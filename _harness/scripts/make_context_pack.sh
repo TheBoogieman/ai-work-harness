@@ -25,7 +25,7 @@ stage_one() { # $1 = path relative to WORK_ROOT
   local rel="$1" src="$WORK_ROOT/$1" dst="$STAGE/$1"
   [[ -f "$src" ]] || return 0
   mkdir -p "$(dirname "$dst")"; cp "$src" "$dst"
-  for rule in "${SCRUB[@]}"; do sed -E -i "$rule" "$dst"; done
+  for rule in "${SCRUB[@]}"; do sed -E "$rule" "$dst" > "$dst.tmp" && mv "$dst.tmp" "$dst"; done
 }
 
 # Harness state per the backbone's Context Pack Convention

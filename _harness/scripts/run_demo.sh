@@ -9,8 +9,15 @@ export HARNESS_STATE_DIR=$(mktemp -d) HARNESS_AGENT_DEPLOY_DIR=$(mktemp -d) PACK
 trap 'rm -rf "$HARNESS_STATE_DIR" "$HARNESS_AGENT_DEPLOY_DIR" "$PACK_OUT_DIR"' EXIT
 S="Tickets/999911Z-PROJ-99998"; rm -rf "$S"
 
+DID_INIT=0
 if ! git rev-parse --git-dir >/dev/null 2>&1; then
   git init -q .; git add -A; git -c user.email=demo@local -c user.name=demo commit -qm "harness: day zero"
+  DID_INIT=1
+fi
+
+# R-03 portability guard: reject in-place sed under _harness/ (BSD-incompatible; use tmp+mv instead)
+if grep -rnE 'sed +(-[A-Za-z]+ +)*-i' _harness/; then
+  echo "FAIL: in-place sed found under _harness/ — not BSD-portable. Fix: rewrite via tmp+mv (grep for deletes, sed for substitutions)."; exit 1
 fi
 
 echo "=== 1/6 validator: first pass + vacuous rerun ==="
@@ -26,23 +33,31 @@ echo "quirk" > "$S/AI-Knowledge/notes.md"
 bash _harness/scripts/check_ticket_log.sh
 
 echo "=== 3/6 corruption must FAIL loudly (this is the point) ==="
-sleep 1; sed -i '/notes.md/d' "$S/AI-Knowledge/_index.md"; touch "$S/999911Z-PROJ-99998.md"
+sleep 1; grep -v "notes.md" "$S/AI-Knowledge/_index.md" > "$S/AI-Knowledge/_index.tmp" && mv "$S/AI-Knowledge/_index.tmp" "$S/AI-Knowledge/_index.md"; touch "$S/999911Z-PROJ-99998.md"
 if bash _harness/scripts/check_ticket_log.sh; then echo "BUG: should have failed"; exit 1; fi
 echo "--- correctly refused; applying the printed fix (repair gets its own log entry) ---"
 echo "- notes.md — platform quirk — read before editing" >> "$S/AI-Knowledge/_index.md"
 sleep 1
 printf '\n## %s - Repaired records\n- restored the index line for notes.md\n' "$(date +%Y%m%d%H%M%S)" >> "$S/999911Z-PROJ-99998.md"
 bash _harness/scripts/check_ticket_log.sh
-echo "--- regression #2: substring decoy must NOT cover a real file ---"
+echo "--- regression #2: substring decoy must NOT cover a real file (token match, not substring) ---"
 echo "decoy content" > "$S/AI-Knowledge/extra.md"
-echo "- release-extra.md — decoy line, superstring of extra.md" >> "$S/AI-Knowledge/_index.md"
+echo "release note" > "$S/AI-Knowledge/release-extra.md"          # real file: ghost check passes, isolates the orphan check
+echo "- release-extra.md — decoy" >> "$S/AI-Knowledge/_index.md"  # no bare 'extra.md' token: substring would cover it, token does not
 sleep 1; touch "$S/999911Z-PROJ-99998.md"
-if bash _harness/scripts/check_ticket_log.sh; then echo "BUG: substring decoy accepted"; exit 1; fi
-echo "--- correctly refused the decoy; cleaning up ---"
-rm "$S/AI-Knowledge/extra.md"
+set +e
+decoy_out=$(bash _harness/scripts/check_ticket_log.sh 2>&1)
+decoy_rc=$?
+set -e
+printf '%s\n' "$decoy_out"
+if [ "$decoy_rc" -eq 0 ] || ! printf '%s\n' "$decoy_out" | grep -q "orphan file AI-Knowledge/extra.md"; then
+  echo "BUG: substring decoy accepted — token-match orphan check did not fire on real file extra.md"; exit 1
+fi
+echo "--- correctly refused the decoy (real file extra.md flagged as orphan by token match); cleaning up ---"
+rm "$S/AI-Knowledge/extra.md" "$S/AI-Knowledge/release-extra.md"
 grep -v "release-extra.md" "$S/AI-Knowledge/_index.md" > "$S/AI-Knowledge/_index.tmp" && mv "$S/AI-Knowledge/_index.tmp" "$S/AI-Knowledge/_index.md"
 sleep 1
-printf '\n## %s - Repaired records\n- removed decoy index line and file\n' "$(date +%Y%m%d%H%M%S)" >> "$S/999911Z-PROJ-99998.md"
+printf '\n## %s - Repaired records\n- removed decoy index line and both decoy files\n' "$(date +%Y%m%d%H%M%S)" >> "$S/999911Z-PROJ-99998.md"
 bash _harness/scripts/check_ticket_log.sh
 
 echo "=== 4/6 notebook helper (deterministic .ipynb writes) ==="
@@ -60,5 +75,8 @@ echo "=== 6/6 scrubbed context pack + self-audit ==="
 bash _harness/scripts/make_context_pack.sh --ticket 999911Z-PROJ-99998
 unzip -p "$PACK_OUT_DIR"/harness-pack-*.zip MANIFEST.txt | tail -1
 
-rm -rf "$S"; git add -A >/dev/null; git -c user.email=demo@local -c user.name=demo commit -qm "demo: pass" >/dev/null 2>&1 || true
+rm -rf "$S"
+if [ "$DID_INIT" -eq 1 ]; then
+  git add -A >/dev/null; git -c user.email=demo@local -c user.name=demo commit -qm "demo: pass" >/dev/null 2>&1 || true
+fi
 echo; echo "ALL 6 DEMO STAGES PASSED — the machinery works. Next: INSTALL.md to wire Copilot."

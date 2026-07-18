@@ -5,6 +5,11 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORK_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 DEPLOY_DIR="${HARNESS_AGENT_DEPLOY_DIR:-$HOME/.copilot/agents}"
+# ---- portability compat (GNU/BSD) — issue #1
+epoch_from_date() {  # YYYY-MM-DD -> epoch
+  if date -d "1970-01-01" +%s >/dev/null 2>&1; then date -d "$1" +%s 2>/dev/null || echo 0
+  else date -j -f "%Y-%m-%d" "$1" +%s 2>/dev/null || echo 0; fi
+}
 fails=0
 CORE=(ticket-init ticket-scribe check-scribe doc-writer knowledge-keeper knowledge-curator)
 
@@ -19,7 +24,13 @@ done
 if git -C "$WORK_ROOT" rev-parse --git-dir >/dev/null 2>&1; then
   last=$(git -C "$WORK_ROOT" log -1 --format=%cr 2>/dev/null || echo "never")
   echo "OK: work repo present; last commit $last."
-  git -C "$WORK_ROOT" remote | grep -q . && { echo "FAIL: work repo has a REMOTE configured — it must be local-only. Fix: git -C '$WORK_ROOT' remote remove <name>"; fails=$((fails+1)); } || true
+  if git -C "$WORK_ROOT" remote | grep -q .; then
+    if [[ -n "${HARNESS_DEMO:-}" ]]; then
+      echo "NOTE: remote present — fine for a template clone; your real Work repo must have none."
+    else
+      echo "FAIL: work repo has a REMOTE configured — it must be local-only. Fix: git -C '$WORK_ROOT' remote remove <name>"; fails=$((fails+1))
+    fi
+  fi
 else
   echo "FAIL: no git repo at $WORK_ROOT. Fix: git -C '$WORK_ROOT' init (whitelist .gitignore already present)."; fails=$((fails+1))
 fi
@@ -50,7 +61,7 @@ now=$(date +%s)
 while IFS= read -r f; do
   d=$(grep -m1 -oE 'Last reviewed: [0-9]{4}-[0-9]{2}-[0-9]{2}' "$f" | grep -oE '[0-9-]{10}' || true)
   if [[ -n "$d" ]]; then
-    age=$(( (now - $(date -d "$d" +%s)) / 86400 ))
+    age=$(( (now - $(epoch_from_date "$d")) / 86400 ))
     (( age > 183 )) && echo "WARN: stale knowledge ($age days): ${f#$WORK_ROOT/} — re-verify or cull (history keeps it)."
   fi
 done < <(find "$WORK_ROOT/General AI-Knowledge" -name '*.md' -type f 2>/dev/null || true)
@@ -61,6 +72,6 @@ while IFS= read -r name; do
   latest=$(grep -oE '^## [0-9]{14} ' "$md" | tail -1 | tr -dc '0-9' || true)
   live=$(find "$WORK_ROOT/Tickets/$name/AI-Knowledge" -maxdepth 1 -name '*.md' ! -name '_index.md' 2>/dev/null | wc -l)
   echo "OK: $name — last session ${latest:-none}, knowledge files: $live."
-done < <(find "$WORK_ROOT/Tickets" -maxdepth 1 -mindepth 1 -type d -printf '%f\n' | grep -E '^[0-9]{6}[A-Z]-[A-Z][A-Z0-9]*-[0-9]{3,6}$' || true)
+done < <(for d in "$WORK_ROOT/Tickets"/*/; do [[ -d "$d" ]] && basename "$d"; done 2>/dev/null | grep -E '^[0-9]{6}[A-Z]-[A-Z][A-Z0-9]*-[0-9]{3,6}$' || true)
 
 (( fails == 0 )) && echo "OK: estate healthy." || { echo "FAIL: $fails issue(s) above — each line names its fix."; exit 1; }

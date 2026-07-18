@@ -62,8 +62,8 @@ Anything marked *swappable* degrades gracefully if you differ.
 - **Your real code lives under `GitHub/`** in the workspace (a folder of
   clones and a `.code-workspace`; *optional* — the harness gitignores it and
   never touches it, but the repo-mapping conventions assume it exists).
-- **bash + GNU coreutils** (macOS/Linux; on macOS install `coreutils` or
-  adjust the two `date -d`/`stat -c` calls). **Windows:** run the harness
+- **bash** (macOS/Linux; the scripts auto-detect GNU vs BSD userland, so
+  stock macOS works without installing coreutils). **Windows:** run the harness
   inside **WSL** (`wsl --install`, then work from your Linux home, not
   `/mnt/c`) — plain PowerShell can push the repo with git but cannot run
   the scripts.

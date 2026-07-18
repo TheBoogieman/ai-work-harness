@@ -7,11 +7,25 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORK_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 TICKETS="$WORK_ROOT/Tickets"
 STAMPS="${HARNESS_STATE_DIR:-$HOME/.harness}/validated"
+# ---- portability compat (GNU/BSD) — issue #1
+file_mtime() {  # epoch mtime, GNU stat -c / BSD stat -f
+  if stat -c %Y "$1" >/dev/null 2>&1; then stat -c %Y "$1"; else stat -f %m "$1"; fi
+}
+epoch_from_ts14() {  # YYYYMMDDHHMMSS -> epoch, GNU date -d / BSD date -j
+  local t="$1"
+  if date -d "1970-01-01" +%s >/dev/null 2>&1; then
+    date -d "${t:0:8} ${t:8:2}:${t:10:2}:${t:12:2}" +%s 2>/dev/null || echo 0
+  else
+    date -j -f "%Y%m%d%H%M%S" "$t" +%s 2>/dev/null || echo 0
+  fi
+}
+
 mkdir -p "$STAMPS"
 
 fails=0
 ticket_dirs() {
-  find "$TICKETS" -maxdepth 1 -mindepth 1 -type d -printf '%f\n' 2>/dev/null \
+  local d
+  for d in "$TICKETS"/*/; do [[ -d "$d" ]] && basename "$d"; done 2>/dev/null \
     | grep -E '^[0-9]{6}[A-Z]-[A-Z][A-Z0-9]*-[0-9]{3,6}$' || true
 }
 
@@ -19,9 +33,13 @@ checked=0
 for name in $(ticket_dirs); do
   dir="$TICKETS/$name"; md="$dir/$name.md"; stamp="$STAMPS/$name"
   [[ -f "$md" ]] || { echo "FAIL: $name has no $name.md — create it from the template. Fix: cp -r Tickets/999912Z-PROJ-99999/* '$dir/' and rename."; fails=$((fails+1)); continue; }
-  stamp_epoch=0; [[ -f "$stamp" ]] && stamp_epoch=$(cat "$stamp")
-  md_epoch=$(stat -c %Y "$md")
-  (( md_epoch > stamp_epoch )) || continue   # unchanged since last successful validation
+  stamp_wall=0; stamp_mtime=0
+  if [[ -f "$stamp" ]]; then
+    stamp_wall=$(sed -n 1p "$stamp"); stamp_mtime=$(sed -n 2p "$stamp")
+    [[ -z "$stamp_mtime" ]] && stamp_mtime=$stamp_wall   # legacy single-line stamp
+  fi
+  md_epoch=$(file_mtime "$md")
+  (( md_epoch > stamp_mtime )) || continue   # unchanged since last successful validation
   checked=$((checked+1))
   ok=1
 
@@ -30,8 +48,8 @@ for name in $(ticket_dirs); do
   if [[ -z "$latest" ]]; then
     echo "FAIL: $name has no Session Log entry. Fix: run ticket-scribe (or reconstruct from: git -C '$WORK_ROOT' log -- 'Tickets/$name')."; ok=0
   else
-    latest_epoch=$(date -d "${latest:0:8} ${latest:8:2}:${latest:10:2}:${latest:12:2}" +%s 2>/dev/null || echo 0)
-    if (( latest_epoch < stamp_epoch )); then
+    latest_epoch=$(epoch_from_ts14 "$latest")
+    if (( latest_epoch < stamp_wall )); then
       echo "FAIL: $name changed but no new Session Log entry since last validation. Fix: run ticket-scribe (or log 'session unrecorded; changes per commits' from git history)."; ok=0
     fi
   fi
@@ -48,7 +66,8 @@ for name in $(ticket_dirs); do
       while IFS= read -r f; do
         base=$(basename "$f"); [[ "$base" == "_index.md" ]] && continue
         live=$((live+1))
-        grep -q "$base" "$idx" || { echo "FAIL: $name orphan file AI-Knowledge/$base not in _index.md. Fix: echo '- $base — <what it covers>' >> '$idx'"; ok=0; }
+        base_re=$(printf '%s' "$base" | sed 's/[.[\*^$]/\\&/g')
+        grep -Eq "(^|[^A-Za-z0-9_.-])${base_re}([^A-Za-z0-9_.-]|$)" "$idx" || { echo "FAIL: $name orphan file AI-Knowledge/$base not in _index.md. Fix: echo '- $base — <what it covers>' >> '$idx'"; ok=0; }
       done < <(find "$ak" -maxdepth 1 -name '*.md' -type f)
       while IFS= read -r ref; do
         [[ "$ref" == "_index.md" ]] && continue
@@ -63,7 +82,7 @@ for name in $(ticket_dirs); do
   fi
 
   if (( ok == 1 )); then
-    echo "$md_epoch" > "$stamp"
+    printf '%s\n%s\n' "$(date +%s)" "$md_epoch" > "$stamp"
     echo "OK: $name validated."
   else
     fails=$((fails+1))

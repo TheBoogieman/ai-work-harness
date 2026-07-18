@@ -17,7 +17,7 @@ CORE=(ticket-init ticket-scribe check-scribe doc-writer knowledge-keeper knowled
 for f in check_ticket_log.sh harness-status.sh append_notebook_cell.py make_context_pack.sh deploy_agents.sh; do
   p="$SCRIPT_DIR/$f"
   [[ -f "$p" ]] || { echo "FAIL: missing script $f. Fix: restore from git: git -C '$WORK_ROOT' checkout -- '_harness/scripts/$f'"; fails=$((fails+1)); continue; }
-  [[ -x "$p" || "$f" == *.py ]] || { echo "FAIL: $f not executable. Fix: chmod +x '$p'"; fails=$((fails+1)); }
+  [[ -x "$p" ]] || { echo "FAIL: $f not executable. Fix: chmod +x '$p'"; fails=$((fails+1)); }
 done
 
 # git liveness

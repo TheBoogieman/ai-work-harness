@@ -62,6 +62,11 @@ bash _harness/scripts/check_ticket_log.sh
 
 echo "=== 4/6 notebook helper (deterministic .ipynb writes) ==="
 python3 _harness/scripts/append_notebook_cell.py "$S/Checks/checks_master.ipynb" "check: row counts match" "SELECT COUNT(*) FROM model;"
+# R-07: exercise check-scribe's LITERAL contract form — invoke the helper DIRECTLY (bit + shebang, not python3),
+# so a stripped execute bit turns this stage RED (the python3 call above never sees the bit).
+if ! _harness/scripts/append_notebook_cell.py "$S/Checks/checks_master.ipynb" "check: direct-exec contract (R-07)" "SELECT 1;"; then
+  echo "FAIL: append_notebook_cell.py not directly executable — execute bit or shebang missing. Fix: git update-index --chmod=+x _harness/scripts/append_notebook_cell.py"; exit 1
+fi
 
 echo "=== 5/6 deploy + status; break an agent; watch it prescribe ==="
 bash _harness/scripts/deploy_agents.sh

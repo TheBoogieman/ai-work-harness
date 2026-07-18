@@ -1,0 +1,23 @@
+# WHITELIST REPO — everything is untracked unless re-included below
+/*
+!/.gitignore
+!/LICENSE
+!/README.md
+!/INSTALL.md
+!/setup-prompt.md
+!/folder-structure.md
+!/AGENTS.md
+!/_agents/
+!/_harness/
+!/Tickets/
+!/General AI-Knowledge/
+
+# working bulk inside tickets is never a record
+Tickets/*/Logs/*
+Tickets/*/Dump/*
+!Tickets/*/Logs/.gitkeep
+!Tickets/*/Dump/.gitkeep
+
+# OS noise
+.DS_Store
+**/.DS_Store

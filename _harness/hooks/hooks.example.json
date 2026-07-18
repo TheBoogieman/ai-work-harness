@@ -1,0 +1,21 @@
+{
+  "$comment": "EXAMPLE ONLY - hook config schemas are preview-grade and differ across Copilot CLI / VS Code versions. Verify event names, file location, and payload fields against the CURRENT docs before installing (see INSTALL.md). Design intent: safety net anchors to WRITES, validation anchors to ENTRY, sessionEnd is a bonus. Every command is idempotent and safe at any frequency.",
+  "hooks": {
+    "sessionStart": [
+      { "type": "command",
+        "command": "bash \"${WORKSPACE_ROOT}/_harness/scripts/check_ticket_log.sh\"",
+        "why": "entry gate: validates the state the PREVIOUS work left behind" }
+    ],
+    "postToolUse": [
+      { "type": "command",
+        "toolFilter": ["edit", "create", "write", "str_replace"],
+        "command": "git -C \"${WORKSPACE_ROOT}\" add -A && git -C \"${WORKSPACE_ROOT}\" diff-index --quiet HEAD || git -C \"${WORKSPACE_ROOT}\" commit -q -m auto-write",
+        "why": "safety net: every mutation captured the moment it lands; no-op-safe" }
+    ],
+    "sessionEnd": [
+      { "type": "command",
+        "command": "bash \"${WORKSPACE_ROOT}/_harness/scripts/check_ticket_log.sh\"; git -C \"${WORKSPACE_ROOT}\" add -A && git -C \"${WORKSPACE_ROOT}\" diff-index --quiet HEAD || git -C \"${WORKSPACE_ROOT}\" commit -q -m auto-session-end",
+        "why": "best-effort bonus only - nothing may depend on this firing" }
+    ]
+  }
+}

@@ -1,0 +1,170 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1544" viewBox="0 0 1000 1544" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#1E4568" stroke-width="1"/>
+    </pattern>
+    <pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="8" stroke="#3D6A94" stroke-width="1.5"/>
+    </pattern>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#CFE4F5"/>
+    </marker>
+    <marker id="arrowAmber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#F5B84A"/>
+    </marker>
+    <marker id="arrowCyan" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#7FD1F0"/>
+    </marker>
+  </defs>
+
+  <!-- paper -->
+  <rect width="1000" height="1544" fill="#14324E"/>
+  <rect width="1000" height="1544" fill="url(#grid)"/>
+  <rect x="18" y="18" width="964" height="1508" fill="none" stroke="#CFE4F5" stroke-width="2"/>
+  <rect x="26" y="26" width="948" height="1492" fill="none" stroke="#3D6A94" stroke-width="1"/>
+
+  <!-- registration marks -->
+  <g stroke="#7FA8CC" stroke-width="1">
+    <path d="M50 40 v20 M40 50 h20"/><path d="M950 40 v20 M940 50 h20"/>
+    <path d="M50 1474 v20 M40 1484 h20"/><path d="M950 1474 v20 M940 1484 h20"/>
+  </g>
+
+  <!-- header -->
+  <text x="60" y="86" fill="#E8F2FB" font-size="30" font-weight="700" letter-spacing="4">AI WORK HARNESS</text>
+  <text x="60" y="112" fill="#9DBBD6" font-size="13" letter-spacing="3">PERSONAL AI WORKSPACE · ~/Work</text>
+  <line x1="60" y1="128" x2="700" y2="128" stroke="#CFE4F5" stroke-width="1.5"/>
+  <text x="940" y="86" fill="#7FD1F0" font-size="12" letter-spacing="2" text-anchor="end">DWG HARNESS-001</text>
+  <text x="940" y="104" fill="#9DBBD6" font-size="11" letter-spacing="2" text-anchor="end">REV N · SHEET 1 OF 2</text>
+
+  <!-- ============ L5 THINKING ============ -->
+  <text x="60" y="176" fill="#7FD1F0" font-size="11" letter-spacing="3">L5 — THINKING</text>
+  <rect x="60" y="188" width="620" height="88" fill="#1B3E5F" stroke="#7FD1F0" stroke-width="2"/>
+  <text x="84" y="224" fill="#E8F2FB" font-size="17" font-weight="700" letter-spacing="1">YOU  +  FRONTIER MODEL SESSION</text>
+  <text x="84" y="250" fill="#9DBBD6" font-size="12">judgment · architecture · hard debugging · tight context</text>
+  <text x="700" y="238" fill="#7FD1F0" font-size="11">EXPENSIVE / RARE</text>
+
+  <!-- delegation arrow -->
+  <line x1="370" y1="276" x2="370" y2="330" stroke="#CFE4F5" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="384" y="308" fill="#CFE4F5" font-size="11" letter-spacing="1">DELEGATES DOWN ONLY</text>
+
+  <!-- ============ L4 AGENTS ============ -->
+  <text x="60" y="352" fill="#7FD1F0" font-size="11" letter-spacing="3">L4 — WORKERS · SIX AGENTS (.agent.md)</text>
+  <rect x="60" y="364" width="880" height="196" fill="none" stroke="#CFE4F5" stroke-width="1.5" stroke-dasharray="6 4"/>
+
+  <g>
+    <rect x="80" y="386" width="188" height="66" fill="#1B3E5F" stroke="#CFE4F5" stroke-width="1.5"/>
+    <text x="94" y="412" fill="#E8F2FB" font-size="13" font-weight="700">ticket-scribe</text>
+    <text x="94" y="432" fill="#9DBBD6" font-size="10.5">session log + state</text>
+
+    <rect x="290" y="386" width="188" height="66" fill="#1B3E5F" stroke="#CFE4F5" stroke-width="1.5"/>
+    <text x="304" y="412" fill="#E8F2FB" font-size="13" font-weight="700">sql-scribe</text>
+    <text x="304" y="432" fill="#9DBBD6" font-size="10.5">queries → notebook*</text>
+
+    <rect x="500" y="386" width="188" height="66" fill="#1B3E5F" stroke="#CFE4F5" stroke-width="1.5"/>
+    <text x="514" y="412" fill="#E8F2FB" font-size="13" font-weight="700">doc-writer</text>
+    <text x="514" y="432" fill="#9DBBD6" font-size="10.5">PRs · READMEs</text>
+
+    <rect x="710" y="386" width="188" height="66" fill="#1B3E5F" stroke="#CFE4F5" stroke-width="1.5"/>
+    <text x="724" y="412" fill="#E8F2FB" font-size="13" font-weight="700">knowledge-keeper</text>
+    <text x="724" y="432" fill="#9DBBD6" font-size="10.5">capture learnings</text>
+  </g>
+  <text x="80" y="478" fill="#9DBBD6" font-size="10.5" letter-spacing="1">CHEAP TIER · NOT USER-INVOCABLE (except doc-writer) · EVERY SESSION</text>
+
+  <rect x="80" y="494" width="500" height="50" fill="#1B3E5F" stroke="#7FD1F0" stroke-width="2"/>
+  <text x="96" y="516" fill="#E8F2FB" font-size="13" font-weight="700">knowledge-curator</text>
+  <text x="96" y="534" fill="#9DBBD6" font-size="10.5">compact + promote (with approval) · SONNET TIER · DIRECT INVOKE ONLY · RARE</text>
+  <rect x="620" y="494" width="300" height="50" fill="#1B3E5F" stroke="#7FD1F0" stroke-width="2"/>
+  <text x="636" y="516" fill="#E8F2FB" font-size="13" font-weight="700">ticket-init</text>
+  <text x="636" y="534" fill="#9DBBD6" font-size="10.5">interactive kickoff · SONNET · DIRECT · at pickup</text>
+  <text x="84" y="557" fill="#9DBBD6" font-size="10.5">*via append_notebook_cell.py</text>
+
+  <!-- writes arrow -->
+  <line x1="370" y1="560" x2="370" y2="612" stroke="#CFE4F5" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="384" y="592" fill="#CFE4F5" font-size="11" letter-spacing="1">WRITES FILES</text>
+
+  <!-- ============ L3 FILESYSTEM ============ -->
+  <text x="60" y="634" fill="#7FD1F0" font-size="11" letter-spacing="3">L3 — FILESYSTEM · SINGLE SOURCE OF TRUTH</text>
+  <rect x="60" y="646" width="880" height="240" fill="none" stroke="#CFE4F5" stroke-width="1.5"/>
+
+  <rect x="80" y="668" width="400" height="88" fill="#1B3E5F" stroke="#7FD1F0" stroke-width="2"/>
+  <text x="96" y="694" fill="#E8F2FB" font-size="14" font-weight="700">folder-structure.md</text>
+  <text x="96" y="714" fill="#9DBBD6" font-size="11">THE CONSTITUTION — every rule lives here</text>
+  <text x="96" y="732" fill="#9DBBD6" font-size="11">conventions · atomicity · context budget</text>
+
+  <rect x="500" y="668" width="400" height="88" fill="#1B3E5F" stroke="#CFE4F5" stroke-width="1.5"/>
+  <text x="516" y="694" fill="#E8F2FB" font-size="14" font-weight="700">Tickets/&lt;ID&gt;/</text>
+  <text x="516" y="714" fill="#9DBBD6" font-size="11">&lt;ID&gt;.md → Current State + Session Log</text>
+  <text x="516" y="732" fill="#9DBBD6" font-size="11">AI-Knowledge/ + _index.md · SQL/ · Logs/ · Dump/</text>
+
+  <rect x="80" y="774" width="400" height="88" fill="#1B3E5F" stroke="#CFE4F5" stroke-width="1.5"/>
+  <text x="96" y="800" fill="#E8F2FB" font-size="14" font-weight="700">General AI-Knowledge/</text>
+  <text x="96" y="820" fill="#9DBBD6" font-size="11">durable, ticket-free knowledge · one topic/folder</text>
+  <text x="96" y="838" fill="#9DBBD6" font-size="11">"Last reviewed:" dated · incl. this drawing</text>
+
+  <rect x="500" y="774" width="400" height="88" fill="#1B3E5F" stroke="#CFE4F5" stroke-width="1.5"/>
+  <text x="516" y="800" fill="#E8F2FB" font-size="14" font-weight="700">AGENTS.md</text>
+  <text x="516" y="820" fill="#9DBBD6" font-size="11">THE LOADER — 10-line contract Copilot reads</text>
+  <text x="516" y="838" fill="#9DBBD6" font-size="11">on every surface → points at the constitution</text>
+
+  <!-- promotion arrow -->
+  <path d="M500 748 H490 V765 H304 V770" fill="none" stroke="#7FD1F0" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#arrowCyan)"/>
+  <text x="512" y="769" fill="#7FD1F0" font-size="10.5">&#9664; curator promotes (approved)</text>
+
+  <!-- enforcement arrow -->
+  <line x1="500" y1="886" x2="500" y2="938" stroke="#F5B84A" stroke-width="2" marker-end="url(#arrowAmber)"/>
+  <text x="514" y="918" fill="#F5B84A" font-size="11" letter-spacing="1">VALIDATED ON ENTRY</text>
+
+  <!-- ============ L2 ENFORCEMENT ============ -->
+  <text x="60" y="960" fill="#F5B84A" font-size="11" letter-spacing="3">L2 — ENFORCEMENT · DUMB INSPECTOR (NO AI)</text>
+  <rect x="60" y="972" width="880" height="118" fill="#1B3E5F" stroke="#F5B84A" stroke-width="2"/>
+  <text x="84" y="1002" fill="#E8F2FB" font-size="14" font-weight="700">hooks: postToolUse → commit · sessionStart → validate · sessionEnd = bonus</text>
+  <text x="84" y="1028" fill="#9DBBD6" font-size="11.5">FAILS: missing log entry · missing Current State · index orphans/ghosts</text>
+  <text x="84" y="1048" fill="#9DBBD6" font-size="11.5">NAGS: index &gt; 10 files → run curator · 3+ sessions with empty AI-Knowledge</text>
+  <text x="84" y="1072" fill="#F5B84A" font-size="11">checks facts only — never judges content · no ticket touched = vacuous pass</text>
+
+  <!-- commit arrow -->
+  <line x1="500" y1="1090" x2="500" y2="1140" stroke="#CFE4F5" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="514" y="1122" fill="#CFE4F5" font-size="11" letter-spacing="1">EVERY WRITE AUTO-COMMITS</text>
+
+  <!-- ============ L1 SAFETY NET ============ -->
+  <text x="60" y="1162" fill="#7FD1F0" font-size="11" letter-spacing="3">L1 — SAFETY NET</text>
+  <rect x="60" y="1174" width="880" height="74" fill="url(#hatch)" stroke="#CFE4F5" stroke-width="2"/>
+  <rect x="60" y="1174" width="880" height="74" fill="#14324E" opacity="0.55"/>
+  <text x="84" y="1204" fill="#E8F2FB" font-size="14" font-weight="700">git — LOCAL ONLY, rooted at Work/, WHITELIST-scoped</text>
+  <text x="84" y="1228" fill="#9DBBD6" font-size="11.5">every write commits · NO REMOTE, EVER · records only: tickets(−Logs/Dump) · constitution · AGENTS.md · _agents · _harness · GAK — nothing else enters</text>
+
+  <!-- ============ M MAINTENANCE PORT ============ -->
+  <text x="60" y="1280" fill="#7FD1F0" font-size="11" letter-spacing="3">M — MAINTENANCE PORT · OFFLINE, ON DEMAND</text>
+  <rect x="60" y="1292" width="880" height="84" fill="none" stroke="#7FD1F0" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="84" y="1316" fill="#E8F2FB" font-size="13" font-weight="700">make_context_pack.sh  →  scrub table  →  zip + manifest → Desktop (disposable) → external review</text>
+  <text x="84" y="1338" fill="#E8F2FB" font-size="13" font-weight="700">harness-status.sh  →  estate report: ticket ages · index nags · stale GAK · git/hook/agent liveness</text>
+  <text x="84" y="1360" fill="#9DBBD6" font-size="11">status observes · failures prescribe · nothing heals itself · manual skim before a pack leaves the machine</text>
+
+  <!-- ============ THE PATTERN ============ -->
+  <line x1="60" y1="1398" x2="940" y2="1398" stroke="#3D6A94" stroke-width="1"/>
+  <text x="60" y="1424" fill="#7FD1F0" font-size="11" letter-spacing="3">THE PATTERN — REPEATED AT EVERY LAYER</text>
+  <g font-size="12.5" font-weight="700" fill="#E8F2FB">
+    <rect x="60" y="1436" width="170" height="40" fill="#1B3E5F" stroke="#CFE4F5" stroke-width="1.5"/>
+    <text x="145" y="1461" text-anchor="middle">FILE = RULE</text>
+    <rect x="290" y="1436" width="170" height="40" fill="#1B3E5F" stroke="#CFE4F5" stroke-width="1.5"/>
+    <text x="375" y="1461" text-anchor="middle">AGENT = WORK</text>
+    <rect x="520" y="1436" width="170" height="40" fill="#1B3E5F" stroke="#F5B84A" stroke-width="1.5"/>
+    <text x="605" y="1461" text-anchor="middle">HOOK = CATCH</text>
+    <rect x="750" y="1436" width="170" height="40" fill="#1B3E5F" stroke="#CFE4F5" stroke-width="1.5"/>
+    <text x="835" y="1461" text-anchor="middle">GIT = UNDO</text>
+  </g>
+  <g stroke="#CFE4F5" stroke-width="1.5">
+    <line x1="230" y1="1456" x2="286" y2="1456" marker-end="url(#arrow)"/>
+    <line x1="460" y1="1456" x2="516" y2="1456" marker-end="url(#arrow)"/>
+    <line x1="690" y1="1456" x2="746" y2="1456" marker-end="url(#arrow)"/>
+  </g>
+
+  <!-- title block -->
+  <g font-size="10" fill="#9DBBD6" letter-spacing="1">
+    <line x1="60" y1="1490" x2="940" y2="1490" stroke="#3D6A94" stroke-width="1"/>
+    <text x="60" y="1508">PROJECT: AI HARNESS v2</text>
+    <text x="330" y="1508">DRAWN: THE HARNESS PROJECT</text>
+    <text x="600" y="1508">CLIENT: YOU</text>
+    <text x="940" y="1508" text-anchor="end">SCALE: NTS · 2026-07</text>
+  </g>
+</svg>

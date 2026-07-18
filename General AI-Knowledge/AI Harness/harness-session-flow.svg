@@ -1,0 +1,240 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="2180" viewBox="0 0 1000 2180" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#1E4568" stroke-width="1"/>
+    </pattern>
+    <pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="8" stroke="#3D6A94" stroke-width="1.5"/>
+    </pattern>
+    <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#CFE4F5"/>
+    </marker>
+    <marker id="arwA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#F5B84A"/>
+    </marker>
+  </defs>
+
+  <rect width="1000" height="2180" fill="#14324E"/>
+  <rect width="1000" height="2180" fill="url(#grid)"/>
+  <rect x="18" y="18" width="964" height="2144" fill="none" stroke="#CFE4F5" stroke-width="2"/>
+  <rect x="26" y="26" width="948" height="2128" fill="none" stroke="#3D6A94" stroke-width="1"/>
+  <g stroke="#7FA8CC" stroke-width="1">
+    <path d="M50 40 v20 M40 50 h20"/><path d="M950 40 v20 M940 50 h20"/>
+    <path d="M50 2088 v20 M40 2098 h20"/><path d="M950 2088 v20 M940 2098 h20"/>
+  </g>
+
+  <!-- header -->
+  <text x="60" y="86" fill="#E8F2FB" font-size="28" font-weight="700" letter-spacing="3">SESSION OPERATIONAL FLOW</text>
+  <text x="60" y="112" fill="#9DBBD6" font-size="12" letter-spacing="2">ONE SESSION, START TO FINISH · WHAT YOU DO · WHAT RUNS ITSELF</text>
+  <line x1="60" y1="128" x2="740" y2="128" stroke="#CFE4F5" stroke-width="1.5"/>
+  <text x="940" y="86" fill="#7FD1F0" font-size="12" letter-spacing="2" text-anchor="end">DWG HARNESS-002</text>
+  <text x="940" y="104" fill="#9DBBD6" font-size="11" letter-spacing="2" text-anchor="end">REV C · SHEET 2 OF 2</text>
+
+  <!-- legend -->
+  <g font-size="10.5" fill="#9DBBD6">
+    <rect x="60" y="146" width="14" height="14" fill="#1B3E5F" stroke="#7FD1F0" stroke-width="2"/><text x="80" y="157">YOU ACT</text>
+    <rect x="170" y="146" width="14" height="14" fill="#1B3E5F" stroke="#CFE4F5" stroke-width="1.5"/><text x="190" y="157">AGENTS</text>
+    <rect x="278" y="146" width="14" height="14" fill="none" stroke="#CFE4F5" stroke-width="1.5" stroke-dasharray="4 3"/><text x="298" y="157">AUTOMATIC</text>
+    <rect x="404" y="146" width="14" height="14" fill="#1B3E5F" stroke="#F5B84A" stroke-width="2"/><text x="424" y="157">ENFORCE / FIX</text>
+    <rect x="536" y="146" width="14" height="14" fill="url(#hatch)" stroke="#CFE4F5" stroke-width="1"/><text x="556" y="157">GIT UNDO</text>
+  </g>
+
+  <!-- ================= P1 ENTRY ================= -->
+  <text x="60" y="196" fill="#7FD1F0" font-size="11" letter-spacing="3">P1 — ENTRY + VALIDATION</text>
+
+  <rect x="60" y="208" width="360" height="56" fill="#1B3E5F" stroke="#7FD1F0" stroke-width="2"/>
+  <text x="76" y="232" fill="#E8F2FB" font-size="12.5" font-weight="700">[YOU] open or resume a Copilot session</text>
+  <text x="76" y="252" fill="#9DBBD6" font-size="10.5">that is the entire trigger</text>
+  <line x1="240" y1="264" x2="240" y2="292" stroke="#CFE4F5" stroke-width="2" marker-end="url(#arw)"/>
+
+  <rect x="60" y="296" width="360" height="64" fill="none" stroke="#CFE4F5" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <text x="76" y="320" fill="#E8F2FB" font-size="12">AUTO: sessionStart fires →</text>
+  <text x="76" y="340" fill="#9DBBD6" font-size="11">check_ticket_log.sh audits state left by the PAST</text>
+  <line x1="240" y1="360" x2="240" y2="380" stroke="#CFE4F5" stroke-width="2" marker-end="url(#arw)"/>
+
+  <path d="M240 384 L360 428 L240 472 L120 428 Z" fill="#1B3E5F" stroke="#CFE4F5" stroke-width="1.5"/>
+  <text x="240" y="424" fill="#E8F2FB" font-size="12" font-weight="700" text-anchor="middle">ENTRY</text>
+  <text x="240" y="442" fill="#E8F2FB" font-size="12" font-weight="700" text-anchor="middle">RESULT?</text>
+
+  <!-- green -->
+  <path d="M240 472 V500 H396 V764 H252" fill="none" stroke="#CFE4F5" stroke-width="2" marker-end="url(#arw)"/>
+  <text x="408" y="540" fill="#9DBBD6" font-size="10.5">GREEN — just work</text>
+
+  <!-- warn -->
+  <line x1="120" y1="428" x2="120" y2="556" stroke="#CFE4F5" stroke-width="1.5" marker-end="url(#arw)"/>
+  <text x="70" y="530" fill="#F5B84A" font-size="10.5">WARN / NOTE</text>
+  <rect x="60" y="560" width="260" height="84" fill="#1B3E5F" stroke="#CFE4F5" stroke-width="1.5"/>
+  <text x="74" y="582" fill="#E8F2FB" font-size="11.5" font-weight="700">Yellow schedules.</text>
+  <text x="74" y="600" fill="#9DBBD6" font-size="10.5">Note it; handle at the next</text>
+  <text x="74" y="616" fill="#9DBBD6" font-size="10.5">boundary (curator at close-out).</text>
+  <text x="74" y="632" fill="#9DBBD6" font-size="10.5">DO NOT stop the flow.</text>
+  <path d="M190 644 V780 H228" fill="none" stroke="#CFE4F5" stroke-width="1.5" marker-end="url(#arw)"/>
+
+  <!-- FAIL branch -->
+  <line x1="360" y1="428" x2="554" y2="428" stroke="#F5B84A" stroke-width="2" marker-end="url(#arwA)"/>
+  <text x="392" y="418" fill="#F5B84A" font-size="10.5" font-weight="700">FAIL — red blocks</text>
+
+  <rect x="560" y="392" width="380" height="56" fill="#1B3E5F" stroke="#F5B84A" stroke-width="2"/>
+  <text x="576" y="416" fill="#E8F2FB" font-size="12" font-weight="700">Read the line — it names the exact fix.</text>
+  <text x="576" y="436" fill="#9DBBD6" font-size="10.5">It is about the PREVIOUS session, not this one.</text>
+  <line x1="750" y1="448" x2="750" y2="464" stroke="#F5B84A" stroke-width="2" marker-end="url(#arwA)"/>
+
+  <rect x="560" y="468" width="380" height="52" fill="#1B3E5F" stroke="#CFE4F5" stroke-width="1.5"/>
+  <text x="576" y="490" fill="#E8F2FB" font-size="12" font-weight="700">Mechanical or substantive?</text>
+  <text x="576" y="508" fill="#9DBBD6" font-size="10.5">(index/section glitch)  vs  (missing record)</text>
+  <line x1="655" y1="520" x2="655" y2="552" stroke="#CFE4F5" stroke-width="1.5" marker-end="url(#arw)"/>
+  <text x="612" y="542" fill="#9DBBD6" font-size="10">MECH</text>
+  <line x1="845" y1="520" x2="845" y2="552" stroke="#CFE4F5" stroke-width="1.5" marker-end="url(#arw)"/>
+  <text x="856" y="542" fill="#9DBBD6" font-size="10">SUBST</text>
+
+  <rect x="560" y="556" width="180" height="84" fill="#1B3E5F" stroke="#CFE4F5" stroke-width="1.5"/>
+  <text x="574" y="578" fill="#E8F2FB" font-size="11.5" font-weight="700">Run the printed fix</text>
+  <text x="574" y="596" fill="#9DBBD6" font-size="10.5">(delegable to the</text>
+  <text x="574" y="612" fill="#9DBBD6" font-size="10.5">session agent)</text>
+  <text x="574" y="630" fill="#9DBBD6" font-size="10.5">~1 minute</text>
+
+  <rect x="760" y="556" width="180" height="116" fill="#1B3E5F" stroke="#CFE4F5" stroke-width="1.5"/>
+  <text x="774" y="576" fill="#E8F2FB" font-size="11.5" font-weight="700">Reconstruct honestly</text>
+  <text x="774" y="594" fill="#9DBBD6" font-size="10.5">git log / diff shows all</text>
+  <text x="774" y="610" fill="#9DBBD6" font-size="10.5">writes → ticket-scribe,</text>
+  <text x="774" y="626" fill="#9DBBD6" font-size="10.5">late-but-true. Can't?</text>
+  <text x="774" y="642" fill="#9DBBD6" font-size="10.5">Log "session unrecorded</text>
+  <text x="774" y="658" fill="#9DBBD6" font-size="10.5">+ commit range".</text>
+
+  <path d="M650 640 V696" fill="none" stroke="#CFE4F5" stroke-width="1.5" marker-end="url(#arw)"/>
+  <path d="M850 672 V696" fill="none" stroke="#CFE4F5" stroke-width="1.5" marker-end="url(#arw)"/>
+
+  <rect x="560" y="700" width="380" height="52" fill="#1B3E5F" stroke="#F5B84A" stroke-width="2"/>
+  <text x="576" y="722" fill="#E8F2FB" font-size="12" font-weight="700">Re-run check_ticket_log.sh → green.</text>
+  <text x="576" y="740" fill="#F5B84A" font-size="10.5">NEVER fabricate a record to silence the gate.</text>
+  <path d="M750 752 V772 H248" fill="none" stroke="#F5B84A" stroke-width="2" marker-end="url(#arwA)"/>
+
+  <circle cx="240" cy="780" r="5" fill="#CFE4F5"/>
+
+  <!-- ================= P2 TICKET ================= -->
+  <text x="60" y="812" fill="#7FD1F0" font-size="11" letter-spacing="3">P2 — TICKET: PICK UP OR CONTINUE</text>
+  <line x1="240" y1="785" x2="240" y2="828" stroke="#CFE4F5" stroke-width="2" marker-end="url(#arw)"/>
+
+  <path d="M240 832 L360 876 L240 920 L120 876 Z" fill="#1B3E5F" stroke="#CFE4F5" stroke-width="1.5"/>
+  <text x="240" y="872" fill="#E8F2FB" font-size="12" font-weight="700" text-anchor="middle">NEW</text>
+  <text x="240" y="890" fill="#E8F2FB" font-size="12" font-weight="700" text-anchor="middle">TICKET?</text>
+
+  <line x1="360" y1="876" x2="516" y2="876" stroke="#CFE4F5" stroke-width="1.5" marker-end="url(#arw)"/>
+  <text x="400" y="866" fill="#9DBBD6" font-size="10">YES</text>
+
+  <rect x="520" y="832" width="420" height="60" fill="#1B3E5F" stroke="#7FD1F0" stroke-width="2"/>
+  <text x="536" y="856" fill="#E8F2FB" font-size="12" font-weight="700">[YOU] pick ticket-init from the dropdown</text>
+  <text x="536" y="876" fill="#9DBBD6" font-size="10.5">paste the Jira link — that's the whole message</text>
+  <line x1="730" y1="892" x2="730" y2="908" stroke="#CFE4F5" stroke-width="1.5" marker-end="url(#arw)"/>
+
+  <rect x="520" y="912" width="420" height="64" fill="#1B3E5F" stroke="#CFE4F5" stroke-width="1.5"/>
+  <text x="536" y="936" fill="#E8F2FB" font-size="11.5">agent: pulls Jira → shows digest → asks EXACTLY 3:</text>
+  <text x="536" y="956" fill="#9DBBD6" font-size="10.5">your words · non-negotiables · repo(s)</text>
+  <line x1="730" y1="976" x2="730" y2="992" stroke="#CFE4F5" stroke-width="1.5" marker-end="url(#arw)"/>
+
+  <rect x="520" y="996" width="420" height="60" fill="#1B3E5F" stroke="#7FD1F0" stroke-width="2"/>
+  <text x="536" y="1020" fill="#E8F2FB" font-size="12" font-weight="700">[YOU] answer · pick a suggested branch name</text>
+  <text x="536" y="1040" fill="#9DBBD6" font-size="10.5">recorded only — the agent never creates branches</text>
+  <line x1="730" y1="1056" x2="730" y2="1072" stroke="#CFE4F5" stroke-width="1.5" marker-end="url(#arw)"/>
+
+  <rect x="520" y="1076" width="420" height="72" fill="#1B3E5F" stroke="#CFE4F5" stroke-width="1.5"/>
+  <text x="536" y="1098" fill="#E8F2FB" font-size="11.5">"In my words" Background · Non-negotiables checklist</text>
+  <text x="536" y="1116" fill="#9DBBD6" font-size="10.5">adjacency scan → pointers · Current State seeded</text>
+  <text x="536" y="1134" fill="#9DBBD6" font-size="10.5">ticket-scribe logs the init</text>
+  <path d="M730 1148 V1176 H248" fill="none" stroke="#CFE4F5" stroke-width="1.5" marker-end="url(#arw)"/>
+
+  <line x1="240" y1="920" x2="240" y2="952" stroke="#CFE4F5" stroke-width="1.5" marker-end="url(#arw)"/>
+  <text x="252" y="944" fill="#9DBBD6" font-size="10">NO</text>
+  <rect x="60" y="956" width="360" height="72" fill="#1B3E5F" stroke="#CFE4F5" stroke-width="1.5"/>
+  <text x="76" y="980" fill="#E8F2FB" font-size="11.5">agent rehydrates from:</text>
+  <text x="76" y="998" fill="#E8F2FB" font-size="11.5" font-weight="700">backbone + header + Current State ONLY</text>
+  <text x="76" y="1016" fill="#9DBBD6" font-size="10.5">the context budget, working as intended</text>
+  <line x1="240" y1="1028" x2="240" y2="1176" stroke="#CFE4F5" stroke-width="1.5" marker-end="url(#arw)"/>
+
+  <circle cx="240" cy="1184" r="5" fill="#CFE4F5"/>
+
+  <!-- ================= P3 WORK ================= -->
+  <text x="60" y="1224" fill="#7FD1F0" font-size="11" letter-spacing="3">P3 — THE WORK ITEM · EXAMPLE: THREAD A NEW FIELD THROUGH A STAGING MODEL</text>
+  <line x1="240" y1="1189" x2="240" y2="1240" stroke="#CFE4F5" stroke-width="2" marker-end="url(#arw)"/>
+
+  <rect x="60" y="1244" width="400" height="56" fill="#1B3E5F" stroke="#7FD1F0" stroke-width="2"/>
+  <text x="76" y="1268" fill="#E8F2FB" font-size="12" font-weight="700">[YOU] state the task in one message</text>
+  <text x="76" y="1288" fill="#9DBBD6" font-size="10.5">"add the new field to the staging model + tests"</text>
+  <line x1="240" y1="1300" x2="240" y2="1328" stroke="#CFE4F5" stroke-width="2" marker-end="url(#arw)"/>
+
+  <rect x="60" y="1332" width="400" height="88" fill="#1B3E5F" stroke="#CFE4F5" stroke-width="1.5"/>
+  <text x="76" y="1356" fill="#E8F2FB" font-size="11.5" font-weight="700">agent works the repo:</text>
+  <text x="76" y="1374" fill="#9DBBD6" font-size="10.5">branch · edit model · fix unit tests · sqlfluff</text>
+  <text x="76" y="1390" fill="#9DBBD6" font-size="10.5">normal git + PR rules apply — the harness</text>
+  <text x="76" y="1406" fill="#9DBBD6" font-size="10.5">never touches GitHub/ by itself</text>
+
+  <text x="520" y="1236" fill="#7FD1F0" font-size="10.5" letter-spacing="2">HARNESS RECORDS, IN PARALLEL:</text>
+  <rect x="520" y="1244" width="420" height="60" fill="none" stroke="#CFE4F5" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <rect x="524" y="1248" width="12" height="52" fill="url(#hatch)"/>
+  <text x="548" y="1268" fill="#E8F2FB" font-size="11.5">every Tickets-file write → auto-commit</text>
+  <text x="548" y="1288" fill="#9DBBD6" font-size="10.5">postToolUse · no-op-safe · you never see it</text>
+
+  <rect x="520" y="1324" width="420" height="60" fill="#1B3E5F" stroke="#CFE4F5" stroke-width="1.5"/>
+  <text x="536" y="1348" fill="#E8F2FB" font-size="11.5">a check worth keeping → sql-scribe →</text>
+  <text x="536" y="1368" fill="#9DBBD6" font-size="10.5">notebook cell: why-note + query + result</text>
+
+  <rect x="520" y="1404" width="420" height="56" fill="#1B3E5F" stroke="#CFE4F5" stroke-width="1.5"/>
+  <text x="536" y="1428" fill="#E8F2FB" font-size="11.5">long output → Logs/ — grep-slice it,</text>
+  <text x="536" y="1448" fill="#9DBBD6" font-size="10.5">never dump it into chat context</text>
+
+  <rect x="60" y="1444" width="400" height="84" fill="none" stroke="#CFE4F5" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <text x="76" y="1466" fill="#E8F2FB" font-size="11">mid-session events (all automatic):</text>
+  <text x="76" y="1484" fill="#9DBBD6" font-size="10.5">compaction → preCompact re-points the agent</text>
+  <text x="76" y="1500" fill="#9DBBD6" font-size="10.5">you wander off → NOTHING fires; that's fine —</text>
+  <text x="76" y="1516" fill="#9DBBD6" font-size="10.5">next entry validates (S3)</text>
+  <line x1="240" y1="1528" x2="240" y2="1556" stroke="#CFE4F5" stroke-width="2" marker-end="url(#arw)"/>
+
+  <rect x="60" y="1560" width="880" height="88" fill="#1B3E5F" stroke="#7FD1F0" stroke-width="2.5"/>
+  <text x="80" y="1588" fill="#E8F2FB" font-size="13.5" font-weight="700">TASK END — THE ATOMIC STEP (agent-invoked, you just watch)</text>
+  <text x="80" y="1610" fill="#9DBBD6" font-size="11">ticket-scribe: Session Log entry + Current State refresh, ONE step, never split</text>
+  <text x="80" y="1630" fill="#9DBBD6" font-size="11">knowledge-keeper: 0–2 learnings → AI-Knowledge/ + _index — zero files is legal</text>
+  <line x1="500" y1="1648" x2="500" y2="1672" stroke="#CFE4F5" stroke-width="2" marker-end="url(#arw)"/>
+
+  <rect x="60" y="1676" width="880" height="72" fill="#1B3E5F" stroke="#7FD1F0" stroke-width="2"/>
+  <text x="80" y="1702" fill="#E8F2FB" font-size="12" font-weight="700">[OPTIONAL] doc-writer drafts the PR text from Current State + Changes Made</text>
+  <text x="80" y="1724" fill="#9DBBD6" font-size="11">then [YOU] click Create PR — a communication act stays a human act</text>
+  <line x1="500" y1="1748" x2="500" y2="1772" stroke="#CFE4F5" stroke-width="2" marker-end="url(#arw)"/>
+
+  <!-- ================= P4 CLOSE ================= -->
+  <text x="60" y="1768" fill="#7FD1F0" font-size="11" letter-spacing="3">P4 — WALK AWAY</text>
+  <rect x="60" y="1780" width="880" height="76" fill="none" stroke="#CFE4F5" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <text x="80" y="1806" fill="#E8F2FB" font-size="12" font-weight="700">[YOU] just leave. Close the laptop. Nothing must fire.</text>
+  <text x="80" y="1828" fill="#9DBBD6" font-size="11">writes are already committed · the record is already written · next session's entry gate audits</text>
+  <text x="80" y="1846" fill="#9DBBD6" font-size="11">if sessionEnd happens to fire: harmless bonus re-run — everything is idempotent</text>
+
+  <!-- ================= SIDEBARS ================= -->
+  <text x="60" y="1902" fill="#F5B84A" font-size="11" letter-spacing="3">WHEN THINGS BREAK — SIDE QUESTS, NOT BLOCKERS</text>
+
+  <rect x="60" y="1916" width="430" height="150" fill="#1B3E5F" stroke="#F5B84A" stroke-width="2"/>
+  <text x="78" y="1942" fill="#E8F2FB" font-size="12.5" font-weight="700">S4 — AGENT WROTE GARBAGE</text>
+  <text x="78" y="1966" fill="#9DBBD6" font-size="10.5">git -C ~/Work log → revert the paths</text>
+  <text x="78" y="1984" fill="#9DBBD6" font-size="10.5">→ re-run the agent, or fix by hand</text>
+  <text x="78" y="2008" fill="#F5B84A" font-size="10.5">same failure ×3 = upstream bug:</text>
+  <text x="78" y="2026" fill="#9DBBD6" font-size="10.5">stop mopping → make_context_pack.sh →</text>
+  <text x="78" y="2044" fill="#9DBBD6" font-size="10.5">design session (harnessception)</text>
+
+  <rect x="510" y="1916" width="430" height="150" fill="#1B3E5F" stroke="#F5B84A" stroke-width="2"/>
+  <text x="528" y="1942" fill="#E8F2FB" font-size="12.5" font-weight="700">S5 — MACHINERY ITSELF BROKEN</text>
+  <text x="528" y="1966" fill="#9DBBD6" font-size="10.5">hook silent · agent missing from picker · script errors</text>
+  <text x="528" y="1984" fill="#9DBBD6" font-size="10.5">→ run harness-status.sh, follow its prescriptions</text>
+  <text x="528" y="2008" fill="#F5B84A" font-size="10.5">ticket delivery is never blocked — but:</text>
+  <text x="528" y="2026" fill="#9DBBD6" font-size="10.5">end every affected session with a MANUAL</text>
+  <text x="528" y="2044" fill="#9DBBD6" font-size="10.5">ticket-scribe run · fix before it becomes normal</text>
+
+  <!-- doctrine -->
+  <text x="500" y="2098" fill="#E8F2FB" font-size="13" font-weight="700" letter-spacing="2" text-anchor="middle">RED BLOCKS · YELLOW SCHEDULES · NEVER FABRICATE · LATE-BUT-TRUE BEATS FICTION</text>
+
+  <!-- title block -->
+  <g font-size="10" fill="#9DBBD6" letter-spacing="1">
+    <line x1="60" y1="2124" x2="940" y2="2124" stroke="#3D6A94" stroke-width="1"/>
+    <text x="60" y="2144">PROJECT: AI HARNESS v2</text>
+    <text x="330" y="2144">DRAWN: THE HARNESS PROJECT</text>
+    <text x="600" y="2144">CLIENT: YOU</text>
+    <text x="940" y="2144" text-anchor="end">SHEET 2 · REV C · 2026-07</text>
+  </g>
+</svg>

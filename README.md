@@ -123,7 +123,7 @@ Work/                                        [git root · local-only · whitelis
 ├── _agents/                                 SOURCE OF TRUTH (versioned)
 │   ├── ticket-init.agent.md                 ┐
 │   ├── ticket-scribe.agent.md               │ deploy_agents.sh → user-level dir
-│   ├── check-scribe.agent.md                  │   [live · derived · unversioned]
+│   ├── check-scribe.agent.md                │   [live · derived · unversioned]
 │   ├── doc-writer.agent.md                  │   drift check (status): differ ⇒ FAIL
 │   ├── knowledge-keeper.agent.md            │   fix ⇒ re-run deploy_agents.sh
 │   └── knowledge-curator.agent.md           ┘

@@ -63,18 +63,44 @@ for name in $(ticket_dirs); do
     [[ -f "$idx" ]] || { echo "FAIL: $name AI-Knowledge/ has no _index.md. Fix: create it listing one line per file."; ok=0; }
     live=0
     if [[ -f "$idx" ]]; then
+      # ---- AI-Knowledge index grammar: ONE rule feeds orphan-coverage AND ghost-detection (R-04).
+      # Pinned in folder-structure.md (AI Memory Convention). A line names a file ONLY via its
+      # first token after "- "; the prose that follows is never scanned. Scanning prose is what
+      # minted false ghosts — a truthful entry like "- notes.md — supersedes old-plan.md" would
+      # raise old-plan.md as a ghost and RED-BLOCK an honest record (R-12). '#' comment lines and
+      # '<...>' placeholder tokens name no file. Orphan and ghost read the SAME set, so they agree.
+      entry_files=""    # newline-delimited set of real entry filenames (first tokens); feeds orphan-coverage
+      ghost_lines=""    # entries whose filename backs no file and whose line is not a tombstone; reported below
+      entry_re='^- ([^[:space:]]+)'   # entry candidate = starts "- " then a token
+      # Pass 1 — read the index once; reduce each line to at most one filename.
+      while IFS= read -r line || [[ -n "$line" ]]; do
+        [[ "$line" == \#* ]] && continue                 # comment line: inert, skip entirely
+        [[ "$line" =~ $entry_re ]] || continue           # not "- <token>...": not an entry line
+        tok="${BASH_REMATCH[1]}"                          # the filename is the FIRST token, nothing after it
+        case "$tok" in *"<"*|*">"*) continue;; esac       # <...> placeholder: illustrative — skip deliberately, not by char-class luck
+        [[ "$tok" =~ ^[A-Za-z0-9._-]+\.md$ ]] || continue # first token isn't a *.md filename: skip
+        entry_files+="$tok"$'\n'
+        # A tombstone (promotion record) exempts an entry from ghosting. Legacy estates may hold
+        # tombstones written with the UNICODE arrow (the pre-004b fix-line taught it), so accept
+        # BOTH "(promoted ->" and "(promoted →" — else an honest legacy tombstone flips
+        # valid->ghost and red-blocks a real record (the exact R-04 failure). The emitted/
+        # prescribed form stays ASCII "->" (see the fix-line below): accept-loose, prescribe-strict.
+        if [[ ! -f "$ak/$tok" && "$line" != *"(promoted ->"* && "$line" != *"(promoted →"* ]]; then
+          ghost_lines+="$tok"$'\n'                        # named a file that isn't here, and not a tombstone
+        fi
+      done < "$idx"
+      # Orphan-coverage — every real AI-Knowledge/ file must equal some entry's first token.
       while IFS= read -r f; do
         base=$(basename "$f"); [[ "$base" == "_index.md" ]] && continue
-        live=$((live+1))
-        base_re=$(printf '%s' "$base" | sed 's/[.[\*^$]/\\&/g')
-        grep -Eq "(^|[^A-Za-z0-9_.-])${base_re}([^A-Za-z0-9_.-]|$)" "$idx" || { echo "FAIL: $name orphan file AI-Knowledge/$base not in _index.md. Fix: echo '- $base — <what it covers>' >> '$idx'"; ok=0; }
+        live=$((live+1))                                  # count real files (drives the fat/empty NOTEs below)
+        printf '%s' "$entry_files" | grep -Fxq -- "$base" \
+          || { echo "FAIL: $name orphan file AI-Knowledge/$base not in _index.md. Fix: echo '- $base — <what it covers>' >> '$idx'"; ok=0; }
       done < <(find "$ak" -maxdepth 1 -name '*.md' -type f)
+      # Ghost-detection — report the entries collected in pass 1 (first-token name, no file, not a tombstone).
       while IFS= read -r ref; do
-        [[ "$ref" == "_index.md" ]] && continue
-        if [[ ! -f "$ak/$ref" ]] && ! grep -q "promoted" <(grep -F "$ref" "$idx"); then
-          echo "FAIL: $name ghost entry '$ref' in _index.md (no file, no tombstone). Fix: remove the line or add '(promoted → General AI-Knowledge/<topic>)'."; ok=0
-        fi
-      done < <(grep -oE '[A-Za-z0-9._-]+\.md' "$idx" | sort -u || true)
+        [[ -z "$ref" ]] && continue
+        echo "FAIL: $name ghost entry '$ref' in _index.md (no file, no tombstone). Fix: remove the line or add '(promoted -> General AI-Knowledge/<Topic>)'."; ok=0
+      done < <(printf '%s' "$ghost_lines")
       (( live > 10 )) && echo "NOTE: $name AI-Knowledge is fat ($live files) — run knowledge-curator."
       sessions=$(grep -cE '^## [0-9]{14} ' "$md" || true)
       (( sessions >= 3 && live == 0 )) && echo "NOTE: $name has $sessions sessions and zero captured knowledge — is knowledge-keeper being invoked?"

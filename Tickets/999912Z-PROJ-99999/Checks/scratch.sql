@@ -1,1 +1,1 @@
--- disposable spot-checks only; anything worth remembering goes in a notebook via sql-scribe
+-- disposable spot-checks only; anything worth remembering goes in a notebook via check-scribe

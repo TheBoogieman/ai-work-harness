@@ -15,7 +15,7 @@ failures prescribe, nothing heals itself — a fixed record is a human act.
   AGENTS.md, _agents/, _harness/, General AI-Knowledge); everything else
   never enters history — containment by construction.
 - Source vs deployment everywhere: _agents/ is truth, the Copilot discovery
-  dir is a derived copy (drift-checked); dashboards, status output, and
+  dir is a derived copy (drift-checked); status output and
   context packs are derived views, never stored state.
 - Promotion never exits version control (the "black hole" fix): knowledge
   moves ticket → General AI-Knowledge inside one history; culling is safe.

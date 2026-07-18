@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""append_notebook_cell.py — deterministic notebook writer for sql-scribe.
+"""append_notebook_cell.py — deterministic notebook writer for check-scribe.
 Agents must NEVER hand-edit .ipynb JSON; they call this instead.
 Usage: append_notebook_cell.py <notebook.ipynb> "<why-note markdown>" "<code>"
 """

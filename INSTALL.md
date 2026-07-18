@@ -16,7 +16,7 @@ this repo never touches them).
 
 ## 2. Personalise (5 minutes)
 - `folder-structure.md`: Owner line; your board key (replace `PROJ`); your
-  key-repos list; optional dashboard link.
+  key-repos list.
 - `_agents/*.agent.md`: replace `PICK-A-CHEAP-MODEL` / `PICK-A-SONNET-CLASS-MODEL`
   with real model IDs enabled in YOUR Copilot org (scalar strings only —
   arrays break the CLI loader).

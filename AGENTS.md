@@ -7,7 +7,7 @@
    AI-Knowledge folders, or Logs/.
 3. At the end of every completed task, invoke `ticket-scribe` and
    `knowledge-keeper`. This is not optional.
-4. Record every query worth keeping via `sql-scribe` — never as throwaway
+4. Record every query worth keeping via `check-scribe` — never as throwaway
    one-offs.
 5. Never persist durable knowledge into Copilot session or repo memory.
    Files in the ticket's `AI-Knowledge/` (indexed) are the only memory store.

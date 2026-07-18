@@ -32,7 +32,7 @@ echo "- notes.md — platform quirk — read before editing" >> "$S/AI-Knowledge
 sleep 1; touch "$S/999911Z-PROJ-99998.md"; _harness/scripts/check_ticket_log.sh
 
 echo "=== 4/6 notebook helper (deterministic .ipynb writes) ==="
-python3 _harness/scripts/append_notebook_cell.py "$S/SQL/Master/master_examples.ipynb" "check: row counts match" "SELECT COUNT(*) FROM model;"
+python3 _harness/scripts/append_notebook_cell.py "$S/Checks/checks_master.ipynb" "check: row counts match" "SELECT COUNT(*) FROM model;"
 
 echo "=== 5/6 deploy + status; break an agent; watch it prescribe ==="
 _harness/scripts/deploy_agents.sh

@@ -28,7 +28,7 @@
   <text x="60" y="112" fill="#9DBBD6" font-size="12" letter-spacing="2">ONE SESSION, START TO FINISH · WHAT YOU DO · WHAT RUNS ITSELF</text>
   <line x1="60" y1="128" x2="740" y2="128" stroke="#CFE4F5" stroke-width="1.5"/>
   <text x="940" y="86" fill="#7FD1F0" font-size="12" letter-spacing="2" text-anchor="end">DWG HARNESS-002</text>
-  <text x="940" y="104" fill="#9DBBD6" font-size="11" letter-spacing="2" text-anchor="end">REV C · SHEET 2 OF 2</text>
+  <text x="940" y="104" fill="#9DBBD6" font-size="11" letter-spacing="2" text-anchor="end">REV D · SHEET 2 OF 2</text>
 
   <!-- legend -->
   <g font-size="10.5" fill="#9DBBD6">
@@ -175,8 +175,8 @@
   <text x="548" y="1288" fill="#9DBBD6" font-size="10.5">postToolUse · no-op-safe · you never see it</text>
 
   <rect x="520" y="1324" width="420" height="60" fill="#1B3E5F" stroke="#CFE4F5" stroke-width="1.5"/>
-  <text x="536" y="1348" fill="#E8F2FB" font-size="11.5">a check worth keeping → sql-scribe →</text>
-  <text x="536" y="1368" fill="#9DBBD6" font-size="10.5">notebook cell: why-note + query + result</text>
+  <text x="536" y="1348" fill="#E8F2FB" font-size="11.5">a check worth keeping → check-scribe →</text>
+  <text x="536" y="1368" fill="#9DBBD6" font-size="10.5">notebook cell: why-note + code + result</text>
 
   <rect x="520" y="1404" width="420" height="56" fill="#1B3E5F" stroke="#CFE4F5" stroke-width="1.5"/>
   <text x="536" y="1428" fill="#E8F2FB" font-size="11.5">long output → Logs/ — grep-slice it,</text>
@@ -235,6 +235,6 @@
     <text x="60" y="2144">PROJECT: AI HARNESS v2</text>
     <text x="330" y="2144">DRAWN: THE HARNESS PROJECT</text>
     <text x="600" y="2144">CLIENT: YOU</text>
-    <text x="940" y="2144" text-anchor="end">SHEET 2 · REV C · 2026-07</text>
+    <text x="940" y="2144" text-anchor="end">SHEET 2 · REV D · 2026-07</text>
   </g>
 </svg>

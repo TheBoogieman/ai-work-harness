@@ -20,7 +20,7 @@ failures prescribe, nothing heals itself — a fixed record is a human act.
 - Promotion never exits version control (the "black hole" fix): knowledge
   moves ticket → General AI-Knowledge inside one history; culling is safe.
 - Determinism over intelligence wherever possible: notebook edits via
-  nbformat helper, linting via linters, validation via bash. Models are for
+  nbformat helper (any language), linting via linters, validation via bash. Models are for
   judgment only; the six agents are tiered accordingly.
 - Growth is governed: mint a new agent on the THIRD repetition of a task,
   authored in _agents/, inheriting all constraints. PR review — not agent

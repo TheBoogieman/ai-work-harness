@@ -34,7 +34,7 @@
   <text x="60" y="112" fill="#9DBBD6" font-size="13" letter-spacing="3">PERSONAL AI WORKSPACE · ~/Work</text>
   <line x1="60" y1="128" x2="700" y2="128" stroke="#CFE4F5" stroke-width="1.5"/>
   <text x="940" y="86" fill="#7FD1F0" font-size="12" letter-spacing="2" text-anchor="end">DWG HARNESS-001</text>
-  <text x="940" y="104" fill="#9DBBD6" font-size="11" letter-spacing="2" text-anchor="end">REV N · SHEET 1 OF 2</text>
+  <text x="940" y="104" fill="#9DBBD6" font-size="11" letter-spacing="2" text-anchor="end">REV O · SHEET 1 OF 2</text>
 
   <!-- ============ L5 THINKING ============ -->
   <text x="60" y="176" fill="#7FD1F0" font-size="11" letter-spacing="3">L5 — THINKING</text>
@@ -57,8 +57,8 @@
     <text x="94" y="432" fill="#9DBBD6" font-size="10.5">session log + state</text>
 
     <rect x="290" y="386" width="188" height="66" fill="#1B3E5F" stroke="#CFE4F5" stroke-width="1.5"/>
-    <text x="304" y="412" fill="#E8F2FB" font-size="13" font-weight="700">sql-scribe</text>
-    <text x="304" y="432" fill="#9DBBD6" font-size="10.5">queries → notebook*</text>
+    <text x="304" y="412" fill="#E8F2FB" font-size="13" font-weight="700">check-scribe</text>
+    <text x="304" y="432" fill="#9DBBD6" font-size="10.5">checks → notebook*</text>
 
     <rect x="500" y="386" width="188" height="66" fill="#1B3E5F" stroke="#CFE4F5" stroke-width="1.5"/>
     <text x="514" y="412" fill="#E8F2FB" font-size="13" font-weight="700">doc-writer</text>
@@ -94,7 +94,7 @@
   <rect x="500" y="668" width="400" height="88" fill="#1B3E5F" stroke="#CFE4F5" stroke-width="1.5"/>
   <text x="516" y="694" fill="#E8F2FB" font-size="14" font-weight="700">Tickets/&lt;ID&gt;/</text>
   <text x="516" y="714" fill="#9DBBD6" font-size="11">&lt;ID&gt;.md → Current State + Session Log</text>
-  <text x="516" y="732" fill="#9DBBD6" font-size="11">AI-Knowledge/ + _index.md · SQL/ · Logs/ · Dump/</text>
+  <text x="516" y="732" fill="#9DBBD6" font-size="11">AI-Knowledge/ + _index.md · Checks/ · Logs/ · Dump/</text>
 
   <rect x="80" y="774" width="400" height="88" fill="#1B3E5F" stroke="#CFE4F5" stroke-width="1.5"/>
   <text x="96" y="800" fill="#E8F2FB" font-size="14" font-weight="700">General AI-Knowledge/</text>

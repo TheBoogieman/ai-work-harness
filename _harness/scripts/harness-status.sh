@@ -6,7 +6,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORK_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 DEPLOY_DIR="${HARNESS_AGENT_DEPLOY_DIR:-$HOME/.copilot/agents}"
 fails=0
-CORE=(ticket-init ticket-scribe sql-scribe doc-writer knowledge-keeper knowledge-curator)
+CORE=(ticket-init ticket-scribe check-scribe doc-writer knowledge-keeper knowledge-curator)
 
 # machinery checks its siblings
 for f in check_ticket_log.sh harness-status.sh append_notebook_cell.py make_context_pack.sh deploy_agents.sh; do

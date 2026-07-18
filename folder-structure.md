@@ -4,9 +4,9 @@
 >
 > **Context budget (STRICT):** By default, load only (1) **PART I** of this file and (2) the target ticket's header + **Current State** section. Do **not** read the full Session Log, the `AI-Knowledge/` contents, or `Logs/` unless the user explicitly asks for a deep dive or the Current State points you at a specific file. Context is metered — organise it, don't hoard it.
 >
-> **PART II routing (load only the section your task needs):** initialising a ticket → *Ticket Initialisation Procedure* · a FAIL/WARN at entry, or any operational question → *Session States* · syncing OneNote → *Master Dashboard* · building a review pack → *Context Pack Convention* · estate health → *Harness Status Convention*.
+> **PART II routing (load only the section your task needs):** initialising a ticket → *Ticket Initialisation Procedure* · a FAIL/WARN at entry, or any operational question → *Session States* · building a review pack → *Context Pack Convention* · estate health → *Harness Status Convention*.
 >
-> **Query logging (STRICT):** run every ad-hoc query in the ticket's SQL notebooks — the combined `SQL/Master/*.ipynb` (Platform A + Platform B), or the focused `SQL/PlatformA/*.ipynb` / `SQL/PlatformB/*.ipynb` — so the query + its result are kept; see the query-logging note under §2.
+> **Check logging (STRICT):** record every ad-hoc verification — SQL, Python, shell, whatever your work is — in the ticket's `Checks/checks_master.ipynb`, so the check + its result are kept; see the note under §2.
 
 ---
 
@@ -26,20 +26,17 @@
 Work/
 ├── Tickets/        Active and completed Jira ticket working folders
 │   └── README.md   Thin pointer (ticket scans ignore non-YYYYMM entries)
-├── GitHub/         Local checkouts of all internal repos (primary dev work, managed in VS Code)
-├── Diagrams/       Visio diagrams — architecture, workflow charts, etc.
-├── Mappings/       Excel spreadsheets with end-to-end pipeline mappings (named by business area/pipeline)
-├── Bookmarks/      Internal documentation links + Safari bookmarks (updated semi-frequently)
+├── GitHub/         Local checkouts of your code repos (primary dev work; never touched by the harness)
 ├── General AI-Knowledge/  Non-ticket knowledge base — tooling/setup/how-to docs (one subfolder per topic)
 ├── _harness/scripts/   THE MACHINERY — validator, status, notebook helper, context pack, agent deploy (versioned: the enforcement layer has undo + history)
 ├── _agents/        SOURCE OF TRUTH for all .agent.md definitions (versioned; deployed to the user-level Copilot agent directory — live copies are derived and disposable; filesystem wins on drift)
-├── Misc/           Anything that doesn't fit elsewhere
+├── <anything else>/  Your other folders — untracked by the whitelist, no conventions imposed
 └── folder-structure.md   ← this file
 ```
 
 Ticket folders live **outside** the VS Code multi-repo workspace (`GitHub/<your>.code-workspace`), so nothing under `Tickets/` can be committed to a team repo by mistake.
 
-`Work/` is the root of a **LOCAL-ONLY git repository**, scoped by a WHITELIST `.gitignore`: everything is untracked by default, and only the record set is re-included — `folder-structure.md`, `AGENTS.md`, `_agents/`, `_harness/`, `Tickets/`, and `General AI-Knowledge/`. Within tickets, each `Logs/` and `Dump/` is ignored too (regenerable output and re-droppable inputs — working bulk, not records; the record is the ticket `.md`, `AI-Knowledge/`, and the SQL notebooks). Every other folder in `Work/` — `GitHub/`, `Diagrams/`, `Mappings/`, and the rest — never enters history by construction, so new folders are automatically outside. One history for all records means promotion never exits version control and culling stale knowledge is safe. The repo versions records, not the warehouse. No remote ever exists; nothing ever pushes.
+`Work/` is the root of a **LOCAL-ONLY git repository**, scoped by a WHITELIST `.gitignore`: everything is untracked by default, and only the record set is re-included — `folder-structure.md`, `AGENTS.md`, `_agents/`, `_harness/`, `Tickets/`, and `General AI-Knowledge/`. Within tickets, each `Logs/` and `Dump/` is ignored too (regenerable output and re-droppable inputs — working bulk, not records; the record is the ticket `.md`, `AI-Knowledge/`, and the SQL notebooks). Every other folder in `Work/` — `GitHub/` and any other folder you keep here — never enters history by construction, so new folders are automatically outside. One history for all records means promotion never exits version control and culling stale knowledge is safe. The repo versions records, not the warehouse. No remote ever exists; nothing ever pushes.
 
 ---
 
@@ -73,28 +70,21 @@ Tickets/
 └── 202605A-PROJ-65474/
     ├── 202605A-PROJ-65474.md    ← primary ticket log file (source of truth)
     ├── AI-Knowledge/           ← AI agent memory .md files for this ticket (indexed + compacted, see below)
-    ├── SQL/                    ← working queries, split by platform (see below)
-    │   ├── PlatformA/              ← platform_a_examples.ipynb (+ optional CLI runner)
-    │   ├── PlatformB/              ← platform_b_examples.ipynb + scratch.sql (VS Code ext quick runs)
-    │   └── Master/             ← master_examples.ipynb — combined Platform A + Platform B checks, per environment
+    ├── Checks/                 ← reproducible evidence: checks_master.ipynb (+ scratch files / per-tool subfolders as YOUR stack needs)
     ├── Logs/                   ← long run logs (build/test/pipeline output) — dump here so grep can slice them
     └── Dump/                   ← user-dropped misc files for the AI to read (.csv, screenshots, .docx/.pptx/.eml)
 ```
 
-Any supporting files (spreadsheets, exports, scripts, etc.) also live in this folder. The dashboard page for the ticket (if you use one) is then generated from the `.md` file (see *Master Dashboard* above).
+Any supporting files (spreadsheets, exports, scripts, etc.) also live in this folder.
 
 Each ticket folder has four standard subfolders:
 
 - **`AI-Knowledge/`** — AI agent memory/knowledge `.md` files for this ticket (see *AI Memory Convention* below — including the **index + compaction** rules).
-- **`SQL/`** — working queries for the ticket, split into three subfolders:
-    - **`SQL/PlatformA/`** — your first SQL platform (e.g. PlatformA/BigQuery/Trino): `platform_a_examples.ipynb` on the `venv_global` kernel, plus any `.sql` an optional CLI runner executes.
-    - **`SQL/PlatformB/`** — your second SQL platform (e.g. PlatformB/Postgres): `platform_b_examples.ipynb` on the `venv_global` kernel for **recorded** queries, plus `.sql` files for quick runs via your platform's VS Code extension.
-    - **`SQL/Master/`** — `master_examples.ipynb`, the **combined Platform A + Platform B** notebook, wired **per environment**: a config cell (cell 0) + one explicit connection cell per platform per environment (**UAT**/**PROD** kept separate and named), then a documented query per cell. The default home for a ticket's SQL audit trail across platforms and environments.
-  On ticket init, starter files are copied from the `999912Z-PROJ-99999` template: `PlatformA/platform_a_examples.ipynb`; `PlatformB/platform_b_examples.ipynb` + `scratch.sql`; `Master/master_examples.ipynb`. File naming can otherwise be lax and context-dependent (e.g. `check_dupes.sql`).
+- **`Checks/`** — the ticket's reproducible evidence, in ANY language your work needs (SQL, Python, shell, API probes). `checks_master.ipynb` is the default recorder — one markdown why-note + one code cell per verified check, appended via `append_notebook_cell.py`, on the `venv_global` kernel (register other kernels freely). Disposable spot-checks can live in scratch files; anything worth remembering goes in the notebook. Add per-tool subfolders if your stack wants them — the harness imposes none.
 - **`Logs/`** — long-running command output (e.g. build/test output, dbt runs, pipeline logs). **AI agents: always redirect long logs here** instead of printing them into chat, so they can be sliced with `grep`/`tail`/`awk` and don't overflow the session context window.
-- **`Dump/`** — the "landfill" for user-generated misc files dropped in for the AI to read: `.csv` extracts, screenshots (`.png`/`.jpg`), `.docx`/`.pptx`/`.eml`. This is *user input for the AI*, distinct from SQL you write (`SQL/`) and command output (`Logs/`). **No customer PII, credentials, or secrets ever land in `Dump/`** — if an extract contains PII it doesn't belong in this folder tree at all; work with it in the approved location and reference it by path/description instead.
+- **`Dump/`** — the "landfill" for user-generated misc files dropped in for the AI to read: `.csv` extracts, screenshots (`.png`/`.jpg`), `.docx`/`.pptx`/`.eml`. This is *user input for the AI*, distinct from checks you write (`Checks/`) and command output (`Logs/`). **No customer PII, credentials, or secrets ever land in `Dump/`** — if an extract contains PII it doesn't belong in this folder tree at all; work with it in the approved location and reference it by path/description instead.
 
-> **STRICT — query logging (AI agents & humans):** Run **all** ad-hoc analysis/verification queries through the ticket's notebooks — the combined **`SQL/Master/*.ipynb`** (Platform A + Platform B together) is the default; use the focused `SQL/PlatformA/*.ipynb` / `SQL/PlatformB/*.ipynb` for single-platform work — **never** as throwaway terminal / `dbt show` one-offs that vanish. Add each check as a new cell with a one-line markdown note (*what* you're checking and *why*), so the query **and its result** are preserved as a reproducible record of everything verified on the ticket. Disposable spot-checks may use `scratch.sql` (Platform B extension) or a CLI runner, but anything worth remembering goes in a notebook.
+> **STRICT — check logging (AI agents & humans):** Run **all** ad-hoc verifications through **`Checks/checks_master.ipynb`** — **never** as throwaway terminal one-offs that vanish. Add each check as a new cell with a one-line markdown note (*what* and *why*), so the check **and its result** are preserved as a reproducible record of everything verified on the ticket. Disposable spot-checks may use scratch files, but anything worth remembering goes in the notebook.
 
 **Python environment (PREREQUISITE):** the harness assumes a venv named exactly **`venv_global`** (Python 3.12, carrying the dbt toolchain + `nbformat`), created BY THE USER — the harness never creates it, it only depends on it. It must be set as the **workspace default interpreter** (in `GitHub/<your>.code-workspace`), so new terminals under `Work/` auto-activate it and notebooks default to its kernel — every ticket picks it up automatically. It also backs the Data Wrangler extension (view/clean `.csv`/`.parquet`/`.xlsx`). See *General AI-Knowledge/Python Environment*; create a repo-specific venv only when a repo needs different pins.
 
@@ -237,20 +227,6 @@ Invoked with the Jira link; every step below is also the by-hand fallback:
 7. For each repo given, suggest 2–3 branch names in the `feature/PROJ-XXXXX_<short-slug>` convention; the user picks or edits; record the choice in **Branches**. The agent NEVER creates branches or touches `GitHub/` — recording only.
 8. Seed a 3-sentence **Current State** (not started / next step / gotchas), then invoke `ticket-scribe` for the init Session Log entry.
 
----
-
-## Master Dashboard (OneNote) — generated, not hand-maintained
-
-All tickets are mirrored to the **external dashboard (OneNote/Notion/etc — optional)** OneNote notebook (**Tickets** section, one page per ticket).
-
-🔗 [Open dashboard](<your dashboard link — optional>)
-
-The dashboard is a **derived view**: everything on a ticket page (title, short description, Jira link, local path, current state) already lives in the ticket's markdown file, which is the **single source of truth**. Pages are generated/refreshed from the ticket `.md` files — by script or by an AI agent task — never edited by hand. If the dashboard and the filesystem disagree, the filesystem wins; regenerate the page.
-
-> **For AI agents:** when asked to "sync the dashboard", produce the page content from the ticket `.md` header + Current State only. Never write information into the dashboard that isn't in the ticket file — add it to the ticket file first.
-
----
-
 ## Session States — Operational Rules
 
 The one rule: **red blocks, yellow schedules.** `FAIL` = fix before any new
@@ -346,8 +322,7 @@ _harness/scripts/harness-status.sh
 
 Read-only, deterministic, no AI, no credits. **It prints to stdout and writes
 nothing to disk** — status output is a derived view of the filesystem, never
-stored state (same principle as the external dashboard: derived views are
-regenerated, not kept). Want a snapshot? Redirect it yourself, deliberately.
+stored state (derived views are regenerated, not kept). Want a snapshot? Redirect it yourself, deliberately.
 It reports, with `OK` / `WARN` / `FAIL` prefixes:
 
 - Per active ticket: last Session Log timestamp, Current State age,

@@ -10,8 +10,8 @@ again — to anyone. MIT licensed.
 
 You work on tickets with an AI assistant. The harness makes that work leave
 **records** instead of vibes: every ticket folder keeps its own log, current
-state, and captured knowledge; every ad-hoc query lands in an audit-trail
-notebook; every file write is auto-committed to a local-only git repo; and a
+state, and captured knowledge; every ad-hoc check — SQL, Python, whatever your work is — lands in an
+audit-trail notebook; every file write is auto-committed to a local-only git repo; and a
 dumb bash validator refuses to let a session start on top of an undocumented
 mess. Six small AI agents do the clerical work (logging, capturing,
 compacting) so the expensive model — and you — only do the thinking. Nothing
@@ -116,14 +116,14 @@ Work/                                        [git root · local-only · whitelis
 │       ├── check_ticket_log.sh              ← sessionStart hook │ sessionEnd (bonus)
 │       │       └── watermark →              ~/.harness/last-validated  [state · unversioned]
 │       ├── harness-status.sh                stdout only · roster = _agents/ · checks siblings
-│       ├── append_notebook_cell.py          ← sql-scribe · runs on venv_global [user-created prereq]
+│       ├── append_notebook_cell.py          ← check-scribe · runs on venv_global [user-created prereq]
 │       ├── make_context_pack.sh             → ~/Desktop/harness-pack-*.zip [disposable · outside repo]
 │       └── deploy_agents.sh                 → user-level agent dir (sync source → live)
 │
 ├── _agents/                                 SOURCE OF TRUTH (versioned)
 │   ├── ticket-init.agent.md                 ┐
 │   ├── ticket-scribe.agent.md               │ deploy_agents.sh → user-level dir
-│   ├── sql-scribe.agent.md                  │   [live · derived · unversioned]
+│   ├── check-scribe.agent.md                  │   [live · derived · unversioned]
 │   ├── doc-writer.agent.md                  │   drift check (status): differ ⇒ FAIL
 │   ├── knowledge-keeper.agent.md            │   fix ⇒ re-run deploy_agents.sh
 │   └── knowledge-curator.agent.md           ┘
@@ -135,7 +135,7 @@ Work/                                        [git root · local-only · whitelis
 │       ├── AI-Knowledge/                    ← knowledge-keeper (capture) │ curator (compact)
 │       │   ├── _index.md                    roster · tombstones
 │       │   └── *.md                         —promotion (approved)→ General AI-Knowledge/
-│       ├── SQL/{Master,PlatformA,PlatformB}/   audit-trail notebooks · venv_global kernel
+│       ├── Checks/                          audit-trail notebook (any language) · venv_global kernel
 │       ├── Logs/                            [gitignored · regenerable bulk]
 │       └── Dump/                            [gitignored · re-droppable inputs]
 │
@@ -165,7 +165,7 @@ Work/                                        [git root · local-only · whitelis
   - `ticket-init` (smart, at pickup) — pulls Jira, interviews you (your
     words, non-negotiables, repos), suggests branch names, births the folder
   - `ticket-scribe` (cheap) — writes Session Log + Current State
-  - `sql-scribe` (cheap) — records queries via the notebook helper script
+  - `check-scribe` (cheap) — records verified checks (any language) via the helper
   - `doc-writer` (cheap) — drafts PR descriptions and READMEs
   - `knowledge-keeper` (cheap) — captures learnings into `AI-Knowledge/`
   - `knowledge-curator` (smart, rare) — compacts and promotes, with human

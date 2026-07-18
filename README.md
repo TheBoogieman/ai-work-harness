@@ -129,7 +129,7 @@ Work/                                        [git root · local-only · whitelis
 │   └── knowledge-curator.agent.md           ┘
 │
 ├── Tickets/                                 RECORDS ONLY
-│   ├── README.md                            this file · embeds the sheets below
+│   ├── README.md                            thin pointer (the map lives at the Work root)
 │   └── YYYYMM[A-Z]-PROJ-XXXXX/               one per ticket (template: 999912Z-PROJ-99999)
 │       ├── YYYYMM[A-Z]-PROJ-XXXXX.md         source of truth ← ticket-scribe (log + state, atomic)
 │       ├── AI-Knowledge/                    ← knowledge-keeper (capture) │ curator (compact)
@@ -154,7 +154,8 @@ Work/                                        [git root · local-only · whitelis
   control, and every other `Work/` folder never enters it. No remote
   exists, nothing ever pushes.
 - **L2 — Hooks + `check_ticket_log.sh`** — the dumb inspector. Runs at
-  session end, checks facts only: log appended? Current State exists? Index
+  session START (the entry gate — it audits what the previous session left
+  behind; sessionEnd is a best-effort bonus), checks facts only: log appended? Current State exists? Index
   matches files? Fails loudly, judges nothing.
 - **L3 — Filesystem** — single source of truth. `folder-structure.md` holds
   every rule; each ticket folder holds its own log, state, and knowledge;
@@ -218,4 +219,4 @@ that way; keep it that way.
 
 ---
 
-*Rev D · 2026-07 · MIT licensed. Built human-and-AI, pair-designed over ~20 review cycles.*
+*Rev E · 2026-07 · MIT licensed. Built human-and-AI, pair-designed over ~20 review cycles.*

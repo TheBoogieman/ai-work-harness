@@ -9,7 +9,8 @@ Read the backbone PART I: *AI Memory Convention*. Review what THIS session
 actually learned. Keep-filter (all must hold): non-obvious, verified,
 useful beyond today (gotchas, environment quirks, decisions + why). Write
 ZERO to TWO small `.md` files into the ticket's `AI-Knowledge/` and update
-`_index.md` in the same step (one line per file: name — what it covers —
-when to read it). Zero files is a legal, common outcome — never manufacture
+`_index.md` in the same step, writing each index line in the canonical format
+pinned in the *AI Memory Convention* (folder-structure.md):
+`- <file>.md — <what it covers> — <when to read it>`. Zero files is a legal, common outcome — never manufacture
 a memory to feel useful. Session narrative belongs in the Session Log, not
 here. NEVER write to Copilot session or repo memory — files only.

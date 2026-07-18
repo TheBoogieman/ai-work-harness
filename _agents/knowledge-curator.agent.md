@@ -15,5 +15,6 @@ promotion candidates against the three-part test (useful on a future
 unrelated ticket · expressible with zero references to this ticket · not
 already covered — extend instead) and WAIT for approval; (4) on approval,
 rewrite content generically into `General AI-Knowledge/<Topic>/<Topic>.md`
-with a `Last reviewed: YYYY-MM-DD` line, and leave a one-line tombstone
-`(promoted -> General AI-Knowledge/<Topic>)` in `_index.md`.
+with a `Last reviewed: YYYY-MM-DD` line, and leave a one-line tombstone in
+`_index.md` in the canonical format pinned in the *AI Memory Convention*
+(folder-structure.md): `- <file>.md (promoted -> General AI-Knowledge/<Topic>)`.

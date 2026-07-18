@@ -175,7 +175,13 @@ Create any new memory `.md` files under `Tickets/YYYYMM[A-Z]-PROJ-XXXXX/AI-Knowl
 
 **Index + compaction rules (STRICT — this folder is not a landfill):**
 
-- Maintain an **`AI-Knowledge/_index.md`**: one line per file — filename + what it covers + when to read it. Agents read the index first and pull **only** the specific files the task needs; never bulk-read the folder.
+- Maintain an **`AI-Knowledge/_index.md`** whose every line follows this canonical grammar — the SINGLE authoritative spec the validator and both knowledge agents anchor on:
+    - **Entry line:** `- <file>.md — <what it covers> — <when to read it>`
+    - **Tombstone line:** `- <file>.md (promoted -> General AI-Knowledge/<Topic>)`
+    - **Comment line:** any line starting with `#` is INERT — not an entry.
+    - **Placeholder:** any token wrapped in `< >` (e.g. `<file>`, `<Topic>`) is illustrative and INERT — never parsed as a real filename.
+    - **Rule:** every entry begins with `- ` (dash-space); the filename is the FIRST token after `- `. Prose after the filename (the `—` descriptions) is NOT parsed for filenames.
+- Agents read the index first and pull **only** the specific files the task needs; never bulk-read the folder.
 - **Before creating a new file, check the index.** If a file on the topic exists, extend or rewrite it — do not create `topic-2.md` / `topic-final.md` variants.
 - **Compact on close-out** (and whenever the folder exceeds ~10 files): merge overlapping files, delete anything superseded or restatable in one Current State sentence, and refresh the index. Knowledge worth keeping long-term beyond the ticket graduates to `General AI-Knowledge/`.
 - Prefer updating **Current State** over writing a memory file. A memory file earns its place only when the content is too long or too specialised for the ticket log.

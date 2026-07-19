@@ -650,6 +650,27 @@ done
 echo "  ok [R-08] — all $r08_total agents are user-invocable: true"
 # --- end R-08 guard -------------------------------------------------------------------
 
+# --- docs-inventory guard (#34): every shipped script is named in README.md -----------
+# The README machinery tree must LIST every _harness/scripts/ basename — a script that
+# ships without a line there is undocumented drift the reader never learns about. Assert
+# one-for-one coverage here so the demo (the truth-teller) goes RED the moment a new script
+# lands unlisted, OR a README line naming an existing script is dropped. Buffer README once
+# and test each basename with a fixed-string here-string match (grep -Fq <<<): deliberately
+# NOT `printf ... | grep -q`, whose early exit on a match SIGPIPEs the producer and, under
+# this script's pipefail, would fail the check even when the name IS present.
+echo "--- docs-inventory: every shipped script is documented in README.md ---"
+readme_body=$(cat README.md)
+di_total=0; di_missing=0
+for s in _harness/scripts/*; do
+  base=$(basename "$s")
+  di_total=$((di_total+1))
+  grep -Fq -- "$base" <<<"$readme_body" \
+    || { echo "FAIL [docs-inventory]: $base ships but is not named in README.md — add it to the machinery tree."; di_missing=$((di_missing+1)); }
+done
+[ "$di_missing" -eq 0 ] || { echo "BUG [docs-inventory]: $di_missing shipped script(s) missing from README.md"; exit 1; }
+echo "  ok [docs-inventory] — all $di_total script basenames appear in README.md"
+# --- end docs-inventory guard ---------------------------------------------------------
+
 echo "=== 6/6 scrubbed context pack + self-audit ==="
 bash _harness/scripts/make_context_pack.sh --ticket 999911Z-PROJ-99998
 # The shared PACK_OUT_DIR must hold EXACTLY this one pack before we glob it — every other pack-building

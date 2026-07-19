@@ -1,0 +1,36 @@
+# demo.yml — runs the harness acceptance demo (run_demo.sh) on macOS and Linux.
+# The demo IS the truth-teller: it exits 0 only on "ALL 6 DEMO STAGES PASSED", so a green job
+# means the machinery works on that OS — including the GNU/BSD portability branches, which run
+# for REAL on macOS here (not via shims). Triggers on push to main + manual dispatch only; no
+# pull-request or scheduled runs, to keep runner usage minimal.
+name: demo
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  demo:
+    name: demo (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      # Run BOTH OSes even if one fails — each lane's pass/fail is a separate result we want.
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      # A hosted-tool Python (NOT externally-managed), so `pip install` works directly — no PEP 668,
+      # no --break-system-packages needed. Sets `python3` on PATH, which is what the demo calls.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install nbformat (the notebook helper's only dependency)
+        run: python3 -m pip install nbformat
+      - name: Verify zip + unzip are present (context-pack build + stage 6 read)
+        run: command -v zip >/dev/null && command -v unzip >/dev/null
+      # The demo self-anchors, sets HARNESS_DEMO, uses temp dirs, and (on a real clone like this
+      # checkout) never commits to the repo — it runs fully headless and exits 0 only on success.
+      - name: Run acceptance demo
+        run: bash _harness/scripts/run_demo.sh

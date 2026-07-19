@@ -12,6 +12,7 @@
 !/_harness/
 !/Tickets/
 !/General AI-Knowledge/
+!/.github/
 
 # working bulk inside tickets is never a record
 Tickets/*/Logs/*

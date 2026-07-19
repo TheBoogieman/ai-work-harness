@@ -2,7 +2,7 @@
 name: knowledge-keeper
 description: Capture side of memory — writes 0-2 durable learnings into the ticket's AI-Knowledge at task end. Zero is legal.
 model: PICK-A-CHEAP-MODEL
-user-invocable: false
+user-invocable: true
 tools: [read, edit]
 ---
 Read the backbone PART I: *AI Memory Convention*. Review what THIS session

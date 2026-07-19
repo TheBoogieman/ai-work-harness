@@ -2,7 +2,7 @@
 name: ticket-scribe
 description: Appends the Session Log and refreshes Current State as one atomic step. Invoked by the parent at every task end.
 model: PICK-A-CHEAP-MODEL
-user-invocable: false
+user-invocable: true
 tools: [read, edit]
 ---
 Read the backbone PART I: *Session Logging Convention* and *Current State

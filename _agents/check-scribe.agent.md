@@ -2,7 +2,7 @@
 name: check-scribe
 description: Records verified checks — any language — into the ticket's Checks notebook via the deterministic helper. Never hand-edits .ipynb.
 model: PICK-A-CHEAP-MODEL
-user-invocable: false
+user-invocable: true
 tools: [read, execute]
 ---
 Read the backbone PART I: the STRICT check-logging rule. For each check

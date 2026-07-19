@@ -235,6 +235,21 @@ rm -rf "$R09_SPACE" "$R09_CONF" "$R09_LONG" "$R09_BAD"
 
 bash _harness/scripts/harness-status.sh >/dev/null && echo "healthy after fix"
 
+# --- R-08 guard: every agent is directly human-callable -------------------------------
+# Asserts every _agents/*.agent.md declares `user-invocable: true`. The clerk agents
+# (ticket-scribe, knowledge-keeper, check-scribe) still run automatically at task end, but
+# a human must also be able to invoke any of them directly. This guard FAILS on pre-flip
+# code (where those three were `user-invocable: false`), so the demo pins the flip.
+echo "--- R-08: all agents are user-invocable ---"
+r08_total=0; r08_bad=0
+for a in _agents/*.agent.md; do
+  r08_total=$((r08_total+1))
+  grep -q '^user-invocable: true$' "$a" || { echo "FAIL [R-08]: $a is not 'user-invocable: true' — every agent must be directly human-callable."; r08_bad=$((r08_bad+1)); }
+done
+[ "$r08_bad" -eq 0 ] || { echo "BUG [R-08]: $r08_bad agent(s) not user-invocable"; exit 1; }
+echo "  ok [R-08] — all $r08_total agents are user-invocable: true"
+# --- end R-08 guard -------------------------------------------------------------------
+
 echo "=== 6/6 scrubbed context pack + self-audit ==="
 bash _harness/scripts/make_context_pack.sh --ticket 999911Z-PROJ-99998
 unzip -p "$PACK_OUT_DIR"/harness-pack-*.zip MANIFEST.txt | tail -1

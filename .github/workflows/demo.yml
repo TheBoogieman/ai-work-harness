@@ -30,6 +30,17 @@ jobs:
         run: python3 -m pip install nbformat
       - name: Verify zip + unzip are present (context-pack build + stage 6 read)
         run: command -v zip >/dev/null && command -v unzip >/dev/null
+      # The harness is case-safe by construction — nothing depends on case-distinct filenames, so it
+      # runs identically on either filesystem. This step RECORDS the runner's actual FS mode into the
+      # log, so the macOS run's coverage of the case-INSENSITIVE (default-Mac) surface is witnessed,
+      # not assumed. The probe runs in a temp dir, so it never touches the repo root or the demo.
+      # Expected: macos-latest -> case-INSENSITIVE (a real user's default); ubuntu-latest -> case-SENSITIVE.
+      - name: Report filesystem case-sensitivity (documents the runner's FS mode)
+        run: |
+          probe=$(mktemp -d)
+          touch "$probe/_caseprobe"
+          if [ -e "$probe/_CASEPROBE" ]; then echo "FILESYSTEM: case-INSENSITIVE"; else echo "FILESYSTEM: case-SENSITIVE"; fi
+          rm -rf "$probe"
       # The demo self-anchors, sets HARNESS_DEMO, uses temp dirs, and (on a real clone like this
       # checkout) never commits to the repo — it runs fully headless and exits 0 only on success.
       - name: Run acceptance demo

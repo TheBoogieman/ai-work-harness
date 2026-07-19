@@ -106,8 +106,9 @@
   <text x="516" y="820" fill="#9DBBD6" font-size="11">THE LOADER — six-rule contract Copilot reads</text>
   <text x="516" y="838" fill="#9DBBD6" font-size="11">on every surface → points at the constitution</text>
 
-  <!-- Tickets/ edge markers: how init flags a folder's ticket-hood -->
-  <text x="96" y="878" fill="#9DBBD6" font-size="10">Tickets/ markers (init writes them): .not-a-ticket &#8594; silence a non-ticket &#183; .ticket-pending &#8594; unnamed, non-silenceable, nags until renamed</text>
+  <!-- Tickets/ edge markers: .ticket-pending (init-written) vs .not-a-ticket (user-written) -->
+  <text x="96" y="878" fill="#9DBBD6" font-size="10">Tickets/ markers &#8212; init writes .ticket-pending; you write .not-a-ticket</text>
+  <text x="96" y="892" fill="#9DBBD6" font-size="10">.not-a-ticket &#8594; silence a non-ticket &#183; .ticket-pending &#8594; non-silenceable, nags until renamed AND the marker removed</text>
 
   <!-- promotion arrow -->
   <path d="M500 748 H490 V765 H304 V770" fill="none" stroke="#7FD1F0" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#arrowCyan)"/>

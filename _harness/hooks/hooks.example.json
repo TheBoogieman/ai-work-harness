@@ -9,12 +9,12 @@
     "postToolUse": [
       { "type": "command",
         "toolFilter": ["edit", "create", "write", "str_replace"],
-        "command": "git -C \"${WORKSPACE_ROOT}\" add -A && git -C \"${WORKSPACE_ROOT}\" diff-index --quiet HEAD || git -C \"${WORKSPACE_ROOT}\" commit -q -m auto-write",
-        "why": "safety net: every mutation captured the moment it lands; no-op-safe" }
+        "command": "git -C \"${WORKSPACE_ROOT}\" add -A && git -C \"${WORKSPACE_ROOT}\" diff-index --quiet HEAD || git -C \"${WORKSPACE_ROOT}\" commit -q -m \"auto-write $(date +%Y%m%d-%H%M%S): $(git -C \"${WORKSPACE_ROOT}\" diff --cached --name-only | tr '\\n' ' ')\"",
+        "why": "safety net: every mutation captured the moment it lands; no-op-safe. Message carries a timestamp + the staged file paths so `git log` reads as a legible per-write trail, not a wall of identical lines." }
     ],
     "sessionEnd": [
       { "type": "command",
-        "command": "bash \"${WORKSPACE_ROOT}/_harness/scripts/check_ticket_log.sh\"; git -C \"${WORKSPACE_ROOT}\" add -A && git -C \"${WORKSPACE_ROOT}\" diff-index --quiet HEAD || git -C \"${WORKSPACE_ROOT}\" commit -q -m auto-session-end",
+        "command": "bash \"${WORKSPACE_ROOT}/_harness/scripts/check_ticket_log.sh\"; git -C \"${WORKSPACE_ROOT}\" add -A && git -C \"${WORKSPACE_ROOT}\" diff-index --quiet HEAD || git -C \"${WORKSPACE_ROOT}\" commit -q -m \"auto-session-end $(date +%Y%m%d-%H%M%S): $(git -C \"${WORKSPACE_ROOT}\" diff --cached --name-only | tr '\\n' ' ')\"",
         "why": "best-effort bonus only - nothing may depend on this firing" }
     ]
   }

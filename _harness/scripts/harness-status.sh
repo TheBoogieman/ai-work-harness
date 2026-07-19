@@ -8,23 +8,13 @@ DEPLOY_DIR="${HARNESS_AGENT_DEPLOY_DIR:-$HOME/.copilot/agents}"
 # One grammar home: share the validator's exact definition of "what is a ticket"
 # ($TICKET_RE, ticket_bearing, ticket_silenced) so status and validator never drift (R-09).
 source "$SCRIPT_DIR/ticket-grammar.sh"
-# ---- portability compat (GNU/BSD) — issue #1
+# epoch_from_ts14 (ts14->epoch) now lives once, in portability.sh, sourced by BOTH the validator
+# and status so they can't drift on the conversion (R-21 — it used to be a duplicated copy here).
+source "$SCRIPT_DIR/portability.sh"
+# ---- portability compat (GNU/BSD) — issue #1 (epoch_from_date is status-only, so it stays local)
 epoch_from_date() {  # YYYY-MM-DD -> epoch
   if date -d "1970-01-01" +%s >/dev/null 2>&1; then date -d "$1" +%s 2>/dev/null || echo 0
   else date -j -f "%Y-%m-%d" "$1" +%s 2>/dev/null || echo 0; fi
-}
-# epoch_from_ts14 — YYYYMMDDHHMMSS -> epoch (LOCAL tz; see the session-log clock note in the
-# constitution, R-10). MIRRORS check_ticket_log.sh's epoch_from_ts14 verbatim: the two are the
-# only consumers today, so this is a deliberate small duplication rather than a new shared lib.
-# If a third consumer appears — or the two must agree exactly — promote both to a shared
-# portability lib (the ticket-grammar.sh pattern). Keep this copy in lockstep with the validator's.
-epoch_from_ts14() {  # YYYYMMDDHHMMSS -> epoch, GNU date -d / BSD date -j
-  local t="$1"
-  if date -d "1970-01-01" +%s >/dev/null 2>&1; then
-    date -d "${t:0:8} ${t:8:2}:${t:10:2}:${t:12:2}" +%s 2>/dev/null || echo 0
-  else
-    date -j -f "%Y%m%d%H%M%S" "$t" +%s 2>/dev/null || echo 0
-  fi
 }
 fails=0
 CORE=(ticket-init ticket-scribe check-scribe doc-writer knowledge-keeper knowledge-curator)
@@ -32,7 +22,7 @@ CORE=(ticket-init ticket-scribe check-scribe doc-writer knowledge-keeper knowled
 # machinery checks its siblings
 # ticket-grammar.sh is in this list too: it is the shared grammar both tools source,
 # so a missing/inert grammar lib must itself be caught here, not silently tolerated.
-for f in check_ticket_log.sh harness-status.sh ticket-grammar.sh append_notebook_cell.py make_context_pack.sh deploy_agents.sh harness-housekeeping.sh; do
+for f in check_ticket_log.sh harness-status.sh ticket-grammar.sh portability.sh append_notebook_cell.py make_context_pack.sh deploy_agents.sh harness-housekeeping.sh; do
   p="$SCRIPT_DIR/$f"
   [[ -f "$p" ]] || { echo "FAIL: missing script $f. Fix: restore from git: git -C '$WORK_ROOT' checkout -- '_harness/scripts/$f'"; fails=$((fails+1)); continue; }
   [[ -x "$p" ]] || { echo "FAIL: $f not executable. Fix: chmod +x '$p'"; fails=$((fails+1)); }

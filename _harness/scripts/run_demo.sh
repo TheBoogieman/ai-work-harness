@@ -497,14 +497,41 @@ G10=$(mktemp -d)
 git -C "$G10" init -q
 printf 'committed line\n' > "$G10/tracked.txt"
 git -C "$G10" add -A; git -C "$G10" -c user.email=demo@local -c user.name=demo commit -qm "seed" >/dev/null
-printf 'uncommitted WIP line\n' >> "$G10/tracked.txt"     # a real clone's in-progress work
-demo_close_commit 0 "$G10"                                # DID_INIT=0 → the gate must do nothing
-printf '%s\n' "$(git -C "$G10" log --oneline)" | grep -q "demo: pass" \
-  && { echo "BUG [#10 guard]: DID_INIT=0 but a 'demo: pass' commit appeared — a real clone's WIP was absorbed:"; git -C "$G10" log --oneline; exit 1; }
-git -C "$G10" status --porcelain | grep -q 'tracked.txt' \
-  || { echo "BUG [#10 guard]: the dirty file is no longer uncommitted — it was swept into a commit:"; git -C "$G10" status --porcelain; exit 1; }
+G10_HEAD=$(git -C "$G10" rev-parse HEAD)
+printf 'UNCOMMITTED-WIP-MARKER\n' >> "$G10/tracked.txt"   # dirty the TRACKED file — a real clone's in-progress work
+demo_close_commit 0 "$G10"                                # DID_INIT=0 → the gate must do NOTHING
+# The load-bearing #10/P-i check: the dirty WIP must NOT be absorbed into any commit. Grep the WHOLE
+# history for the WIP marker — a broken gate that commits the working tree leaves the marker in a
+# commit, and this finds it. (The old guard only checked "no demo: pass commit", which ANY
+# unconditional commit trips even with zero WIP present — that tautology was R-20; this asserts the
+# WIP-specific property, and the revert-proof now flips because the WIP is ABSORBED, not merely
+# because a commit exists.)
+git -C "$G10" log -p 2>/dev/null | grep -q "UNCOMMITTED-WIP-MARKER" \
+  && { echo "BUG [#10 guard]: the dirty tracked WIP was ABSORBED into a commit (a real clone's work must never be committed under DID_INIT=0):"; git -C "$G10" log --oneline; exit 1; }
+# Corroborate: HEAD never moved (no new commit at all) and the working tree still reads as dirty.
+[ "$(git -C "$G10" rev-parse HEAD)" = "$G10_HEAD" ] \
+  || { echo "BUG [#10 guard]: HEAD advanced — the gate committed under DID_INIT=0"; git -C "$G10" log --oneline; exit 1; }
+[ -n "$(git -C "$G10" status --porcelain)" ] \
+  || { echo "BUG [#10 guard]: the working tree is clean — the dirty WIP was swept into a commit"; exit 1; }
 rm -rf "$G10"
-echo "  ok [#10 guard: real clone WIP not absorbed] — DID_INIT=0 skips the commit; WIP left uncommitted"
+echo "  ok [#10 guard: real clone WIP not absorbed] — dirty tracked WIP stays uncommitted under DID_INIT=0"
+
+# [R-21 guard: ts14->epoch has one home] — epoch_from_ts14 must live ONCE (portability.sh), sourced by
+# both the validator and status so they can't drift (they were duplicated in M3). Assert: neither
+# script defines its own copy; both source portability.sh; and the one shared function converts a
+# known header correctly. Re-introducing a local copy in either script reddens this.
+grep -qE '^[[:space:]]*epoch_from_ts14\(\)' _harness/scripts/check_ticket_log.sh \
+  && { echo "BUG [R-21 guard]: check_ticket_log.sh defines its own epoch_from_ts14 (drift risk — source portability.sh)"; exit 1; }
+grep -qE '^[[:space:]]*epoch_from_ts14\(\)' _harness/scripts/harness-status.sh \
+  && { echo "BUG [R-21 guard]: harness-status.sh defines its own epoch_from_ts14 (drift risk — source portability.sh)"; exit 1; }
+{ grep -q 'source .*portability\.sh' _harness/scripts/check_ticket_log.sh && grep -q 'source .*portability\.sh' _harness/scripts/harness-status.sh; } \
+  || { echo "BUG [R-21 guard]: both the validator and status must source portability.sh"; exit 1; }
+( source _harness/scripts/portability.sh
+  r21_got=$(epoch_from_ts14 "20260101120000")
+  r21_want=$(date -d "2026-01-01 12:00:00" +%s 2>/dev/null || date -j -f "%Y-%m-%d %H:%M:%S" "2026-01-01 12:00:00" +%s 2>/dev/null || echo x)
+  [ -n "$r21_got" ] && [ "$r21_got" = "$r21_want" ] \
+    || { echo "BUG [R-21 guard]: shared epoch_from_ts14 gave '$r21_got', expected '$r21_want'"; exit 1; } )
+echo "  ok [R-21 guard: ts14->epoch has one home] — single shared function, both tools source it, converts correctly"
 # --- end backfill guards --------------------------------------------------------------
 
 # --- status consolidation guards (#8+R-05, #14, R-11) --------------------------------

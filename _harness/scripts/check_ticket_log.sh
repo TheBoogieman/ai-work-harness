@@ -10,17 +10,12 @@ STAMPS="${HARNESS_STATE_DIR:-$HOME/.harness}/validated"
 # One grammar home: the validator and harness-status source the SAME definition of
 # "what is a ticket" so their view of the estate can never drift apart (R-09).
 source "$SCRIPT_DIR/ticket-grammar.sh"
-# ---- portability compat (GNU/BSD) — issue #1
+# epoch_from_ts14 (ts14->epoch) is SHARED with harness-status via portability.sh — one home so the
+# validator and status can never drift on how a session-log header converts to epoch (R-21).
+source "$SCRIPT_DIR/portability.sh"
+# ---- portability compat (GNU/BSD) — issue #1 (file_mtime is validator-only, so it stays local)
 file_mtime() {  # epoch mtime, GNU stat -c / BSD stat -f
   if stat -c %Y "$1" >/dev/null 2>&1; then stat -c %Y "$1"; else stat -f %m "$1"; fi
-}
-epoch_from_ts14() {  # YYYYMMDDHHMMSS -> epoch, GNU date -d / BSD date -j
-  local t="$1"
-  if date -d "1970-01-01" +%s >/dev/null 2>&1; then
-    date -d "${t:0:8} ${t:8:2}:${t:10:2}:${t:12:2}" +%s 2>/dev/null || echo 0
-  else
-    date -j -f "%Y%m%d%H%M%S" "$t" +%s 2>/dev/null || echo 0
-  fi
 }
 
 mkdir -p "$STAMPS"

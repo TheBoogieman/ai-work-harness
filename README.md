@@ -30,9 +30,9 @@ bash _harness/scripts/run_demo.sh
 The demo initialises the local git safety net, validates the template
 ticket, runs a scratch ticket through the happy path, **deliberately
 corrupts a record and shows the validator refusing with an exact fix**,
-round-trips the notebook helper, breaks and heals an agent deployment, and
-produces a scrubbed context pack with a manifest self-audit. If all six
-stages pass, the machinery works on your machine.
+round-trips the notebook helper, breaks an agent deployment and manually
+restores it, and produces a scrubbed context pack with a manifest
+self-audit. If all six stages pass, the machinery works on your machine.
 
 **Then wire your AI assistant:** follow `INSTALL.md` (~30 minutes) —
 personalise the backbone, pin real model IDs into the six agents, deploy

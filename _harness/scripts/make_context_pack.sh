@@ -55,6 +55,24 @@ fi
 
 mkdir -p "$OUT_DIR"
 ZIP="$OUT_DIR/harness-pack-$STAMP.zip"
-( cd "$STAGE" && find . -type f | sort | sed 's|^\./||' | zip -X -q "$ZIP" -@ )
+# Package the scrubbed stage into $ZIP. Prefer the `zip` CLI; fall back to Python's zipfile when
+# zip is absent — zip is not installed by default on some hosts (Windows especially), and python3
+# is already a hard dependency (nbformat), so the pack never hinges on a separate archiver (#14).
+# Both consume the SAME sorted file list; the two archives may differ in metadata but carry
+# identical scrubbed contents — bundling those files is the pack's only job. HARNESS_PACK_NO_ZIP
+# forces the fallback (testable, deterministic).
+if [[ -z "${HARNESS_PACK_NO_ZIP:-}" ]] && command -v zip >/dev/null 2>&1; then
+  ( cd "$STAGE" && find . -type f | sort | sed 's|^\./||' | zip -X -q "$ZIP" -@ )
+else
+  # Python fallback: read the newline-delimited, already-sorted relative paths from stdin and add
+  # each to the zip in that order (deterministic). $ZIP is absolute, so cwd=$STAGE is only the read root.
+  ( cd "$STAGE" && find . -type f | sort | sed 's|^\./||' | python3 -c '
+import sys, zipfile
+names = [ln.rstrip("\n") for ln in sys.stdin if ln.strip()]
+with zipfile.ZipFile(sys.argv[1], "w", zipfile.ZIP_DEFLATED) as z:
+    for n in names:
+        z.write(n, n)
+' "$ZIP" )
+fi
 echo "OK: pack written to $ZIP (disposable — delete after upload; regenerate anytime)."
 echo "NOTE: manually SKIM the zip before it leaves the machine. Automation reduces redaction errors; it does not replace the human check."

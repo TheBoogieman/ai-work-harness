@@ -505,6 +505,61 @@ rm -rf "$G10"
 echo "  ok [#10 guard: real clone WIP not absorbed] — DID_INIT=0 skips the commit; WIP left uncommitted"
 # --- end backfill guards --------------------------------------------------------------
 
+# --- M3: status consolidation guards (#8+R-05, #14, R-11) -----------------------------
+echo "--- M3: status consolidation (#8+R-05 argv, #14 zip fallback, R-11 stale-commit) ---"
+
+# [#8+R-05 guard: hooks path passed as argv, awkward path safe] — the hooks-parse check must work
+# when the path contains a character that would BREAK a Python source-string literal. A single
+# quote is the reliable case (a space or plain unicode does NOT break the literal, verified); it
+# reproduces the #8/R-05 "path corrupts the source string" class on ANY host — the Git-Bash MSYS
+# case is the same class. We point status at an awkward-named copy of the real hooks file via
+# HARNESS_HOOKS_FILE and assert it still parses OK. (The Git-Bash MSYS-path FORMAT half additionally
+# wants a Git-Bash witness; the cygpath branch is dormant/untested on this host.)
+G8DIR=$(mktemp -d); G8="$G8DIR/quote'inside hooks.json"
+cp _harness/hooks/hooks.example.json "$G8"
+set +e; G8_OUT=$(HARNESS_HOOKS_FILE="$G8" bash _harness/scripts/harness-status.sh 2>&1); set -e
+printf '%s\n' "$G8_OUT" | grep -q "OK: hooks config parses." \
+  || { echo "BUG [#8+R-05 guard]: valid JSON at an awkward (quote-bearing) path was NOT parsed — the argv fix regressed:"; printf '%s\n' "$G8_OUT" | grep -i hooks; exit 1; }
+printf '%s\n' "$G8_OUT" | grep -q "hooks config is invalid JSON" \
+  && { echo "BUG [#8+R-05 guard]: awkward path wrongly reported as invalid JSON (source-string mangling):"; printf '%s\n' "$G8_OUT" | grep -i hooks; exit 1; }
+rm -rf "$G8DIR"
+echo "  ok [#8+R-05 guard: hooks path passed as argv, awkward path safe] — quote-bearing path parses OK"
+
+# [#14 guard: pack completes without zip] — with the zip CLI unavailable the context pack must still
+# build via the Python zipfile fallback (python3 is already required). HARNESS_PACK_NO_ZIP=1 forces
+# the fallback deterministically (cleaner than PATH surgery, and it exercises the exact fallback
+# path). Assert the pack is produced and is a readable archive.
+G14_OUT_DIR=$(mktemp -d)
+set +e; G14_OUT=$(HARNESS_PACK_NO_ZIP=1 PACK_OUT_DIR="$G14_OUT_DIR" bash _harness/scripts/make_context_pack.sh --ticket 999911Z-PROJ-99998 2>&1); G14_RC=$?; set -e
+[ "$G14_RC" -eq 0 ] || { echo "BUG [#14 guard]: pack failed with zip forced off (rc=$G14_RC):"; printf '%s\n' "$G14_OUT"; exit 1; }
+g14zip=$(ls "$G14_OUT_DIR"/harness-pack-*.zip 2>/dev/null | head -1 || true)   # no-match must not trip set -e/pipefail
+{ [ -n "$g14zip" ] && python3 -c 'import zipfile,sys; sys.exit(1 if zipfile.ZipFile(sys.argv[1]).testzip() else 0)' "$g14zip" 2>/dev/null; } \
+  || { echo "BUG [#14 guard]: no readable pack archive produced by the fallback:"; printf '%s\n' "$G14_OUT"; exit 1; }
+rm -rf "$G14_OUT_DIR"
+echo "  ok [#14 guard: pack completes without zip] — Python zipfile fallback produced a readable archive"
+
+# [R-11 guard: stale-commit WARN] — status must nudge (WARN) when session activity is newer than the
+# last commit + margin (auto-commit may have silently stopped), and stay silent otherwise; either
+# way exit 0 (yellow). The check is HARNESS_DEMO-suppressed, so the guard sets HARNESS_LIVENESS_FORCE
+# to exercise the real code. Both directions are driven deterministically by the margin knob against
+# a scratch ticket dated NEXT YEAR: margin 0 → the future session outpaces the commit → WARN fires;
+# a ~30-year margin → even a next-year session is within margin → no WARN. HARNESS_DEMO stays set so
+# the remote reads as a NOTE (rc 0), isolating the nudge from the estate's exit code.
+R11T="Tickets/202607L-PROJ-11"; r11md="$R11T/202607L-PROJ-11.md"
+r09_make "$R11T"
+r11_nyr=$(( $(date +%Y) + 1 ))    # next year → a session-header epoch always beyond 'now'
+printf '\n## %s0101000000 - future-dated session\n- work newer than the last commit\n' "$r11_nyr" >> "$r11md"
+set +e; R11_OUT=$(HARNESS_LIVENESS_FORCE=1 HARNESS_COMMIT_LAG_WARN_S=0 bash _harness/scripts/harness-status.sh 2>&1); R11_RC=$?; set -e
+printf '%s\n' "$R11_OUT" | grep -q "recent session activity" \
+  || { echo "BUG [R-11 guard]: session activity newer than the last commit did NOT raise the stale-commit WARN:"; printf '%s\n' "$R11_OUT"; exit 1; }
+[ "$R11_RC" -eq 0 ] || { echo "BUG [R-11 guard]: the stale-commit nudge must be yellow (exit 0), got rc=$R11_RC"; exit 1; }
+set +e; R11_OUT2=$(HARNESS_LIVENESS_FORCE=1 HARNESS_COMMIT_LAG_WARN_S=999999999 bash _harness/scripts/harness-status.sh 2>&1); set -e
+printf '%s\n' "$R11_OUT2" | grep -q "recent session activity" \
+  && { echo "BUG [R-11 guard]: stale-commit WARN fired while within the lag margin (commit current):"; printf '%s\n' "$R11_OUT2"; exit 1; }
+rm -rf "$R11T"
+echo "  ok [R-11 guard: stale-commit WARN] — fires when session activity outpaces the last commit, silent within margin"
+# --- end M3 guards --------------------------------------------------------------------
+
 # Break-and-restore status demonstration — deliberately runs AFTER the R-09 block so that on
 # a lane where a plain `harness-status` aborts under set -e, the R-09 stages have already been
 # witnessed. The first call shows a healthy estate; then we remove a deployed agent and watch

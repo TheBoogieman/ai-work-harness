@@ -13,6 +13,19 @@ epoch_from_date() {  # YYYY-MM-DD -> epoch
   if date -d "1970-01-01" +%s >/dev/null 2>&1; then date -d "$1" +%s 2>/dev/null || echo 0
   else date -j -f "%Y-%m-%d" "$1" +%s 2>/dev/null || echo 0; fi
 }
+# epoch_from_ts14 — YYYYMMDDHHMMSS -> epoch (LOCAL tz; see the session-log clock note in the
+# constitution, R-10). MIRRORS check_ticket_log.sh's epoch_from_ts14 verbatim: the two are the
+# only consumers today, so this is a deliberate small duplication rather than a new shared lib.
+# If a third consumer appears — or the two must agree exactly — promote both to a shared
+# portability lib (the ticket-grammar.sh pattern). Keep this copy in lockstep with the validator's.
+epoch_from_ts14() {  # YYYYMMDDHHMMSS -> epoch, GNU date -d / BSD date -j
+  local t="$1"
+  if date -d "1970-01-01" +%s >/dev/null 2>&1; then
+    date -d "${t:0:8} ${t:8:2}:${t:10:2}:${t:12:2}" +%s 2>/dev/null || echo 0
+  else
+    date -j -f "%Y%m%d%H%M%S" "$t" +%s 2>/dev/null || echo 0
+  fi
+}
 fails=0
 CORE=(ticket-init ticket-scribe check-scribe doc-writer knowledge-keeper knowledge-curator)
 
@@ -40,6 +53,34 @@ else
   echo "FAIL: no git repo at $WORK_ROOT. Fix: git -C '$WORK_ROOT' init (whitelist .gitignore already present)."; fails=$((fails+1))
 fi
 
+# commit-vs-session liveness cross-check (issue #4 / R-11): the auto-commit hook should capture
+# every write, so the last commit must never lag behind session activity. If the newest session
+# log entry across all tickets is meaningfully NEWER than the last commit, the safety net may have
+# silently stopped firing — the exact failure the hook exists to prevent. Surface it (WARN, exit
+# stays 0 — a yellow nudge, not a block). It compares WHEN work happened (session headers, local
+# time) against WHEN it was last committed (git commit time). A margin (default 300s, tunable via
+# HARNESS_COMMIT_LAG_WARN_S) absorbs the normal seconds between a write and its auto-commit.
+# Suppressed under HARNESS_DEMO: the demo/template context deliberately has scratch tickets whose
+# session logs outpace the last commit (the demo doesn't run the auto-commit hook, and a fresh
+# 60-second-try clone's HEAD is an old upstream commit), so the nudge would be a false alarm there.
+# HARNESS_LIVENESS_FORCE re-enables it so the demo's own [R-11 guard] can exercise the real check.
+if { [[ -z "${HARNESS_DEMO:-}" ]] || [[ -n "${HARNESS_LIVENESS_FORCE:-}" ]]; } \
+   && git -C "$WORK_ROOT" rev-parse HEAD >/dev/null 2>&1; then
+  commit_epoch=$(git -C "$WORK_ROOT" log -1 --format=%ct 2>/dev/null || echo 0)
+  newest_session=0; newest_ts=""
+  while IFS= read -r name; do
+    md="$WORK_ROOT/Tickets/$name/$name.md"; [[ -f "$md" ]] || continue
+    ts=$(grep -oE '^## [0-9]{14} ' "$md" | tail -1 | tr -dc '0-9' || true)
+    [[ -n "$ts" ]] || continue
+    e=$(epoch_from_ts14 "$ts")
+    (( e > newest_session )) && { newest_session=$e; newest_ts=$ts; }
+  done < <(for d in "$WORK_ROOT/Tickets"/*/; do [[ -d "$d" ]] && basename "$d"; done 2>/dev/null | grep -E "$TICKET_RE" || true)
+  lag_margin="${HARNESS_COMMIT_LAG_WARN_S:-300}"
+  if (( newest_session > 0 && commit_epoch > 0 && newest_session > commit_epoch + lag_margin )); then
+    echo "WARN: recent session activity (newest entry $newest_ts) is newer than the last commit ($(git -C "$WORK_ROOT" log -1 --format=%cr)) — the auto-commit hook may not be firing. Fix: check your hook config (_harness/hooks/hooks.example.json) and that writes are being committed."
+  fi
+fi
+
 # repo-size nudge (issue #16): the record repo grows with every auto-write commit and every
 # tracked-notebook revision, so .git creeps up over months of use. Surface it when it gets
 # large and prescribe the fix — the same observe-and-prescribe pattern as the ticket WARNs.
@@ -61,11 +102,34 @@ if [[ -d "$WORK_ROOT/.git" ]]; then
   fi
 fi
 
-# hooks config parses
-hooks="$WORK_ROOT/_harness/hooks/hooks.example.json"
+# hooks config parses. HARNESS_HOOKS_FILE overrides the path (flexibility + testable).
+hooks="${HARNESS_HOOKS_FILE:-$WORK_ROOT/_harness/hooks/hooks.example.json}"
 if [[ -f "$hooks" ]]; then
-  python3 -c "import json;json.load(open('$hooks'))" 2>/dev/null && echo "OK: hooks config parses." \
-    || { echo "FAIL: hooks config is invalid JSON. Fix: repair '$hooks' (git history has the last good copy)."; fails=$((fails+1)); }
+  # The path is passed as sys.argv[1], NEVER interpolated into the Python source. A path with a
+  # quote, backslash, or an MSYS form (/c/... under Git Bash) corrupts the source string literal
+  # open('$path') — that string-mangling is the R-05 anti-pattern and the #8 bug, which the old
+  # swallowed error then disguised as "invalid JSON". argv passes the path as data, immune to it.
+  hpath="$hooks"
+  # Git-Bash half of #8: Windows Store Python can't open an MSYS /c/... path, so under MSYS convert
+  # to a Windows-native path when cygpath is available. Guarded by MSYSTEM, so POSIX hosts are
+  # untouched (this branch is dormant on Linux/macOS/WSL and UNWITNESSED here — needs a Git-Bash host).
+  if [[ -n "${MSYSTEM:-}" ]] && command -v cygpath >/dev/null 2>&1; then
+    hpath=$(cygpath -w "$hooks" 2>/dev/null || echo "$hooks")
+  fi
+  # Distinguish "can't read the file" (exit 3) from "invalid JSON" (exit 4) — conflating them under
+  # 2>/dev/null is exactly what let #8 (an unreadable path) masquerade as invalid JSON. The signal
+  # now travels via exit code, not a swallowed traceback.
+  hk_rc=0
+  python3 -c 'import json,sys
+try: f=open(sys.argv[1])
+except OSError: sys.exit(3)
+try: json.load(f)
+except ValueError: sys.exit(4)' "$hpath" 2>/dev/null || hk_rc=$?
+  case "$hk_rc" in
+    0) echo "OK: hooks config parses." ;;
+    3) echo "FAIL: hooks config could not be READ at '$hooks' (path or permission problem, not JSON). Fix: check the path exists and is readable (under Git Bash a /c/... path may need cygpath -w)."; fails=$((fails+1)) ;;
+    *) echo "FAIL: hooks config is invalid JSON. Fix: repair '$hooks' (git history has the last good copy)."; fails=$((fails+1)) ;;
+  esac
 fi
 
 # agents: _agents/ is the roster; deployed copies must match source

@@ -15,6 +15,18 @@ if ! git rev-parse --git-dir >/dev/null 2>&1; then
   DID_INIT=1
 fi
 
+# demo_close_commit — the demo's closing auto-commit, GATED so it only fires when the demo
+# ITSELF created the repo (issue #10). In a real clone (.git already present -> DID_INIT=0) it
+# must do NOTHING, so the demo never sweeps a user's uncommitted work into a "demo: pass"
+# commit. Factored into a function so the [#10 guard] below tests THIS exact gate, not a copy
+# that could drift from it.
+demo_close_commit() {  # $1 = DID_INIT flag (1 iff the demo created the repo), $2 = repo dir
+  local did_init="$1" repo="$2"
+  [ "$did_init" -eq 1 ] || return 0                      # real clone -> skip; never absorb WIP
+  git -C "$repo" add -A >/dev/null
+  git -C "$repo" -c user.email=demo@local -c user.name=demo commit -qm "demo: pass" >/dev/null 2>&1 || true
+}
+
 # R-03 portability guard: reject in-place sed under _harness/ (BSD-incompatible; use tmp+mv instead)
 if grep -rnE 'sed +(-[A-Za-z]+ +)*-i' _harness/; then
   echo "FAIL: in-place sed found under _harness/ — not BSD-portable. Fix: rewrite via tmp+mv (grep for deletes, sed for substitutions)."; exit 1
@@ -407,6 +419,92 @@ printf '%s\n' "$G3W_OUT2" | grep -q "WARN: the record repo's .git is" \
 echo "  ok [G3 bloat WARN] — under threshold, no nudge (fires only when it should)"
 # --- end G3 ---------------------------------------------------------------------------
 
+# --- Backfill regression guards (issue #18): retroactive guards for #1, #3, #10 -------
+# These three bugs were fixed and closed BEFORE the guard-per-bug law (#18) existed, so they
+# shipped without guards. One guard each below, all witnessable on this host (no Mac needed),
+# each provably red on the pre-fix behaviour.
+
+# [#1 guard: no unguarded GNU-only construct] — the macOS/BSD portability contract. Static
+# lexical check: every GNU-only command in the shell machinery must sit behind a BSD fallback,
+# so nothing bare-GNU can regress in. HONEST LIMITATION: this is a commit-time lexical check,
+# NOT a BSD runtime test (that needs BSD hardware — a deferred evidence box); it catches the #1
+# regression CLASS (GNU-only commands with no fallback) without a Mac. Comments are stripped
+# first so a construct merely NAMED in prose doesn't count. Paired forms (stat -c/-f, date -d/-j)
+# must co-occur per file (a GNU call implies its BSD twin); unpaired GNU-only forms (GNU in-place
+# sed, find -printf, readlink -f, grep -P) must be absent. run_demo.sh is skipped: it necessarily
+# holds these token patterns as search literals (they would self-match), and it is itself run
+# end-to-end on this host by the demo you are reading.
+echo "--- #1/#3/#10: retroactive backfill guards (issue #18) ---"
+g1_bad=0
+for s in _harness/scripts/*.sh; do
+  [ "$(basename "$s")" = "run_demo.sh" ] && continue
+  code=$(sed 's/#.*//' "$s")     # drop comments (full + inline); only executable text is scanned
+  if printf '%s' "$code" | grep -q 'stat -c' && ! printf '%s' "$code" | grep -q 'stat -f'; then
+    echo "FAIL [#1]: $(basename "$s") uses GNU 'stat -c' with no BSD 'stat -f' fallback."; g1_bad=1; fi
+  if printf '%s' "$code" | grep -q 'date -d' && ! printf '%s' "$code" | grep -q 'date -j'; then
+    echo "FAIL [#1]: $(basename "$s") uses GNU 'date -d' with no BSD 'date -j' fallback."; g1_bad=1; fi
+  if printf '%s' "$code" | grep -qE 'sed +(-[A-Za-z]+ +)*-i'; then
+    echo "FAIL [#1]: $(basename "$s") uses GNU in-place sed (not BSD-portable; use tmp+mv)."; g1_bad=1; fi
+  if printf '%s' "$code" | grep -qE 'find .*-printf'; then
+    echo "FAIL [#1]: $(basename "$s") uses GNU 'find -printf' (absent in BSD find)."; g1_bad=1; fi
+  if printf '%s' "$code" | grep -q 'readlink -f'; then
+    echo "FAIL [#1]: $(basename "$s") uses GNU 'readlink -f' (absent in BSD readlink)."; g1_bad=1; fi
+  if printf '%s' "$code" | grep -qE 'grep -[a-zA-Z]*P'; then
+    echo "FAIL [#1]: $(basename "$s") uses GNU 'grep -P' PCRE (absent in BSD grep)."; g1_bad=1; fi
+done
+[ "$g1_bad" -eq 0 ] || { echo "BUG [#1 guard]: an unguarded GNU-only construct is present (see FAILs above)"; exit 1; }
+echo "  ok [#1 guard: no unguarded GNU-only construct] — every GNU call has a BSD fallback"
+
+# [#3 guard: freshness and recency use independent clocks] — the dual-clock watermark. The stamp
+# is two lines: line 1 = wall-clock (date +%s; recency = newest header >= last validation), line 2
+# = md mtime (freshness = did the file change since last validation). Different clocks, kept
+# separate. This pins that freshness reads line 2 (mtime), independent of line 1 (wall): a change
+# whose new mtime lands BETWEEN the stored mtime and the stored wall time is noticed only by a
+# line-2 read. A single-line stamp (one value for both) would use the wall clock for freshness and
+# MISS such a change — the exact #3 bug. (Distinct from the R-10 guard, which is about the header's
+# TIMEZONE; this is about the two stamp lines being separate values.) touch -t is POSIX (GNU+BSD).
+G3T="Tickets/202607S-PROJ-33"; g3md="$G3T/202607S-PROJ-33.md"
+r09_make "$G3T"
+sleep 1                                     # make the validation wall-clock strictly after the header time
+touch -t "$(date +%Y)01010000" "$g3md"      # anchor mtime to Jan 1 this year (M1) — months before 'now' (W1)
+bash _harness/scripts/check_ticket_log.sh >/dev/null 2>&1 || true   # stamp written: line1=W1(now), line2=M1(Jan1)
+# Case A — advance mtime to Feb 1 (M1 < M2 < W1) with NO new header. The change is above the stored
+# mtime but below the wall clock, so only a line-2 (mtime) freshness read notices it. Two-clock →
+# re-checks and FAILs "no new Session Log entry". Single-clock (line2=line1=W1) → M2 < W1 →
+# "unchanged" → silently skips (the bug).
+touch -t "$(date +%Y)02010000" "$g3md"
+set +e; G3A=$(bash _harness/scripts/check_ticket_log.sh 2>&1); set -e
+printf '%s\n' "$G3A" | grep -q "202607S-PROJ-33 changed but no new Session Log entry" \
+  || { echo "BUG [#3 guard]: an mtime change below the wall clock was NOT noticed — freshness isn't reading the stamp's mtime line:"; printf '%s\n' "$G3A"; exit 1; }
+# Case B — complement: a genuine new header at/after the watermark AND mtime advances → both axes
+# satisfied → validates OK.
+printf '\n## %s - real new session\n- work recorded\n' "$(date +%Y%m%d%H%M%S)" >> "$g3md"
+set +e; G3B=$(bash _harness/scripts/check_ticket_log.sh 2>&1); set -e
+printf '%s\n' "$G3B" | grep -q "OK: 202607S-PROJ-33 validated" \
+  || { echo "BUG [#3 guard]: a real new session header was not accepted:"; printf '%s\n' "$G3B"; exit 1; }
+rm -rf "$G3T"
+echo "  ok [#3 guard: freshness and recency use independent clocks] — mtime change noticed, new header accepted"
+
+# [#10 guard: real clone WIP not absorbed] — the demo's closing commit is gated behind DID_INIT so
+# it fires ONLY when the demo created the repo. In a real clone (DID_INIT=0) it must do nothing,
+# never sweeping a user's uncommitted work into a "demo: pass" commit. Exercises the ACTUAL gate
+# (demo_close_commit — the same function the demo's closing step calls) against a throwaway repo
+# that already has .git and a dirty tracked file. This is the reviewer's WIP-absorption probe made
+# a standing guard.
+G10=$(mktemp -d)
+git -C "$G10" init -q
+printf 'committed line\n' > "$G10/tracked.txt"
+git -C "$G10" add -A; git -C "$G10" -c user.email=demo@local -c user.name=demo commit -qm "seed" >/dev/null
+printf 'uncommitted WIP line\n' >> "$G10/tracked.txt"     # a real clone's in-progress work
+demo_close_commit 0 "$G10"                                # DID_INIT=0 → the gate must do nothing
+printf '%s\n' "$(git -C "$G10" log --oneline)" | grep -q "demo: pass" \
+  && { echo "BUG [#10 guard]: DID_INIT=0 but a 'demo: pass' commit appeared — a real clone's WIP was absorbed:"; git -C "$G10" log --oneline; exit 1; }
+git -C "$G10" status --porcelain | grep -q 'tracked.txt' \
+  || { echo "BUG [#10 guard]: the dirty file is no longer uncommitted — it was swept into a commit:"; git -C "$G10" status --porcelain; exit 1; }
+rm -rf "$G10"
+echo "  ok [#10 guard: real clone WIP not absorbed] — DID_INIT=0 skips the commit; WIP left uncommitted"
+# --- end backfill guards --------------------------------------------------------------
+
 # Break-and-restore status demonstration — deliberately runs AFTER the R-09 block so that on
 # a lane where a plain `harness-status` aborts under set -e, the R-09 stages have already been
 # witnessed. The first call shows a healthy estate; then we remove a deployed agent and watch
@@ -438,7 +536,5 @@ bash _harness/scripts/make_context_pack.sh --ticket 999911Z-PROJ-99998
 unzip -p "$PACK_OUT_DIR"/harness-pack-*.zip MANIFEST.txt | tail -1
 
 rm -rf "$S"
-if [ "$DID_INIT" -eq 1 ]; then
-  git add -A >/dev/null; git -c user.email=demo@local -c user.name=demo commit -qm "demo: pass" >/dev/null 2>&1 || true
-fi
+demo_close_commit "$DID_INIT" "."   # gated: commits only if the demo created this repo (issue #10)
 echo; echo "ALL 6 DEMO STAGES PASSED — the machinery works. Next: INSTALL.md to wire Copilot."

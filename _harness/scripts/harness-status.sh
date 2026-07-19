@@ -5,6 +5,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORK_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 DEPLOY_DIR="${HARNESS_AGENT_DEPLOY_DIR:-$HOME/.copilot/agents}"
+# One grammar home: share the validator's exact definition of "what is a ticket"
+# ($TICKET_RE, ticket_bearing, ticket_silenced) so status and validator never drift (R-09).
+source "$SCRIPT_DIR/ticket-grammar.sh"
 # ---- portability compat (GNU/BSD) — issue #1
 epoch_from_date() {  # YYYY-MM-DD -> epoch
   if date -d "1970-01-01" +%s >/dev/null 2>&1; then date -d "$1" +%s 2>/dev/null || echo 0
@@ -14,7 +17,9 @@ fails=0
 CORE=(ticket-init ticket-scribe check-scribe doc-writer knowledge-keeper knowledge-curator)
 
 # machinery checks its siblings
-for f in check_ticket_log.sh harness-status.sh append_notebook_cell.py make_context_pack.sh deploy_agents.sh; do
+# ticket-grammar.sh is in this list too: it is the shared grammar both tools source,
+# so a missing/inert grammar lib must itself be caught here, not silently tolerated.
+for f in check_ticket_log.sh harness-status.sh ticket-grammar.sh append_notebook_cell.py make_context_pack.sh deploy_agents.sh; do
   p="$SCRIPT_DIR/$f"
   [[ -f "$p" ]] || { echo "FAIL: missing script $f. Fix: restore from git: git -C '$WORK_ROOT' checkout -- '_harness/scripts/$f'"; fails=$((fails+1)); continue; }
   [[ -x "$p" ]] || { echo "FAIL: $f not executable. Fix: chmod +x '$p'"; fails=$((fails+1)); }
@@ -66,12 +71,30 @@ while IFS= read -r f; do
   fi
 done < <(find "$WORK_ROOT/General AI-Knowledge" -name '*.md' -type f 2>/dev/null || true)
 
-# per-ticket summary
+# per-ticket summary — matched against the SHARED $TICKET_RE so the summary and the
+# validator recognise the exact same set (a name valid under the expanded grammar must
+# appear here, not fall through into the WARN sweep below).
 while IFS= read -r name; do
   md="$WORK_ROOT/Tickets/$name/$name.md"; [[ -f "$md" ]] || continue
   latest=$(grep -oE '^## [0-9]{14} ' "$md" | tail -1 | tr -dc '0-9' || true)
   live=$(find "$WORK_ROOT/Tickets/$name/AI-Knowledge" -maxdepth 1 -name '*.md' ! -name '_index.md' 2>/dev/null | wc -l)
   echo "OK: $name — last session ${latest:-none}, knowledge files: $live."
-done < <(for d in "$WORK_ROOT/Tickets"/*/; do [[ -d "$d" ]] && basename "$d"; done 2>/dev/null | grep -E '^[0-9]{6}[A-Z]-[A-Z][A-Z0-9]*-[0-9]{3,6}$' || true)
+done < <(for d in "$WORK_ROOT/Tickets"/*/; do [[ -d "$d" ]] && basename "$d"; done 2>/dev/null | grep -E "$TICKET_RE" || true)
+
+# Surface, never enforce (Model 1): a folder that HOLDS a ticket record but whose name
+# the grammar doesn't recognise is silently skipped by the validator — so a user could
+# believe it's being validated when it isn't. WARN it (exit stays 0; we never block) so
+# the gap is visible. Conforming names are validated elsewhere; user-silenced folders
+# opt out via a tracked .not-a-ticket marker; nameless scratch dirs stay quiet. The `*/`
+# glob is whitespace-safe and already excludes Tickets/README.md (a file, not a dir).
+for d in "$WORK_ROOT/Tickets"/*/; do
+  [[ -d "$d" ]] || continue
+  name=$(basename "$d")
+  [[ "$name" =~ $TICKET_RE ]] && continue          # recognised → validated elsewhere, nothing to surface
+  ticket_silenced "$d" && continue                 # user opted out via .not-a-ticket
+  if ticket_bearing "$d"; then
+    echo "WARN: Tickets/$name holds a .md record but doesn't match the recognised ticket pattern, so it isn't validated. If it's a ticket, rename to match or edit the pattern; if not, run: touch 'Tickets/$name/.not-a-ticket' to silence this."
+  fi                                               # else: no ticket content (e.g. a scratch dir) → stay silent
+done
 
 (( fails == 0 )) && echo "OK: estate healthy." || { echo "FAIL: $fails issue(s) above — each line names its fix."; exit 1; }

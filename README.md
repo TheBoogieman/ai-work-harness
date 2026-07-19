@@ -130,8 +130,8 @@ Work/                                        [git root · local-only · whitelis
 │
 ├── Tickets/                                 RECORDS ONLY
 │   ├── README.md                            thin pointer (the map lives at the Work root)
-│   └── YYYYMM[A-Z]-PROJ-XXXXX/               one per ticket (template: 999912Z-PROJ-99999)
-│       ├── YYYYMM[A-Z]-PROJ-XXXXX.md         source of truth ← ticket-scribe (log + state, atomic)
+│   └── YYYYMM<seq>-<BOARD>-<num>/            one per ticket (recommended name; template: 999912Z-PROJ-99999)
+│       ├── YYYYMM<seq>-<BOARD>-<num>.md       source of truth ← ticket-scribe (log + state, atomic)
 │       ├── AI-Knowledge/                    ← knowledge-keeper (capture) │ curator (compact)
 │       │   ├── _index.md                    roster · tombstones
 │       │   └── *.md                         —promotion (approved)→ General AI-Knowledge/
@@ -144,6 +144,15 @@ Work/                                        [git root · local-only · whitelis
 │
 └── [GitHub/ · Diagrams/ · Mappings/ · …]    [never enter history — whitelist excludes them]
 ```
+
+**On ticket-folder names:** nothing requires a specific ticket-folder name.
+Name folders however suits your workflow. Names matching the recommended
+pattern are auto-validated; a differently-named folder that holds a ticket
+record is surfaced by harness-status as a heads-up (never blocked);
+non-matching names never break the tools. To use your own scheme, edit the
+one pattern in `_harness/scripts/ticket-grammar.sh`. In short: matching names
+are validated; non-matching ticket-bearing folders are surfaced (WARNed), not
+validated; non-matching names never break the tools.
 
 ## The layers, bottom to top
 

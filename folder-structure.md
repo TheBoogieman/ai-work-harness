@@ -25,7 +25,7 @@
 ```
 Work/
 ├── Tickets/        Active and completed Jira ticket working folders
-│   └── README.md   Thin pointer (ticket scans ignore non-YYYYMM entries)
+│   └── README.md   Thin pointer (the validator only validates recognised names; harness-status surfaces the rest)
 ├── GitHub/         Local checkouts of your code repos (primary dev work; never touched by the harness)
 ├── General AI-Knowledge/  Non-ticket knowledge base — tooling/setup/how-to docs (one subfolder per topic)
 ├── _harness/scripts/   THE MACHINERY — validator, status, notebook helper, context pack, agent deploy (versioned: the enforcement layer has undo + history)
@@ -42,19 +42,39 @@ Ticket folders live **outside** the VS Code multi-repo workspace (`GitHub/<your>
 
 ## Ticket Naming Convention
 
+Nothing requires a specific ticket-folder name. Name folders however suits
+your workflow. Names matching the recommended pattern are auto-validated; a
+differently-named folder that holds a ticket record is surfaced by
+harness-status as a heads-up (never blocked); non-matching names never break
+the tools. To use your own scheme, edit the one pattern in
+`_harness/scripts/ticket-grammar.sh`.
+
+Put precisely: **matching names are validated; non-matching ticket-bearing
+folders are surfaced (WARNed), not validated; non-matching names never break
+the tools.**
+
+The **recommended default** pattern:
+
 ```
-YYYYMM[A-Z]-PROJ-XXXXX
+YYYYMM<seq>-<BOARD>-<num>
 ```
 
-| Part       | Meaning                                                                 |
-|------------|-------------------------------------------------------------------------|
-| `YYYY`     | Year the ticket was picked up                                           |
-| `MM`       | Month the ticket was picked up                                          |
-| `[A-Z]`    | Chronological order within the month (A = first ticket, B = second, …) |
-| `PROJ`     | Your issue-tracker board key (set your own)                                                         |
-| `XXXXX`    | 5-digit Jira ticket number                                              |
+| Part      | Meaning                                                                            |
+|-----------|-----------------------------------------------------------------------------------|
+| `YYYYMM`  | Year+month the ticket was picked up — exactly 6 digits (the only fixed-width part) |
+| `<seq>`   | Chronological order within the month — one or more letters (A, B, … Z, AA, AB, …; unbounded, so a month is never capped) |
+| `<BOARD>` | Your issue-tracker board key (set your own)                                        |
+| `<num>`   | The tracker's ticket number — digits, any length                                  |
 
-**Example:** The first ticket picked up in May 2026, ticket number PROJ-65474 → `202605A-PROJ-65474`
+**Example:** the first ticket picked up in May 2026, ticket number
+PROJ-65474 → `202605A-PROJ-65474`. A busy month past `Z` rolls to `AA`,
+`AB`, … — `ticket-init` asks you how to extend rather than guessing.
+
+**Opt out of the heads-up:** if a `Tickets/` folder is deliberately *not* a
+ticket (a scratch or staging dir that happens to hold a `.md`), drop a
+`.not-a-ticket` marker file in it — `touch 'Tickets/<name>/.not-a-ticket'`.
+The marker is tracked in git, so silencing is a recorded, versioned choice,
+and harness-status stops WARNing about that folder.
 
 ---
 
@@ -88,15 +108,15 @@ Each ticket folder has four standard subfolders:
 
 **Python environment (PREREQUISITE):** the harness assumes a venv named exactly **`venv_global`** (Python 3.12, carrying the dbt toolchain + `nbformat`), created BY THE USER — the harness never creates it, it only depends on it. It must be set as the **workspace default interpreter** (in `GitHub/<your>.code-workspace`), so new terminals under `Work/` auto-activate it and notebooks default to its kernel — every ticket picks it up automatically. It also backs the Data Wrangler extension (view/clean `.csv`/`.parquet`/`.xlsx`). See *General AI-Knowledge/Python Environment*; create a repo-specific venv only when a repo needs different pins.
 
-### 2. Ticket markdown file (`YYYYMM[A-Z]-PROJ-XXXXX.md`)
+### 2. Ticket markdown file (`YYYYMM<seq>-<BOARD>-<num>.md`)
 This is the **source of truth** for everything done on the ticket. It restores AI agent context without blowing up the context window — via the **Current State** section, not the full history.
 
 **Top-level structure (strict order):**
 ```markdown
-# PROJ-XXXXX — <Short Ticket Description>
+# <BOARD>-<num> — <Short Ticket Description>
 
 **Ticket:** <Jira URL>
-**Local path:** Work/Tickets/YYYYMM[A-Z]-PROJ-XXXXX
+**Local path:** Work/Tickets/YYYYMM<seq>-<BOARD>-<num>
 
 Repos:
 - Work/GitHub/<repo>
@@ -171,7 +191,7 @@ Appending a Session Log block and refreshing **Current State** (and the Repos/Br
 
 ## AI Memory Convention
 
-Create any new memory `.md` files under `Tickets/YYYYMM[A-Z]-PROJ-XXXXX/AI-Knowledge/`. If memory must be created in session/agent memory first (where the folder is not directly writable), copy those `.md` files into the ticket's `AI-Knowledge/` folder after creation. Each ticket's AI knowledge base lives in its own `AI-Knowledge/` subfolder so context survives across sessions.
+Create any new memory `.md` files under `Tickets/YYYYMM<seq>-<BOARD>-<num>/AI-Knowledge/`. If memory must be created in session/agent memory first (where the folder is not directly writable), copy those `.md` files into the ticket's `AI-Knowledge/` folder after creation. Each ticket's AI knowledge base lives in its own `AI-Knowledge/` subfolder so context survives across sessions.
 
 **Index + compaction rules (STRICT — this folder is not a landfill):**
 

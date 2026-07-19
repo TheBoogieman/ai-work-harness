@@ -7,6 +7,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORK_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 TICKETS="$WORK_ROOT/Tickets"
 STAMPS="${HARNESS_STATE_DIR:-$HOME/.harness}/validated"
+# One grammar home: the validator and harness-status source the SAME definition of
+# "what is a ticket" so their view of the estate can never drift apart (R-09).
+source "$SCRIPT_DIR/ticket-grammar.sh"
 # ---- portability compat (GNU/BSD) — issue #1
 file_mtime() {  # epoch mtime, GNU stat -c / BSD stat -f
   if stat -c %Y "$1" >/dev/null 2>&1; then stat -c %Y "$1"; else stat -f %m "$1"; fi
@@ -24,13 +27,20 @@ mkdir -p "$STAMPS"
 
 fails=0
 ticket_dirs() {
+  # Emit one basename per Tickets/ subdir that matches the shared grammar's
+  # $TICKET_RE (sourced above). Matching IS the validation boundary — only
+  # recognised names are validated here; harness-status surfaces the rest.
   local d
   for d in "$TICKETS"/*/; do [[ -d "$d" ]] && basename "$d"; done 2>/dev/null \
-    | grep -E '^[0-9]{6}[A-Z]-[A-Z][A-Z0-9]*-[0-9]{3,6}$' || true
+    | grep -E "$TICKET_RE" || true
 }
 
 checked=0
-for name in $(ticket_dirs); do
+# Read ticket names line-by-line rather than `for name in $(ticket_dirs)`: the old
+# word-splitting form shattered a space-bearing folder like "My Random Ticket 42"
+# into bogus names ("My", "Random", ...). Line-at-a-time keeps each name whole (R-09).
+while IFS= read -r name; do
+  [[ -z "$name" ]] && continue
   dir="$TICKETS/$name"; md="$dir/$name.md"; stamp="$STAMPS/$name"
   [[ -f "$md" ]] || { echo "FAIL: $name has no $name.md — create it from the template. Fix: cp -r Tickets/999912Z-PROJ-99999/* '$dir/' and rename."; fails=$((fails+1)); continue; }
   stamp_wall=0; stamp_mtime=0
@@ -113,7 +123,7 @@ for name in $(ticket_dirs); do
   else
     fails=$((fails+1))
   fi
-done
+done < <(ticket_dirs)
 
 (( checked == 0 )) && echo "OK: no tickets modified since last validation — vacuous pass."
 (( fails == 0 )) || { echo "FAIL: $fails ticket(s) need attention — red blocks."; exit 1; }

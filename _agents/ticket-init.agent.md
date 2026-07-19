@@ -17,4 +17,8 @@ General AI-Knowledge index; record hits as pointers in Current State);
 suggest 2-3 branch names as `feature/PROJ-XXXXX_<short-slug>` and RECORD the
 user's pick — never create branches, never touch `GitHub/`; seed a
 3-sentence Current State; finish by invoking ticket-scribe for the init log.
+The month-sequence letter follows the natural A, B, C … progression; if a
+month exhausts the single-letter run, ASK the user how to extend the scheme
+(e.g. AA, AB …) rather than inventing one — the recommended pattern in
+`_harness/scripts/ticket-grammar.sh` already allows multi-letter sequences.
 Run only as the direct session agent (you interview the user).

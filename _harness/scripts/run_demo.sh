@@ -156,6 +156,83 @@ bash _harness/scripts/harness-status.sh
 mv "$HARNESS_AGENT_DEPLOY_DIR/doc-writer.agent.md" /tmp/dw.bak
 bash _harness/scripts/harness-status.sh || echo "--- correctly failed with a fix line ---"
 mv /tmp/dw.bak "$HARNESS_AGENT_DEPLOY_DIR/doc-writer.agent.md"
+
+# --- R-09 regression: surface (never enforce) unrecognised ticket folders -------------
+# Placed BEFORE the "healthy after fix" assertion ON PURPOSE: on lanes where a still-broken
+# deploy could make that harness-status call abort, R-09 must already have been witnessed.
+# In WSL that call won't abort, but the ordering is what other lanes rely on. Every folder
+# below is built from the shipped template and torn down at the end of the block.
+echo "--- R-09: unrecognised ticket folders are surfaced, never enforced ---"
+R09_SPACE="Tickets/My Random Ticket 42"        # real ticket record under a space-bearing, non-matching name
+R09_CONF="Tickets/202607A-PROJ-7"              # conforming, low ticket number
+R09_LONG="Tickets/202607AB-LONGBOARD-1000000"  # conforming, multi-letter seq + long number (pins the expansion)
+R09_BAD="Tickets/20260A-PROJ-42"               # malformed: 5-digit date — must NOT be recognised
+
+# r09_make builds a ticket-bearing, validator-ready folder from the template: copy it,
+# rename the inner .md to the folder's OWN name, and append a fresh session-log entry so
+# the watermark check passes. For non-matching names the validator ignores the folder, but
+# the rename still gives ticket_bearing() a <foldername>.md to find.
+r09_make() {
+  local dir="$1" base; base=$(basename "$dir")
+  rm -rf "$dir"; cp -r Tickets/999912Z-PROJ-99999 "$dir"
+  mv "$dir/999912Z-PROJ-99999.md" "$dir/$base.md"
+  printf '\n## %s - r09 probe\n- exercising the ticket grammar\n' "$(date +%Y%m%d%H%M%S)" >> "$dir/$base.md"
+}
+
+# [R-09 A] space-named ticket-bearing folder → harness-status WARNs it, exit stays 0.
+#          Pins Model 1: a real-but-misnamed ticket is surfaced so nobody assumes it's
+#          validated when it's silently skipped — and surfacing NEVER fails the estate.
+r09_make "$R09_SPACE"
+set +e; R09_OUT=$(bash _harness/scripts/harness-status.sh 2>&1); R09_RC=$?; set -e
+printf '%s\n' "$R09_OUT" | grep -q "WARN: Tickets/My Random Ticket 42" \
+  || { echo "BUG [R-09 A]: space-named ticket-bearing folder not surfaced as WARN:"; printf '%s\n' "$R09_OUT"; exit 1; }
+[ "$R09_RC" -eq 0 ] || { echo "BUG [R-09 A]: surfacing a misnamed folder must not fail the estate (rc=$R09_RC)"; exit 1; }
+echo "  ok [R-09 A] — space-named ticket-bearing folder surfaced (WARN), estate still exit 0"
+
+# [R-09 B] same folder + a tracked .not-a-ticket marker → silent (no WARN), exit 0.
+#          Pins the recorded, versioned opt-out.
+touch "$R09_SPACE/.not-a-ticket"
+set +e; R09_OUT=$(bash _harness/scripts/harness-status.sh 2>&1); R09_RC=$?; set -e
+printf '%s\n' "$R09_OUT" | grep -q "WARN: Tickets/My Random Ticket 42" \
+  && { echo "BUG [R-09 B]: silenced folder still WARNed:"; printf '%s\n' "$R09_OUT"; exit 1; }
+[ "$R09_RC" -eq 0 ] || { echo "BUG [R-09 B]: exit non-zero after silencing (rc=$R09_RC)"; exit 1; }
+echo "  ok [R-09 B] — .not-a-ticket marker silences the WARN, exit 0"
+
+# [R-09 C] conforming low-number ticket → validated; no naming FAIL, and no whitespace
+#          breakage from the space-named sibling created above.
+r09_make "$R09_CONF"
+set +e; R09_OUT=$(bash _harness/scripts/check_ticket_log.sh 2>&1); R09_RC=$?; set -e
+printf '%s\n' "$R09_OUT" | grep -q "OK: 202607A-PROJ-7 validated" \
+  || { echo "BUG [R-09 C]: conforming low-number ticket not validated:"; printf '%s\n' "$R09_OUT"; exit 1; }
+[ "$R09_RC" -eq 0 ] || { echo "BUG [R-09 C]: validator exited non-zero (rc=$R09_RC):"; printf '%s\n' "$R09_OUT"; exit 1; }
+echo "  ok [R-09 C] — 202607A-PROJ-7 validated (low number accepted, space sibling didn't break it)"
+
+# [R-09 E] multi-letter sequence + long number → validated. Pins the EXPANDED pattern
+#          (a month past Z, a board key longer than PROJ, a number wider than 5 digits).
+r09_make "$R09_LONG"
+set +e; R09_OUT=$(bash _harness/scripts/check_ticket_log.sh 2>&1); R09_RC=$?; set -e
+printf '%s\n' "$R09_OUT" | grep -q "OK: 202607AB-LONGBOARD-1000000 validated" \
+  || { echo "BUG [R-09 E]: expanded-pattern ticket not validated:"; printf '%s\n' "$R09_OUT"; exit 1; }
+[ "$R09_RC" -eq 0 ] || { echo "BUG [R-09 E]: validator exited non-zero (rc=$R09_RC):"; printf '%s\n' "$R09_OUT"; exit 1; }
+echo "  ok [R-09 E] — 202607AB-LONGBOARD-1000000 validated (multi-letter seq + long number)"
+
+# [R-09 F] malformed name (5-digit date) → NOT recognised, so NEVER validated. Proves the
+#          expansion still has a shape — it widened the fields, it didn't go formless.
+r09_make "$R09_BAD"
+set +e; R09_OUT=$(bash _harness/scripts/check_ticket_log.sh 2>&1); R09_RC=$?; set -e
+printf '%s\n' "$R09_OUT" | grep -q "20260A-PROJ-42 validated" \
+  && { echo "BUG [R-09 F]: malformed 5-digit-date name was validated — the grammar went formless:"; printf '%s\n' "$R09_OUT"; exit 1; }
+echo "  ok [R-09 F] — 20260A-PROJ-42 not recognised, correctly left unvalidated"
+
+# [R-09 D] the context-pack builder handles a space-named ticket at exit 0 (needs zip).
+set +e; bash _harness/scripts/make_context_pack.sh --ticket "My Random Ticket 42" >/dev/null; R09_RC=$?; set -e
+[ "$R09_RC" -eq 0 ] || { echo "BUG [R-09 D]: context pack failed on a space-named ticket (rc=$R09_RC)"; exit 1; }
+echo "  ok [R-09 D] — make_context_pack.sh handled a space-named ticket, exit 0"
+
+# Tear down the R-09 scratch folders so the estate is clean for the healthy-after-fix check.
+rm -rf "$R09_SPACE" "$R09_CONF" "$R09_LONG" "$R09_BAD"
+# --- end R-09 regression --------------------------------------------------------------
+
 bash _harness/scripts/harness-status.sh >/dev/null && echo "healthy after fix"
 
 echo "=== 6/6 scrubbed context pack + self-audit ==="

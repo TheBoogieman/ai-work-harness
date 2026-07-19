@@ -104,6 +104,10 @@ while IFS= read -r name; do
         fi
       done < "$idx"
       # Orphan-coverage — every real AI-Knowledge/ file must equal some entry's first token.
+      # NOTE: orphan-coverage compares filenames case-sensitively (grep -Fxq) while ghost-detection
+      # follows the filesystem (-f above). On a case-insensitive Mac, a USER index-entry whose case
+      # doesn't match the file can make the two disagree — but it red-blocks on both filesystems (a
+      # "fix your case" nudge), never a silent pass. Known, benign edge.
       while IFS= read -r f; do
         base=$(basename "$f"); [[ "$base" == "_index.md" ]] && continue
         live=$((live+1))                                  # count real files (drives the fat/empty NOTEs below)

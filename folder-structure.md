@@ -44,8 +44,9 @@ Ticket folders live **outside** the VS Code multi-repo workspace (`GitHub/<your>
 
 Nothing requires a specific ticket-folder name. Name folders however suits
 your workflow. The tools recognise a **recommended default pattern** out of
-the box but never force it — naming is nudged, never enforced. A `Tickets/`
-folder is always in exactly one of four states:
+the box but never force it — naming is nudged, never enforced. By name and
+markers, a `Tickets/` folder falls into one of four states (with one validation
+edge case noted after the list):
 
 1. **Matches the pattern + holds a ticket record → auto-validated.** A real,
    enforced ticket: the entry-gate validator checks its log and Current State
@@ -70,8 +71,11 @@ folder is always in exactly one of four states:
    recorded human act of removing the marker finishes it.
 4. **No ticket content, or marked `.not-a-ticket` → silent.**
 
-Nothing is ever blocked — there is no red `FAIL` for a naming choice; the
-tools nudge with yellow, never wall you off. The two markers:
+Nothing is ever blocked *for a naming choice* — the tools nudge with yellow,
+never wall you off. (One edge case sits outside these four states: a recognised
+name additionally commits the folder to validation, so a conforming folder that
+is MISSING its `.md` record is a validator `FAIL` — fix by adding the record,
+not by a naming nudge.) The two markers:
 
 - `.not-a-ticket` — "this folder is **not** a ticket, leave it alone."
   Silences the state-2 heads-up. Your call; tracked in git, so silencing is a
@@ -294,7 +298,7 @@ All repos live under `Work/GitHub/` (relative to this workspace root). List YOUR
 Invoked with the Jira link; every step below is also the by-hand fallback:
 
 1. Pull the full Jira issue — summary, description, acceptance criteria, comments, and the epic/parent one level up. (If Jira is unreachable, fill Background/Scope with `TODO` markers from the interview instead of failing — a *content* fallback; naming is decided separately in step 3.)
-2. Compute the ticket ID: scan `Tickets/` for this month's highest chronological letter and take the next one.
+2. Compute the ticket ID: scan `Tickets/` for this month's latest sequence and take the next one — order sequences by LENGTH first, then alphabetically (A < … < Z < AA < AB < …), so a multi-letter run sorts after the single letters (a plain string sort is wrong: "AA" sorts before "B"). On exhausting a run, ask the user how to extend rather than guessing.
 3. Copy the `999912Z-PROJ-99999` template; fill the header (Jira URL, local path); then **name the folder and `.md` per two outcomes, never a silent misfile.** When you *can* determine the ticket's identity (tracker reachable, or the user supplied it), give it a **conforming** name matching the recommended pattern — an immediately-validated ticket; you conform on the user's behalf. When you *cannot* (tracker unreachable **and** no identity supplied), do **not** invent a fake-but-conforming name (it would validate silently as a misfiled stub); instead give the folder a deliberately non-conforming placeholder name (e.g. `pending-<timestamp>`) and drop a `.ticket-pending` marker inside it — a non-silenceable pending ticket that `harness-status` nags about until it is *completed*: renamed to a conforming name **and** the `.ticket-pending` marker removed (both steps — the marker, not the name, is what clears the nag, so a conforming rename alone can't leave a real ticket silently misfiled). The nag is the intended safety mechanism.
 4. Present a short digest of the issue, then ask the user EXACTLY three things: (a) a paragraph explaining the ticket **in their own words**, (b) the **non-negotiables**, (c) the repo(s) involved.
 5. Write **Background** — leading with the user's paragraph as an "**In my words:**" block, followed by the Jira-derived context — and **Scope**, leading with a "**Non-negotiables**" checklist.
@@ -359,9 +363,9 @@ _harness/scripts/make_context_pack.sh [--ticket <TICKET-ID>]
 
 It stages the harness state — `folder-structure.md`, `README.md`,
 `AGENTS.md`, all `.agent.md` files, the hooks config, `check_ticket_log.sh`,
-and `General AI-Knowledge/AI Harness/` — applies the scrub table (employee
-ID and personal paths → `<user>`, Jira/SharePoint URLs, Platform B account
-locators, AWS profile/account names), and zips it with a datestamped name. With
+and `General AI-Knowledge/AI Harness/` — applies the scrub table — which you seed with your identifier classes
+(employee IDs and personal paths, org/tracker URLs, cloud account locators) —
+and zips it with a datestamped name. With
 `--ticket`, it additionally includes that ticket's `.md` and
 `AI-Knowledge/_index.md` (scrubbed) — never notebooks, `Logs/`, or `Dump/`.
 
@@ -370,10 +374,11 @@ Output rules:
   repos, always. A pack is a derived view: disposable, regenerated on
   demand, deleted after upload, never stored anywhere inside the `Work/`
   repo (where auto-commit would archive it forever).
-- Contents are deterministic: stable sorted file ordering (two packs from
-  the same state are byte-comparable), OS junk excluded at staging, and a
-  generated `MANIFEST.txt` inside listing every included file plus a
-  self-audit line confirming zero scrub-table hits.
+- Contents have a stable file SET and sorted ORDER, captured in a generated
+  `MANIFEST.txt` inside (every included file, plus a self-audit line confirming
+  zero scrub-table hits); OS junk is excluded at staging. The `.zip` itself is
+  NOT byte-reproducible — it records per-run file mtimes (and the Python
+  zipfile fallback differs again); what is stable is the file set and the MANIFEST.
 
 Rules:
 - The scrub table lives at the top of the script — extend it there whenever a

@@ -6,8 +6,8 @@ the law is `folder-structure.md`.
 
 Nothing requires a specific ticket-folder name. Name folders however suits
 your workflow — the tools recognise a recommended default pattern
-(`YYYYMM<seq>-<BOARD>-<num>`) but never force it. A folder here is always in
-one of four states:
+(`YYYYMM<seq>-<BOARD>-<num>`) but never force it. By name and markers, a folder
+here falls into one of four states (with one validation edge case, noted after):
 
 1. **Matches the pattern + holds a ticket record** → auto-validated (a real,
    enforced ticket).
@@ -23,7 +23,10 @@ one of four states:
    `.not-a-ticket`, so a real ticket can't be dismissed.
 4. **No ticket content, or marked `.not-a-ticket`** → silent.
 
-Nothing is ever blocked — the tools nudge with yellow, never wall you off. The
+Nothing is ever blocked for a *naming* choice — the tools nudge with yellow,
+never wall you off. (Edge case outside the four: a recognised name commits the
+folder to validation, so a conforming folder missing its `.md` record is a
+validator `FAIL` — add the record.) The
 two markers: `.not-a-ticket` means "this is not a ticket, leave it alone"
 (silences state 2); `.ticket-pending` means "this is a real ticket awaiting
 completion — rename **and** remove the marker" (non-silenceable). To use your

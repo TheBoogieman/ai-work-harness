@@ -42,7 +42,7 @@ names, config location, and payload fields against your Copilot version's
 docs** — schemas differ across CLI/VS Code and change often — then install.
 
 ## 6. Acceptance test (do not skip)
-1. `_harness/scripts/check_ticket_log.sh` → vacuous pass on the template.
+1. `_harness/scripts/check_ticket_log.sh` → validates the template (OK); re-run → vacuous pass.
 2. Copy the template to a scratch ticket, edit its `.md`, re-run → OK + stamped.
 3. Delete an index line for a knowledge file → re-run → FAIL with a working fix.
 4. `_harness/scripts/harness-status.sh` → zero FAILs; rename one deployed

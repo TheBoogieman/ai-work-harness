@@ -11,7 +11,7 @@ again — to anyone. MIT licensed.
 You work on tickets with an AI assistant. The harness makes that work leave
 **records** instead of vibes: every ticket folder keeps its own log, current
 state, and captured knowledge; every ad-hoc check — SQL, Python, whatever your work is — lands in an
-audit-trail notebook; every file write is auto-committed to a local-only git repo; and a
+audit-trail notebook; every file write is auto-committed to a local-only git repo (via a Copilot hook, when it fires); and a
 dumb bash validator refuses to let a session start on top of an undocumented
 mess. Six small AI agents do the clerical work (logging, capturing,
 compacting) so the expensive model — and you — only do the thinking. Nothing
@@ -30,7 +30,7 @@ bash _harness/scripts/run_demo.sh
 The demo initialises the local git safety net, validates the template
 ticket, runs a scratch ticket through the happy path, **deliberately
 corrupts a record and shows the validator refusing with an exact fix**,
-round-trips the notebook helper, breaks and heals an agent deployment, and
+round-trips the notebook helper, breaks and manually restores an agent deployment, and
 produces a scrubbed context pack with a manifest self-audit. If all six
 stages pass, the machinery works on your machine.
 
@@ -158,7 +158,10 @@ are done — the marker, not the name, is the lifecycle token, so a conforming
 rename alone can't leave a real ticket silently misfiled; it also takes
 precedence over `.not-a-ticket`, so a real ticket can't be dismissed; **(4)**
 no ticket content, or marked `.not-a-ticket` → silent. Nothing is ever blocked
-— the tools nudge with yellow, never wall you off. Two markers: `.not-a-ticket`
+for a *naming* choice — the tools nudge with yellow, never wall you off. (One
+edge case sits outside these four: a recognised name commits the folder to
+validation, so a conforming folder missing its `.md` record is a validator
+`FAIL` — add the record.) Two markers: `.not-a-ticket`
 ("not a ticket, leave it alone") and `.ticket-pending` ("a real ticket
 awaiting completion — rename **and** remove the marker; non-silenceable"). The
 recognition pattern lives in one editable line
@@ -169,7 +172,9 @@ see `folder-structure.md` for the worked example.
 ## The layers, bottom to top
 
 - **L1 — Git (local-only, rooted at `Work/`, whitelist-scoped)** — the
-  undo button. Every write auto-commits. One history covers the RECORDS:
+  undo button. Every write auto-commits — via the Copilot `postToolUse` hook,
+  when it fires; harness-status warns if commits fall behind session activity.
+  One history covers the RECORDS:
   tickets (minus each `Logs/` and `Dump/`), the constitution, `AGENTS.md`,
   and General AI-Knowledge — promoted knowledge never leaves version
   control, and every other `Work/` folder never enters it. No remote
@@ -250,18 +255,21 @@ working loop, the edit constraints, the acceptance gate).
 
 - A real Unix environment — Linux or macOS, or **WSL** on Windows
   (`wsl --install`, then work from your Linux home, not `/mnt/c`). The
-  acceptance demo needs a POSIX shell, `python3` with `nbformat`, and `zip`.
-  On Windows use WSL rather than **Git Bash** (a known MSYS-path +
-  Windows-Store-Python issue affects Git Bash); plain PowerShell can run `git`
+  acceptance demo needs a POSIX shell, `python3` with `nbformat`, and `unzip`
+  (`zip` is used when present; `make_context_pack` falls back to Python's
+  zipfile otherwise). On Windows use WSL rather than **Git Bash** — the
+  previously-known MSYS-path/Windows-Store-Python hooks-parse issue is fixed
+  (#8), but WSL remains the fully-tested lane; plain PowerShell can run `git`
   but not the bash machinery.
 - An agentic AI coding tool (e.g. Claude Code) launched in the repo directory,
   with git credentials configured so it can commit and push.
 
 **The loop:** the assistant applies a change, runs the acceptance demo
 (`bash _harness/scripts/run_demo.sh` — it must end with *ALL 6 DEMO STAGES
-PASSED*), and commits, with you reviewing before anything is pushed. Every
-behaviour change ships with a regression guard in that demo. See `CLAUDE.md`
-for the full rules; don't hand-edit the machinery from memory.
+PASSED*), and commits, with you reviewing before anything is pushed. Every bug
+fix ships with a regression guard in that demo that provably fails on the
+pre-fix code (features are usually guarded too, but the law is bug-scoped). See
+`CLAUDE.md` for the full rules; don't hand-edit the machinery from memory.
 
 **For an external design review** (rather than local iteration), run
 `_harness/scripts/make_context_pack.sh`: it produces a scrubbed, disposable

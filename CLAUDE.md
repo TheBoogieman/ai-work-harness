@@ -65,16 +65,17 @@ Doctrine you must never violate when changing this code:
 
 ## Cross-platform
 This runs on Linux, macOS, and Windows. Windows support is lane-specific: WSL
-is fully supported (develop here); Git Bash is best-effort (a known MSYS-path
-+ Windows Store Python issue affects it); plain PowerShell runs git only, not
-the bash machinery. Write portably — no GNU-only flags without a BSD/macOS
-fallback. Verify on the platform where a fix's failure mode can actually
-occur.
+is fully supported (develop here); Git Bash is best-effort — the previously-known
+MSYS-path/Windows-Store-Python hooks-parse issue is fixed (#8), with WSL still
+the fully-tested lane; plain PowerShell runs git only, not the bash machinery.
+Write portably — no GNU-only flags without a BSD/macOS fallback. Verify on the
+platform where a fix's failure mode can actually occur.
 
 ## Environment (WSL)
 Real Linux, so the demo runs fully. Requirements already installed: node/npm,
-claude-code, zip, and the `nbformat` python package (the notebook helper needs
-it: `pip install nbformat --break-system-packages`). Git push works over
+claude-code, `unzip` (and `zip`; `zip` is optional — `make_context_pack` falls
+back to Python's zipfile), and the `nbformat` python package (the notebook helper
+needs it: `pip install nbformat --break-system-packages`). Git push works over
 HTTPS via `gh auth`.
 
 ## Porting to another AI assistant (the vendor seam)

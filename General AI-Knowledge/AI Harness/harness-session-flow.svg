@@ -52,6 +52,18 @@
   <text x="76" y="340" fill="#9DBBD6" font-size="11">check_ticket_log.sh audits state left by the PAST</text>
   <line x1="240" y1="360" x2="240" y2="380" stroke="#CFE4F5" stroke-width="2" marker-end="url(#arw)"/>
 
+  <!-- the four-state entry sweep: how the audit classifies each Tickets/ subdir before the gate -->
+  <text x="510" y="224" fill="#7FD1F0" font-size="10.5" letter-spacing="2">THE ENTRY SWEEP — EACH Tickets/ SUBDIR SORTS INTO ONE STATE</text>
+  <rect x="510" y="232" width="430" height="140" fill="none" stroke="#CFE4F5" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <text x="526" y="258" fill="#E8F2FB" font-size="11" font-weight="700">check_ticket_log.sh classifies by fact, never guesses:</text>
+  <text x="526" y="280" fill="#9DBBD6" font-size="10.5">&#9312; recognised name &#8594; validated (recency &#183; state &#183; index)</text>
+  <text x="526" y="300" fill="#9DBBD6" font-size="10.5">&#9313; .not-a-ticket marker &#8594; SILENT &#8212; deliberately skipped</text>
+  <text x="526" y="320" fill="#F5B84A" font-size="10.5">&#9314; .ticket-pending marker &#8594; NON-SILENCEABLE nag until named</text>
+  <text x="526" y="340" fill="#9DBBD6" font-size="10.5">&#9315; hand-made name, no marker &#8594; status WARNs, never blocks</text>
+  <text x="526" y="362" fill="#9DBBD6" font-size="10">only &#9312; feeds the ENTRY RESULT gate below; &#9313;&#8211;&#9315; are notes, not blockers</text>
+  <line x1="420" y1="330" x2="504" y2="330" stroke="#CFE4F5" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#arw)"/>
+  <text x="424" y="322" fill="#9DBBD6" font-size="9.5">per subdir</text>
+
   <path d="M240 384 L360 428 L240 472 L120 428 Z" fill="#1B3E5F" stroke="#CFE4F5" stroke-width="1.5"/>
   <text x="240" y="424" fill="#E8F2FB" font-size="12" font-weight="700" text-anchor="middle">ENTRY</text>
   <text x="240" y="442" fill="#E8F2FB" font-size="12" font-weight="700" text-anchor="middle">RESULT?</text>

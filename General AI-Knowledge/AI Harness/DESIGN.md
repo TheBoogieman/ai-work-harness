@@ -1,15 +1,20 @@
 # Design notes — why the harness is shaped like this
 Last reviewed: 2026-07-19
 
-**Diagram currency (2026-07-19):** the two SVG sheets capture the architecture
-and session flow at a coarse level. Their known FALSE text nodes have been
-corrected inline (agent invocability; the loader's rule count; the status-port
-line; and the compaction note). They still PREDATE some later refinements and
-don't redraw them: the four-state ticket-naming model and the shared grammar
-home (`_harness/scripts/ticket-grammar.sh`); the newer `harness-status` checks
-(shown only in outline); and the shared `portability.sh`. For current
-enforcement/status/naming behaviour, `folder-structure.md` (the constitution)
-is the source of truth.
+**Diagram currency (2026-07-19):** the two SVG sheets have been brought up to
+date with the machinery they document. Sheet 1 now draws the shared-recognition
+home (`ticket-grammar.sh`) and shared portability shims (`portability.sh`) as
+one-home boxes both the validator (L2) and status (M) source; the human-run
+`harness-housekeeping.sh` lane in the maintenance port; and the two Tickets/
+edge markers (`.not-a-ticket`, `.ticket-pending`). Sheet 2 now draws the
+four-state entry sweep — how `check_ticket_log.sh` sorts each Tickets/ subdir
+(recognised → validate · `.not-a-ticket` → silent · `.ticket-pending` →
+non-silenceable nag · hand-made → status WARN). Deliberately NOT on the runtime
+sheets: the setup/acceptance tooling (`deploy_agents.sh`, `run_demo.sh`) and the
+notebook helper (`append_notebook_cell.py`, named in Sheet 1's footnote) — these
+are install/CI machinery, not runtime layers, and belong to INSTALL/README. For
+current enforcement/status/naming behaviour, `folder-structure.md` (the
+constitution) is the source of truth.
 
 **The pattern (every layer):** file states the rule → agent does the work →
 hook catches the miss → git undoes the damage. Corollary: status observes,

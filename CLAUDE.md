@@ -52,10 +52,17 @@ Doctrine you must never violate when changing this code:
 - One wave, one concern. Keep commits focused; keep messages honest (the
   message must describe what the diff actually does).
 - Public text — repo files, code comments, output strings, commit messages,
-  and issue text — cites only immutable identifiers: R-IDs (R-09, etc.),
-  GitHub issue numbers, and commit hashes. NEVER internal wave/milestone
-  labels (like "M1", "W3", "004a") — those are private development
-  choreography that drift and mean nothing to someone reading the repo later.
+  and issue text — cites only immutable identifiers: GitHub issue numbers and
+  commit hashes. NEVER internal wave/milestone labels (like "M1", "W3", "004a")
+  — private development choreography that drifts and means nothing to someone
+  reading the repo later. This extends to REVIEW FINDING LABELS: a reviewer's
+  or architect's finding R-numbers are chat-local — two chats' "R-20" mean
+  different things, so they collide and mislead once they leave their chat — so
+  they must NOT travel in public text either; a finding that crosses a chat
+  boundary is referenced by its GitHub issue number. (The existing
+  `[R-09]`-style guard labels already baked into the demo are internal, stable
+  test names, not cross-chat references — leave them; this rule governs NEW
+  public references to findings.)
 - Public-surface privacy: never put work-context identifiers (employer,
   internal workspace names, board keys, internal IDs) in repo files, issue
   text, or commit messages. Generic language only. (Project rule "G6".)

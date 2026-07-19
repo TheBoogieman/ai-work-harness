@@ -72,7 +72,7 @@ Anything marked *swappable* degrades gracefully if you differ.
 
 - `folder-structure.md` — **the constitution.** Part I loads every session;
   Part II on demand. Start here.
-- `AGENTS.md` — the ten-line contract Copilot reads on every surface.
+- `AGENTS.md` — the six-rule contract Copilot reads on every surface.
 - `_agents/` — six agent definitions (source of truth; deployed copies are
   derived).
 - `_harness/scripts/` — validator, status, notebook helper, context pack,
@@ -114,7 +114,7 @@ Work/                                        [git root · local-only · whitelis
 ├── _harness/
 │   └── scripts/                             THE MACHINERY (versioned)
 │       ├── check_ticket_log.sh              ← sessionStart hook │ sessionEnd (bonus)
-│       │       └── watermark →              ~/.harness/last-validated  [state · unversioned]
+│       │       └── watermark →              ~/.harness/validated/<ticket>  [state · unversioned]
 │       ├── harness-status.sh                stdout only · roster = _agents/ · checks siblings
 │       ├── append_notebook_cell.py          ← check-scribe · runs on venv_global [user-created prereq]
 │       ├── make_context_pack.sh             → ~/Desktop/harness-pack-*.zip [disposable · outside repo]
@@ -186,7 +186,7 @@ see `folder-structure.md` for the worked example.
 - **L3 — Filesystem** — single source of truth. `folder-structure.md` holds
   every rule; each ticket folder holds its own log, state, and knowledge;
   `General AI-Knowledge/` holds the durable stuff; `AGENTS.md` is the
-  ten-line contract Copilot loads on every surface.
+  six-rule contract Copilot loads on every surface.
 - **L4 — Six agents** — the workers:
   - `ticket-init` (smart, at pickup) — pulls Jira, interviews you (your
     words, non-negotiables, repos), suggests branch names, births the folder

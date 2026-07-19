@@ -153,7 +153,7 @@ Each ticket folder has four standard subfolders:
 
 > **STRICT — check logging (AI agents & humans):** Run **all** ad-hoc verifications through **`Checks/checks_master.ipynb`** — **never** as throwaway terminal one-offs that vanish. Add each check as a new cell with a one-line markdown note (*what* and *why*), so the check **and its result** are preserved as a reproducible record of everything verified on the ticket. Disposable spot-checks may use scratch files, but anything worth remembering goes in the notebook.
 
-**Python environment (PREREQUISITE):** the harness assumes a venv named exactly **`venv_global`** (Python 3.12, carrying the dbt toolchain + `nbformat`), created BY THE USER — the harness never creates it, it only depends on it. It must be set as the **workspace default interpreter** (in `GitHub/<your>.code-workspace`), so new terminals under `Work/` auto-activate it and notebooks default to its kernel — every ticket picks it up automatically. It also backs the Data Wrangler extension (view/clean `.csv`/`.parquet`/`.xlsx`). See *General AI-Knowledge/Python Environment*; create a repo-specific venv only when a repo needs different pins.
+**Python environment (PREREQUISITE):** the harness assumes a venv named exactly **`venv_global`** (Python 3.12 with `nbformat` + your toolchain, e.g. dbt), created BY THE USER — the harness never creates it, it only depends on it. It must be set as the **workspace default interpreter** (in `GitHub/<your>.code-workspace`), so new terminals under `Work/` auto-activate it and notebooks default to its kernel — every ticket picks it up automatically. It also backs the Data Wrangler extension (view/clean `.csv`/`.parquet`/`.xlsx`). Create a repo-specific venv only when a repo needs different pins.
 
 ### 2. Ticket markdown file (`YYYYMM<seq>-<BOARD>-<num>.md`)
 This is the **source of truth** for everything done on the ticket. It restores AI agent context without blowing up the context window — via the **Current State** section, not the full history.
@@ -335,9 +335,10 @@ verify the keeper gets invoked at the next task end. Stale General
 AI-Knowledge → batch into a review pass.
 
 **S3 — Resumed, compacted, or abandoned sessions.** Entry validation
-re-fires on resume; preCompact re-points the agent at the conventions. A
-chat left idle for days: prefer a fresh session — the entry gate plus a
-clean context beats a stale 200k-token one.
+re-fires on resume; there is no compaction hook, so on a compacted session it
+is `AGENTS.md` (which Copilot loads on every surface) that re-points the agent
+at the conventions. A chat left idle for days: prefer a fresh session — the
+entry gate plus a clean context beats a stale 200k-token one.
 
 **S4 — An agent wrote garbage.** Git is the undo: inspect the log, revert
 the specific paths, re-run the agent or fix by hand. The same failure
@@ -405,9 +406,13 @@ nothing to disk** — status output is a derived view of the filesystem, never
 stored state (derived views are regenerated, not kept). Want a snapshot? Redirect it yourself, deliberately.
 It reports, with `OK` / `WARN` / `FAIL` prefixes:
 
-- Per active ticket: last Session Log timestamp, Current State age,
-  `AI-Knowledge/` file count and any nag conditions (fat index, sessions
-  without capture).
+- Per active ticket: last Session Log timestamp and `AI-Knowledge/` file count.
+  (The fat-index and sessions-without-capture NAGs are the *validator*'s, not
+  status; status does not report Current State age.)
+- Naming: a `Tickets/` folder that holds a record but isn't recognised, or a
+  pending ticket awaiting its name (the WARN sweep).
+- Repo size past the threshold, and session activity newer than the last
+  commit (auto-commit-lag) — both WARNs.
 - `General AI-Knowledge/`: entries whose `Last reviewed:` date is older than
   6 months.
 - Liveness: last commit in the Work local git (auto-commit is alive),

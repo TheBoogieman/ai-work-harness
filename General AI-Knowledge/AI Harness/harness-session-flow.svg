@@ -184,7 +184,7 @@
 
   <rect x="60" y="1444" width="400" height="84" fill="none" stroke="#CFE4F5" stroke-width="1.5" stroke-dasharray="5 4"/>
   <text x="76" y="1466" fill="#E8F2FB" font-size="11">mid-session events (all automatic):</text>
-  <text x="76" y="1484" fill="#9DBBD6" font-size="10.5">compaction → preCompact re-points the agent</text>
+  <text x="76" y="1484" fill="#9DBBD6" font-size="10.5">compaction → AGENTS.md re-points the agent (loaded every surface)</text>
   <text x="76" y="1500" fill="#9DBBD6" font-size="10.5">you wander off → NOTHING fires; that's fine —</text>
   <text x="76" y="1516" fill="#9DBBD6" font-size="10.5">next entry validates (S3)</text>
   <line x1="240" y1="1528" x2="240" y2="1556" stroke="#CFE4F5" stroke-width="2" marker-end="url(#arw)"/>

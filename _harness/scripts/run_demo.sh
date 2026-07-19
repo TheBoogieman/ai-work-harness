@@ -357,8 +357,8 @@ r09_make "$R10"
 bash _harness/scripts/check_ticket_log.sh >/dev/null 2>&1 || true
 
 # [R-10 local] a LOCAL-now header (what the named convention requires) is newer than the
-#   watermark and is accepted — header and watermark share the absolute frame (EDIT 3 proved
-#   epoch_from_ts14(local) == date +%s). A validator that parsed the header as UTC would
+#   watermark and is accepted — header and watermark share the absolute frame (a local-time header
+#   converts to the same epoch date +%s records: epoch_from_ts14(local) == date +%s). A validator that parsed the header as UTC would
 #   misread this and the OK below would vanish.
 sleep 1
 printf '\n## %s - local-clock session\n- work recorded in local machine time\n' "$(date +%Y%m%d%H%M%S)" >> "$R10/202607R-PROJ-10.md"
@@ -373,7 +373,7 @@ echo "  ok [R-10 local] — local-time session header accepted (header and water
 #   scribe would emit) is parsed 10h behind by the LOCAL-tz validator, lands below the
 #   watermark, and is correctly refused. This is the pre-fix bug reproduced: it proves the
 #   comparison is clock-sensitive and that leaving the clock unnamed lets a scribe red-block
-#   honest work. Naming the clock (EDIT 1/2) is what stops a scribe writing this header.
+#   honest work. Naming the clock as local in the convention and the ticket-scribe agent is what stops a scribe writing this header.
 sleep 1
 printf '\n## %s - utc-clock session (wrong clock)\n- work stamped in UTC by mistake\n' "$(date -u +%Y%m%d%H%M%S)" >> "$R10/202607R-PROJ-10.md"
 set +e; R10_OUT=$(bash _harness/scripts/check_ticket_log.sh 2>&1); R10_RC=$?; set -e

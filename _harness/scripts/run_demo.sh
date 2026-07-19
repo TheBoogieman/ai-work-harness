@@ -264,8 +264,14 @@ printf '%s\n' "$R09_OUT" | grep -q "20260A-PROJ-42 validated" \
   && { echo "BUG [R-09 F]: malformed 5-digit-date name was validated — the grammar went formless:"; printf '%s\n' "$R09_OUT"; exit 1; }
 echo "  ok [R-09 F] — 20260A-PROJ-42 not recognised, correctly left unvalidated"
 
-# [R-09 D] the context-pack builder handles a space-named ticket at exit 0 (needs zip).
-set +e; bash _harness/scripts/make_context_pack.sh --ticket "My Random Ticket 42" >/dev/null; R09_RC=$?; set -e
+# [R-09 D] the context-pack builder handles a space-named ticket at exit 0 (needs zip). It writes to
+# its OWN throwaway pack dir (like the [#14 guard] below), NOT the demo's shared PACK_OUT_DIR: if this
+# pack and stage 6's both landed in the shared dir across a minute boundary (make_context_pack's STAMP
+# is minute-granular), two harness-pack-*.zip would accumulate there and stage 6's unzip glob would
+# match both and fail — the timing flake CI caught on the slower macOS runner. Own dir = timing can't matter.
+R09D_OUT=$(mktemp -d)
+set +e; PACK_OUT_DIR="$R09D_OUT" bash _harness/scripts/make_context_pack.sh --ticket "My Random Ticket 42" >/dev/null; R09_RC=$?; set -e
+rm -rf "$R09D_OUT"
 [ "$R09_RC" -eq 0 ] || { echo "BUG [R-09 D]: context pack failed on a space-named ticket (rc=$R09_RC)"; exit 1; }
 echo "  ok [R-09 D] — make_context_pack.sh handled a space-named ticket, exit 0"
 
@@ -646,6 +652,12 @@ echo "  ok [R-08] — all $r08_total agents are user-invocable: true"
 
 echo "=== 6/6 scrubbed context pack + self-audit ==="
 bash _harness/scripts/make_context_pack.sh --ticket 999911Z-PROJ-99998
+# The shared PACK_OUT_DIR must hold EXACTLY this one pack before we glob it — every other pack-building
+# stage (R-09 D, the [#14 guard]) writes to its OWN throwaway dir. Assert it, so a regression that drops
+# a second pack here fails LOUDLY right here instead of as a cryptic `unzip` exit 11 when the glob
+# matches two archives (the flake CI caught on the slower macOS runner). find (no -printf) is portable.
+n_packs=$(find "$PACK_OUT_DIR" -maxdepth 1 -name 'harness-pack-*.zip' 2>/dev/null | wc -l | tr -d ' ')
+[ "$n_packs" = "1" ] || { echo "BUG [stage 6]: expected exactly 1 pack in PACK_OUT_DIR, found $n_packs — a second pack makes the unzip glob ambiguous:"; ls -1 "$PACK_OUT_DIR"; exit 1; }
 unzip -p "$PACK_OUT_DIR"/harness-pack-*.zip MANIFEST.txt | tail -1
 
 rm -rf "$S"

@@ -5,6 +5,14 @@ ai-work-harness project itself. It is NOT the harness's user-facing rules —
 those live in folder-structure.md (the constitution). Read that too when a
 change touches harness behaviour.
 
+## Role handoff
+You are the IMPLEMENTER in a three-role loop (Architect / Implementer /
+Reviewer-PO). This file is your canonical working rules. Your role, topology,
+and restart handoff are held in the architect's shared memory and are pasted in
+by the operator on restart — that handoff defers to THIS file on any rule
+conflict. On restart, read this file, then check `git log --oneline -3` and
+`git status` for the true current HEAD before trusting anything remembered.
+
 ## What this project is
 A local-first "work harness" that turns an AI coding assistant into a
 disciplined colleague. Core pattern at every layer: a file states the rule →

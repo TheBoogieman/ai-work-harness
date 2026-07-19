@@ -68,7 +68,7 @@
     <text x="724" y="412" fill="#E8F2FB" font-size="13" font-weight="700">knowledge-keeper</text>
     <text x="724" y="432" fill="#9DBBD6" font-size="10.5">capture learnings</text>
   </g>
-  <text x="80" y="478" fill="#9DBBD6" font-size="10.5" letter-spacing="1">CHEAP TIER · NOT USER-INVOCABLE (except doc-writer) · EVERY SESSION</text>
+  <text x="80" y="478" fill="#9DBBD6" font-size="10.5" letter-spacing="1">CHEAP TIER · USER-INVOCABLE + AUTO AT TASK END · EVERY SESSION</text>
 
   <rect x="80" y="494" width="500" height="50" fill="#1B3E5F" stroke="#7FD1F0" stroke-width="2"/>
   <text x="96" y="516" fill="#E8F2FB" font-size="13" font-weight="700">knowledge-curator</text>

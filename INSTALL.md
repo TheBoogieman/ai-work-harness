@@ -4,9 +4,12 @@ Parts: this repo. Tools: GitHub Copilot (agents + hooks support), Python 3.12,
 git. Time: ~30 minutes.
 
 ## 0. Prerequisite — `venv_global` (you create this; the harness never does)
-    python3.12 -m venv ~/venvs/venv_global
+    python3.12 -m venv ~/venvs/venv_global   # 3.12 is the assumed version; a newer python3 works for the scripts
     source ~/venvs/venv_global/bin/activate && pip install nbformat  # + your toolchain (dbt etc.)
 Register its Jupyter kernel and set it as your workspace default interpreter.
+`pip install` works directly INSIDE the activated venv. If instead you install
+`nbformat` into a **system** Python, modern distros (PEP 668) require
+`pip install nbformat --break-system-packages` — as CLAUDE.md's environment note shows.
 
 ## 1. Place the workspace
 Clone into (or copy over) your work root so `folder-structure.md` sits at the

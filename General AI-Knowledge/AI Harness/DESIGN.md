@@ -1,5 +1,15 @@
 # Design notes — why the harness is shaped like this
-Last reviewed: 2026-07-18
+Last reviewed: 2026-07-19
+
+**Diagram currency (2026-07-19):** the two SVG sheets capture the architecture
+and session flow at a coarse level and are broadly accurate, but they PREDATE
+some later refinements and don't show them: the four-state ticket-naming model
+and the shared grammar home (`_harness/scripts/ticket-grammar.sh`); the newer
+`harness-status` checks (the repo-size bloat WARN, and the commit-vs-session
+liveness WARN); and the shared `portability.sh`. The sheets' agent box has been
+corrected inline (all six agents are now user-invocable), but the structural
+additions above are not redrawn — for current enforcement/status/naming
+behaviour, `folder-structure.md` (the constitution) is the source of truth.
 
 **The pattern (every layer):** file states the rule → agent does the work →
 hook catches the miss → git undoes the damage. Corollary: status observes,

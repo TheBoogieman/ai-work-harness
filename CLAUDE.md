@@ -5,14 +5,6 @@ ai-work-harness project itself. It is NOT the harness's user-facing rules —
 those live in folder-structure.md (the constitution). Read that too when a
 change touches harness behaviour.
 
-## Role handoff
-You are the IMPLEMENTER in a three-role loop (Architect / Implementer /
-Reviewer-PO). This file is your canonical working rules. Your role, topology,
-and restart handoff are held in the architect's shared memory and are pasted in
-by the operator on restart — that handoff defers to THIS file on any rule
-conflict. On restart, read this file, then check `git log --oneline -3` and
-`git status` for the true current HEAD before trusting anything remembered.
-
 ## What this project is
 A local-first "work harness" that turns an AI coding assistant into a
 disciplined colleague. Core pattern at every layer: a file states the rule →
@@ -23,31 +15,19 @@ Doctrine you must never violate when changing this code:
 - Surface, don't impose: recommend conventions, never force them on users.
   The one exception is the harness's own internal controlled paths.
 
-## How development is organised (the three roles)
-- Architect: a separate Claude chat that holds the plan, writes wave specs,
-  and verifies results. It hands specs to you via the operator (paste).
-- Implementer: YOU (Claude Code, running in WSL in this repo). You apply the
-  spec's exact edits, run the demo, commit, and — after the architect
-  verifies your report — push.
-- Reviewer / Product Owner: a separate Claude chat that audits and sets goals.
-  You do not act on its output directly; the architect turns it into specs.
-
-## The working loop (follow this every wave)
-1. The operator pastes a spec from the architect.
-2. Apply exactly what the spec names. Do not invent scope. If a spec seems to
-   require reading or changing files it didn't name, say so before doing it.
-3. Comment every CODE change in plain English — WHAT it does and WHY, not a
-   restatement of syntax (project rule "G7"). This applies to bash/python and
-   hooks.example.json. Agent .md files and the constitution are prose and are
-   exempt from line-comments but must stay clear.
-4. Run the demo: `bash _harness/scripts/run_demo.sh`. It must end with
-   "ALL 6 DEMO STAGES PASSED". (Stage 5 deliberately breaks and restores a
-   deployment — an internal FAIL followed by "healthy after fix" is that
-   stage working, not a failure.)
-5. STOP and report before pushing. The architect verifies your report first.
-   Report: commit hashes + messages, `git diff --stat`, the demo's final
-   line, and any judgment calls you made.
-6. Push only when the architect releases the push step.
+## Working on this harness
+- Make the change that's asked for; don't invent scope. If it seems to need
+  reading or editing a file that wasn't named, flag that before doing it.
+- Comment every CODE change in plain English — WHAT it does and WHY, not a
+  restatement of syntax (project rule "G7"). This applies to bash/python and
+  hooks.example.json. Agent .md files and the constitution are prose and are
+  exempt from line-comments but must stay clear.
+- Run the demo: `bash _harness/scripts/run_demo.sh`. It must end with
+  "ALL 6 DEMO STAGES PASSED" — it is the truth-teller for any change. (Stage 5
+  deliberately breaks and restores a deployment — an internal FAIL followed by
+  "healthy after fix" is that stage working, not a failure.)
+- Before pushing, self-check: the demo passes, the commit is scoped to one
+  concern, and every claim you wrote (including in comments) is true at HEAD.
 
 ## Hard rules for changing this codebase
 - Every bug fix ships with a regression guard that provably FAILS on the
@@ -57,20 +37,16 @@ Doctrine you must never violate when changing this code:
   or removed. A code comment is a claim too — a comment that misdescribes the
   code is a defect. (Project rule "G4".)
 - Comment-only passes commit SEPARATELY from behaviour changes.
-- One wave, one concern. Keep commits focused; keep messages honest (the
-  message must describe what the diff actually does).
+- Keep commits focused — one concern each — and messages honest (the message
+  must describe what the diff actually does).
 - Public text — repo files, code comments, output strings, commit messages,
   and issue text — cites only immutable identifiers: GitHub issue numbers and
-  commit hashes. NEVER internal wave/milestone labels (like "M1", "W3", "004a")
-  — private development choreography that drifts and means nothing to someone
-  reading the repo later. This extends to REVIEW FINDING LABELS: a reviewer's
-  or architect's finding R-numbers are chat-local — two chats' "R-20" mean
-  different things, so they collide and mislead once they leave their chat — so
-  they must NOT travel in public text either; a finding that crosses a chat
-  boundary is referenced by its GitHub issue number. (The existing
+  commit hashes. NEVER internal or ephemeral labels (wave/milestone tags like
+  "M1"/"W3"/"004a", or transient review/finding numbers) — they drift, and mean
+  nothing (or something different) to a later reader; a finding that needs a
+  durable public reference gets a GitHub issue number. (The existing
   `[R-09]`-style guard labels already baked into the demo are internal, stable
-  test names, not cross-chat references — leave them; this rule governs NEW
-  public references to findings.)
+  test names — leave them; this rule governs NEW public references to findings.)
 - Public-surface privacy: never put work-context identifiers (employer,
   internal workspace names, board keys, internal IDs) in repo files, issue
   text, or commit messages. Generic language only. (Project rule "G6".)

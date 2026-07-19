@@ -5,9 +5,33 @@ set -euo pipefail
 export HARNESS_DEMO=1   # lets status treat a template-clone remote as a NOTE, not a FAIL
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/../.."
+DEMO_ROOT=$PWD
 export HARNESS_STATE_DIR=$(mktemp -d) HARNESS_AGENT_DEPLOY_DIR=$(mktemp -d) PACK_OUT_DIR=$(mktemp -d)
-trap 'rm -rf "$HARNESS_STATE_DIR" "$HARNESS_AGENT_DEPLOY_DIR" "$PACK_OUT_DIR"' EXIT
+
+# cleanup runs on EXIT — normal, a set -e abort, or Ctrl-C. It removes the temp dirs AND any
+# Tickets/ folder THIS run created but didn't tear down. Success-path teardown is explicit below,
+# but a run that DIES mid-stage used to leave scratch tickets behind (untracked, so git stayed
+# clean) and the NEXT run then red-blocked at stage 1 on the leftovers — a misleading second
+# failure (the "leftover-scratch-folder collision"). Snapshotting the real tickets up front and
+# deleting anything not in that snapshot makes an aborted run clean up after itself, and never
+# touches a pre-existing (real) ticket. DEMO_SNAPSHOT_DONE guards the window before the snapshot
+# exists, so a very early death can't delete real tickets.
+DEMO_PRE_TICKETS=""; DEMO_SNAPSHOT_DONE=0
+cleanup() {
+  rm -rf "$HARNESS_STATE_DIR" "$HARNESS_AGENT_DEPLOY_DIR" "$PACK_OUT_DIR"
+  [ "$DEMO_SNAPSHOT_DONE" = 1 ] || return 0
+  local d name
+  for d in "$DEMO_ROOT/Tickets"/*/; do
+    [ -d "$d" ] || continue
+    name=$(basename "$d")
+    printf '%s\n' "$DEMO_PRE_TICKETS" | grep -Fxq "$name" || rm -rf "$d"
+  done
+}
+trap cleanup EXIT
 S="Tickets/999911Z-PROJ-99998"; rm -rf "$S"
+# Snapshot the real (pre-existing) tickets so cleanup removes ONLY what THIS run creates.
+DEMO_PRE_TICKETS=$(for d in "$DEMO_ROOT/Tickets"/*/; do [ -d "$d" ] && basename "$d"; done 2>/dev/null)
+DEMO_SNAPSHOT_DONE=1
 
 DID_INIT=0
 if ! git rev-parse --git-dir >/dev/null 2>&1; then
@@ -506,8 +530,13 @@ demo_close_commit 0 "$G10"                                # DID_INIT=0 → the g
 # unconditional commit trips even with zero WIP present — that tautology was R-20; this asserts the
 # WIP-specific property, and the revert-proof now flips because the WIP is ABSORBED, not merely
 # because a commit exists.)
-git -C "$G10" log -p 2>/dev/null | grep -q "UNCOMMITTED-WIP-MARKER" \
-  && { echo "BUG [#10 guard]: the dirty tracked WIP was ABSORBED into a commit (a real clone's work must never be committed under DID_INIT=0):"; git -C "$G10" log --oneline; exit 1; }
+# Buffer the full history first, THEN grep it via a here-string — not `git log -p | grep -q`, whose
+# early exit SIGPIPEs git and, under the demo's pipefail, fails the pipeline even ON a match, so the
+# named WIP-absorption assertion silently never fires and the corroborating check fires instead.
+g10_hist=$(git -C "$G10" log -p 2>/dev/null || true)
+if grep -q "UNCOMMITTED-WIP-MARKER" <<<"$g10_hist"; then
+  echo "BUG [#10 guard]: the dirty tracked WIP was ABSORBED into a commit (a real clone's work must never be committed under DID_INIT=0):"; git -C "$G10" log --oneline; exit 1
+fi
 # Corroborate: HEAD never moved (no new commit at all) and the working tree still reads as dirty.
 [ "$(git -C "$G10" rev-parse HEAD)" = "$G10_HEAD" ] \
   || { echo "BUG [#10 guard]: HEAD advanced — the gate committed under DID_INIT=0"; git -C "$G10" log --oneline; exit 1; }

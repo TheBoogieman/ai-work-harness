@@ -152,17 +152,21 @@ fi
 
 echo "=== 5/6 deploy + status; break an agent; watch it prescribe ==="
 bash _harness/scripts/deploy_agents.sh
-bash _harness/scripts/harness-status.sh
-mv "$HARNESS_AGENT_DEPLOY_DIR/doc-writer.agent.md" /tmp/dw.bak
-bash _harness/scripts/harness-status.sh || echo "--- correctly failed with a fix line ---"
-mv /tmp/dw.bak "$HARNESS_AGENT_DEPLOY_DIR/doc-writer.agent.md"
 
 # --- R-09 regression: surface (never enforce) unrecognised ticket folders -------------
-# Placed BEFORE the "healthy after fix" assertion ON PURPOSE: on lanes where a still-broken
-# deploy could make that harness-status call abort, R-09 must already have been witnessed.
-# In WSL that call won't abort, but the ordering is what other lanes rely on. Every folder
-# below is built from the shipped template and torn down at the end of the block.
+# Runs BEFORE the first harness-status call of stage 5 (the break-and-restore demonstration
+# further down) ON PURPOSE: this block is the first thing after deploy_agents, which makes no
+# status call, so a lane where a plain `harness-status` aborts under set -e (e.g. the
+# Git-Bash issue #8) still reaches and witnesses every R-09 stage before that abort-prone
+# call. The status rc assertions here are baseline-relative (see BASELINE_RC): each fixture
+# must add no NEW failure versus the untouched estate, so a pre-existing estate failure on
+# such a lane is tested-around, not mis-attributed to an R-09 fixture. Every folder below is
+# built from the shipped template and torn down at the end of the block.
 echo "--- R-09: unrecognised ticket folders are surfaced, never enforced ---"
+# Baseline: status's rc on the UNTOUCHED estate, captured before any fixture exists. Wrapped
+# in set +e so this call itself never aborts the demo — the whole point is to witness R-09
+# even on a lane where the later plain status call would die.
+set +e; BASELINE_OUT=$(bash _harness/scripts/harness-status.sh 2>&1); BASELINE_RC=$?; set -e
 R09_SPACE="Tickets/My Random Ticket 42"        # real ticket record under a space-bearing, non-matching name
 R09_CONF="Tickets/202607A-PROJ-7"              # conforming, low ticket number
 R09_LONG="Tickets/202607AB-LONGBOARD-1000000"  # conforming, multi-letter seq + long number (pins the expansion)
@@ -186,8 +190,8 @@ r09_make "$R09_SPACE"
 set +e; R09_OUT=$(bash _harness/scripts/harness-status.sh 2>&1); R09_RC=$?; set -e
 printf '%s\n' "$R09_OUT" | grep -q "WARN: Tickets/My Random Ticket 42" \
   || { echo "BUG [R-09 A]: space-named ticket-bearing folder not surfaced as WARN:"; printf '%s\n' "$R09_OUT"; exit 1; }
-[ "$R09_RC" -eq 0 ] || { echo "BUG [R-09 A]: surfacing a misnamed folder must not fail the estate (rc=$R09_RC)"; exit 1; }
-echo "  ok [R-09 A] — space-named ticket-bearing folder surfaced (WARN), estate still exit 0"
+[ "$R09_RC" -le "$BASELINE_RC" ] || { echo "BUG [R-09 A]: surfacing a misnamed folder added a NEW failure (rc=$R09_RC > baseline=$BASELINE_RC)"; exit 1; }
+echo "  ok [R-09 A] — space-named ticket-bearing folder surfaced (WARN), no new failure vs baseline"
 
 # [R-09 B] same folder + a tracked .not-a-ticket marker → silent (no WARN), exit 0.
 #          Pins the recorded, versioned opt-out.
@@ -195,8 +199,8 @@ touch "$R09_SPACE/.not-a-ticket"
 set +e; R09_OUT=$(bash _harness/scripts/harness-status.sh 2>&1); R09_RC=$?; set -e
 printf '%s\n' "$R09_OUT" | grep -q "WARN: Tickets/My Random Ticket 42" \
   && { echo "BUG [R-09 B]: silenced folder still WARNed:"; printf '%s\n' "$R09_OUT"; exit 1; }
-[ "$R09_RC" -eq 0 ] || { echo "BUG [R-09 B]: exit non-zero after silencing (rc=$R09_RC)"; exit 1; }
-echo "  ok [R-09 B] — .not-a-ticket marker silences the WARN, exit 0"
+[ "$R09_RC" -le "$BASELINE_RC" ] || { echo "BUG [R-09 B]: silencing added a NEW failure (rc=$R09_RC > baseline=$BASELINE_RC)"; exit 1; }
+echo "  ok [R-09 B] — .not-a-ticket marker silences the WARN, no new failure vs baseline"
 
 # [R-09 C] conforming low-number ticket → validated; no naming FAIL, and no whitespace
 #          breakage from the space-named sibling created above.
@@ -244,8 +248,8 @@ r09_make "$R09_PEND"; touch "$R09_PEND/.ticket-pending"
 set +e; R09_OUT=$(bash _harness/scripts/harness-status.sh 2>&1); R09_RC=$?; set -e
 printf '%s\n' "$R09_OUT" | grep -q "Tickets/pending-20260719120000 is a pending ticket" \
   || { echo "BUG [R-09 G]: pending folder did not get the PENDING WARN:"; printf '%s\n' "$R09_OUT"; exit 1; }
-[ "$R09_RC" -eq 0 ] || { echo "BUG [R-09 G]: pending WARN must not fail the estate (rc=$R09_RC)"; exit 1; }
-echo "  ok [R-09 G] — pending folder surfaced with the non-silenceable PENDING WARN, exit 0"
+[ "$R09_RC" -le "$BASELINE_RC" ] || { echo "BUG [R-09 G]: pending WARN added a NEW failure (rc=$R09_RC > baseline=$BASELINE_RC)"; exit 1; }
+echo "  ok [R-09 G] — pending folder surfaced with the non-silenceable PENDING WARN, no new failure vs baseline"
 
 # [R-09 H] pending folder that ALSO carries a .not-a-ticket marker → STILL the PENDING WARN
 #          (pending is checked first). Pins the non-silenceable semantics: you cannot
@@ -254,7 +258,7 @@ touch "$R09_PEND/.not-a-ticket"
 set +e; R09_OUT=$(bash _harness/scripts/harness-status.sh 2>&1); R09_RC=$?; set -e
 printf '%s\n' "$R09_OUT" | grep -q "Tickets/pending-20260719120000 is a pending ticket" \
   || { echo "BUG [R-09 H]: .not-a-ticket silenced a pending ticket — precedence is wrong:"; printf '%s\n' "$R09_OUT"; exit 1; }
-[ "$R09_RC" -eq 0 ] || { echo "BUG [R-09 H]: exit non-zero (rc=$R09_RC)"; exit 1; }
+[ "$R09_RC" -le "$BASELINE_RC" ] || { echo "BUG [R-09 H]: added a NEW failure (rc=$R09_RC > baseline=$BASELINE_RC)"; exit 1; }
 echo "  ok [R-09 H] — .not-a-ticket did NOT silence the pending ticket (pending wins)"
 
 # [R-09 I] contrast: a hand-made ticket-bearing folder with NO markers → the M1 silenceable
@@ -273,14 +277,63 @@ touch "$R09_HAND/.not-a-ticket"
 set +e; R09_OUT=$(bash _harness/scripts/harness-status.sh 2>&1); R09_RC=$?; set -e
 printf '%s\n' "$R09_OUT" | grep -q "Tickets/handmade-notes" \
   && { echo "BUG [R-09 J]: silenced hand-made folder still surfaced:"; printf '%s\n' "$R09_OUT"; exit 1; }
-[ "$R09_RC" -eq 0 ] || { echo "BUG [R-09 J]: exit non-zero (rc=$R09_RC)"; exit 1; }
-echo "  ok [R-09 J] — hand-made folder silenced by .not-a-ticket, exit 0"
-# --- end W3 pending-state guards ------------------------------------------------------
+[ "$R09_RC" -le "$BASELINE_RC" ] || { echo "BUG [R-09 J]: added a NEW failure (rc=$R09_RC > baseline=$BASELINE_RC)"; exit 1; }
+echo "  ok [R-09 J] — hand-made folder silenced by .not-a-ticket, no new failure vs baseline"
 
-# Tear down the R-09 scratch folders so the estate is clean for the healthy-after-fix check.
-rm -rf "$R09_SPACE" "$R09_CONF" "$R09_LONG" "$R09_BAD" "$R09_PEND" "$R09_HAND"
+# --- R-14: the pending COMPLETION path — the marker, not the name, is the lifecycle token -
+# The nag must follow the .ticket-pending MARKER, not the folder name. A conforming rename
+# alone must NOT complete a pending ticket (that would let a real ticket go silently misfiled
+# under a made-up name); only removing the marker — a recorded human act — completes it.
+# A name-first implementation reddens [R-09 K] (marker stranded → wrongly silent) and
+# [R-09 M] (conforming-garbage rename → wrongly silent, the evasion).
+R09_KCONF="Tickets/202607K-PROJ-500"   # a pending ticket after a legitimate conforming rename (marker still inside)
+R09_MGARB="Tickets/202607M-XYZ-1"      # a pending ticket renamed to a conforming-but-arbitrary (garbage) identity
+
+# [R-09 K] pending folder whose name now CONFORMS but marker remains → the "remove the marker
+#          to finish" completion WARN, no new failure. Pins the mandatory exit path.
+r09_make "$R09_KCONF"; touch "$R09_KCONF/.ticket-pending"
+set +e; R09_OUT=$(bash _harness/scripts/harness-status.sh 2>&1); R09_RC=$?; set -e
+printf '%s\n' "$R09_OUT" | grep -q "Tickets/202607K-PROJ-500 looks complete" \
+  || { echo "BUG [R-09 K]: conforming-named pending folder did not get the completion WARN:"; printf '%s\n' "$R09_OUT"; exit 1; }
+[ "$R09_RC" -le "$BASELINE_RC" ] || { echo "BUG [R-09 K]: completion WARN added a NEW failure (rc=$R09_RC > baseline=$BASELINE_RC)"; exit 1; }
+echo "  ok [R-09 K] — conforming name + lingering marker → 'remove the marker' completion WARN"
+
+# [R-09 L] that same folder after `rm .ticket-pending` → the validator validates it AND status
+#          goes silent for it. Pins that removing the marker actually COMPLETES the ticket.
+rm "$R09_KCONF/.ticket-pending"
+set +e; R09_OUT=$(bash _harness/scripts/check_ticket_log.sh 2>&1); R09_RC=$?; set -e
+printf '%s\n' "$R09_OUT" | grep -q "OK: 202607K-PROJ-500 validated" \
+  || { echo "BUG [R-09 L]: completed ticket did not validate after marker removal:"; printf '%s\n' "$R09_OUT"; exit 1; }
+set +e; R09_OUT=$(bash _harness/scripts/harness-status.sh 2>&1); R09_RC=$?; set -e
+printf '%s\n' "$R09_OUT" | grep -q "Tickets/202607K-PROJ-500" \
+  && { echo "BUG [R-09 L]: completed ticket still surfaced a WARN after marker removal:"; printf '%s\n' "$R09_OUT"; exit 1; }
+[ "$R09_RC" -le "$BASELINE_RC" ] || { echo "BUG [R-09 L]: added a NEW failure (rc=$R09_RC > baseline=$BASELINE_RC)"; exit 1; }
+echo "  ok [R-09 L] — marker removed → ticket validated and status silent (completion completes)"
+
+# [R-09 M] pending folder renamed to conforming GARBAGE, marker still present → STILL nags
+#          (the completion WARN). Pins that the nag follows the MARKER, not the name — the
+#          rename-to-conforming-garbage evasion is closed.
+r09_make "$R09_MGARB"; touch "$R09_MGARB/.ticket-pending"
+set +e; R09_OUT=$(bash _harness/scripts/harness-status.sh 2>&1); R09_RC=$?; set -e
+printf '%s\n' "$R09_OUT" | grep -q "Tickets/202607M-XYZ-1 looks complete" \
+  || { echo "BUG [R-09 M]: conforming-garbage rename silenced the nag — the marker no longer governs:"; printf '%s\n' "$R09_OUT"; exit 1; }
+[ "$R09_RC" -le "$BASELINE_RC" ] || { echo "BUG [R-09 M]: added a NEW failure (rc=$R09_RC > baseline=$BASELINE_RC)"; exit 1; }
+echo "  ok [R-09 M] — conforming-garbage rename STILL nags (nag follows the marker, not the name)"
+# --- end W3/R-14 pending-state guards -------------------------------------------------
+
+# Tear down the R-09 scratch folders so the estate is clean for the demonstration below.
+rm -rf "$R09_SPACE" "$R09_CONF" "$R09_LONG" "$R09_BAD" "$R09_PEND" "$R09_HAND" "$R09_KCONF" "$R09_MGARB"
 # --- end R-09 regression --------------------------------------------------------------
 
+# Break-and-restore status demonstration — deliberately runs AFTER the R-09 block so that on
+# a lane where a plain `harness-status` aborts under set -e, the R-09 stages have already been
+# witnessed. The first call shows a healthy estate; then we remove a deployed agent and watch
+# status prescribe the fix (its rc=1 is the point — the `|| echo` keeps the demo alive);
+# restore it; and confirm the estate reads healthy again.
+bash _harness/scripts/harness-status.sh
+mv "$HARNESS_AGENT_DEPLOY_DIR/doc-writer.agent.md" /tmp/dw.bak
+bash _harness/scripts/harness-status.sh || echo "--- correctly failed with a fix line ---"
+mv /tmp/dw.bak "$HARNESS_AGENT_DEPLOY_DIR/doc-writer.agent.md"
 bash _harness/scripts/harness-status.sh >/dev/null && echo "healthy after fix"
 
 # --- R-08 guard: every agent is directly human-callable -------------------------------

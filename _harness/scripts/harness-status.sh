@@ -87,21 +87,31 @@ done < <(for d in "$WORK_ROOT/Tickets"/*/; do [[ -d "$d" ]] && basename "$d"; do
 # the gap is visible. Conforming names are validated elsewhere; user-silenced folders
 # opt out via a tracked .not-a-ticket marker; nameless scratch dirs stay quiet. The `*/`
 # glob is whitespace-safe and already excludes Tickets/README.md (a file, not a dir).
-# Two distinct WARNs come out of this sweep — see the pending vs hand-made branches below.
+# Three distinct WARNs come out of this sweep — pending (two forms) and hand-made, below.
 for d in "$WORK_ROOT/Tickets"/*/; do
   [[ -d "$d" ]] || continue
   name=$(basename "$d")
-  [[ "$name" =~ $TICKET_RE ]] && continue          # recognised → validated elsewhere, nothing to surface
-  # PENDING is tested BEFORE .not-a-ticket ON PURPOSE. A .ticket-pending folder is a REAL
-  # ticket that ticket-init created but couldn't name, so it must NAG until renamed — it is
-  # not a "maybe-not-a-ticket" the user may wave away. Its WARN deliberately OMITS the
-  # .not-a-ticket escape, because the only intended resolution is giving it a conforming
-  # name. Running this branch first also means a folder carrying BOTH markers still nags
-  # (pending wins over silenced) — you can't silence a ticket init flagged as unfinished.
+  # The .ticket-pending marker is the ticket's lifecycle token, NOT its name — so it is
+  # tested FIRST, even ahead of the conforming-name skip below. A pending ticket completes
+  # only when a human REMOVES the marker (a recorded act — "a fixed record is a human act");
+  # renaming the folder alone never completes it. Testing the marker before the name closes
+  # two evasions the name-first order allowed: a rename to a conforming-but-garbage name
+  # can't silence the nag, and a marker stranded inside a properly-renamed ticket is still
+  # surfaced. The nag follows the marker, not the name. (This also keeps pending winning
+  # over .not-a-ticket — you can't silence a ticket init flagged as unfinished.)
   if ticket_pending "$d"; then
-    echo "WARN: Tickets/$name is a pending ticket — ticket-init created it but couldn't determine its proper name. Rename it to a conforming name to complete it (this IS a real ticket). See the recognised pattern in folder-structure.md or _harness/scripts/ticket-grammar.sh."
+    if [[ "$name" =~ $TICKET_RE ]]; then
+      # Name conforms but the marker lingers: the ticket looks done — the only thing left is
+      # to remove the marker. We never auto-remove it; completion is the human's recorded act.
+      echo "WARN: Tickets/$name looks complete (the name conforms) but still carries a .ticket-pending marker. Remove it to finish: rm 'Tickets/$name/.ticket-pending'"
+    else
+      # Still unnamed: the original pending nag, which omits the .not-a-ticket escape because
+      # the intended resolution is naming the ticket, not waving it away.
+      echo "WARN: Tickets/$name is a pending ticket — ticket-init created it but couldn't determine its proper name. Rename it to a conforming name to complete it (this IS a real ticket). See the recognised pattern in folder-structure.md or _harness/scripts/ticket-grammar.sh."
+    fi
     continue
   fi
+  [[ "$name" =~ $TICKET_RE ]] && continue          # recognised, no pending marker → validated elsewhere, nothing to surface
   ticket_silenced "$d" && continue                 # hand-made folder the user opted out of via .not-a-ticket
   if ticket_bearing "$d"; then                     # hand-made ticket-bearing folder: silenceable M1 WARN
     echo "WARN: Tickets/$name holds a .md record but doesn't match the recognised ticket pattern, so it isn't validated. If it's a ticket, rename to match or edit the pattern; if not, run: touch 'Tickets/$name/.not-a-ticket' to silence this."

@@ -152,12 +152,15 @@ states: **(1)** matches the pattern + holds a ticket record → auto-validated;
 **(2)** hand-made, holds a record, doesn't match → `harness-status` gives a
 heads-up (WARN) to rename it or `touch .not-a-ticket` to silence it — never
 blocked; **(3)** a pending ticket `ticket-init` couldn't name (marked
-`.ticket-pending`) → a **non-silenceable** WARN that nags until you give it a
-proper name (this takes precedence over `.not-a-ticket`, so a real ticket is
-never silently misfiled); **(4)** no ticket content, or marked `.not-a-ticket`
-→ silent. Nothing is ever blocked — the tools nudge with yellow, never wall
-you off. Two markers: `.not-a-ticket` ("not a ticket, leave it alone") and
-`.ticket-pending` ("a real ticket awaiting its name, non-silenceable"). The
+`.ticket-pending`) → a **non-silenceable** WARN, completed in two steps
+(rename to a conforming name **and** remove the marker) and nagging until both
+are done — the marker, not the name, is the lifecycle token, so a conforming
+rename alone can't leave a real ticket silently misfiled; it also takes
+precedence over `.not-a-ticket`, so a real ticket can't be dismissed; **(4)**
+no ticket content, or marked `.not-a-ticket` → silent. Nothing is ever blocked
+— the tools nudge with yellow, never wall you off. Two markers: `.not-a-ticket`
+("not a ticket, leave it alone") and `.ticket-pending` ("a real ticket
+awaiting completion — rename **and** remove the marker; non-silenceable"). The
 recognition pattern lives in one editable line
 (`_harness/scripts/ticket-grammar.sh`) that both tools share — e.g. a
 hyphenated board key like `DATA-ENG` needs the board segment widened there;

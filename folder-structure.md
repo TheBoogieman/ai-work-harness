@@ -57,11 +57,17 @@ folder is always in exactly one of four states:
 3. **Pending (`.ticket-pending`) → a non-silenceable WARN.** When `ticket-init`
    creates a ticket but can't name it properly (tracker unreachable **and** no
    identity supplied), it gives the folder a deliberately non-conforming
-   placeholder name and drops a `.ticket-pending` marker. `harness-status` nags
-   ("rename to complete — this is a real ticket") every session until you give
-   it a proper name. This exists so init never leaves a real ticket silently
-   misfiled — the pending WARN takes precedence over `.not-a-ticket`, so a real
-   pending ticket can't be dismissed.
+   placeholder name and drops a `.ticket-pending` marker. Completing it takes
+   **two steps**: rename the folder to a conforming name, **and** remove the
+   `.ticket-pending` marker. `harness-status` nags every session until both are
+   done — while the name is still non-conforming it says "rename to a conforming
+   name to complete it"; once the name conforms but the marker lingers it
+   switches to "remove it to finish: `rm .../.ticket-pending`". The **marker**,
+   not the name, is the lifecycle token: a conforming rename alone never
+   completes a pending ticket, so a real ticket can never be silently misfiled
+   under a made-up conforming name. The pending WARN takes precedence over
+   `.not-a-ticket`, so a real pending ticket can't be dismissed; only the
+   recorded human act of removing the marker finishes it.
 4. **No ticket content, or marked `.not-a-ticket` → silent.**
 
 Nothing is ever blocked — there is no red `FAIL` for a naming choice; the
@@ -70,8 +76,11 @@ tools nudge with yellow, never wall you off. The two markers:
 - `.not-a-ticket` — "this folder is **not** a ticket, leave it alone."
   Silences the state-2 heads-up. Your call; tracked in git, so silencing is a
   recorded, versioned choice.
-- `.ticket-pending` — "this **is** a real ticket, still awaiting its proper
-  name." Non-silenceable; only renaming to a conforming name resolves it.
+- `.ticket-pending` — "this **is** a real ticket, still awaiting completion."
+  Non-silenceable; the folder is completed by renaming it to a conforming name
+  **and** removing this marker (a recorded human act). A conforming rename
+  alone does not finish it — the marker is the lifecycle token, so a real
+  ticket can't slip through silently misfiled.
 
 The **recommended default** pattern:
 
@@ -280,7 +289,7 @@ Invoked with the Jira link; every step below is also the by-hand fallback:
 
 1. Pull the full Jira issue — summary, description, acceptance criteria, comments, and the epic/parent one level up. (If Jira is unreachable, fill Background/Scope with `TODO` markers from the interview instead of failing — a *content* fallback; naming is decided separately in step 3.)
 2. Compute the ticket ID: scan `Tickets/` for this month's highest chronological letter and take the next one.
-3. Copy the `999912Z-PROJ-99999` template; fill the header (Jira URL, local path); then **name the folder and `.md` per two outcomes, never a silent misfile.** When you *can* determine the ticket's identity (tracker reachable, or the user supplied it), give it a **conforming** name matching the recommended pattern — an immediately-validated ticket; you conform on the user's behalf. When you *cannot* (tracker unreachable **and** no identity supplied), do **not** invent a fake-but-conforming name (it would validate silently as a misfiled stub); instead give the folder a deliberately non-conforming placeholder name (e.g. `pending-<timestamp>`) and drop a `.ticket-pending` marker inside it — a non-silenceable pending ticket that `harness-status` nags about until it is renamed. The nag is the intended safety mechanism.
+3. Copy the `999912Z-PROJ-99999` template; fill the header (Jira URL, local path); then **name the folder and `.md` per two outcomes, never a silent misfile.** When you *can* determine the ticket's identity (tracker reachable, or the user supplied it), give it a **conforming** name matching the recommended pattern — an immediately-validated ticket; you conform on the user's behalf. When you *cannot* (tracker unreachable **and** no identity supplied), do **not** invent a fake-but-conforming name (it would validate silently as a misfiled stub); instead give the folder a deliberately non-conforming placeholder name (e.g. `pending-<timestamp>`) and drop a `.ticket-pending` marker inside it — a non-silenceable pending ticket that `harness-status` nags about until it is *completed*: renamed to a conforming name **and** the `.ticket-pending` marker removed (both steps — the marker, not the name, is what clears the nag, so a conforming rename alone can't leave a real ticket silently misfiled). The nag is the intended safety mechanism.
 4. Present a short digest of the issue, then ask the user EXACTLY three things: (a) a paragraph explaining the ticket **in their own words**, (b) the **non-negotiables**, (c) the repo(s) involved.
 5. Write **Background** — leading with the user's paragraph as an "**In my words:**" block, followed by the Jira-derived context — and **Scope**, leading with a "**Non-negotiables**" checklist.
 6. **Adjacency scan:** grep prior ticket titles and Current States plus the `General AI-Knowledge/` index for related work; record any hits as pointers in Current State (e.g. "see 202605A-PROJ-65474, AI-Knowledge/field-mapping.md").

@@ -67,6 +67,7 @@ Anything marked *swappable* degrades gracefully if you differ.
   inside **WSL** (`wsl --install`, then work from your Linux home, not
   `/mnt/c`) — plain PowerShell can push the repo with git but cannot run
   the scripts.
+- **This tool is designed for a single operator running one active session at a time; concurrent sessions may race the commit index lock and watermarks.**
 
 ## Repository tour
 

@@ -8,6 +8,10 @@
 >
 > **Check logging (STRICT):** record every ad-hoc verification — SQL, Python, shell, whatever your work is — in the ticket's `Checks/checks_master.ipynb`, so the check + its result are kept; see the note under §2.
 
+> **Operational constraint:** This tool is designed for a single operator running one active session at a time; concurrent sessions may race the commit index lock and watermarks.
+
+---
+
 ---
 
 ## Owner

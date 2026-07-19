@@ -325,6 +325,55 @@ echo "  ok [R-09 M] — conforming-garbage rename STILL nags (nag follows the ma
 rm -rf "$R09_SPACE" "$R09_CONF" "$R09_LONG" "$R09_BAD" "$R09_PEND" "$R09_HAND" "$R09_KCONF" "$R09_MGARB"
 # --- end R-09 regression --------------------------------------------------------------
 
+# --- R-10: the session-log header clock is LOCAL machine time -------------------------
+# The validator reads a 14-digit header via epoch_from_ts14 (date -d/-j — LOCAL tz) and
+# compares it to the watermark stamp_wall (date +%s — absolute epoch). Those two frames
+# agree ONLY when the header is written in LOCAL time; a UTC header on a non-UTC machine is
+# parsed hours behind and can land below the watermark, tripping a false "no new Session Log
+# entry" FAIL that red-blocks honest work. That is the R-10 gap the now-named convention
+# closes. This guard pins BOTH directions: a local-now header is accepted, and a UTC header
+# on a simulated non-UTC machine is (correctly) refused — proving the comparison IS
+# clock-sensitive, so the convention MUST name the clock. Runs before the first abort-prone
+# harness-status call, like the R-09 block. TZ is forced to a fixed non-UTC zone here and
+# restored afterwards so it never leaks into the rest of the demo.
+echo "--- R-10: session-log header clock is LOCAL machine time ---"
+R10="Tickets/202607R-PROJ-10"
+R10_TZ_SAVE="${TZ-__unset__}"
+export TZ='Etc/GMT-10'   # fixed UTC+10, no DST — makes local differ from UTC by a clear 10h
+r09_make "$R10"
+# Establish the watermark: validate once so stamp_wall (date +%s) is written for this ticket.
+bash _harness/scripts/check_ticket_log.sh >/dev/null 2>&1 || true
+
+# [R-10 local] a LOCAL-now header (what the named convention requires) is newer than the
+#   watermark and is accepted — header and watermark share the absolute frame (EDIT 3 proved
+#   epoch_from_ts14(local) == date +%s). A validator that parsed the header as UTC would
+#   misread this and the OK below would vanish.
+sleep 1
+printf '\n## %s - local-clock session\n- work recorded in local machine time\n' "$(date +%Y%m%d%H%M%S)" >> "$R10/202607R-PROJ-10.md"
+set +e; R10_OUT=$(bash _harness/scripts/check_ticket_log.sh 2>&1); R10_RC=$?; set -e
+printf '%s\n' "$R10_OUT" | grep -q "202607R-PROJ-10 changed but no new Session Log entry" \
+  && { echo "BUG [R-10]: a LOCAL-time header was misread as stale (false FAIL) — clock frames disagree:"; printf '%s\n' "$R10_OUT"; exit 1; }
+printf '%s\n' "$R10_OUT" | grep -q "OK: 202607R-PROJ-10 validated" \
+  || { echo "BUG [R-10]: local-time header not accepted:"; printf '%s\n' "$R10_OUT"; exit 1; }
+echo "  ok [R-10 local] — local-time session header accepted (header and watermark share the frame)"
+
+# [R-10 skew] a UTC header on this simulated non-UTC machine (exactly what a UTC-writing
+#   scribe would emit) is parsed 10h behind by the LOCAL-tz validator, lands below the
+#   watermark, and is correctly refused. This is the pre-fix bug reproduced: it proves the
+#   comparison is clock-sensitive and that leaving the clock unnamed lets a scribe red-block
+#   honest work. Naming the clock (EDIT 1/2) is what stops a scribe writing this header.
+sleep 1
+printf '\n## %s - utc-clock session (wrong clock)\n- work stamped in UTC by mistake\n' "$(date -u +%Y%m%d%H%M%S)" >> "$R10/202607R-PROJ-10.md"
+set +e; R10_OUT=$(bash _harness/scripts/check_ticket_log.sh 2>&1); R10_RC=$?; set -e
+printf '%s\n' "$R10_OUT" | grep -q "202607R-PROJ-10 changed but no new Session Log entry" \
+  || { echo "BUG [R-10]: a UTC header on a non-UTC machine was NOT caught — the guard is blind to the clock frame:"; printf '%s\n' "$R10_OUT"; exit 1; }
+echo "  ok [R-10 skew] — UTC-on-non-UTC header refused as stale (clock frame matters; convention must name it)"
+
+# Restore TZ (whatever it was, including unset) and tear down the R-10 scratch ticket.
+if [ "$R10_TZ_SAVE" = "__unset__" ]; then unset TZ; else export TZ="$R10_TZ_SAVE"; fi
+rm -rf "$R10"
+# --- end R-10 -------------------------------------------------------------------------
+
 # Break-and-restore status demonstration — deliberately runs AFTER the R-09 block so that on
 # a lane where a plain `harness-status` aborts under set -e, the R-09 stages have already been
 # witnessed. The first call shows a healthy estate; then we remove a deployed agent and watch

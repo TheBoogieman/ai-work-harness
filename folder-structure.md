@@ -215,6 +215,12 @@ Every ticket markdown file must include the **Repos**, **Branches**, and **Pull 
 ## YYYYMMDDHHMMSS - [Short one line description of session update]
 ```
 
+**The timestamp is LOCAL machine time** — the same clock as the shell command
+`date +%Y%m%d%H%M%S`. Do not write UTC (unless the machine's timezone is UTC):
+the validator interprets this header in the machine's local timezone, so a
+header written in a different zone can be misread as stale and wrongly
+red-block the next session.
+
 **Example:**
 ```markdown
 ## 20260611143000 - Threaded the new field through the staging SQL

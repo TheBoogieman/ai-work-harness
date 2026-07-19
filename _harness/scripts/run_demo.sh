@@ -229,8 +229,56 @@ set +e; bash _harness/scripts/make_context_pack.sh --ticket "My Random Ticket 42
 [ "$R09_RC" -eq 0 ] || { echo "BUG [R-09 D]: context pack failed on a space-named ticket (rc=$R09_RC)"; exit 1; }
 echo "  ok [R-09 D] — make_context_pack.sh handled a space-named ticket, exit 0"
 
+# --- W3: pending-ticket fourth state (graceful cancellation of custom names) ----------
+# A ticket ticket-init couldn't name gets a deliberately non-conforming placeholder name
+# PLUS a .ticket-pending marker: a REAL ticket that must NAG until renamed, and cannot be
+# silenced. These guards pin that the pending WARN is a DISTINCT message from the M1
+# hand-made WARN and is non-silenceable. A broken build flips them: checking .not-a-ticket
+# before .ticket-pending reddens [R-09 H]; reusing the M1 text reddens [R-09 I].
+R09_PEND="Tickets/pending-20260719120000"   # non-conforming placeholder name init would coin
+R09_HAND="Tickets/handmade-notes"           # a user's own non-conforming folder (contrast case)
+
+# [R-09 G] pending folder (non-conforming name + ticket .md + .ticket-pending) → the
+#          PENDING "rename to complete" WARN, exit 0. Pins that the fourth state exists.
+r09_make "$R09_PEND"; touch "$R09_PEND/.ticket-pending"
+set +e; R09_OUT=$(bash _harness/scripts/harness-status.sh 2>&1); R09_RC=$?; set -e
+printf '%s\n' "$R09_OUT" | grep -q "Tickets/pending-20260719120000 is a pending ticket" \
+  || { echo "BUG [R-09 G]: pending folder did not get the PENDING WARN:"; printf '%s\n' "$R09_OUT"; exit 1; }
+[ "$R09_RC" -eq 0 ] || { echo "BUG [R-09 G]: pending WARN must not fail the estate (rc=$R09_RC)"; exit 1; }
+echo "  ok [R-09 G] — pending folder surfaced with the non-silenceable PENDING WARN, exit 0"
+
+# [R-09 H] pending folder that ALSO carries a .not-a-ticket marker → STILL the PENDING WARN
+#          (pending is checked first). Pins the non-silenceable semantics: you cannot
+#          silence a ticket init flagged as unfinished.
+touch "$R09_PEND/.not-a-ticket"
+set +e; R09_OUT=$(bash _harness/scripts/harness-status.sh 2>&1); R09_RC=$?; set -e
+printf '%s\n' "$R09_OUT" | grep -q "Tickets/pending-20260719120000 is a pending ticket" \
+  || { echo "BUG [R-09 H]: .not-a-ticket silenced a pending ticket — precedence is wrong:"; printf '%s\n' "$R09_OUT"; exit 1; }
+[ "$R09_RC" -eq 0 ] || { echo "BUG [R-09 H]: exit non-zero (rc=$R09_RC)"; exit 1; }
+echo "  ok [R-09 H] — .not-a-ticket did NOT silence the pending ticket (pending wins)"
+
+# [R-09 I] contrast: a hand-made ticket-bearing folder with NO markers → the M1 silenceable
+#          WARN, and NOT the pending WARN. Proves the two WARNs are distinct message types.
+r09_make "$R09_HAND"
+set +e; R09_OUT=$(bash _harness/scripts/harness-status.sh 2>&1); R09_RC=$?; set -e
+printf '%s\n' "$R09_OUT" | grep -q "Tickets/handmade-notes holds a .md record but doesn't match" \
+  || { echo "BUG [R-09 I]: hand-made folder lost its M1 silenceable WARN:"; printf '%s\n' "$R09_OUT"; exit 1; }
+printf '%s\n' "$R09_OUT" | grep -q "Tickets/handmade-notes is a pending ticket" \
+  && { echo "BUG [R-09 I]: hand-made folder wrongly got the PENDING WARN:"; printf '%s\n' "$R09_OUT"; exit 1; }
+echo "  ok [R-09 I] — hand-made folder kept the M1 silenceable WARN (distinct from pending)"
+
+# [R-09 J] hand-made folder + .not-a-ticket → silent (unchanged from M1). Proves the M1
+#          escape still works for genuinely user-owned folders.
+touch "$R09_HAND/.not-a-ticket"
+set +e; R09_OUT=$(bash _harness/scripts/harness-status.sh 2>&1); R09_RC=$?; set -e
+printf '%s\n' "$R09_OUT" | grep -q "Tickets/handmade-notes" \
+  && { echo "BUG [R-09 J]: silenced hand-made folder still surfaced:"; printf '%s\n' "$R09_OUT"; exit 1; }
+[ "$R09_RC" -eq 0 ] || { echo "BUG [R-09 J]: exit non-zero (rc=$R09_RC)"; exit 1; }
+echo "  ok [R-09 J] — hand-made folder silenced by .not-a-ticket, exit 0"
+# --- end W3 pending-state guards ------------------------------------------------------
+
 # Tear down the R-09 scratch folders so the estate is clean for the healthy-after-fix check.
-rm -rf "$R09_SPACE" "$R09_CONF" "$R09_LONG" "$R09_BAD"
+rm -rf "$R09_SPACE" "$R09_CONF" "$R09_LONG" "$R09_BAD" "$R09_PEND" "$R09_HAND"
 # --- end R-09 regression --------------------------------------------------------------
 
 bash _harness/scripts/harness-status.sh >/dev/null && echo "healthy after fix"

@@ -30,3 +30,13 @@ export TICKET_NOT_MARKER='.not-a-ticket'
 ticket_silenced() {  # $1 = folder path
   [[ -f "$1/$TICKET_NOT_MARKER" ]]
 }
+
+# 4. PENDING — a ticket that ticket-init created but could not name properly
+#    (tracker unreachable and the user didn't supply an identity). Marked with
+#    a .ticket-pending file. Unlike .not-a-ticket, this is NOT a "leave me
+#    alone" flag — it means "this is a real ticket still awaiting its proper
+#    name," so status nags about it until it's renamed.
+export TICKET_PENDING_MARKER='.ticket-pending'
+ticket_pending() {  # $1 = folder path
+  [[ -f "$1/$TICKET_PENDING_MARKER" ]]
+}

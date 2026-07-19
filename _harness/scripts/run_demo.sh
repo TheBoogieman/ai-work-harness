@@ -466,24 +466,45 @@ echo "  ok [G3 bloat WARN] — under threshold, no nudge (fires only when it sho
 # end-to-end on this host by the demo you are reading.
 echo "--- #1/#3/#10: retroactive backfill guards (issue #18) ---"
 g1_bad=0
+# code_has / code_hasE — does the comment-stripped script text $code contain PATTERN?
+# HERE-STRING, deliberately NOT `printf '%s' "$code" | grep -q`: under `set -o pipefail`
+# grep -q's early exit on a match closes the pipe while printf is still writing, printf
+# takes SIGPIPE, and pipefail turns that into a FALSE pipeline failure on a match (#35 —
+# the exact class the #10 guard already avoids). A here-string has no pipe, so a match
+# always reads as success. code_has = BRE (grep -q); code_hasE = ERE (grep -qE).
+code_has()  { grep -q  "$1" <<< "$code"; }
+code_hasE() { grep -qE "$1" <<< "$code"; }
 for s in _harness/scripts/*.sh; do
   [ "$(basename "$s")" = "run_demo.sh" ] && continue
   code=$(sed 's/#.*//' "$s")     # drop comments (full + inline); only executable text is scanned
-  if printf '%s' "$code" | grep -q 'stat -c' && ! printf '%s' "$code" | grep -q 'stat -f'; then
+  if code_has 'stat -c' && ! code_has 'stat -f'; then
     echo "FAIL [#1]: $(basename "$s") uses GNU 'stat -c' with no BSD 'stat -f' fallback."; g1_bad=1; fi
-  if printf '%s' "$code" | grep -q 'date -d' && ! printf '%s' "$code" | grep -q 'date -j'; then
+  if code_has 'date -d' && ! code_has 'date -j'; then
     echo "FAIL [#1]: $(basename "$s") uses GNU 'date -d' with no BSD 'date -j' fallback."; g1_bad=1; fi
-  if printf '%s' "$code" | grep -qE 'sed +(-[A-Za-z]+ +)*-i'; then
+  if code_hasE 'sed +(-[A-Za-z]+ +)*-i'; then
     echo "FAIL [#1]: $(basename "$s") uses GNU in-place sed (not BSD-portable; use tmp+mv)."; g1_bad=1; fi
-  if printf '%s' "$code" | grep -qE 'find .*-printf'; then
+  if code_hasE 'find .*-printf'; then
     echo "FAIL [#1]: $(basename "$s") uses GNU 'find -printf' (absent in BSD find)."; g1_bad=1; fi
-  if printf '%s' "$code" | grep -q 'readlink -f'; then
+  if code_has 'readlink -f'; then
     echo "FAIL [#1]: $(basename "$s") uses GNU 'readlink -f' (absent in BSD readlink)."; g1_bad=1; fi
-  if printf '%s' "$code" | grep -qE 'grep -[a-zA-Z]*P'; then
+  if code_hasE 'grep -[a-zA-Z]*P'; then
     echo "FAIL [#1]: $(basename "$s") uses GNU 'grep -P' PCRE (absent in BSD grep)."; g1_bad=1; fi
 done
 [ "$g1_bad" -eq 0 ] || { echo "BUG [#1 guard]: an unguarded GNU-only construct is present (see FAILs above)"; exit 1; }
 echo "  ok [#1 guard: no unguarded GNU-only construct] — every GNU call has a BSD fallback"
+
+# [sigpipe-safety guard (#35)] — proves the #1 match helpers are here-string-safe: a match
+# under pipefail reads as SUCCESS, never a SIGPIPE-false-fail. DETERMINISTIC: with a LARGE
+# $code whose match token is at the very top, the old `printf | grep -q` form would reliably
+# SIGPIPE (printf can't drain ~500 KiB into a 64 KiB pipe buffer before grep exits), so this
+# goes RED the instant code_has/code_hasE are reverted to the piped form; the here-string
+# form passes. Subshell so the large $code never leaks to later stages.
+if ( code=$(printf 'SIGPIPE_PROBE_TOKEN\n'; head -c 500000 /dev/zero | tr '\000' 'x')
+     code_has 'SIGPIPE_PROBE_TOKEN' && code_hasE 'SIGPIPE_PROBE_TOKEN' ); then
+  echo "  ok [sigpipe-safety] — code_has/code_hasE return success on a large-input match under pipefail (no SIGPIPE)"
+else
+  echo "FAIL [sigpipe-safety]: a large-input match did not read as success — helpers are not here-string-safe (#35)."; exit 1
+fi
 
 # [#3 guard: freshness and recency use independent clocks] — the dual-clock watermark. The stamp
 # is two lines: line 1 = wall-clock (date +%s; recency = newest header >= last validation), line 2

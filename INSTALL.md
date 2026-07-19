@@ -59,3 +59,7 @@ New ticket: pick **ticket-init** in Copilot, paste the issue link, answer
 three questions. Work normally. Walk away — nothing must fire. Full
 choreography: Sheet 2 in `General AI-Knowledge/AI Harness/`. Doctrine:
 **red blocks, yellow schedules, never fabricate.**
+
+**Maintenance:** monthly, or whenever `harness-status` warns that `.git` is
+large, run `bash _harness/scripts/harness-housekeeping.sh` (repacks history;
+touches no records).

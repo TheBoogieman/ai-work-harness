@@ -34,6 +34,10 @@ round-trips the notebook helper, breaks and manually restores an agent deploymen
 produces a scrubbed context pack with a manifest self-audit. If all six
 stages pass, the machinery works on your machine.
 
+The same demo runs in CI: on every push to `main` (and on manual dispatch),
+GitHub Actions runs `run_demo.sh` on both Linux and macOS, so the GNU/BSD
+portability branches are exercised for real on macOS, not via shims.
+
 **Then wire your AI assistant:** follow `INSTALL.md` (~30 minutes) —
 personalise the backbone, pin real model IDs into the six agents, deploy
 them, install the hooks, run the acceptance test. `setup-prompt.md` lets a
@@ -113,15 +117,20 @@ Work/                                        [git root · local-only · whitelis
 ├── .gitignore                               /* deny-all → re-include record set
 ├── folder-structure.md                      THE CONSTITUTION · Part I always / Part II on demand
 ├── AGENTS.md                                door-note → folder-structure.md
+├── .github/workflows/                       CI — runs the demo on Linux + macOS on every push to main
 │
 ├── _harness/
 │   └── scripts/                             THE MACHINERY (versioned)
 │       ├── check_ticket_log.sh              ← sessionStart hook │ sessionEnd (bonus)
 │       │       └── watermark →              ~/.harness/validated/<ticket>  [state · unversioned]
 │       ├── harness-status.sh                stdout only · roster = _agents/ · checks siblings
+│       ├── ticket-grammar.sh                recognition home: TICKET_RE + ticket predicates · validator + status both source it (edit to retarget your board)
+│       ├── portability.sh                   shared GNU/BSD shims: ts14→epoch, sourced by validator + status (one home · no drift)
 │       ├── append_notebook_cell.py          ← check-scribe · runs on venv_global [user-created prereq]
 │       ├── make_context_pack.sh             → ~/Desktop/harness-pack-*.zip [disposable · outside repo]
-│       └── deploy_agents.sh                 → user-level agent dir (sync source → live)
+│       ├── deploy_agents.sh                 → user-level agent dir (sync source → live)
+│       ├── harness-housekeeping.sh          human-run · git gc + size report · never touches records
+│       └── run_demo.sh                      the acceptance demo: proves the machinery end-to-end on this host (see Setup) · wired to no hook
 │
 ├── _agents/                                 SOURCE OF TRUTH (versioned)
 │   ├── ticket-init.agent.md                 ┐

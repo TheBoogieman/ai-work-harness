@@ -26,6 +26,9 @@ Doctrine you must never violate when changing this code:
   "ALL 6 DEMO STAGES PASSED" — it is the truth-teller for any change. (Stage 5
   deliberately breaks and restores a deployment — an internal FAIL followed by
   "healthy after fix" is that stage working, not a failure.)
+- CI: pushing to `main` runs the demo workflow (`.github/workflows/demo.yml`) on
+  Linux + macOS; a red run means a lane failed — the demo is the truth-teller,
+  go read the failing lane.
 - Before pushing, self-check: the demo passes, the commit is scoped to one
   concern, and every claim you wrote (including in comments) is true at HEAD.
 

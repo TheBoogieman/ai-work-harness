@@ -44,6 +44,9 @@ strong-model Copilot session drive the install for you.
 This harness assumes — and only works as designed with — the following.
 Anything marked *swappable* degrades gracefully if you differ.
 
+- **A single operator working one active session at a time** — not concurrent
+  multi-user access to a shared record repo. The auto-commit-per-write and
+  single-writer git model assume one writer.
 - **GitHub Copilot with custom agents + lifecycle hooks** (CLI and/or
   VS Code). Both features are preview-grade; `INSTALL.md` tells you to
   verify config schemas against your version's docs. Without Copilot the

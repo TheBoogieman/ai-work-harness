@@ -83,7 +83,10 @@ Real Linux, so the demo runs fully. Requirements already installed: node/npm,
 claude-code, `unzip` (and `zip`; `zip` is optional — `make_context_pack` falls
 back to Python's zipfile), and the `nbformat` python package (the notebook helper
 needs it: `pip install nbformat --break-system-packages`). Git push works over
-HTTPS via `gh auth`.
+HTTPS via `gh auth`. `gh` is a **development** convenience only — used for
+pushing and issue management while working on the harness. NO shipped harness
+component (validation, status, the git safety net, agents, hooks) depends on
+`gh`; the harness runs fully on a host without it.
 
 ## Porting to another AI assistant (the vendor seam)
 

@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-# make_context_pack.sh — scrubbed, deterministic, disposable export of harness state.
+# make_context_pack.sh — scrubbed, disposable export of harness state with a stable, sorted file set.
+# Bundling the scrubbed files is the job — the .zip is NOT byte-reproducible (zip records per-run
+# file mtimes; the Python zipfile fallback differs again). What IS stable: the file SET and the
+# sorted MANIFEST inside it.
 # Output: ~/Desktop/harness-pack-YYYYMMDD-HHMM.zip (override: PACK_OUT_DIR). Never inside the repo.
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

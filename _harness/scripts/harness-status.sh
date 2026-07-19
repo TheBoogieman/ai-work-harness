@@ -198,7 +198,7 @@ for d in "$WORK_ROOT/Tickets"/*/; do
   fi
   [[ "$name" =~ $TICKET_RE ]] && continue          # recognised, no pending marker → validated elsewhere, nothing to surface
   ticket_silenced "$d" && continue                 # hand-made folder the user opted out of via .not-a-ticket
-  if ticket_bearing "$d"; then                     # hand-made ticket-bearing folder: silenceable M1 WARN
+  if ticket_bearing "$d"; then                     # hand-made ticket-bearing folder → the silenceable WARN
     echo "WARN: Tickets/$name holds a .md record but doesn't match the recognised ticket pattern, so it isn't validated. If it's a ticket, rename to match or edit the pattern; if not, run: touch 'Tickets/$name/.not-a-ticket' to silence this."
   fi                                               # else: no ticket content (e.g. a scratch dir) → stay silent
 done

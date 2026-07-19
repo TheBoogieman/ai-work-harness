@@ -43,17 +43,26 @@ while IFS= read -r name; do
   [[ -z "$name" ]] && continue
   dir="$TICKETS/$name"; md="$dir/$name.md"; stamp="$STAMPS/$name"
   [[ -f "$md" ]] || { echo "FAIL: $name has no $name.md — create it from the template. Fix: cp -r Tickets/999912Z-PROJ-99999/* '$dir/' and rename."; fails=$((fails+1)); continue; }
+  # The stamp holds TWO clocks, one per question, so a change judged on one axis is never measured
+  # against the other's clock (a legacy single-line stamp used one value for both, conflating them
+  # — see the fallback below):
+  #   line 1 stamp_wall  = wall-clock at last validation      → RECENCY: is the newest session-log
+  #                        header at/after that moment?
+  #   line 2 stamp_mtime = the .md's mtime at last validation → FRESHNESS: did the file actually
+  #                        change since we last validated it?
   stamp_wall=0; stamp_mtime=0
   if [[ -f "$stamp" ]]; then
     stamp_wall=$(sed -n 1p "$stamp"); stamp_mtime=$(sed -n 2p "$stamp")
-    [[ -z "$stamp_mtime" ]] && stamp_mtime=$stamp_wall   # legacy single-line stamp
+    [[ -z "$stamp_mtime" ]] && stamp_mtime=$stamp_wall   # legacy single-line stamp: reuse wall for both axes
   fi
   md_epoch=$(file_mtime "$md")
-  (( md_epoch > stamp_mtime )) || continue   # unchanged since last successful validation
+  # FRESHNESS (mtime vs stamp line 2): if the file hasn't changed since last validation, skip it.
+  (( md_epoch > stamp_mtime )) || continue
   checked=$((checked+1))
   ok=1
 
-  # 1) newest session-log header must be at/after the watermark
+  # 1) RECENCY (header time vs stamp line 1, the wall-clock watermark): the newest session-log
+  #    header must sit at/after the last validation — a file that changed with no new log entry FAILs.
   latest=$(grep -oE '^## [0-9]{14} ' "$md" | tail -1 | tr -dc '0-9' || true)
   if [[ -z "$latest" ]]; then
     echo "FAIL: $name has no Session Log entry. Fix: run ticket-scribe (or reconstruct from: git -C '$WORK_ROOT' log -- 'Tickets/$name')."; ok=0
@@ -91,7 +100,7 @@ while IFS= read -r name; do
         [[ "$tok" =~ ^[A-Za-z0-9._-]+\.md$ ]] || continue # first token isn't a *.md filename: skip
         entry_files+="$tok"$'\n'
         # A tombstone (promotion record) exempts an entry from ghosting. Legacy estates may hold
-        # tombstones written with the UNICODE arrow (the pre-004b fix-line taught it), so accept
+        # tombstones written with the UNICODE arrow (an earlier fix-line taught it), so accept
         # BOTH "(promoted ->" and "(promoted →" — else an honest legacy tombstone flips
         # valid->ghost and red-blocks a real record (the exact R-04 failure). The emitted/
         # prescribed form stays ASCII "->" (see the fix-line below): accept-loose, prescribe-strict.

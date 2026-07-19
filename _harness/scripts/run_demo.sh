@@ -124,11 +124,11 @@ echo "  ok [6] — one token rule drove BOTH orphan-coverage (good.md) and ghost
 ak_reset $'- old.md (promoted -> General AI-Knowledge/Foo)\n- real.md — kept' real.md
 reg_run; reg_pass "7 tombstone-accepted"
 
-# 8. DASHLESS PRE-FIX ENTRY: a pre-004a hand-written line WITHOUT the leading "- " is not an entry
-#    under the grammar, so its file reads as an orphan and FAILs. This is CORRECT — the leading
-#    dash is now enforced. MIGRATION: operators with old dashless indexes must prepend "- " (the
-#    keeper agent already writes the dash post-004a, so only pre-existing hand-written indexes hit
-#    this). Asserting FAIL here proves the dash is load-bearing.
+# 8. DASHLESS PRE-FIX ENTRY: a hand-written line predating the leading-dash rule, WITHOUT the
+#    leading "- ", is not an entry under the grammar, so its file reads as an orphan and FAILs. This
+#    is CORRECT — the leading dash is now enforced. MIGRATION: operators with old dashless indexes
+#    must prepend "- " (the keeper agent now writes the dash, so only pre-existing hand-written
+#    indexes hit this). Asserting FAIL here proves the dash is load-bearing.
 ak_reset "notes.md — quirk" notes.md
 reg_run; reg_fail "8 dashless-pre-fix" "orphan file AI-Knowledge/notes.md"
 
@@ -245,12 +245,12 @@ set +e; bash _harness/scripts/make_context_pack.sh --ticket "My Random Ticket 42
 [ "$R09_RC" -eq 0 ] || { echo "BUG [R-09 D]: context pack failed on a space-named ticket (rc=$R09_RC)"; exit 1; }
 echo "  ok [R-09 D] — make_context_pack.sh handled a space-named ticket, exit 0"
 
-# --- W3: pending-ticket fourth state (graceful cancellation of custom names) ----------
+# --- pending-ticket fourth state (graceful cancellation of custom names) — issue #25 ---
 # A ticket ticket-init couldn't name gets a deliberately non-conforming placeholder name
 # PLUS a .ticket-pending marker: a REAL ticket that must NAG until renamed, and cannot be
-# silenced. These guards pin that the pending WARN is a DISTINCT message from the M1
-# hand-made WARN and is non-silenceable. A broken build flips them: checking .not-a-ticket
-# before .ticket-pending reddens [R-09 H]; reusing the M1 text reddens [R-09 I].
+# silenced. These guards pin that the pending WARN is a DISTINCT message from the
+# silenceable hand-made WARN and is non-silenceable. A broken build flips them: checking
+# .not-a-ticket before .ticket-pending reddens [R-09 H]; reusing the hand-made-WARN text reddens [R-09 I].
 R09_PEND="Tickets/pending-20260719120000"   # non-conforming placeholder name init would coin
 R09_HAND="Tickets/handmade-notes"           # a user's own non-conforming folder (contrast case)
 
@@ -273,18 +273,18 @@ printf '%s\n' "$R09_OUT" | grep -q "Tickets/pending-20260719120000 is a pending 
 [ "$R09_RC" -le "$BASELINE_RC" ] || { echo "BUG [R-09 H]: added a NEW failure (rc=$R09_RC > baseline=$BASELINE_RC)"; exit 1; }
 echo "  ok [R-09 H] — .not-a-ticket did NOT silence the pending ticket (pending wins)"
 
-# [R-09 I] contrast: a hand-made ticket-bearing folder with NO markers → the M1 silenceable
+# [R-09 I] contrast: a hand-made ticket-bearing folder with NO markers → the silenceable hand-made
 #          WARN, and NOT the pending WARN. Proves the two WARNs are distinct message types.
 r09_make "$R09_HAND"
 set +e; R09_OUT=$(bash _harness/scripts/harness-status.sh 2>&1); R09_RC=$?; set -e
 printf '%s\n' "$R09_OUT" | grep -q "Tickets/handmade-notes holds a .md record but doesn't match" \
-  || { echo "BUG [R-09 I]: hand-made folder lost its M1 silenceable WARN:"; printf '%s\n' "$R09_OUT"; exit 1; }
+  || { echo "BUG [R-09 I]: hand-made folder lost its silenceable hand-made WARN:"; printf '%s\n' "$R09_OUT"; exit 1; }
 printf '%s\n' "$R09_OUT" | grep -q "Tickets/handmade-notes is a pending ticket" \
   && { echo "BUG [R-09 I]: hand-made folder wrongly got the PENDING WARN:"; printf '%s\n' "$R09_OUT"; exit 1; }
-echo "  ok [R-09 I] — hand-made folder kept the M1 silenceable WARN (distinct from pending)"
+echo "  ok [R-09 I] — hand-made folder kept the silenceable hand-made WARN (distinct from pending)"
 
-# [R-09 J] hand-made folder + .not-a-ticket → silent (unchanged from M1). Proves the M1
-#          escape still works for genuinely user-owned folders.
+# [R-09 J] hand-made folder + .not-a-ticket → silent (unchanged behaviour). Proves the silenceable
+#          WARN's .not-a-ticket escape still works for genuinely user-owned folders.
 touch "$R09_HAND/.not-a-ticket"
 set +e; R09_OUT=$(bash _harness/scripts/harness-status.sh 2>&1); R09_RC=$?; set -e
 printf '%s\n' "$R09_OUT" | grep -q "Tickets/handmade-notes" \
@@ -331,7 +331,7 @@ printf '%s\n' "$R09_OUT" | grep -q "Tickets/202607M-XYZ-1 looks complete" \
   || { echo "BUG [R-09 M]: conforming-garbage rename silenced the nag — the marker no longer governs:"; printf '%s\n' "$R09_OUT"; exit 1; }
 [ "$R09_RC" -le "$BASELINE_RC" ] || { echo "BUG [R-09 M]: added a NEW failure (rc=$R09_RC > baseline=$BASELINE_RC)"; exit 1; }
 echo "  ok [R-09 M] — conforming-garbage rename STILL nags (nag follows the marker, not the name)"
-# --- end W3/R-14 pending-state guards -------------------------------------------------
+# --- end pending-state guards (issue #25 / R-14) --------------------------------------
 
 # Tear down the R-09 scratch folders so the estate is clean for the demonstration below.
 rm -rf "$R09_SPACE" "$R09_CONF" "$R09_LONG" "$R09_BAD" "$R09_PEND" "$R09_HAND" "$R09_KCONF" "$R09_MGARB"
@@ -466,11 +466,13 @@ echo "  ok [#1 guard: no unguarded GNU-only construct] — every GNU call has a 
 G3T="Tickets/202607S-PROJ-33"; g3md="$G3T/202607S-PROJ-33.md"
 r09_make "$G3T"
 sleep 1                                     # make the validation wall-clock strictly after the header time
-touch -t "$(date +%Y)01010000" "$g3md"      # anchor mtime to Jan 1 this year (M1) — months before 'now' (W1)
-bash _harness/scripts/check_ticket_log.sh >/dev/null 2>&1 || true   # stamp written: line1=W1(now), line2=M1(Jan1)
-# Case A — advance mtime to Feb 1 (M1 < M2 < W1) with NO new header. The change is above the stored
-# mtime but below the wall clock, so only a line-2 (mtime) freshness read notices it. Two-clock →
-# re-checks and FAILs "no new Session Log entry". Single-clock (line2=line1=W1) → M2 < W1 →
+# mnemonics below: mt1 = the anchored mtime (Jan 1), mt2 = the advanced mtime (Feb 1),
+# wall1 = the wall-clock at validation ('now'). Ordering that matters: mt1 < mt2 < wall1.
+touch -t "$(date +%Y)01010000" "$g3md"      # anchor mtime to Jan 1 this year (mt1) — months before 'now' (wall1)
+bash _harness/scripts/check_ticket_log.sh >/dev/null 2>&1 || true   # stamp written: line1=wall1(now), line2=mt1(Jan1)
+# Case A — advance mtime to Feb 1 (mt1 < mt2 < wall1) with NO new header. The change is above the
+# stored mtime but below the wall clock, so only a line-2 (mtime) freshness read notices it. Two-clock
+# → re-checks and FAILs "no new Session Log entry". Single-clock (line2=line1=wall1) → mt2 < wall1 →
 # "unchanged" → silently skips (the bug).
 touch -t "$(date +%Y)02010000" "$g3md"
 set +e; G3A=$(bash _harness/scripts/check_ticket_log.sh 2>&1); set -e
@@ -505,8 +507,8 @@ rm -rf "$G10"
 echo "  ok [#10 guard: real clone WIP not absorbed] — DID_INIT=0 skips the commit; WIP left uncommitted"
 # --- end backfill guards --------------------------------------------------------------
 
-# --- M3: status consolidation guards (#8+R-05, #14, R-11) -----------------------------
-echo "--- M3: status consolidation (#8+R-05 argv, #14 zip fallback, R-11 stale-commit) ---"
+# --- status consolidation guards (#8+R-05, #14, R-11) --------------------------------
+echo "--- status consolidation (#8+R-05 argv, #14 zip fallback, R-11 stale-commit) ---"
 
 # [#8+R-05 guard: hooks path passed as argv, awkward path safe] — the hooks-parse check must work
 # when the path contains a character that would BREAK a Python source-string literal. A single
@@ -558,7 +560,7 @@ printf '%s\n' "$R11_OUT2" | grep -q "recent session activity" \
   && { echo "BUG [R-11 guard]: stale-commit WARN fired while within the lag margin (commit current):"; printf '%s\n' "$R11_OUT2"; exit 1; }
 rm -rf "$R11T"
 echo "  ok [R-11 guard: stale-commit WARN] — fires when session activity outpaces the last commit, silent within margin"
-# --- end M3 guards --------------------------------------------------------------------
+# --- end status consolidation guards -------------------------------------------------
 
 # Break-and-restore status demonstration — deliberately runs AFTER the R-09 block so that on
 # a lane where a plain `harness-status` aborts under set -e, the R-09 stages have already been

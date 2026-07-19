@@ -43,15 +43,35 @@ Ticket folders live **outside** the VS Code multi-repo workspace (`GitHub/<your>
 ## Ticket Naming Convention
 
 Nothing requires a specific ticket-folder name. Name folders however suits
-your workflow. Names matching the recommended pattern are auto-validated; a
-differently-named folder that holds a ticket record is surfaced by
-harness-status as a heads-up (never blocked); non-matching names never break
-the tools. To use your own scheme, edit the one pattern in
-`_harness/scripts/ticket-grammar.sh`.
+your workflow. The tools recognise a **recommended default pattern** out of
+the box but never force it — naming is nudged, never enforced. A `Tickets/`
+folder is always in exactly one of four states:
 
-Put precisely: **matching names are validated; non-matching ticket-bearing
-folders are surfaced (WARNed), not validated; non-matching names never break
-the tools.**
+1. **Matches the pattern + holds a ticket record → auto-validated.** A real,
+   enforced ticket: the entry-gate validator checks its log and Current State
+   every session.
+2. **Hand-made, holds a ticket record, doesn't match → a heads-up (WARN).**
+   `harness-status` surfaces it so you never mistake an unvalidated folder for
+   a validated one: rename it to match, or — if it isn't really a ticket —
+   `touch .not-a-ticket` to silence it. Never blocked.
+3. **Pending (`.ticket-pending`) → a non-silenceable WARN.** When `ticket-init`
+   creates a ticket but can't name it properly (tracker unreachable **and** no
+   identity supplied), it gives the folder a deliberately non-conforming
+   placeholder name and drops a `.ticket-pending` marker. `harness-status` nags
+   ("rename to complete — this is a real ticket") every session until you give
+   it a proper name. This exists so init never leaves a real ticket silently
+   misfiled — the pending WARN takes precedence over `.not-a-ticket`, so a real
+   pending ticket can't be dismissed.
+4. **No ticket content, or marked `.not-a-ticket` → silent.**
+
+Nothing is ever blocked — there is no red `FAIL` for a naming choice; the
+tools nudge with yellow, never wall you off. The two markers:
+
+- `.not-a-ticket` — "this folder is **not** a ticket, leave it alone."
+  Silences the state-2 heads-up. Your call; tracked in git, so silencing is a
+  recorded, versioned choice.
+- `.ticket-pending` — "this **is** a real ticket, still awaiting its proper
+  name." Non-silenceable; only renaming to a conforming name resolves it.
 
 The **recommended default** pattern:
 
@@ -70,11 +90,25 @@ YYYYMM<seq>-<BOARD>-<num>
 PROJ-65474 → `202605A-PROJ-65474`. A busy month past `Z` rolls to `AA`,
 `AB`, … — `ticket-init` asks you how to extend rather than guessing.
 
-**Opt out of the heads-up:** if a `Tickets/` folder is deliberately *not* a
-ticket (a scratch or staging dir that happens to hold a `.md`), drop a
-`.not-a-ticket` marker file in it — `touch 'Tickets/<name>/.not-a-ticket'`.
-The marker is tracked in git, so silencing is a recorded, versioned choice,
-and harness-status stops WARNing about that folder.
+### Using your own scheme — one editable home
+
+The recognition pattern lives in exactly one place: the `TICKET_RE` line in
+`_harness/scripts/ticket-grammar.sh`, sourced by both the validator and
+`harness-status`, so editing that one line moves both tools together. Real
+teams have board schemes the default can't anticipate; adapting is a one-line
+change.
+
+**Worked example — a hyphenated board key.** A team whose issue-tracker board
+key contains a hyphen (e.g. `DATA-ENG`, so tickets read like
+`202607A-DATA-ENG-42`) finds these **unrecognised by default**: the default
+pattern expects a single board segment with no internal hyphen, so the extra
+`-ENG` segment doesn't match. The right fix is **not** to mark them
+`.not-a-ticket` (they ARE tickets) — it's to widen the board segment in
+`ticket-grammar.sh` to allow hyphens: `[A-Z0-9]*` → `[A-Z0-9-]*`. One line,
+and both tools now validate the team's real tickets. This is the canonical
+reason the pattern is editable: the default stays hyphen-free on purpose —
+for the common case it keeps names unambiguous and human-parseable — while
+editability is the escape hatch for everyone whose board it can't anticipate.
 
 ---
 
@@ -244,9 +278,9 @@ All repos live under `Work/GitHub/` (relative to this workspace root). List YOUR
 
 Invoked with the Jira link; every step below is also the by-hand fallback:
 
-1. Pull the full Jira issue — summary, description, acceptance criteria, comments, and the epic/parent one level up. (If Jira is unreachable, init from the template with `TODO` markers instead of failing.)
+1. Pull the full Jira issue — summary, description, acceptance criteria, comments, and the epic/parent one level up. (If Jira is unreachable, fill Background/Scope with `TODO` markers from the interview instead of failing — a *content* fallback; naming is decided separately in step 3.)
 2. Compute the ticket ID: scan `Tickets/` for this month's highest chronological letter and take the next one.
-3. Copy the `999912Z-PROJ-99999` template; rename folder and `.md`; fill the header (Jira URL, local path).
+3. Copy the `999912Z-PROJ-99999` template; fill the header (Jira URL, local path); then **name the folder and `.md` per two outcomes, never a silent misfile.** When you *can* determine the ticket's identity (tracker reachable, or the user supplied it), give it a **conforming** name matching the recommended pattern — an immediately-validated ticket; you conform on the user's behalf. When you *cannot* (tracker unreachable **and** no identity supplied), do **not** invent a fake-but-conforming name (it would validate silently as a misfiled stub); instead give the folder a deliberately non-conforming placeholder name (e.g. `pending-<timestamp>`) and drop a `.ticket-pending` marker inside it — a non-silenceable pending ticket that `harness-status` nags about until it is renamed. The nag is the intended safety mechanism.
 4. Present a short digest of the issue, then ask the user EXACTLY three things: (a) a paragraph explaining the ticket **in their own words**, (b) the **non-negotiables**, (c) the repo(s) involved.
 5. Write **Background** — leading with the user's paragraph as an "**In my words:**" block, followed by the Jira-derived context — and **Scope**, leading with a "**Non-negotiables**" checklist.
 6. **Adjacency scan:** grep prior ticket titles and Current States plus the `General AI-Knowledge/` index for related work; record any hits as pointers in Current State (e.g. "see 202605A-PROJ-65474, AI-Knowledge/field-mapping.md").

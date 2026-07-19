@@ -5,13 +5,25 @@ agent. The human map of the whole harness is the repository root `README.md`;
 the law is `folder-structure.md`.
 
 Nothing requires a specific ticket-folder name. Name folders however suits
-your workflow. Names matching the recommended pattern
-(`YYYYMM<seq>-<BOARD>-<num>`) are auto-validated; a differently-named folder
-that holds a ticket record is surfaced by harness-status as a heads-up (never
-blocked); non-matching names never break the tools. To use your own scheme,
-edit the one pattern in `_harness/scripts/ticket-grammar.sh`.
+your workflow — the tools recognise a recommended default pattern
+(`YYYYMM<seq>-<BOARD>-<num>`) but never force it. A folder here is always in
+one of four states:
 
-In short: matching names are validated; non-matching ticket-bearing folders
-are surfaced (WARNed), not validated; non-matching names never break the
-tools. To silence the heads-up on a folder that is deliberately not a ticket,
-drop a `.not-a-ticket` marker in it: `touch 'Tickets/<name>/.not-a-ticket'`.
+1. **Matches the pattern + holds a ticket record** → auto-validated (a real,
+   enforced ticket).
+2. **Hand-made, holds a record, doesn't match** → `harness-status` gives a
+   heads-up (WARN): rename it to match, or `touch .not-a-ticket` if it isn't
+   really a ticket. Never blocked.
+3. **Pending** (marked `.ticket-pending` by `ticket-init` when it couldn't
+   name the ticket) → a **non-silenceable** WARN that nags until you rename it
+   to a proper name. Takes precedence over `.not-a-ticket`, so a real ticket
+   is never silently misfiled.
+4. **No ticket content, or marked `.not-a-ticket`** → silent.
+
+Nothing is ever blocked — the tools nudge with yellow, never wall you off. The
+two markers: `.not-a-ticket` means "this is not a ticket, leave it alone"
+(silences state 2); `.ticket-pending` means "this is a real ticket awaiting
+its proper name" (non-silenceable). To use your own naming scheme, edit the
+one `TICKET_RE` line in `_harness/scripts/ticket-grammar.sh` — both the
+validator and `harness-status` follow it. See `folder-structure.md` for the
+full story and the hyphenated-board worked example.

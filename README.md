@@ -146,13 +146,22 @@ Work/                                        [git root · local-only · whitelis
 ```
 
 **On ticket-folder names:** nothing requires a specific ticket-folder name.
-Name folders however suits your workflow. Names matching the recommended
-pattern are auto-validated; a differently-named folder that holds a ticket
-record is surfaced by harness-status as a heads-up (never blocked);
-non-matching names never break the tools. To use your own scheme, edit the
-one pattern in `_harness/scripts/ticket-grammar.sh`. In short: matching names
-are validated; non-matching ticket-bearing folders are surfaced (WARNed), not
-validated; non-matching names never break the tools.
+Name folders however suits your workflow — the tools recognise a recommended
+default pattern but never force it. A `Tickets/` folder is in one of four
+states: **(1)** matches the pattern + holds a ticket record → auto-validated;
+**(2)** hand-made, holds a record, doesn't match → `harness-status` gives a
+heads-up (WARN) to rename it or `touch .not-a-ticket` to silence it — never
+blocked; **(3)** a pending ticket `ticket-init` couldn't name (marked
+`.ticket-pending`) → a **non-silenceable** WARN that nags until you give it a
+proper name (this takes precedence over `.not-a-ticket`, so a real ticket is
+never silently misfiled); **(4)** no ticket content, or marked `.not-a-ticket`
+→ silent. Nothing is ever blocked — the tools nudge with yellow, never wall
+you off. Two markers: `.not-a-ticket` ("not a ticket, leave it alone") and
+`.ticket-pending` ("a real ticket awaiting its name, non-silenceable"). The
+recognition pattern lives in one editable line
+(`_harness/scripts/ticket-grammar.sh`) that both tools share — e.g. a
+hyphenated board key like `DATA-ENG` needs the board segment widened there;
+see `folder-structure.md` for the worked example.
 
 ## The layers, bottom to top
 
@@ -219,12 +228,36 @@ States — Operational Rules*.
 
 Each fact has exactly one home; everything else points at it.
 
-## If you're here to change the harness
+## Developing this harness with an AI assistant
 
-Don't hand-edit from memory. Run `_harness/scripts/make_context_pack.sh`, take the pack to a
-design session, come back with an updated build prompt, and let the
-acceptance tests prove the change before you trust it. The system was built
-that way; keep it that way.
+The harness is built to be developed much the way you'd use it: clone the repo
+locally and point an agentic AI coding assistant at it to work on the harness
+itself. The repo root carries a **`CLAUDE.md`** — machine-facing instructions
+the assistant reads automatically — holding the full development rules (the
+working loop, the edit constraints, the acceptance gate).
+
+**Recommended setup:**
+
+- A real Unix environment — Linux or macOS, or **WSL** on Windows
+  (`wsl --install`, then work from your Linux home, not `/mnt/c`). The
+  acceptance demo needs a POSIX shell, `python3` with `nbformat`, and `zip`.
+  On Windows use WSL rather than **Git Bash** (a known MSYS-path +
+  Windows-Store-Python issue affects Git Bash); plain PowerShell can run `git`
+  but not the bash machinery.
+- An agentic AI coding tool (e.g. Claude Code) launched in the repo directory,
+  with git credentials configured so it can commit and push.
+
+**The loop:** the assistant applies a change, runs the acceptance demo
+(`bash _harness/scripts/run_demo.sh` — it must end with *ALL 6 DEMO STAGES
+PASSED*), and commits, with you reviewing before anything is pushed. Every
+behaviour change ships with a regression guard in that demo. See `CLAUDE.md`
+for the full rules; don't hand-edit the machinery from memory.
+
+**For an external design review** (rather than local iteration), run
+`_harness/scripts/make_context_pack.sh`: it produces a scrubbed, disposable
+zip of the harness to take to a design session — then come back with an
+updated build prompt and let the acceptance tests prove the change before you
+trust it. The system was built that way; keep it that way.
 
 ---
 

@@ -203,6 +203,13 @@ see `folder-structure.md` for the worked example.
   zip of the harness for external design review, landing on your Desktop.
   Disposable: upload, delete, regenerate anytime. Structure travels, payload
   never. Skim before it leaves the machine.
+- `_harness/scripts/harness-housekeeping.sh` — the repo grows with use
+  (an auto-write commit per file mutation, plus tracked `Checks/` notebooks
+  rewritten whole on each append), so `.git` becomes several times the
+  working-tree size over months. Run this by hand periodically to `git gc` /
+  repack and reclaim the space — it preserves all history and records, deletes
+  nothing. See *Repo Health / Housekeeping* in `folder-structure.md` for the
+  full growth story and the optional notebook-stripping step.
 
 ## The one pattern, repeated everywhere
 

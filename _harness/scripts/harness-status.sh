@@ -19,7 +19,7 @@ CORE=(ticket-init ticket-scribe check-scribe doc-writer knowledge-keeper knowled
 # machinery checks its siblings
 # ticket-grammar.sh is in this list too: it is the shared grammar both tools source,
 # so a missing/inert grammar lib must itself be caught here, not silently tolerated.
-for f in check_ticket_log.sh harness-status.sh ticket-grammar.sh append_notebook_cell.py make_context_pack.sh deploy_agents.sh; do
+for f in check_ticket_log.sh harness-status.sh ticket-grammar.sh append_notebook_cell.py make_context_pack.sh deploy_agents.sh harness-housekeeping.sh; do
   p="$SCRIPT_DIR/$f"
   [[ -f "$p" ]] || { echo "FAIL: missing script $f. Fix: restore from git: git -C '$WORK_ROOT' checkout -- '_harness/scripts/$f'"; fails=$((fails+1)); continue; }
   [[ -x "$p" ]] || { echo "FAIL: $f not executable. Fix: chmod +x '$p'"; fails=$((fails+1)); }
@@ -38,6 +38,27 @@ if git -C "$WORK_ROOT" rev-parse --git-dir >/dev/null 2>&1; then
   fi
 else
   echo "FAIL: no git repo at $WORK_ROOT. Fix: git -C '$WORK_ROOT' init (whitelist .gitignore already present)."; fails=$((fails+1))
+fi
+
+# repo-size nudge (issue #16): the record repo grows with every auto-write commit and every
+# tracked-notebook revision, so .git creeps up over months of use. Surface it when it gets
+# large and prescribe the fix — the same observe-and-prescribe pattern as the ticket WARNs.
+# This is a WARN, never a FAIL: storage growth is a yellow nudge to tidy, not a broken record
+# to block on, and the remedy (git gc via harness-housekeeping.sh) is a human act per doctrine.
+# The threshold is tunable via HARNESS_GIT_WARN_MB (default 50 MiB) — high enough to stay quiet
+# on a young repo, low enough to catch real bloat before it hurts. du -sk is portable (GNU/BSD);
+# the working-tree size is total-minus-.git since du --exclude is GNU-only.
+if [[ -d "$WORK_ROOT/.git" ]]; then
+  git_warn_mb="${HARNESS_GIT_WARN_MB:-50}"
+  git_kb=$(du -sk "$WORK_ROOT/.git" 2>/dev/null | awk '{print $1}')
+  work_kb=$(( $(du -sk "$WORK_ROOT" 2>/dev/null | awk '{print $1}') - git_kb ))
+  git_mib=$(awk -v k="$git_kb" 'BEGIN{ printf "%.1f", k/1024 }')
+  work_mib=$(awk -v k="$work_kb" 'BEGIN{ printf "%.1f", k/1024 }')
+  if (( git_kb > git_warn_mb * 1024 )); then
+    echo "WARN: the record repo's .git is ${git_mib} MiB (working tree ${work_mib} MiB). This grows with every auto-write commit and tracked notebook revision. Run _harness/scripts/harness-housekeeping.sh to repack and reclaim space (tune the threshold with HARNESS_GIT_WARN_MB, default 50)."
+  else
+    echo "OK: record repo .git ${git_mib} MiB (working tree ${work_mib} MiB) — under the ${git_warn_mb} MiB housekeeping threshold."
+  fi
 fi
 
 # hooks config parses

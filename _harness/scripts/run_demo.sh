@@ -374,6 +374,39 @@ if [ "$R10_TZ_SAVE" = "__unset__" ]; then unset TZ; else export TZ="$R10_TZ_SAVE
 rm -rf "$R10"
 # --- end R-10 -------------------------------------------------------------------------
 
+# --- G3: the human-run housekeeping script exists, runs, and reports (issue #16) ------
+# Pins that harness-housekeeping.sh runs cleanly and reports sizes without touching records.
+# It runs against a THROWAWAY repo (not the demo's real tree) so `git gc` has zero side effect
+# on the estate — the demo's "uses temp state" promise holds. We assert only that it exits 0
+# and reports .git size; NOT a specific reclaim amount (that varies with repo state).
+echo "--- G3: housekeeping runs clean (human-run repo maintenance) ---"
+G3_REPO=$(mktemp -d)
+git -C "$G3_REPO" init -q
+git -C "$G3_REPO" -c user.email=demo@local -c user.name=demo commit -q --allow-empty -m "seed"
+set +e; G3_OUT=$(bash _harness/scripts/harness-housekeeping.sh "$G3_REPO" 2>&1); G3_RC=$?; set -e
+[ "$G3_RC" -eq 0 ] || { echo "BUG [G3]: housekeeping exited non-zero (rc=$G3_RC):"; printf '%s\n' "$G3_OUT"; exit 1; }
+printf '%s\n' "$G3_OUT" | grep -q "\.git" \
+  || { echo "BUG [G3]: housekeeping did not report .git size:"; printf '%s\n' "$G3_OUT"; exit 1; }
+printf '%s\n' "$G3_OUT" | grep -q "REPACK: git gc" \
+  || { echo "BUG [G3]: housekeeping did not run the git gc repack step:"; printf '%s\n' "$G3_OUT"; exit 1; }
+rm -rf "$G3_REPO"
+echo "  ok [G3 housekeeping runs clean] — script runs, reports sizes, repacks, exit 0 (no record touched)"
+
+# [G3 bloat WARN] harness-status nudges (WARN) when .git exceeds HARNESS_GIT_WARN_MB, and the
+# nudge is YELLOW — exit stays 0, never a red FAIL. Force it by setting the threshold to 0 so
+# any non-empty .git trips it; then set it very high and assert it does NOT fire — pinning both
+# directions. Read-only: harness-status writes nothing, so running it on the real repo is safe.
+set +e; G3W_OUT=$(HARNESS_GIT_WARN_MB=0 bash _harness/scripts/harness-status.sh 2>&1); G3W_RC=$?; set -e
+printf '%s\n' "$G3W_OUT" | grep -q "WARN: the record repo's .git is" \
+  || { echo "BUG [G3 bloat WARN]: the .git-size nudge did not fire at threshold 0:"; printf '%s\n' "$G3W_OUT"; exit 1; }
+[ "$G3W_RC" -eq 0 ] || { echo "BUG [G3 bloat WARN]: the size nudge must be yellow (exit 0), got rc=$G3W_RC:"; printf '%s\n' "$G3W_OUT"; exit 1; }
+echo "  ok [G3 bloat WARN] — .git-size nudge fires and stays non-blocking (WARN, exit 0)"
+set +e; G3W_OUT2=$(HARNESS_GIT_WARN_MB=1000000 bash _harness/scripts/harness-status.sh 2>&1); set -e
+printf '%s\n' "$G3W_OUT2" | grep -q "WARN: the record repo's .git is" \
+  && { echo "BUG [G3 bloat WARN]: the size nudge fired while under threshold:"; printf '%s\n' "$G3W_OUT2"; exit 1; }
+echo "  ok [G3 bloat WARN] — under threshold, no nudge (fires only when it should)"
+# --- end G3 ---------------------------------------------------------------------------
+
 # Break-and-restore status demonstration — deliberately runs AFTER the R-09 block so that on
 # a lane where a plain `harness-status` aborts under set -e, the R-09 stages have already been
 # witnessed. The first call shows a healthy estate; then we remove a deployed agent and watch

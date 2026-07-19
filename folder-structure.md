@@ -406,7 +406,7 @@ It reports, with `OK` / `WARN` / `FAIL` prefixes:
 - `General AI-Knowledge/`: entries whose `Last reviewed:` date is older than
   6 months.
 - Liveness: last commit in the Work local git (auto-commit is alive),
-  hooks config parses, all five `.agent.md` files present and registered
+  hooks config parses, all six `.agent.md` files present and registered
   (agents can fail to load *silently* after Copilot updates).
 
 Every `FAIL` line includes the exact command or edit that fixes it.
@@ -414,3 +414,52 @@ Every `FAIL` line includes the exact command or edit that fixes it.
 Principle (applies to all harness tooling): **status observes, failures
 prescribe, nothing heals itself.** No auto-repair, no dashboards — a fixed
 record must always be a human act, or the audit trail stops meaning anything.
+
+---
+
+## Repo Health / Housekeeping (human-run maintenance)
+
+**The Work repo grows structurally, not accidentally.** Every file mutation
+triggers an auto-write commit (the safety net), and `Checks/` notebooks are
+tracked JSON that the notebook helper rewrites in full on each cell append —
+which git delta-compresses poorly. So the `.git` directory grows with the
+**number of commits and the churn of notebook revisions**, not with the live
+working-tree size. Over months of heavy use this is real: expect `.git` to
+become several times the working-tree size (already ~3× at only a couple dozen
+commits). This is the cost of the safety net, and it is worth paying — but it
+needs an occasional, deliberate tidy-up.
+
+**The remedy — run it by hand, periodically:**
+
+```
+_harness/scripts/harness-housekeeping.sh
+```
+
+It reports `.git` size, working-tree size, their ratio, and the commit count;
+runs `git gc` to collapse the thousands of loose per-write objects into
+packfiles (the actual reclaim); and reports the largest tracked notebooks.
+Run it monthly, or whenever `.git` feels large. It is **safe**: it repacks
+storage and preserves *all* history and records — it deletes no ticket, no
+log, no commit, and rewrites no history (`git gc` only drops
+already-unreachable objects). Pass `--aggressive` for a full recompress
+(slower, rarely worth it; plain `gc` already does the job).
+
+You don't have to remember a schedule: **`harness-status.sh` will WARN when
+`.git` grows past a threshold** (default 50 MiB) and prescribe the housekeeping
+command right there — the same observe-and-prescribe nudge as the ticket WARNs,
+yellow not red. Tune the threshold with the `HARNESS_GIT_WARN_MB` environment
+variable.
+
+**The notebook accumulator.** A heavily-checked ticket's
+`Checks/checks_master.ipynb` is the other thing that grows, because every
+appended cell re-commits the whole JSON file. If one gets large, you may strip
+its saved **outputs** to shrink it — e.g.
+`jupyter nbconvert --clear-output --inplace '<ticket>/Checks/checks_master.ipynb'`.
+This is a **deliberate manual choice**, never automatic: stripping mutates a
+record (it drops the saved cell outputs), so the housekeeping script only
+*reports* notebook sizes and never edits them for you.
+
+**Squares with the doctrine.** Housekeeping is a human act, never automatic —
+consistent with *status observes, failures prescribe, nothing heals itself*.
+No hook invokes the script; you do. It compacts *storage*; it never alters or
+deletes the *content* of a record.

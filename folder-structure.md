@@ -463,3 +463,13 @@ record (it drops the saved cell outputs), so the housekeeping script only
 consistent with *status observes, failures prescribe, nothing heals itself*.
 No hook invokes the script; you do. It compacts *storage*; it never alters or
 deletes the *content* of a record.
+
+---
+
+## Porting to another AI assistant
+
+The harness is coupled to GitHub Copilot at only three thin, isolated points —
+the `_agents/*.agent.md` format, the `hooks.example.json` hook shape, and
+`deploy_agents.sh`'s deploy target; everything else is assistant-agnostic. See
+**Porting to another AI assistant (the vendor seam)** in `CLAUDE.md` for the
+full seam map and the planned (not-yet-built) `ADAPTERS/` layer.

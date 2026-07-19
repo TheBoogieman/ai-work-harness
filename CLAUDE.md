@@ -77,6 +77,35 @@ claude-code, zip, and the `nbformat` python package (the notebook helper needs
 it: `pip install nbformat --break-system-packages`). Git push works over
 HTTPS via `gh auth`.
 
+## Porting to another AI assistant (the vendor seam)
+
+The harness is coupled to GitHub Copilot at exactly **three** thin, isolated
+points. Everything else — the doctrine, the bash/python machinery, the git
+safety net, the validation model, the ticket states, context packs — is
+assistant-agnostic and works with any AI coding tool. (This repo is in fact
+developed using Claude Code, not Copilot, which exercises that portability.)
+The three Copilot-specific pieces:
+
+1. **`_agents/*.agent.md`** (six files) use Copilot's agent format —
+   frontmatter like `user-invocable` and `tools`. The instruction *content* is
+   portable; only the wrapper format is Copilot-specific.
+2. **`_harness/hooks/hooks.example.json`** uses Copilot's `postToolUse` hook
+   format to fire the auto-commit on file writes. Another assistant's hook
+   system would use a different config shape.
+3. **`_harness/scripts/deploy_agents.sh`** targets the Copilot agents directory
+   (`~/.copilot/agents`).
+
+Porting to another assistant means translating these three — mechanical work,
+not redesign; the ~90% of value above this line carries over untouched.
+
+**FUTURE (not built yet):** an `ADAPTERS/` layer would formalise this — one
+subdirectory per assistant (`copilot/`, `claude-code/`, …) holding that
+assistant's agent-format files, hook config, and deploy target, with the
+portable core referencing whichever adapter is active. This is deliberately
+**not** implemented yet (YAGNI until multi-assistant support is actually
+wanted); this note is the marker so the design intent isn't lost. Revisit once
+the issue board is clear and the project is self-contained.
+
 ## Where to look
 - folder-structure.md — the constitution (harness rules for the user's work;
   Part I always-load, Part II on-demand).

@@ -34,9 +34,9 @@ round-trips the notebook helper, breaks and manually restores an agent deploymen
 produces a scrubbed context pack with a manifest self-audit. If all six
 stages pass, the machinery works on your machine.
 
-The same demo runs in CI: on every push to `main` (and on manual dispatch),
-GitHub Actions runs `run_demo.sh` on both Linux and macOS, so the GNU/BSD
-portability branches are exercised for real on macOS, not via shims.
+The same demo runs in CI: on every push to `main`, on every pull request into `main`,
+and on manual dispatch, GitHub Actions runs `run_demo.sh` on both Linux and macOS, so
+the GNU/BSD portability branches are exercised for real on macOS, not via shims.
 
 **Then wire your AI assistant:** follow `INSTALL.md` (~30 minutes) —
 personalise the backbone, pin real model IDs into the six agents, deploy
@@ -117,7 +117,7 @@ Work/                                        [git root · local-only · whitelis
 ├── .gitignore                               /* deny-all → re-include record set
 ├── folder-structure.md                      THE CONSTITUTION · Part I always / Part II on demand
 ├── AGENTS.md                                door-note → folder-structure.md
-├── .github/workflows/                       CI — runs the demo on Linux + macOS on every push to main
+├── .github/workflows/                       CI — runs the demo on Linux + macOS on every push to main and PR into main
 │
 ├── _harness/
 │   └── scripts/                             THE MACHINERY (versioned)

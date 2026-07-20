@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+# docs-check.sh — CI-side documentation governance (#42). It gates MERGES; the demo gates the
+# PRODUCT — two truths, two instruments (cond 3). DEV infrastructure: it lives under .github/ and
+# NEVER ships to a user estate (#43); no PRODUCT script references it. Pure greps, zero judgment,
+# each detector's failure names its exact fix (addition-D). The demo carries ZERO README knowledge
+# (cond 2); all documentation-state checks live here, in ONE home.
+#
+# Inputs (so the detectors are testable locally AND in CI):
+#   PR_BODY               the pull-request body text (for the [diagrams-unaffected] token)
+#   DOCS_CHANGED_FILES    newline list of files changed in the PR; if unset, computed from git
+#   DOCS_BASE_REF         base ref for the diff when DOCS_CHANGED_FILES is unset (default origin/main)
+set -uo pipefail
+fail=0
+README=README.md
+DESIGN="General AI-Knowledge/AI Harness/DESIGN.md"
+readme_body=$(cat "$README")
+
+# --- B1 INVENTORY — every shipped script + the two root surfaces named in README's folder map ---
+# (the #34 docs-inventory guard, MIGRATED out of run_demo.sh; it gates merges now, not the demo.)
+b1_total=0
+for s in _harness/scripts/* install.sh setup.md; do
+  base=$(basename "$s"); b1_total=$((b1_total+1))
+  grep -Fq -- "$base" <<<"$readme_body" \
+    || { echo "FAIL [docs B1-inventory]: $base ships but is not named in README's folder map — add its tree line."; fail=1; }
+done
+[ "$fail" -ne 0 ] || echo "  ok [docs B1-inventory] — $b1_total shipped surfaces named in README"
+
+# --- B2 FROZEN SWEEP SET — the cond-1 zero-gap matrix, pinned as ONE named grep per surface -----
+# Each swept user-facing surface = one assertion with its own prescriptive miss, so coverage of a
+# surface cannot silently regress (cond 3 "cannot regress"). Extend this list when a NEW surface is
+# swept; never blob it. Format: "LABEL<TAB>literal string that must appear in README".
+b2_pairs=(
+  "ticket-naming	YYYYMM"
+  "ticket-state-pending	.ticket-pending"
+  "ticket-state-silenced	.not-a-ticket"
+  "ticket-init-agent	ticket-init"
+  "branch-workflow-anchor	Fixes #"
+  "governance-checks	governance.yml"
+  "ship-dev-manifest	ship-manifest"
+  "venv-prerequisite	venv_global"
+  "contributor-guide	CONTRIBUTING"
+)
+for pair in "${b2_pairs[@]}"; do
+  label=${pair%%	*}; needle=${pair#*	}
+  grep -Fq -- "$needle" <<<"$readme_body" \
+    || { echo "FAIL [docs B2-sweep:$label]: README no longer documents this surface (missing \"$needle\") — restore its telling."; fail=1; }
+done
+
+# --- grammar-drift — the branch regex's one home (branch-grammar.sh) quoted verbatim in its doc ---
+# homes. Also documentation-state, so it lives here now (out of the demo). Revert-provable per home.
+gd_re=$(grep -oE "BRANCH_RE='[^']+'" .github/scripts/branch-grammar.sh | sed "s/^BRANCH_RE='//; s/'\$//")
+if [ -z "$gd_re" ]; then
+  echo "FAIL [docs grammar-drift]: could not read BRANCH_RE from branch-grammar.sh"; fail=1
+else
+  for gd_home in CLAUDE.md README.md .github/CONTRIBUTING.md; do
+    grep -Fq -- "$gd_re" "$gd_home" \
+      || { echo "FAIL [docs grammar-drift]: $gd_home does not quote the branch regex verbatim ($gd_re) — sync it to branch-grammar.sh."; fail=1; }
+  done
+fi
+
+# --- B3 SEPARATION — diagrams have EXITED README: zero .svg references (amendment 4-revised-a) ----
+svg_refs=$(grep -c '\.svg' "$README" || true)
+[ "$svg_refs" -eq 0 ] \
+  || { echo "FAIL [docs B3-separation]: README references a diagram ($svg_refs .svg mention(s)) — README must not embed diagrams; keep only the pointer to General AI-Knowledge/AI Harness/."; fail=1; }
+
+# --- B4 STRUCTURE — DESIGN.md carries a dated currency-note section (cond 4 / amendment) ----------
+grep -qiE 'Diagram currency \([0-9]{4}-[0-9]{2}-[0-9]{2}\)' "$DESIGN" \
+  || { echo "FAIL [docs B4-structure]: $DESIGN is missing its dated 'Diagram currency (YYYY-MM-DD)' note section — add/restore it."; fail=1; }
+
+# --- DESIGN.md TRIGGER — depicted machinery changed without a currency-note disposition ----------
+# (addition-C): if this PR touches _harness/scripts/**, _agents/**, or _harness/hooks/** and does
+# NOT touch DESIGN.md, the note's honesty is an unanswered question -> RED, UNLESS the PR body
+# carries [diagrams-unaffected: <non-empty reason>]. The machine can't judge whether prose reflects
+# reality, but it can refuse to merge the unanswered question.
+if [ "${DOCS_CHANGED_FILES+x}" = x ]; then changed="$DOCS_CHANGED_FILES"; else
+  changed=$(git diff --name-only "${DOCS_BASE_REF:-origin/main}...HEAD" 2>/dev/null || true)
+fi
+if printf '%s\n' "$changed" | grep -qE '^(_harness/scripts/|_agents/|_harness/hooks/)'; then
+  if ! printf '%s\n' "$changed" | grep -qxF "$DESIGN"; then
+    reason=$(printf '%s' "${PR_BODY:-}" | grep -oE '\[diagrams-unaffected:[^]]*\]' | head -1 | sed -E 's/^\[diagrams-unaffected:[[:space:]]*//; s/[[:space:]]*\]$//')
+    [ -n "$reason" ] \
+      || { echo "FAIL [docs DESIGN-trigger]: machinery changed without a DESIGN.md currency-note update — update the note, or add [diagrams-unaffected: reason] to the PR body."; fail=1; }
+  fi
+fi
+
+[ "$fail" -eq 0 ] || { echo "docs-check: FAILED — each line above names its fix."; exit 1; }
+echo "docs-check: all detectors pass (inventory, frozen-sweep, grammar-drift, separation, structure, DESIGN-trigger)."

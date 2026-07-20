@@ -37,12 +37,51 @@ agent deployment, and builds a scrubbed context pack with a manifest self-audit.
 The same demo runs in CI on Linux + macOS on every push and PR into `main`, so
 the GNU/BSD portability branches are exercised for real, not via shims.
 
-**2 · Install onto your estate and wire your assistant (~10 minutes).** Follow
-`INSTALL.md` — run `install.sh` (it lays down the estate, inits git, deploys
-agents, installs the hooks, runs the validator + status), then paste `setup.md`
-into your AI assistant of choice as the final validation gate. *(Prerequisites,
-any platform: `python3` with `nbformat`; `unzip` on Linux/macOS — the
-context-pack helper falls back to Python's zipfile if it is missing.)*
+**2 · Install onto your estate and wire your assistant (~10 minutes).**
+
+*Prerequisite you create (the harness never does):* a Python virtualenv named
+exactly **`venv_global`** with `nbformat`, registered as a Jupyter kernel and set
+as the workspace default interpreter. (`unzip` is optional — the context-pack
+helper falls back to Python's zipfile without it.)
+
+```bash
+python3.12 -m venv ~/venvs/venv_global   # 3.12 assumed; a newer python3 also works
+source ~/venvs/venv_global/bin/activate && pip install nbformat   # + your toolchain (dbt etc.)
+```
+
+`pip install` works directly inside the activated venv; installing `nbformat`
+into a **system** Python instead needs `pip install nbformat --break-system-packages`
+on PEP 668 distros. Then run the installer and hand off:
+
+```bash
+bash install.sh /path/to/your/Work
+```
+
+`install.sh` is a non-destructive **dumb creator** — it lays down PRODUCT files
+only, scaffolds any absent ticket anatomy, initialises a whitelist-scoped
+**local-only** git repo with a day-zero commit, copies the verified hook config
+to `.github/hooks/harness.json`, deploys the agents, and runs the validator +
+status; it **never edits an existing file**, so a re-run finds nothing absent. It
+asks for your board key and model pins (Enter accepts each suggested default;
+`--dry-run` plans without touching anything, `--yes` accepts every default). The
+agents deploy to your Copilot version's discovery directory — verify that path
+for your version (override with `HARNESS_AGENT_DEPLOY_DIR`). Finally, paste
+`setup.md` into your AI assistant, working in the new estate: it is the **final
+validation gate** — it confirms the validator + status are green, spot-checks the
+scaffolded tickets, and walks you through the personalisation the installer left
+you (model pins, `LICENSE`, scrub-table seeds, Owner lines).
+
+### Hook activation caveat
+
+The auto-commit hook is *witnessed firing* on the VS Code Copilot IDE agent
+(v1.129.1, 2026-07-20) on an **established, trusted** workspace. On a
+**freshly-created** workspace, `postToolUse` did **not** auto-fire immediately in
+testing — even after trusting the folder and reloading; the exact fresh-estate
+activation trigger is not fully characterised, so expect a first real session or
+a Copilot restart may be needed. The git safety net is the backstop — if a write
+wasn't auto-committed, commit it by hand; nothing in the record depends on the
+hook firing. (CLI and cloud Copilot surfaces are UNVERIFIED — their schema may
+differ.)
 
 ## What it does, plainly
 
@@ -65,9 +104,9 @@ Anything marked *swappable* degrades gracefully if you differ.
   multi-user access to a shared record repo. The auto-commit-per-write and
   single-writer git model assume one writer.
 - **GitHub Copilot with custom agents + lifecycle hooks** (CLI and/or
-  VS Code). Both features are preview-grade; `INSTALL.md` tells you to
-  verify config schemas against your version's docs. Without Copilot the
-  conventions and scripts still work — you just invoke agents' jobs by hand.
+  VS Code). Both features are preview-grade — verify config schemas against your
+  version's docs (see **Setup**). Without Copilot the conventions and scripts
+  still work — you just invoke agents' jobs by hand.
 - **VS Code** as the editor (*swappable* — nothing hard-depends on it, but
   the notebook/interpreter flow is written for it).
 - **git** installed; the harness creates a **local-only** repo at the
@@ -103,8 +142,8 @@ Anything marked *swappable* degrades gracefully if you differ.
 - `Tickets/999912Z-PROJ-99999/` — the template ticket.
 - `General AI-Knowledge/AI Harness/` — the two blueprint sheets + design
   notes.
-- `INSTALL.md` / `install.sh` / `setup.md` — the flat-pack instructions, the
-  installer that assembles the estate, and the AI-assistant final-gate prompt.
+- `install.sh` / `setup.md` — the installer that assembles the estate and the
+  AI-assistant final-gate prompt (setup steps live under **Setup**, above).
 
 ## The drawings
 
@@ -279,8 +318,7 @@ Each fact has exactly one home; everything else points at it.
 > people hacking on the harness itself (branches, PRs, CI). None of it is estate
 > setup — the files it names (`CLAUDE.md`, `.github/`, `run_demo.sh`) are
 > classified DEV in `.github/ship-manifest.txt` and never ship. To *install* the
-> harness, see [INSTALL.md](INSTALL.md); nothing here points a user at dev
-> machinery.
+> harness, see **Setup** above; nothing here points a user at dev machinery.
 
 The harness is built to be developed much the way you'd use it: clone the repo
 locally and point an agentic AI coding assistant at it to work on the harness

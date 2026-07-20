@@ -59,7 +59,7 @@ Doctrine you must never violate when changing this code:
 - Every bug fix ships with a regression guard that provably FAILS on the
   pre-fix code (prove it by reverting the fix and watching the guard go red).
   No bug is "fixed" without one. (Project rule "G5".)
-- Every claim in README, the constitution, and INSTALL must be true at HEAD
+- Every claim in README and the constitution must be true at HEAD
   or removed. A code comment is a claim too — a comment that misdescribes the
   code is a defect. (Project rule "G4".)
 - Comment-only passes commit SEPARATELY from behaviour changes.

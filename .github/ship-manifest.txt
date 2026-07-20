@@ -26,7 +26,6 @@ DEV	CLAUDE.md
 PRODUCT	General AI-Knowledge/AI Harness/DESIGN.md
 PRODUCT	General AI-Knowledge/AI Harness/harness-architecture.svg
 PRODUCT	General AI-Knowledge/AI Harness/harness-session-flow.svg
-PRODUCT	INSTALL.md
 PRODUCT	LICENSE
 PRODUCT	README.md
 PRODUCT	Tickets/999912Z-PROJ-99999/999912Z-PROJ-99999.md

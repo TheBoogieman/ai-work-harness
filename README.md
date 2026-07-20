@@ -162,29 +162,41 @@ Work/                                        [git root · local-only · whitelis
 └── [GitHub/ · Diagrams/ · Mappings/ · …]    [never enter history — whitelist excludes them]
 ```
 
-**On ticket-folder names:** nothing requires a specific ticket-folder name.
-Name folders however suits your workflow — the tools recognise a recommended
-default pattern but never force it. A `Tickets/` folder is in one of four
-states: **(1)** matches the pattern + holds a ticket record → auto-validated;
-**(2)** hand-made, holds a record, doesn't match → `harness-status` gives a
-heads-up (WARN) to rename it or `touch .not-a-ticket` to silence it — never
-blocked; **(3)** a pending ticket `ticket-init` couldn't name (marked
-`.ticket-pending`) → a **non-silenceable** WARN, completed in two steps
-(rename to a conforming name **and** remove the marker) and nagging until both
-are done — the marker, not the name, is the lifecycle token, so a conforming
-rename alone can't leave a real ticket silently misfiled; it also takes
-precedence over `.not-a-ticket`, so a real ticket can't be dismissed; **(4)**
-no ticket content, or marked `.not-a-ticket` → silent. Nothing is ever blocked
-for a *naming* choice — the tools nudge with yellow, never wall you off. (One
-edge case sits outside these four: a recognised name commits the folder to
-validation, so a conforming folder missing its `.md` record is a validator
-`FAIL` — add the record.) Two markers: `.not-a-ticket`
-("not a ticket, leave it alone") and `.ticket-pending` ("a real ticket
-awaiting completion — rename **and** remove the marker; non-silenceable"). The
-recognition pattern lives in one editable line
-(`_harness/scripts/ticket-grammar.sh`) that both tools share — e.g. a
-hyphenated board key like `DATA-ENG` needs the board segment widened there;
-see `folder-structure.md` for the worked example.
+**On ticket-folder names:** nothing requires a specific ticket-folder name —
+name folders however suits your workflow. The tools recognise a recommended
+default pattern but never force it. A `Tickets/` folder is in one of four states:
+
+- **(1) Conforming + recorded** — matches the pattern *and* holds a ticket
+  record → auto-validated.
+- **(2) Hand-made + recorded** — holds a record but doesn't match the pattern →
+  `harness-status` gives a heads-up (WARN) to either rename it *or* `touch
+  .not-a-ticket` to silence it. Never blocked.
+- **(3) Pending** — a real ticket `ticket-init` couldn't name, marked
+  `.ticket-pending` → a **non-silenceable** WARN. It nags until *both* of its
+  completion steps are done:
+  - Two-step completion: rename to a conforming name **and** remove the marker.
+  - The **marker, not the name, is the lifecycle token** — a conforming rename
+    alone can't leave a real ticket silently misfiled.
+  - `.ticket-pending` takes **precedence over `.not-a-ticket`**, so a real
+    ticket can't be dismissed.
+- **(4) Not a ticket** — no ticket content, *or* explicitly marked
+  `.not-a-ticket` → silent.
+
+**Outside the four states**, one edge case: a recognised name commits the folder
+to validation, so a conforming folder *missing* its `.md` record is a validator
+`FAIL` — add the record.
+
+The two markers:
+
+- `.not-a-ticket` — "not a ticket, leave it alone."
+- `.ticket-pending` — "a real ticket awaiting completion; rename **and** remove
+  the marker — non-silenceable."
+
+Nothing is ever blocked for a *naming* choice: the tools nudge with yellow,
+never wall you off. The recognition pattern lives in one editable line
+(`_harness/scripts/ticket-grammar.sh`) that both tools share — e.g. a hyphenated
+board key like `DATA-ENG` needs the board segment widened there; see
+`folder-structure.md` for the worked example.
 
 ## The layers, bottom to top
 

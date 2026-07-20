@@ -2,6 +2,7 @@
 # run_demo.sh — proves the harness machinery works on THIS machine in ~20s.
 # No Copilot needed. Safe: uses temp state, creates+destroys one scratch ticket.
 set -euo pipefail
+echo "WITNESS #41: forced failure to prove CI blocks merge — never merge this branch"; exit 1
 export HARNESS_DEMO=1   # lets status treat a template-clone remote as a NOTE, not a FAIL
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/../.."

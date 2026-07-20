@@ -923,10 +923,10 @@ while IFS= read -r d; do [ -e "$I39_EST/$d" ] && { echo "  DEV leak: $d"; i39_le
 [ "$i39_leak" -eq 0 ] || { echo "BUG [#39 product-only]: a DEV file reached the installed estate"; exit 1; }
 echo "  ok [#39 product-only] — fresh estate contains zero DEV files"
 # (c) dumb creator (cond 2, ABSOLUTE): a pre-existing (corrupted) file is byte-UNCHANGED by a re-run.
-echo "GARBAGE" > "$I39_EST/AGENTS.md"; i39_before=$(sha256sum "$I39_EST/AGENTS.md" | awk '{print $1}')
+# Compare with cmp against a snapshot (portable — no sha256sum, which stock macOS lacks).
+echo "GARBAGE" > "$I39_EST/AGENTS.md"; cp "$I39_EST/AGENTS.md" "$I39_ROOT/agents.snapshot"
 HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh --yes "$I39_EST" >/dev/null 2>&1
-i39_after=$(sha256sum "$I39_EST/AGENTS.md" | awk '{print $1}')
-[ "$i39_before" = "$i39_after" ] || { echo "BUG [#39 dumb-creator]: install EDITED a pre-existing file (AGENTS.md changed) — it must create only what is absent"; exit 1; }
+cmp -s "$I39_ROOT/agents.snapshot" "$I39_EST/AGENTS.md" || { echo "BUG [#39 dumb-creator]: install EDITED a pre-existing file (AGENTS.md changed) — it must create only what is absent"; exit 1; }
 echo "  ok [#39 dumb-creator] — pre-existing file left byte-unchanged (creates only what is absent)"
 # (d) idempotency: a re-run finds nothing absent and creates zero.
 i39_plan=$(HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh --yes "$I39_EST" 2>&1 | grep -oE 'PRODUCT files to create: [0-9]+' | head -1)

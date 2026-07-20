@@ -60,6 +60,12 @@ ask() {  # ask <prompt> <default> ; echoes the answer (default under --yes or on
 }
 CREATED=()   # paths (relative to TARGET) this run actually created — the ONLY things config may touch
 plan_create=(); plan_exists=()
+# Portable in-place sed: GNU sed wants `-i`, BSD/macOS sed wants `-i ''`. Detect via --version
+# (GNU prints it, BSD errors). Project rule: no GNU-only flag without a BSD fallback.
+sedi() { if sed --version >/dev/null 2>&1; then sed -i "$@"; else sed -i '' "$@"; fi; }
+# NOTE on array expansion: stock-macOS bash 3.2 errors on "${arr[@]}" when arr is EMPTY under
+# `set -u`, so every expansion below uses the "${arr[@]+"${arr[@]}"}" idiom — it yields the quoted
+# elements when set (spaces in paths like "General AI-Knowledge/" preserved) and nothing when empty.
 
 # ---- identity interview (ask-everything, strong defaults; #39 amendment A) -------------------
 DEF_BOARD="PROJ"
@@ -112,8 +118,8 @@ NEED_HOOK=0; [ -e "$TARGET/$HOOK_REL" ] || NEED_HOOK=1
 # ---- print the plan (always; the whole plan for --dry-run) -----------------------------------
 echo "=== install plan for estate: $TARGET ==="
 echo "PRODUCT files to create: ${#plan_create[@]}   (already present: ${#plan_exists[@]})"
-for p in "${plan_create[@]}"; do echo "  create   $p"; done
-for s in "${scaffold_targets[@]}"; do echo "  scaffold $s"; done
+for p in ${plan_create[@]+"${plan_create[@]}"}; do echo "  create   $p"; done
+for s in ${scaffold_targets[@]+"${scaffold_targets[@]}"}; do echo "  scaffold $s"; done
 [ "$NEED_HOOK" -eq 1 ] && echo "  create   $HOOK_REL   (hook config, copied from _harness/hooks/hooks.example.json)"
 [ "$NEED_GIT" -eq 1 ] && echo "  git init + whitelist-scoped day-zero commit"
 echo "  deploy agents; then run validator + status"
@@ -124,13 +130,13 @@ fi
 
 # ---- execute: create absent PRODUCT files (dumb creator — absent only) -----------------------
 mkdir -p "$TARGET"   # real run only (dry-run already exited): now it is safe to create the estate dir
-for rel in "${plan_create[@]}"; do
+for rel in ${plan_create[@]+"${plan_create[@]}"}; do
   mkdir -p "$(dirname "$TARGET/$rel")"
   cp -p "$SOURCE/$rel" "$TARGET/$rel"
   CREATED+=("$rel")
 done
 # ticket scaffolding — create absent anatomy only
-for rel in "${scaffold_targets[@]}"; do
+for rel in ${scaffold_targets[@]+"${scaffold_targets[@]}"}; do
   mkdir -p "$(dirname "$TARGET/$rel")"
   case "$rel" in
     */_index.md) printf '%s\n%s\n' \
@@ -143,21 +149,21 @@ done
 
 # ---- config applied AT LAYDOWN, to CREATED files ONLY (amendment C reconciles cond 2) --------
 # We parameterise only files THIS run created. A pre-existing file is reported, never edited.
-was_created() { local q="$1" c; for c in "${CREATED[@]}"; do [ "$c" = "$q" ] && return 0; done; return 1; }
+was_created() { local q="$1" c; for c in ${CREATED[@]+"${CREATED[@]}"}; do [ "$c" = "$q" ] && return 0; done; return 1; }
 # Board widening: edit the CREATED ticket-grammar.sh only.
 if [ "$BOARD_WIDEN" -eq 1 ]; then
   if was_created "_harness/scripts/ticket-grammar.sh"; then
     # The documented one-line widening: board segment [A-Z0-9]* -> [A-Z0-9-]* (folder-structure.md).
-    sed -i "s/\[A-Z\]\[A-Z0-9\]\*/[A-Z][A-Z0-9-]*/" "$TARGET/_harness/scripts/ticket-grammar.sh"
+    sedi "s/\[A-Z\]\[A-Z0-9\]\*/[A-Z][A-Z0-9-]*/" "$TARGET/_harness/scripts/ticket-grammar.sh"
   else
     echo "note: ticket-grammar.sh already existed — NOT edited. To widen it yourself, change [A-Z0-9]* to [A-Z0-9-]* (see folder-structure.md)."
   fi
 fi
 # Model pins: replace placeholders in CREATED agent files only.
-for rel in "${CREATED[@]}"; do
+for rel in ${CREATED[@]+"${CREATED[@]}"}; do
   case "$rel" in _agents/*.agent.md)
-    [ "$CHEAP_MODEL" = "PICK-A-CHEAP-MODEL" ] || sed -i "s/PICK-A-CHEAP-MODEL/$CHEAP_MODEL/" "$TARGET/$rel"
-    [ "$SONNET_MODEL" = "PICK-A-SONNET-CLASS-MODEL" ] || sed -i "s/PICK-A-SONNET-CLASS-MODEL/$SONNET_MODEL/" "$TARGET/$rel"
+    [ "$CHEAP_MODEL" = "PICK-A-CHEAP-MODEL" ] || sedi "s/PICK-A-CHEAP-MODEL/$CHEAP_MODEL/" "$TARGET/$rel"
+    [ "$SONNET_MODEL" = "PICK-A-SONNET-CLASS-MODEL" ] || sedi "s/PICK-A-SONNET-CLASS-MODEL/$SONNET_MODEL/" "$TARGET/$rel"
   ;; esac
 done
 

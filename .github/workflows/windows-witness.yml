@@ -1,0 +1,46 @@
+# windows-witness.yml — runs the acceptance demo on a windows-latest runner under its
+# MSYS/Git-Bash shell. This is a STANDING TRIPWIRE for the native-Windows development lane
+# (#40): the harness is developed on native Windows (Git-Bash/Cygwin), and this job is the
+# only automated eye on an MSYS bash executing the machinery.
+#
+# INFORMATIONAL ONLY — NON-GATING BY DESIGN. It is deliberately NOT a required check and is
+# NOT added to branch protection. MSYS bash on the GitHub runner is a CORRELATED, not
+# identical, witness to the seat's Cygwin bash (different runtime, different coreutils build),
+# so a red here is a signal about the MSYS lane, never a reason to block a merge. Promotion to
+# a required check must wait for a later wave that proves this lane stable. (A comment is a
+# claim — G4: this job is informational today, full stop.)
+name: windows-witness
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# Per-branch concurrency, mirroring the other workflows.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows-demo:
+    name: "windows MSYS witness (informational)"
+    runs-on: windows-latest
+    defaults:
+      run:
+        # Use the runner's Git-Bash (MSYS) as the shell — the same family a native-Windows
+        # developer uses, which is exactly the lane this job witnesses.
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      # Same dependency the demo needs everywhere (the notebook helper imports nbformat) —
+      # parity with demo.yml, not an MSYS-specific adaptation.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install nbformat (the notebook helper's only dependency)
+        run: python3 -m pip install nbformat
+      # The demo self-anchors, sets HARNESS_DEMO, and uses temp dirs — it runs headless and
+      # exits 0 only on "ALL 6 DEMO STAGES PASSED". A red here is a lane-finding to investigate,
+      # not something this workflow silences.
+      - name: Run acceptance demo under MSYS bash
+        run: bash _harness/scripts/run_demo.sh

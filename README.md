@@ -70,10 +70,10 @@ Anything marked *swappable* degrades gracefully if you differ.
   clones and a `.code-workspace`; *optional* — the harness gitignores it and
   never touches it, but the repo-mapping conventions assume it exists).
 - **bash** (macOS/Linux; the scripts auto-detect GNU vs BSD userland, so
-  stock macOS works without installing coreutils). **Windows:** run the harness
-  inside **WSL** (`wsl --install`, then work from your Linux home, not
-  `/mnt/c`) — plain PowerShell can push the repo with git but cannot run
-  the scripts.
+  stock macOS works without installing coreutils). **Windows:** the integrated
+  **Git-Bash/Cygwin** bash runs the machinery (the #8 hooks-parse fix makes it
+  viable); WSL also works. Plain PowerShell can push the repo with git but
+  cannot run the scripts.
 
 ## Repository tour
 
@@ -263,18 +263,44 @@ itself. The repo root carries a **`CLAUDE.md`** — machine-facing instructions
 the assistant reads automatically — holding the full development rules (the
 working loop, the edit constraints, the acceptance gate).
 
-**Recommended setup:**
+**Recommended setup — native Windows (the documented lane):**
 
-- A real Unix environment — Linux or macOS, or **WSL** on Windows
-  (`wsl --install`, then work from your Linux home, not `/mnt/c`). The
-  acceptance demo needs a POSIX shell, `python3` with `nbformat`, and `unzip`
-  (`zip` is used when present; `make_context_pack` falls back to Python's
-  zipfile otherwise). On Windows use WSL rather than **Git Bash** — the
-  previously-known MSYS-path/Windows-Store-Python hooks-parse issue is fixed
-  (#8), but WSL remains the fully-tested lane; plain PowerShell can run `git`
-  but not the bash machinery.
-- An agentic AI coding tool (e.g. Claude Code) launched in the repo directory,
-  with git credentials configured so it can commit and push.
+Follow these from zero; the shell steps run verbatim in the integrated
+Git-Bash/Cygwin terminal, no improvisation needed:
+
+1. Install **Git for Windows** (which provides Git Bash) — or Cygwin with git —
+   and **VS Code**. *(Operator-confirmed step: exact installers are recorded
+   during the walkthrough.)*
+2. Clone the repo and pin LF line endings before anything else:
+   ```bash
+   git clone <repo-url>
+   cd ai-work-harness
+   git config core.autocrlf input
+   ```
+   `.gitattributes` already pins `*.sh`/`*.py` to LF, so the scripts stay
+   byte-for-byte LF even under `core.autocrlf=true`; setting `input` also keeps
+   your own edits clean at the source. This is the first thing to get right — a
+   CRLF in a shell shebang or heredoc breaks the machinery.
+3. Open the folder in VS Code and install your agent extension (e.g. Claude
+   Code), then sign in. *(Operator-confirmed GUI step: the extension name and
+   sign-in flow are recorded as evidence during the walkthrough.)*
+4. In the integrated bash, install the demo's dependencies: `python3` with
+   `nbformat` (`pip install nbformat`) and `unzip` (`zip` is optional —
+   `make_context_pack` falls back to Python's zipfile).
+5. Verify the machinery end to end — it must end with *ALL 6 DEMO STAGES PASSED*:
+   ```bash
+   bash _harness/scripts/run_demo.sh
+   ```
+
+Do all shell work in the integrated Git-Bash/Cygwin terminal; plain PowerShell
+runs `git` but not the bash machinery.
+
+**Linux / macOS / WSL:** Linux and macOS work identically and are the standing
+fully-tested lanes (CI runs the demo on both on every PR); a `windows-latest`
+MSYS job witnesses the Windows lane informationally. WSL is fine for an
+*ephemeral* Linux check — clone inside your WSL home (`~`, **never** a `/mnt/c`
+Windows-drive mount, which gives slow I/O and unreliable executable bits), run
+the demo, discard — but it is not a standing development copy.
 
 **The loop:** the assistant applies a change, runs the acceptance demo
 (`bash _harness/scripts/run_demo.sh` — it must end with *ALL 6 DEMO STAGES

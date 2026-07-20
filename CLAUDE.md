@@ -73,24 +73,38 @@ Doctrine you must never violate when changing this code:
   status. Never duplicate it — an edit there must move both tools.
 
 ## Cross-platform
-This runs on Linux, macOS, and Windows. Windows support is lane-specific: WSL
-is fully supported (develop here); Git Bash is best-effort — the previously-known
-MSYS-path/Windows-Store-Python hooks-parse issue is fixed (#8); plain PowerShell runs
-git only, not the bash machinery. Linux and macOS are the fully-tested lanes: CI runs
-the demo on both on every push to `main` and every PR into `main`, so a change is proven
-on both before it merges.
+This runs on Linux, macOS, and Windows. The canonical DEVELOPMENT lane is a
+NATIVE WINDOWS checkout — VS Code on Windows with the agent extension, all shell
+work in the integrated Git-Bash/Cygwin bash (the MSYS-path/Windows-Store-Python
+hooks-parse issue that once made Git Bash fragile is fixed, #8). Agents working on
+THIS repo execute shell via that native integrated bash, NOT WSL. Linux and macOS
+remain the STANDING fully-tested lanes via CI (the demo runs on ubuntu-latest +
+macos-latest on every push to `main` and every PR into `main`), so a change is
+proven on both before it merges; a windows-latest MSYS job witnesses the Windows
+lane informationally (non-gating). WSL is used ONLY as ephemeral verification
+(fresh clone → run → discard), never a standing copy; plain PowerShell runs git
+only, not the bash machinery.
 Write portably — no GNU-only flags without a BSD/macOS fallback. Verify on the
 platform where a fix's failure mode can actually occur.
 
-## Environment (WSL)
-Real Linux, so the demo runs fully. Requirements already installed: node/npm,
-claude-code, `unzip` (and `zip`; `zip` is optional — `make_context_pack` falls
-back to Python's zipfile), and the `nbformat` python package (the notebook helper
-needs it: `pip install nbformat --break-system-packages`). Git push works over
-HTTPS via `gh auth`. `gh` is a **development** convenience only — used for
-pushing and issue management while working on the harness. NO shipped harness
+## Environment (native Windows)
+The canonical dev seat is a native-Windows checkout driven through Git-Bash/Cygwin
+bash, where the demo runs fully. Line endings come FIRST: set
+`git config core.autocrlf input` at clone so tracked scripts stay LF in the
+working tree; `.gitattributes` pins `*.sh`/`*.py` to LF as the permanent backstop,
+and the demo's CRLF tripwire reds if any tracked script ever carries a carriage
+return. Requirements: node/npm, claude-code (or your agent tool), `python3` with
+`nbformat` (the notebook helper needs it: `pip install nbformat`), and `unzip`
+(`zip` optional — `make_context_pack` falls back to Python's zipfile). Git push
+works over HTTPS via `gh auth`. `gh` is a **development** convenience only — used
+for pushing and issue management while working on the harness. NO shipped harness
 component (validation, status, the git safety net, agents, hooks) depends on
 `gh`; the harness runs fully on a host without it.
+
+The UNSUPPORTED anti-pattern is a Windows-DRIVE checkout accessed THROUGH WSL (a
+`C:\…` path under `/mnt/c`): slow cross-boundary I/O and unreliable executable
+bits. If you need a Linux witness, clone fresh inside the WSL filesystem (`~/…`,
+never `/mnt/c`), run the demo, and discard it — WSL is verification, not a home.
 
 ## Porting to another AI assistant (the vendor seam)
 

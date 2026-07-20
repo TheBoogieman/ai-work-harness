@@ -1,7 +1,7 @@
 # INSTALL — the flat-pack instructions
 
 Parts: this repo. Tools: GitHub Copilot (agents + hooks support), Python 3.12,
-git. Time: ~30 minutes.
+git, bash. Time: ~10 minutes (install.sh does the laydown).
 
 ## 0. Prerequisite — `venv_global` (you create this; the harness never does)
     python3.12 -m venv ~/venvs/venv_global   # 3.12 is the assumed version; a newer python3 works for the scripts

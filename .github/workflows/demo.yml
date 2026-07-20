@@ -1,14 +1,32 @@
 # demo.yml — runs the harness acceptance demo (run_demo.sh) on macOS and Linux.
 # The demo IS the truth-teller: it exits 0 only on "ALL 6 DEMO STAGES PASSED", so a green job
 # means the machinery works on that OS — including the GNU/BSD portability branches, which run
-# for REAL on macOS here (not via shims). Triggers on push to main + manual dispatch only; no
-# pull-request or scheduled runs, to keep runner usage minimal.
+# for REAL on macOS here (not via shims). Triggers on push to main, PRs into main,
+# and manual dispatch; no scheduled runs. Per-branch concurrency cancels superseded runs
+# to keep usage minimal.
 name: demo
 
 on:
+  # Push to main (post-merge integration) and every PR into main (the pre-merge gate).
   push:
     branches: [main]
+  # pull_request (NOT pull_request_target): a PR runs the demo from the PR's own HEAD
+  # in a sandbox with NO repo secrets and a read-only token. Safe even for untrusted
+  # fork PRs, because the demo needs neither secrets nor write access — it is a pure,
+  # read-only test. First-time fork contributors' runs still require maintainer approval
+  # (repo setting stays on); the demo is a required check, and only the owner can merge.
+  pull_request:
+    branches: [main]
   workflow_dispatch:
+
+# Per-branch concurrency: a newer push / PR-update supersedes the in-progress run for
+# that same branch (cancel-in-progress), so only the latest commit's result stands.
+# Distinct branches and PRs never cancel each other — grouped by the PR's source branch
+# (head_ref) on PRs, by ref on pushes. Push fires on main only, so there is no push+PR
+# double-run on feature branches.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   demo:

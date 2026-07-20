@@ -1,6 +1,7 @@
 # WHITELIST REPO — everything is untracked unless re-included below
 /*
 !/.gitignore
+!/.gitattributes
 !/LICENSE
 !/README.md
 !/INSTALL.md

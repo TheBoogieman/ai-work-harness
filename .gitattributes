@@ -1,0 +1,18 @@
+# .gitattributes — protect the machinery from line-ending corruption on any clone.
+#
+# WHY: on a native-Windows clone with core.autocrlf=true, git rewrites tracked text
+# to CRLF on checkout. A carriage return in a shell shebang or heredoc breaks execution
+# (the shell sees `#!/usr/bin/env bash\r`), and a CR in a Python script is just as bad.
+# Pinning eol=lf makes the working tree byte-identical to the record regardless of the
+# cloner's core.autocrlf setting, so the harness runs correctly even on a clone that
+# never read the setup docs. Binary/image files are left to auto-detection (never forced).
+
+# Sane default: normalise line endings for anything git detects as text; leave binaries alone.
+* text=auto
+
+# Executable text — MUST stay LF on every platform or the machinery breaks on execution.
+*.sh  text eol=lf
+*.py  text eol=lf
+
+# Config the tooling reads/executes against — keep it LF for byte-stable parsing.
+*.json text eol=lf

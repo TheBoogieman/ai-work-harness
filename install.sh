@@ -65,43 +65,67 @@ plan_create=(); plan_exists=()
 # Portable in-place sed: GNU sed wants `-i`, BSD/macOS sed wants `-i ''`. Detect via --version
 # (GNU prints it, BSD errors). Project rule: no GNU-only flag without a BSD fallback.
 sedi() { if sed --version >/dev/null 2>&1; then sed -i "$@"; else sed -i '' "$@"; fi; }
-# detect_board <estate> — the board key ALREADY established in an estate, read from the estate
-# itself (its source of truth), for reporting on a re-run: prefer a real (non-template) conforming
-# ticket dir, else the shipped template's PROJ. The board is the segment between the date+sequence
-# prefix and the trailing number, extracted so even a widened hyphenated board (DATA-ENG) survives.
+# detect_board <estate> — the board key ALREADY established in an estate, read from the estate's
+# OWN tickets (its source of truth). Sets DETECTED_BOARD to a real (non-template) conforming
+# ticket's board segment when one exists (DETECTED_BOARD_REAL=1), else to the template default
+# PROJ (DETECTED_BOARD_REAL=0 — honest: no established ticket yet). The board is the segment
+# between the date+sequence prefix and the trailing number, extracted so a widened hyphenated
+# board (DATA-ENG) survives.
+DETECTED_BOARD="PROJ"; DETECTED_BOARD_REAL=0
 detect_board() {
   local root="$1" d base
+  DETECTED_BOARD="PROJ"; DETECTED_BOARD_REAL=0
   for d in "$root"/Tickets/*/; do
     [ -d "$d" ] || continue
     base="$(basename "$d")"
     [ "$base" = "999912Z-PROJ-99999" ] && continue
     if printf '%s' "$base" | grep -qE '^[0-9]{6}[A-Z]+-[A-Z][A-Z0-9-]*-[0-9]+$'; then
-      printf '%s' "$base" | sed -E 's/^[^-]*-(.*)-[^-]*$/\1/'; return 0
+      DETECTED_BOARD="$(printf '%s' "$base" | sed -E 's/^[^-]*-(.*)-[^-]*$/\1/')"; DETECTED_BOARD_REAL=1; return 0
     fi
   done
-  [ -d "$root/Tickets/999912Z-PROJ-99999" ] && { printf 'PROJ'; return 0; }
-  printf '(established)'
+}
+# detect_model <estate> <reference-agent> — the model pin already set on a reference agent's
+# frontmatter (greppable `model: <x>`). Cheap tier reads doc-writer, sonnet tier reads ticket-init
+# (fixed per the template's placeholder assignment). Echoes empty if the agent isn't present.
+detect_model() {
+  local f="$1/_agents/$2"
+  [ -f "$f" ] && grep -m1 '^model:' "$f" | sed -E 's/^model:[[:space:]]*//'
+}
+# route_change <label> <established> <typed> <file-to-edit> — a re-run answer that DIFFERS from the
+# established value is ROUTED, never applied: the installer edits NOTHING pre-existing (cond 2).
+# It warns, names the exact file to edit, and offers the AI-assistant handoff (setup.md).
+route_change() {
+  echo "WARN: you asked to change the $1 from '$2' (established) to '$3'. Changing established config"
+  echo "  can break the harness, so the installer changes NOTHING. To apply it, edit $4 yourself, or"
+  echo "  hand it to your AI assistant (see setup.md): \"Change the $1 from $2 to $3 in $4, re-validate.\""
 }
 # NOTE on array expansion: stock-macOS bash 3.2 errors on "${arr[@]}" when arr is EMPTY under
 # `set -u`, so every expansion below uses the "${arr[@]+"${arr[@]}"}" idiom — it yields the quoted
 # elements when set (spaces in paths like "General AI-Knowledge/" preserved) and nothing when empty.
 
-# ---- identity interview (ask-everything, strong defaults; #39 amendment A) -------------------
+# ---- identity interview (ask-everything + re-run REVIEW loop; #39 amendment A/C) --------------
+# On a RE-RUN of an established estate, every DETECTABLE established value becomes the OFFERED
+# default (ask()'s hint shows it), so a user can Enter-through to REVIEW or type to change. The
+# installer still edits NOTHING pre-existing — a changed answer is ROUTED (route_change: warn +
+# name the file + assistant handoff), never applied (amendment C / cond 2 absolute). A first run
+# has no established values, so it falls back to today's defaults.
 DEF_BOARD="PROJ"
 BOARD_WIDEN=0
-BOARD_ESTABLISHED=0
-# Board key: on a RE-RUN of an already-established estate (the harness is laid down), identity is
-# ALREADY set — DETECT it from the estate and REPORT it; do NOT re-ask (amendment C: report,
-# don't ask). Re-asking and echoing a throwaway re-run answer into the summary is a false claim
-# (G4). On a first run the estate is bare, so we ask as normal and offer the hyphen escape hatch.
-if [ -e "$TARGET/_harness/scripts/ticket-grammar.sh" ]; then
-  BOARD="$(detect_board "$TARGET")"
-  BOARD_ESTABLISHED=1
+ESTABLISHED=0
+[ -e "$TARGET/_harness/scripts/ticket-grammar.sh" ] && ESTABLISHED=1
+
+# Board key: offered default is the established board on a re-run, else PROJ.
+if [ "$ESTABLISHED" -eq 1 ]; then detect_board "$TARGET"; board_default="$DETECTED_BOARD"; else board_default="$DEF_BOARD"; fi
+BOARD="$(ask "Ticket-naming board key (uppercase; single-segment)" "$board_default")"
+if [ "$ESTABLISHED" -eq 1 ]; then
+  # Established estate: a changed board is ROUTED to ticket-grammar.sh, never applied here.
+  if [ "$BOARD" != "$board_default" ]; then
+    route_change "board key" "$board_default" "$BOARD" "_harness/scripts/ticket-grammar.sh"
+    BOARD="$board_default"
+  fi
 else
-  BOARD="$(ask "Ticket-naming board key (uppercase; single-segment)" "$DEF_BOARD")"
-  # Board-key escape hatch (amendment B): the default grammar's board segment is [A-Z][A-Z0-9]* —
-  # no internal hyphen. If the entered key needs a hyphen, OFFER the documented one-line widening
-  # ([A-Z0-9]* -> [A-Z0-9-]*) at the moment it is needed.
+  # First run only: offer the documented hyphen widening escape hatch (amendment B). The default
+  # grammar's board segment is [A-Z][A-Z0-9]* (no internal hyphen).
   if ! printf '%s' "$BOARD" | grep -qE '^[A-Z][A-Z0-9]*$'; then
     if printf '%s' "$BOARD" | grep -qE '^[A-Z][A-Z0-9-]*$'; then
       echo "  note: '$BOARD' contains a hyphen, which the default ticket grammar's board segment rejects." >&2
@@ -112,9 +136,25 @@ else
     fi
   fi
 fi
-WORKSPACE_ROOT="$(ask "Workspace root (the estate path; used where a hook needs an absolute path)" "$TARGET")"
-CHEAP_MODEL="$(ask "Model pin for the CHEAP agents (leave the placeholder to choose later)" "PICK-A-CHEAP-MODEL")"
-SONNET_MODEL="$(ask "Model pin for the SONNET-CLASS agents (leave the placeholder to choose later)" "PICK-A-SONNET-CLASS-MODEL")"
+
+# Workspace root is NO LONGER ASKED (#39 v3): nothing consumes it post-#44 (hooks are cwd:"."), so
+# a prompted value could only mislabel. The summary derives it from the real install TARGET instead.
+
+# Model pins: offered defaults are the established pins on a re-run (cheap tier read from
+# doc-writer, sonnet tier from ticket-init — the template's fixed placeholder assignment), else the
+# PICK-A-* placeholders (honest "not yet set"). A changed pin on a re-run is ROUTED, never applied.
+if [ "$ESTABLISHED" -eq 1 ]; then
+  cheap_default="$(detect_model "$TARGET" doc-writer.agent.md)";  [ -n "$cheap_default" ]  || cheap_default="PICK-A-CHEAP-MODEL"
+  sonnet_default="$(detect_model "$TARGET" ticket-init.agent.md)"; [ -n "$sonnet_default" ] || sonnet_default="PICK-A-SONNET-CLASS-MODEL"
+else
+  cheap_default="PICK-A-CHEAP-MODEL"; sonnet_default="PICK-A-SONNET-CLASS-MODEL"
+fi
+CHEAP_MODEL="$(ask "Model pin for the CHEAP agents (leave the placeholder to choose later)" "$cheap_default")"
+SONNET_MODEL="$(ask "Model pin for the SONNET-CLASS agents (leave the placeholder to choose later)" "$sonnet_default")"
+if [ "$ESTABLISHED" -eq 1 ]; then
+  [ "$CHEAP_MODEL" = "$cheap_default" ]   || { route_change "cheap model pin" "$cheap_default" "$CHEAP_MODEL" "_agents/*.agent.md (cheap-tier agents)"; CHEAP_MODEL="$cheap_default"; }
+  [ "$SONNET_MODEL" = "$sonnet_default" ] || { route_change "sonnet model pin" "$sonnet_default" "$SONNET_MODEL" "_agents/*.agent.md (sonnet-class agents)"; SONNET_MODEL="$sonnet_default"; }
+fi
 
 # ---- PRODUCT laydown plan (create-absent-only, from the manifest) ----------------------------
 # The manifest is TAB-delimited "CLASS<TAB>path"; take PRODUCT paths only. install.sh and setup.md
@@ -238,12 +278,16 @@ echo "======================== INSTALL SUMMARY ========================"
 echo "Estate: $TARGET"
 echo "Created this run: ${#CREATED[@]} file(s); ${#plan_exists[@]} PRODUCT file(s) already existed (untouched)."
 echo "Choices (asked or defaulted):"
-if [ "$BOARD_ESTABLISHED" -eq 1 ]; then
-  echo "  board key         = $BOARD (established; to change it, edit ticket-grammar.sh — see setup.md). Left untouched."
+if [ "$ESTABLISHED" -eq 1 ]; then
+  if [ "$DETECTED_BOARD_REAL" -eq 1 ]; then
+    echo "  board key         = $BOARD (established; to change it, edit ticket-grammar.sh — see setup.md). Left untouched."
+  else
+    echo "  board key         = $BOARD (template default; no established ticket yet)."
+  fi
 else
   echo "  board key         = $BOARD$( [ "$BOARD_WIDEN" -eq 1 ] && echo '  (grammar widened for hyphens)')"
 fi
-echo "  workspace root    = $WORKSPACE_ROOT"
+echo "  workspace root    = $TARGET   (derived from the install target — not asked)"
 echo "  cheap model pin   = $CHEAP_MODEL"
 echo "  sonnet model pin  = $SONNET_MODEL"
 echo "Tunable knobs (not asked; defaults shown, each has ONE home = the named env var):"

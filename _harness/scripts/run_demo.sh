@@ -937,19 +937,57 @@ i39_fresh="$I39_ROOT/dryrun-never"
 HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh --dry-run --yes "$i39_fresh" >/dev/null 2>&1
 [ ! -e "$i39_fresh" ] || { echo "BUG [#39 dry-run]: --dry-run created the target dir — it must touch nothing"; exit 1; }
 echo "  ok [#39 dry-run] — --dry-run plans without touching the filesystem"
-# (f) re-run identity (#39 v2): an established estate's board key is REPORTED from the estate,
-#     never re-asked. Establish a board by creating a conforming non-template ticket, then re-run
-#     answering a DIFFERENT board on stdin; the summary must report the ESTABLISHED board, not the
-#     throwaway answer. Revert-provable: pre-fix re-ask/echo prints the typed answer -> red.
+# (f) re-run-board (#39 v3, subsumes the v2 re-run-identity): on a re-run of an established estate
+#     the board key is OFFERED as the default (review loop), and Enter-through reports it. Establish
+#     a board via a real non-template ticket, re-run all-Enter, and assert BOTH the offered default
+#     (the hint, on stderr) and the reported summary value are the established board.
 i39_re="$I39_ROOT/reest"
 HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh --yes "$i39_re" >/dev/null 2>&1
 mkdir -p "$i39_re/Tickets/202607A-XRAY-1"; : > "$i39_re/Tickets/202607A-XRAY-1/202607A-XRAY-1.md"
-i39_reout=$(printf 'ZULU\n\n\n\n' | HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh "$i39_re" 2>/dev/null || true)
-printf '%s\n' "$i39_reout" | grep -qE 'board key += +XRAY' \
-  || { echo "BUG [#39 re-run-identity]: re-run did NOT report the established board (expected XRAY):"; printf '%s\n' "$i39_reout" | grep -i 'board key'; exit 1; }
-printf '%s\n' "$i39_reout" | grep -qE 'board key += +ZULU' \
-  && { echo "BUG [#39 re-run-identity]: re-run echoed the throwaway answer ZULU as the board key"; exit 1; }
-echo "  ok [#39 re-run-identity] — established board reported (XRAY), never the re-typed answer"
+printf '\n\n\n' | HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh "$i39_re" >"$I39_ROOT/re.out" 2>"$I39_ROOT/re.err" || true
+i39_bhint=$(grep -oE 'ACCEPT DEFAULT: [A-Za-z0-9-]+' "$I39_ROOT/re.err" | head -1 | sed 's/.*: //')
+[ "$i39_bhint" = "XRAY" ] \
+  || { echo "BUG [#39 re-run-board]: re-run did NOT offer the established board as the default (got '$i39_bhint', want XRAY)"; exit 1; }
+grep -qE 'board key += +XRAY' "$I39_ROOT/re.out" \
+  || { echo "BUG [#39 re-run-board]: summary did not report the established board (XRAY):"; grep -i 'board key' "$I39_ROOT/re.out"; exit 1; }
+echo "  ok [#39 re-run-board] — established board offered as the default and reported (XRAY)"
+# (h) re-run-models: an established model pin is OFFERED as the default on a re-run. Set the cheap
+#     tier's reference agent (doc-writer) to a marker, re-run, assert the cheap-model prompt (the
+#     2nd ACCEPT DEFAULT) offers it. The awk-rewrite-to-tmp+mv is BSD-portable (no in-place edit).
+i39_m="$I39_ROOT/mest"
+HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh --yes "$i39_m" >/dev/null 2>&1
+i39_dw="$i39_m/_agents/doc-writer.agent.md"
+awk '/^model:/{print "model: MZAP"; next} {print}' "$i39_dw" > "$I39_ROOT/dw.tmp" && mv "$I39_ROOT/dw.tmp" "$i39_dw"
+printf '\n\n\n' | HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh "$i39_m" 2>"$I39_ROOT/m.err" >/dev/null || true
+i39_mhint=$(grep -oE 'ACCEPT DEFAULT: [A-Za-z0-9-]+' "$I39_ROOT/m.err" | sed -n '2p' | sed 's/.*: //')
+[ "$i39_mhint" = "MZAP" ] \
+  || { echo "BUG [#39 re-run-models]: re-run did NOT offer the established cheap model pin (got '$i39_mhint', want MZAP)"; exit 1; }
+echo "  ok [#39 re-run-models] — established model pin offered as the default (MZAP)"
+# (i) change-routing: a re-run answer that DIFFERS from established is ROUTED, never applied. Re-run
+#     answering a different board; assert ticket-grammar.sh is BYTE-UNCHANGED and the warn names the
+#     file to edit. Revert-provable: a version that edits the file (or omits the warn) reds.
+i39_cr="$I39_ROOT/crest"
+HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh --yes "$i39_cr" >/dev/null 2>&1
+cp "$i39_cr/_harness/scripts/ticket-grammar.sh" "$I39_ROOT/tg.snap"
+i39_crout=$(printf 'NEWB\n\n\n' | HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh "$i39_cr" 2>&1 || true)
+cmp -s "$I39_ROOT/tg.snap" "$i39_cr/_harness/scripts/ticket-grammar.sh" \
+  || { echo "BUG [#39 change-routing]: install EDITED ticket-grammar.sh on a re-run change — it must route, not apply"; exit 1; }
+printf '%s\n' "$i39_crout" | grep -qE 'WARN.*board key' \
+  || { echo "BUG [#39 change-routing]: a changed board key did not WARN + route"; exit 1; }
+printf '%s\n' "$i39_crout" | grep -q 'ticket-grammar.sh' \
+  || { echo "BUG [#39 change-routing]: the route did not name the file to edit (ticket-grammar.sh)"; exit 1; }
+echo "  ok [#39 change-routing] — a changed answer WARNs + names the file, edits nothing"
+# (j) workspace-derived: the workspace-root QUESTION is gone; the summary line is derived from the
+#     real install target, always true by construction.
+i39_ws="$I39_ROOT/wsest"
+printf '\n\n\n' | HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh "$i39_ws" >"$I39_ROOT/ws.out" 2>"$I39_ROOT/ws.err" || true
+grep -qi 'Workspace root' "$I39_ROOT/ws.err" \
+  && { echo "BUG [#39 workspace-derived]: a 'Workspace root' question is still asked — it must be removed"; exit 1; }
+i39_wsabs="$(cd "$i39_ws" && pwd)"
+i39_wsline=$(grep -oE 'workspace root += +[^ ]+' "$I39_ROOT/ws.out" | head -1 | sed -E 's/.*= +//')
+[ "$i39_wsline" = "$i39_wsabs" ] \
+  || { echo "BUG [#39 workspace-derived]: summary workspace root ('$i39_wsline') != install target ('$i39_wsabs')"; exit 1; }
+echo "  ok [#39 workspace-derived] — workspace root derived from the target, no question asked"
 # (g) prompt-default truthfulness (#39 v2): the "[PRESS ENTER TO ACCEPT DEFAULT: <v>]" hint must
 #     name the SAME value the script uses on empty input. Drive a fresh install with all-Enter
 #     stdin, then assert the board prompt's advertised default equals the board the summary reports.

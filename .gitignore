@@ -20,6 +20,12 @@ Tickets/*/Dump/*
 !Tickets/*/Logs/.gitkeep
 !Tickets/*/Dump/.gitkeep
 
-# OS noise
+# OS noise + objective editor/tool junk — never records, safe to ignore everywhere (no data
+# extensions: the user's own files stay tracked/sovereign). .DS_Store already covered above.
 .DS_Store
 **/.DS_Store
+*.tmp
+*~
+*.swp
+*.swo
+Thumbs.db

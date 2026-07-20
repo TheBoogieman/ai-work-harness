@@ -671,6 +671,48 @@ printf '%s\n' "$NOAK_OUT" | grep -q '202607D-PROJ-777.*knowledge files: 0' \
 rm -rf "$NOAK"
 echo "  ok [#37] — harness-status completes on a conforming ticket with no AI-Knowledge/ (roster reached, no new failure)"
 
+# [#38 junk-ignore] objective editor/OS junk must be ignored even inside re-included dirs so it
+# never enters the record. Pre-fix (no junk patterns in .gitignore), git add -A stages it — red.
+J="Tickets/junk-probe"; mkdir -p "$J"
+: > "$J/scratch.tmp"; : > "$J/backup~"; : > "$J/.file.swp"; : > "$J/Thumbs.db"
+JUNK_STAGED=$(git add -A --dry-run 2>/dev/null | grep -E 'junk-probe/(scratch\.tmp|backup~|\.file\.swp|Thumbs\.db)' || true)
+[ -z "$JUNK_STAGED" ] || { echo "BUG [#38 junk-ignore]: objective junk would be staged (not ignored):"; printf '%s\n' "$JUNK_STAGED"; exit 1; }
+rm -rf "$J"
+echo "  ok [#38 junk-ignore] — *.tmp / *~ / *.swp / Thumbs.db ignored, never staged"
+
+# [#38 oversize WARN] a ticket whose TRACKED root (excluding the ignored Logs/, Dump/) grows
+# large gets a yellow WARN prescribing Dump/ — never a block. Also proves Dump/ is EXCLUDED
+# from the measure (so moving scratch there actually clears it) and the knob is honoured both
+# ways. ~2 MiB of padding lands the root over a 1 MiB threshold.
+O="Tickets/202607E-PROJ-888"; mkdir -p "$O"
+cat > "$O/202607E-PROJ-888.md" <<'MD'
+# 202607E-PROJ-888
+## Current State
+Oversize-root fixture for #38.
+## Session Log
+## 20260705120000 - fixture
+MD
+head -c 2097152 /dev/zero > "$O/big-scratch.bin"     # ~2 MiB in the TRACKED root
+# (1) oversized root -> WARN fires with the Dump/ prescription, exit 0 (yellow)
+set +e; O38=$(HARNESS_TICKET_WARN_MB=1 bash _harness/scripts/harness-status.sh 2>&1); O38_RC=$?; set -e
+printf '%s\n' "$O38" | grep -qE 'Tickets/202607E-PROJ-888 tracks .* in its root' \
+  || { echo "BUG [#38 oversize WARN]: oversized ticket root did not fire the WARN:"; printf '%s\n' "$O38"; exit 1; }
+printf '%s\n' "$O38" | grep -q 'Dump/' \
+  || { echo "BUG [#38 oversize WARN]: the WARN did not prescribe Dump/:"; printf '%s\n' "$O38"; exit 1; }
+[ "$O38_RC" -eq 0 ] || { echo "BUG [#38 oversize WARN]: the size nudge must be yellow (exit 0), got rc=$O38_RC"; exit 1; }
+# (2) move padding into Dump/ -> WARN must NOT fire (Dump/ is excluded; the prescription works)
+mkdir -p "$O/Dump"; mv "$O/big-scratch.bin" "$O/Dump/big-scratch.bin"
+set +e; O38b=$(HARNESS_TICKET_WARN_MB=1 bash _harness/scripts/harness-status.sh 2>&1); set -e
+printf '%s\n' "$O38b" | grep -qE 'Tickets/202607E-PROJ-888 tracks .* in its root' \
+  && { echo "BUG [#38 oversize WARN]: moving scratch to Dump/ did NOT clear the WARN (Dump/ not excluded):"; printf '%s\n' "$O38b"; exit 1; }
+# (3) knob honoured: a huge threshold silences it even with padding back in the root
+mv "$O/Dump/big-scratch.bin" "$O/big-scratch.bin"
+set +e; O38c=$(HARNESS_TICKET_WARN_MB=1000000 bash _harness/scripts/harness-status.sh 2>&1); set -e
+printf '%s\n' "$O38c" | grep -qE 'Tickets/202607E-PROJ-888 tracks .* in its root' \
+  && { echo "BUG [#38 oversize WARN]: the size nudge fired while under the knob threshold:"; printf '%s\n' "$O38c"; exit 1; }
+rm -rf "$O"
+echo "  ok [#38 oversize WARN] — fires with Dump/ prescription (yellow), clears when scratch moves to Dump/, honours the knob"
+
 # Break-and-restore status demonstration — deliberately runs AFTER the R-09 block so that on
 # a lane where a plain `harness-status` aborts under set -e, the R-09 stages have already been
 # witnessed. The first call shows a healthy estate; then we remove a deployed agent and watch

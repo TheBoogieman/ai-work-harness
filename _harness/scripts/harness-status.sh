@@ -149,6 +149,10 @@ done < <(find "$WORK_ROOT/General AI-Knowledge" -name '*.md' -type f 2>/dev/null
 # per-ticket summary — matched against the SHARED $TICKET_RE so the summary and the
 # validator recognise the exact same set (a name valid under the expanded grammar must
 # appear here, not fall through into the WARN sweep below).
+# Per-ticket tracked-root size guard (#38): a ticket's TRACKED footprint should stay lean —
+# large scratch/inputs belong in the git-ignored Logs/ or Dump/, not the tracked root.
+# Tunable via HARNESS_TICKET_WARN_MB (default 5); WARN never blocks (yellow).
+ticket_warn_mb="${HARNESS_TICKET_WARN_MB:-5}"
 while IFS= read -r name; do
   md="$WORK_ROOT/Tickets/$name/$name.md"; [[ -f "$md" ]] || continue
   latest=$(grep -oE '^## [0-9]{14} ' "$md" | tail -1 | tr -dc '0-9' || true)
@@ -159,6 +163,18 @@ while IFS= read -r name; do
   ak="$WORK_ROOT/Tickets/$name/AI-Knowledge"
   live=0; [[ -d "$ak" ]] && live=$(find "$ak" -maxdepth 1 -name '*.md' ! -name '_index.md' 2>/dev/null | wc -l)
   echo "OK: $name — last session ${latest:-none}, knowledge files: $live."
+  # Tracked ROOT = ticket total minus the git-ignored bulk (Logs/, Dump/). du -sk is portable;
+  # du --exclude is GNU-only, so subtract. GUARD each subdir du with [[ -d ]] — an absent Logs/
+  # or Dump/ makes du exit non-zero, and (pipefail + set -e) would abort the roster loop, the
+  # exact class fixed at #37. Absent subdir -> 0.
+  t_total=$(du -sk "$WORK_ROOT/Tickets/$name" 2>/dev/null | awk '{print $1}')
+  t_logs=0; [[ -d "$WORK_ROOT/Tickets/$name/Logs" ]] && t_logs=$(du -sk "$WORK_ROOT/Tickets/$name/Logs" 2>/dev/null | awk '{print $1}')
+  t_dump=0; [[ -d "$WORK_ROOT/Tickets/$name/Dump" ]] && t_dump=$(du -sk "$WORK_ROOT/Tickets/$name/Dump" 2>/dev/null | awk '{print $1}')
+  t_root_kb=$(( ${t_total:-0} - ${t_logs:-0} - ${t_dump:-0} ))
+  if (( t_root_kb > ticket_warn_mb * 1024 )); then
+    t_root_mib=$(awk -v k="$t_root_kb" 'BEGIN{ printf "%.1f", k/1024 }')
+    echo "WARN: Tickets/$name tracks ${t_root_mib} MiB in its root (excluding the ignored Logs/ and Dump/). Large scratch or dropped inputs belong in Dump/ (git-ignored), or add a personal, uncommitted ignore to .git/info/exclude — keep the tracked ticket lean. Tune with HARNESS_TICKET_WARN_MB (default 5)."
+  fi
 done < <(for d in "$WORK_ROOT/Tickets"/*/; do [[ -d "$d" ]] && basename "$d"; done 2>/dev/null | grep -E "$TICKET_RE" || true)
 
 # Surface, never enforce (Model 1): a folder that HOLDS a ticket record but whose name

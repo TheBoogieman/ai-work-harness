@@ -54,7 +54,9 @@ fi
 ask() {  # ask <prompt> <default> ; echoes the answer (default under --yes or on empty Enter)
   local prompt="$1" def="$2" ans=""
   if [ "$YES" -eq 1 ]; then printf '%s' "$def"; return; fi
-  printf '%s [%s]: ' "$prompt" "$def" >&2
+  # The hint names the SAME $def the code returns on empty input — ONE variable, so the advertised
+  # default can never drift from the real fallback (a guarded G4 claim, not decoration).
+  printf '%s\n  [PRESS ENTER TO ACCEPT DEFAULT: %s]: ' "$prompt" "$def" >&2
   IFS= read -r ans || true
   [ -n "$ans" ] && printf '%s' "$ans" || printf '%s' "$def"
 }
@@ -63,24 +65,51 @@ plan_create=(); plan_exists=()
 # Portable in-place sed: GNU sed wants `-i`, BSD/macOS sed wants `-i ''`. Detect via --version
 # (GNU prints it, BSD errors). Project rule: no GNU-only flag without a BSD fallback.
 sedi() { if sed --version >/dev/null 2>&1; then sed -i "$@"; else sed -i '' "$@"; fi; }
+# detect_board <estate> — the board key ALREADY established in an estate, read from the estate
+# itself (its source of truth), for reporting on a re-run: prefer a real (non-template) conforming
+# ticket dir, else the shipped template's PROJ. The board is the segment between the date+sequence
+# prefix and the trailing number, extracted so even a widened hyphenated board (DATA-ENG) survives.
+detect_board() {
+  local root="$1" d base
+  for d in "$root"/Tickets/*/; do
+    [ -d "$d" ] || continue
+    base="$(basename "$d")"
+    [ "$base" = "999912Z-PROJ-99999" ] && continue
+    if printf '%s' "$base" | grep -qE '^[0-9]{6}[A-Z]+-[A-Z][A-Z0-9-]*-[0-9]+$'; then
+      printf '%s' "$base" | sed -E 's/^[^-]*-(.*)-[^-]*$/\1/'; return 0
+    fi
+  done
+  [ -d "$root/Tickets/999912Z-PROJ-99999" ] && { printf 'PROJ'; return 0; }
+  printf '(established)'
+}
 # NOTE on array expansion: stock-macOS bash 3.2 errors on "${arr[@]}" when arr is EMPTY under
 # `set -u`, so every expansion below uses the "${arr[@]+"${arr[@]}"}" idiom — it yields the quoted
 # elements when set (spaces in paths like "General AI-Knowledge/" preserved) and nothing when empty.
 
 # ---- identity interview (ask-everything, strong defaults; #39 amendment A) -------------------
 DEF_BOARD="PROJ"
-BOARD="$(ask "Ticket-naming board key (uppercase; the default pattern accepts any single-segment key)" "$DEF_BOARD")"
 BOARD_WIDEN=0
-# Board-key escape hatch (amendment B): the default grammar's board segment is [A-Z][A-Z0-9]* —
-# no internal hyphen. If the entered key needs a hyphen (or other rejected char), OFFER the
-# documented one-line widening ([A-Z0-9]* -> [A-Z0-9-]*) at the moment it is needed.
-if ! printf '%s' "$BOARD" | grep -qE '^[A-Z][A-Z0-9]*$'; then
-  if printf '%s' "$BOARD" | grep -qE '^[A-Z][A-Z0-9-]*$'; then
-    echo "  note: '$BOARD' contains a hyphen, which the default ticket grammar's board segment rejects." >&2
-    w="$(ask "  Widen ticket-grammar.sh's board segment to allow hyphens ([A-Z0-9]* -> [A-Z0-9-]*)? (y/n)" "y")"
-    case "$w" in y*|Y*) BOARD_WIDEN=1 ;; esac
-  else
-    echo "  warning: '$BOARD' has characters the grammar can't recognise even widened; tickets under it won't validate until you edit ticket-grammar.sh (see folder-structure.md)." >&2
+BOARD_ESTABLISHED=0
+# Board key: on a RE-RUN of an already-established estate (the harness is laid down), identity is
+# ALREADY set — DETECT it from the estate and REPORT it; do NOT re-ask (amendment C: report,
+# don't ask). Re-asking and echoing a throwaway re-run answer into the summary is a false claim
+# (G4). On a first run the estate is bare, so we ask as normal and offer the hyphen escape hatch.
+if [ -e "$TARGET/_harness/scripts/ticket-grammar.sh" ]; then
+  BOARD="$(detect_board "$TARGET")"
+  BOARD_ESTABLISHED=1
+else
+  BOARD="$(ask "Ticket-naming board key (uppercase; single-segment)" "$DEF_BOARD")"
+  # Board-key escape hatch (amendment B): the default grammar's board segment is [A-Z][A-Z0-9]* —
+  # no internal hyphen. If the entered key needs a hyphen, OFFER the documented one-line widening
+  # ([A-Z0-9]* -> [A-Z0-9-]*) at the moment it is needed.
+  if ! printf '%s' "$BOARD" | grep -qE '^[A-Z][A-Z0-9]*$'; then
+    if printf '%s' "$BOARD" | grep -qE '^[A-Z][A-Z0-9-]*$'; then
+      echo "  note: '$BOARD' contains a hyphen, which the default ticket grammar's board segment rejects." >&2
+      w="$(ask "  Widen ticket-grammar.sh's board segment to allow hyphens ([A-Z0-9]* -> [A-Z0-9-]*)? (y/n)" "y")"
+      case "$w" in y*|Y*) BOARD_WIDEN=1 ;; esac
+    else
+      echo "  warning: '$BOARD' has characters the grammar can't recognise even widened; tickets under it won't validate until you edit ticket-grammar.sh (see folder-structure.md)." >&2
+    fi
   fi
 fi
 WORKSPACE_ROOT="$(ask "Workspace root (the estate path; used where a hook needs an absolute path)" "$TARGET")"
@@ -209,7 +238,11 @@ echo "======================== INSTALL SUMMARY ========================"
 echo "Estate: $TARGET"
 echo "Created this run: ${#CREATED[@]} file(s); ${#plan_exists[@]} PRODUCT file(s) already existed (untouched)."
 echo "Choices (asked or defaulted):"
-echo "  board key         = $BOARD$( [ "$BOARD_WIDEN" -eq 1 ] && echo '  (grammar widened for hyphens)')"
+if [ "$BOARD_ESTABLISHED" -eq 1 ]; then
+  echo "  board key         = $BOARD (established; to change it, edit ticket-grammar.sh — see setup.md). Left untouched."
+else
+  echo "  board key         = $BOARD$( [ "$BOARD_WIDEN" -eq 1 ] && echo '  (grammar widened for hyphens)')"
+fi
 echo "  workspace root    = $WORKSPACE_ROOT"
 echo "  cheap model pin   = $CHEAP_MODEL"
 echo "  sonnet model pin  = $SONNET_MODEL"

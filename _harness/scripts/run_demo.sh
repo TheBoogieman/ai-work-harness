@@ -937,6 +937,30 @@ i39_fresh="$I39_ROOT/dryrun-never"
 HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh --dry-run --yes "$i39_fresh" >/dev/null 2>&1
 [ ! -e "$i39_fresh" ] || { echo "BUG [#39 dry-run]: --dry-run created the target dir — it must touch nothing"; exit 1; }
 echo "  ok [#39 dry-run] — --dry-run plans without touching the filesystem"
+# (f) re-run identity (#39 v2): an established estate's board key is REPORTED from the estate,
+#     never re-asked. Establish a board by creating a conforming non-template ticket, then re-run
+#     answering a DIFFERENT board on stdin; the summary must report the ESTABLISHED board, not the
+#     throwaway answer. Revert-provable: pre-fix re-ask/echo prints the typed answer -> red.
+i39_re="$I39_ROOT/reest"
+HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh --yes "$i39_re" >/dev/null 2>&1
+mkdir -p "$i39_re/Tickets/202607A-XRAY-1"; : > "$i39_re/Tickets/202607A-XRAY-1/202607A-XRAY-1.md"
+i39_reout=$(printf 'ZULU\n\n\n\n' | HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh "$i39_re" 2>/dev/null || true)
+printf '%s\n' "$i39_reout" | grep -qE 'board key += +XRAY' \
+  || { echo "BUG [#39 re-run-identity]: re-run did NOT report the established board (expected XRAY):"; printf '%s\n' "$i39_reout" | grep -i 'board key'; exit 1; }
+printf '%s\n' "$i39_reout" | grep -qE 'board key += +ZULU' \
+  && { echo "BUG [#39 re-run-identity]: re-run echoed the throwaway answer ZULU as the board key"; exit 1; }
+echo "  ok [#39 re-run-identity] — established board reported (XRAY), never the re-typed answer"
+# (g) prompt-default truthfulness (#39 v2): the "[PRESS ENTER TO ACCEPT DEFAULT: <v>]" hint must
+#     name the SAME value the script uses on empty input. Drive a fresh install with all-Enter
+#     stdin, then assert the board prompt's advertised default equals the board the summary reports.
+#     Single-sourced in ask(), so they must match; a hard-coded mismatched hint reds this.
+i39_id="$I39_ROOT/idest"
+printf '\n\n\n\n' | HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh "$i39_id" >"$I39_ROOT/id.out" 2>"$I39_ROOT/id.err" || true
+i39_hint=$(grep -oE 'ACCEPT DEFAULT: [A-Za-z0-9._/-]+' "$I39_ROOT/id.err" | head -1 | sed 's/.*: //')
+i39_used=$(grep -oE 'board key += +[A-Za-z0-9-]+' "$I39_ROOT/id.out" | head -1 | sed -E 's/.*= +//')
+[ -n "$i39_hint" ] && [ "$i39_hint" = "$i39_used" ] \
+  || { echo "BUG [#39 prompt-default]: the board prompt advertised default '$i39_hint' but Enter used '$i39_used' — the hint is a lie"; exit 1; }
+echo "  ok [#39 prompt-default] — the Enter-to-accept hint names the value actually used ($i39_hint)"
 rm -rf "$I39_ROOT" "$I39_DEPLOY"
 # --- end installer guards -------------------------------------------------------------
 

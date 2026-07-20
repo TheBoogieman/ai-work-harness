@@ -1,5 +1,13 @@
 # CLAUDE.md — instructions for an AI working on this repository
 
+> **⚠️ DEVELOPMENT-REPO INSTRUCTIONS ONLY — this file is DEV, it never ships to a
+> work estate.** It is classified DEV in `.github/ship-manifest.txt` and the
+> installer never lays it down. If you are reading this on an installed Work
+> estate, the install was WRONG: this file describes how to develop the harness
+> (branches, PRs, CI) and directly contradicts an estate's law (no remote ever).
+> Delete it from the estate and re-install with `install.sh`, which ships PRODUCT
+> files only.
+
 This file is for an AI assistant (e.g. Claude Code) developing the
 ai-work-harness project itself. It is NOT the harness's user-facing rules —
 those live in folder-structure.md (the constitution). Read that too when a

@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      { "type": "command", "bash": "bash _harness/scripts/check_ticket_log.sh", "cwd": ".", "timeoutSec": 60 }
+    ],
+    "postToolUse": [
+      { "type": "command", "bash": "git add -A && git diff-index --quiet HEAD || git commit -q -m \"auto-write $(date +%Y%m%d-%H%M%S): $(git diff --cached --name-only | tr '\\n' ' ')\"", "cwd": ".", "timeoutSec": 60 }
+    ],
+    "sessionEnd": [
+      { "type": "command", "bash": "bash _harness/scripts/check_ticket_log.sh; git add -A && git diff-index --quiet HEAD || git commit -q -m \"auto-session-end $(date +%Y%m%d-%H%M%S): $(git diff --cached --name-only | tr '\\n' ' ')\"", "cwd": ".", "timeoutSec": 120 }
+    ]
+  }
+}

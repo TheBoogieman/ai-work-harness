@@ -85,8 +85,9 @@ Anything marked *swappable* degrades gracefully if you differ.
 - **bash** (macOS/Linux; the scripts auto-detect GNU vs BSD userland, so
   stock macOS works without installing coreutils). **Windows:** the integrated
   **Git-Bash/Cygwin** bash runs the machinery (the #8 hooks-parse fix makes it
-  viable); WSL also works. Plain PowerShell can push the repo with git but
-  cannot run the scripts.
+  viable); plain PowerShell can push the repo with git but cannot run the
+  scripts. WSL is for an *ephemeral* Linux check only (clone inside `~`, never a
+  `/mnt/c` mount) — never a standing home.
 
 ## Repository tour
 
@@ -319,12 +320,13 @@ Git-Bash/Cygwin terminal, no improvisation needed:
 Do all shell work in the integrated Git-Bash/Cygwin terminal; plain PowerShell
 runs `git` but not the bash machinery.
 
-**Linux / macOS / WSL:** Linux and macOS work identically and are the standing
-fully-tested lanes (CI runs the demo on both on every PR); a `windows-latest`
-MSYS job witnesses the Windows lane informationally. WSL is fine for an
-*ephemeral* Linux check — clone inside your WSL home (`~`, **never** a `/mnt/c`
-Windows-drive mount, which gives slow I/O and unreliable executable bits), run
-the demo, discard — but it is not a standing development copy.
+**Linux / macOS (and WSL for ephemeral checks only):** Linux and macOS work
+identically and are the standing fully-tested lanes (CI runs the demo on both on
+every PR); a `windows-latest` MSYS job witnesses the Windows lane
+informationally. WSL is *only* for a throwaway Linux check — clone inside your
+WSL home (`~`, **never** a `/mnt/c` Windows-drive mount, which gives slow I/O and
+unreliable executable bits), run the demo, discard — never a standing
+development copy.
 
 **The loop:** the assistant applies a change, runs the acceptance demo
 (`bash _harness/scripts/run_demo.sh` — it must end with *ALL 6 DEMO STAGES

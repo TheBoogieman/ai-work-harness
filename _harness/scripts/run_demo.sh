@@ -610,6 +610,33 @@ printf '%s\n' "$G8_OUT" | grep -q "hooks config is invalid JSON" \
 rm -rf "$G8DIR"
 echo "  ok [#8+R-05 guard: hooks path passed as argv, awkward path safe] — quote-bearing path parses OK"
 
+# [#44 hooks-schema] STRUCTURAL check of the SHIPPED, witnessed hooks.example.json — it must parse
+# and carry the deployment-proven shape: top-level "version", the three camelCase events NESTED
+# UNDER a "hooks" wrapper (NOT top-level — the proven v4 config wraps them), entries keyed on
+# "bash" with NO legacy "command"/"toolFilter". This is STRUCTURE ONLY: it does NOT and must not
+# pretend to witness a hook firing — the live fire stayed an honest human-witnessed box (#44 cond
+# 3). Revert-provable: drop the "hooks" wrapper, a wrapped event key, or the "bash" key and this
+# guard reds. (A guard that passed a wrapper-less config is exactly the bug to catch.)
+if ! HS44_OUT=$(python3 - "_harness/hooks/hooks.example.json" <<'PY' 2>&1
+import json, sys
+d = json.load(open(sys.argv[1]))
+assert d.get("version") == 1, "top-level 'version' must be 1"
+hooks = d.get("hooks")
+assert isinstance(hooks, dict), "events must be nested under a 'hooks' wrapper object"
+for e in ("sessionStart", "postToolUse", "sessionEnd"):
+    assert e in hooks and isinstance(hooks[e], list) and hooks[e], f"missing or empty wrapped event: hooks.{e}"
+    for entry in hooks[e]:
+        assert "bash" in entry, f"hooks.{e}: entry missing the verified 'bash' key"
+        assert "command" not in entry, f"hooks.{e}: entry carries the legacy 'command' key"
+        assert "toolFilter" not in entry, f"hooks.{e}: entry carries the legacy 'toolFilter' key"
+PY
+); then
+  echo "BUG [#44 hooks-schema]: the shipped hooks.example.json failed its verified-schema structural check:"
+  printf '%s\n' "$HS44_OUT"
+  exit 1
+fi
+echo "  ok [#44 hooks-schema] — hooks.example.json parses; hooks.{sessionStart,postToolUse,sessionEnd} present; verified 'bash' shape, no legacy command/toolFilter"
+
 # [#14 guard: pack completes without zip] — with the zip CLI unavailable the context pack must still
 # build via the Python zipfile fallback (python3 is already required). HARNESS_PACK_NO_ZIP=1 forces
 # the fallback deterministically (cleaner than PATH surgery, and it exercises the exact fallback

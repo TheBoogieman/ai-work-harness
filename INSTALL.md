@@ -39,10 +39,31 @@ Verify all six appear in your Copilot agent picker. Discovery directory is
 preview-grade: override with `HARNESS_AGENT_DEPLOY_DIR` if yours differs.
 
 ## 5. Hooks
-`_harness/hooks/hooks.example.json` encodes the design (validate on
-sessionStart, commit on postToolUse, sessionEnd = bonus). **Verify event
-names, config location, and payload fields against your Copilot version's
-docs** — schemas differ across CLI/VS Code and change often — then install.
+Copy the verified config into place — the VS Code Copilot IDE agent auto-loads
+`.github/hooks/*.json` in the workspace:
+
+```bash
+mkdir -p .github/hooks
+cp _harness/hooks/hooks.example.json .github/hooks/harness.json
+```
+
+The config is already generic: it uses relative paths and `cwd: "."` (the
+workspace root), so there is nothing to substitute. It validates on
+sessionStart, auto-commits on postToolUse, and runs a bonus validate+commit on
+sessionEnd. If your Copilot surface rejects unknown top-level keys, delete the
+`$comment` header line. **CLI and cloud Copilot surfaces are UNVERIFIED** — their
+hook schema may differ; verify before relying on them.
+
+> **Activation caveat (honest — this is what was actually seen, not the wish).**
+> The schema is *witnessed firing* on the VS Code Copilot IDE agent (v1.129.1,
+> 2026-07-20) on an **established, trusted** workspace. On a **freshly-created**
+> workspace, `postToolUse` did **not** auto-fire immediately in testing — even
+> after trusting the folder and reloading the window. The exact fresh-estate
+> activation trigger is not fully characterised: trust the folder, and expect that
+> a first real agent session or a Copilot restart may be needed before
+> `postToolUse` begins firing. The git safety net is the backstop regardless — if a
+> write wasn't auto-committed, commit it by hand; nothing in the record depends on
+> the hook firing.
 
 ## 6. Acceptance test (do not skip)
 1. `_harness/scripts/check_ticket_log.sh` → validates the template (OK); re-run → vacuous pass.

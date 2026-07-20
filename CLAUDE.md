@@ -26,9 +26,15 @@ Doctrine you must never violate when changing this code:
   "ALL 6 DEMO STAGES PASSED" — it is the truth-teller for any change. (Stage 5
   deliberately breaks and restores a deployment — an internal FAIL followed by
   "healthy after fix" is that stage working, not a failure.)
-- CI: pushing to `main` runs the demo workflow (`.github/workflows/demo.yml`) on
-  Linux + macOS; a red run means a lane failed — the demo is the truth-teller,
-  go read the failing lane.
+- Branch workflow — never commit to `main` directly (a direct push is rejected). Per
+  change: branch from the issue (`NN-slug`), commit (behaviour and docs in SEPARATE
+  commits), run the demo, then push the BRANCH (branch pushes are safe; `main` is
+  protected). Open a PR that closes the issue (`Fixes #NN`). Opening or updating the PR
+  runs the demo workflow (`.github/workflows/demo.yml`) on Linux + macOS; both lanes
+  must be green before merge (enforced as required status checks on `main`), and the CI
+  run URL is the release evidence. STOP at the PR — do not merge; the operator merges
+  once CI is green. A red lane means that lane failed; read it — the demo is the
+  truth-teller.
 - Before pushing, self-check: the demo passes, the commit is scoped to one
   concern, and every claim you wrote (including in comments) is true at HEAD.
 
@@ -60,8 +66,10 @@ Doctrine you must never violate when changing this code:
 ## Cross-platform
 This runs on Linux, macOS, and Windows. Windows support is lane-specific: WSL
 is fully supported (develop here); Git Bash is best-effort — the previously-known
-MSYS-path/Windows-Store-Python hooks-parse issue is fixed (#8), with WSL still
-the fully-tested lane; plain PowerShell runs git only, not the bash machinery.
+MSYS-path/Windows-Store-Python hooks-parse issue is fixed (#8); plain PowerShell runs
+git only, not the bash machinery. Linux and macOS are the fully-tested lanes: CI runs
+the demo on both on every push to `main` and every PR into `main`, so a change is proven
+on both before it merges.
 Write portably — no GNU-only flags without a BSD/macOS fallback. Verify on the
 platform where a fix's failure mode can actually occur.
 

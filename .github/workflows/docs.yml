@@ -1,0 +1,43 @@
+# docs.yml — CI-side documentation governance (#42). Runs .github/scripts/docs-check.sh, which
+# gates MERGES on doc completeness (inventory + frozen sweep set), diagram separation, the branch
+# grammar's doc homes, and the DESIGN.md currency-note disposition — while the demo gates the
+# PRODUCT. Two truths, two instruments. DEV infrastructure: never ships to a user estate (#43).
+#
+# ONE ubuntu-only job — documentation drift is OS-agnostic (seconds of grep), so no macOS runner.
+# Always runs on every PR into main (a required check must always report to unblock merge).
+# SHIP-ONLY: this wave does NOT touch branch protection — the job reports on THIS delivery PR from
+# its own HEAD (pull_request, not _target), and that green run is the flip-order evidence the
+# operator uses to promote "docs completeness + separation" to a REQUIRED check post-merge.
+name: docs
+
+on:
+  # `edited` is included so that editing the PR body (e.g. adding the
+  # [diagrams-unaffected: reason] token the DESIGN.md trigger looks for) re-fires this check.
+  pull_request:
+    branches: [main]
+    types: [opened, edited, synchronize, reopened]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  docs:
+    name: "docs completeness + separation"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history so the DESIGN.md trigger can diff the PR's changed files
+      # INJECTION-SAFE (demo.yml precedent): the attacker-controlled PR body and the base ref pass
+      # through env ONLY, referenced as quoted "$VARS" — never inlined as ${{ }} into a run line.
+      - name: Run docs-check
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          git fetch --quiet origin "$BASE_REF"
+          DOCS_BASE_REF="origin/$BASE_REF" bash .github/scripts/docs-check.sh

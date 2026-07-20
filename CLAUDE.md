@@ -79,6 +79,15 @@ Doctrine you must never violate when changing this code:
 - The ticket-recognition pattern lives in ONE home
   (_harness/scripts/ticket-grammar.sh), sourced by both the validator and
   status. Never duplicate it — an edit there must move both tools.
+- Diagram ownership (STANDING LAW, #42, binds every wave): the SVG diagram FILES
+  in `General AI-Knowledge/AI Harness/` are OPERATOR-owned and maintained by
+  hand — NO WAVE EVER EDITS AN SVG. A wave's only diagram duty is the DESIGN.md
+  currency note: when a change touches machinery the sheets depict, update that
+  note to name the divergence (honest lag), and the operator redraws on their own
+  schedule. README embeds NO diagrams — one pointer to the folder, no more. The
+  docs check (.github/scripts/docs-check.sh) enforces both: a machinery change
+  with no DESIGN.md note (and no `[diagrams-unaffected: reason]` in the PR body)
+  reds, and any `.svg` reference re-entering README reds.
 
 ## Cross-platform
 This runs on Linux, macOS, and Windows. The canonical DEVELOPMENT lane is a

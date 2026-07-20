@@ -15,9 +15,9 @@ You are in my freshly-installed harness estate; `folder-structure.md` at the
 root is the backbone — read **PART I** first. `install.sh` has run. Showing me
 diffs before every write:
 
-1. **Read the installer's closing SUMMARY** (board key, workspace root, model
-   pins, and the tunable knobs with their defaults). Confirm the git repo is
-   whitelist-scoped and has **no remote** (estates are local-only).
+1. **Read the installer's closing SUMMARY** (board key, model pins, the derived
+   workspace root, and the tunable knobs with their defaults). Confirm the git
+   repo is whitelist-scoped and has **no remote** (estates are local-only).
 2. **Manifest audit:** confirm the estate contains **zero DEV files** — nothing
    from the DEV class of `.github/ship-manifest.txt` in the source (`.github/`,
    `CLAUDE.md`, `run_demo.sh`, the manifest itself).

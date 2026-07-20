@@ -74,7 +74,7 @@ jobs:
             fi
             exit 1
           fi
-          echo "OK: branch name conforms and anchors a closed issue in this PR."
+          echo "OK: branch name conforms and anchors an open issue this PR closes."
 
   pr-issue-link:
     name: "PR references an issue"

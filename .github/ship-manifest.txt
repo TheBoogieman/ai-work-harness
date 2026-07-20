@@ -12,10 +12,12 @@ DEV	.github/CONTRIBUTING.md
 DEV	.github/scripts/branch-coherence.sh
 DEV	.github/scripts/branch-grammar.sh
 DEV	.github/scripts/check-issue-ref.sh
+DEV	.github/scripts/docs-check.sh
 DEV	.github/scripts/gate-waiver.sh
 DEV	.github/scripts/make-scratch-estate.sh
 DEV	.github/ship-manifest.txt
 DEV	.github/workflows/demo.yml
+DEV	.github/workflows/docs.yml
 DEV	.github/workflows/governance.yml
 DEV	.github/workflows/windows-witness.yml
 PRODUCT	.gitignore

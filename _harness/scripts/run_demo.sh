@@ -852,26 +852,10 @@ done
 echo "  ok [R-08] — all $r08_total agents are user-invocable: true"
 # --- end R-08 guard -------------------------------------------------------------------
 
-# --- docs-inventory guard (#34): every shipped script is named in README.md -----------
-# The README machinery tree must LIST every _harness/scripts/ basename — a script that
-# ships without a line there is undocumented drift the reader never learns about. Assert
-# one-for-one coverage here so the demo (the truth-teller) goes RED the moment a new script
-# lands unlisted, OR a README line naming an existing script is dropped. Buffer README once
-# and test each basename with a fixed-string here-string match (grep -Fq <<<): deliberately
-# NOT `printf ... | grep -q`, whose early exit on a match SIGPIPEs the producer and, under
-# this script's pipefail, would fail the check even when the name IS present.
-echo "--- docs-inventory: every shipped script is documented in README.md ---"
-readme_body=$(cat README.md)
-di_total=0; di_missing=0
-for s in _harness/scripts/*; do
-  base=$(basename "$s")
-  di_total=$((di_total+1))
-  grep -Fq -- "$base" <<<"$readme_body" \
-    || { echo "FAIL [docs-inventory]: $base ships but is not named in README.md — add it to the machinery tree."; di_missing=$((di_missing+1)); }
-done
-[ "$di_missing" -eq 0 ] || { echo "BUG [docs-inventory]: $di_missing shipped script(s) missing from README.md"; exit 1; }
-echo "  ok [docs-inventory] — all $di_total script basenames appear in README.md"
-# --- end docs-inventory guard ---------------------------------------------------------
+# NOTE (#42 decoupling, cond 2): the documentation-completeness and branch-grammar doc checks that
+# used to live here have MOVED to .github/scripts/docs-check.sh (run by .github/workflows/docs.yml).
+# The demo now carries ZERO documentation knowledge — doc state can never again red the product
+# demo. The demo gates the PRODUCT; docs.yml gates the docs. Two truths, two instruments.
 
 # --- ship/dev classification guard (#43) ----------------------------------------------
 # The ship-manifest is the ONE home for ship/dev classification. Assert every tracked file

@@ -94,18 +94,10 @@ Anything marked *swappable* degrades gracefully if you differ.
 
 ## The drawings
 
-Both blueprint sheets live canonically at
-`General AI-Knowledge/AI Harness/` — these are embedded views, not
-copies. If an image is broken, the build hasn't placed the sheets yet.
-
-**Sheet 1 — Architecture** (what the machine is):
-
-![Sheet 1 — Harness architecture blueprint](General%20AI-Knowledge/AI%20Harness/harness-architecture.svg)
-
-**Sheet 2 — Session flow** (how a day moves through it — cyan boxes are
-the only places you act):
-
-![Sheet 2 — Session operational flow](General%20AI-Knowledge/AI%20Harness/harness-session-flow.svg)
+Two blueprint sheets — **Architecture** (what the machine is) and **Session
+flow** (how a day moves through it) — live at
+`General AI-Knowledge/AI Harness/`. They are operator-maintained diagrams; open
+them there. (Their currency is tracked in that folder's `DESIGN.md`.)
 
 ---
 

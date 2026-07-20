@@ -645,6 +645,32 @@ rm -rf "$R11T"
 echo "  ok [R-11 guard: stale-commit WARN] — fires when session activity outpaces the last commit, silent within margin"
 # --- end status consolidation guards -------------------------------------------------
 
+# [#37] harness-status must NOT abort on a conforming ticket that has NO AI-Knowledge/ dir
+# (hand-made/legacy — the validator tolerates it). Pre-fix, the unguarded find at
+# harness-status.sh:155 exits non-zero on the missing dir and (pipefail + set -e) aborts the
+# roster loop BEFORE this ticket's line prints — suppressing the whole estate's roster. This
+# is the FIRST conforming-ticket-without-AI-Knowledge fixture in the demo (r09_make builds its
+# conforming fixtures WITH AI-Knowledge, so the field hit a case the demo never covered).
+# NOTE: the demo runs with CWD = repo root and never defines WORK_ROOT (harness-status resolves
+# it internally); like every other fixture here the ticket path is relative to Tickets/.
+set +e; PRE37_OUT=$(bash _harness/scripts/harness-status.sh 2>&1); PRE37_RC=$?; set -e
+NOAK="Tickets/202607D-PROJ-777"
+mkdir -p "$NOAK"     # deliberately NO AI-Knowledge/ subdir — the bug trigger
+cat > "$NOAK/202607D-PROJ-777.md" <<'MD'
+# 202607D-PROJ-777
+## Current State
+Legacy ticket imported by hand; no learnings captured yet.
+## Session Log
+## 20260704120000 - imported
+Hand-created for the #37 fixture.
+MD
+set +e; NOAK_OUT=$(bash _harness/scripts/harness-status.sh 2>&1); NOAK_RC=$?; set -e
+printf '%s\n' "$NOAK_OUT" | grep -q '202607D-PROJ-777.*knowledge files: 0' \
+  || { echo "BUG [#37]: harness-status did not reach the AI-Knowledge-less ticket's roster line (it aborted at the unguarded find):"; printf '%s\n' "$NOAK_OUT"; exit 1; }
+[ "$NOAK_RC" -le "$PRE37_RC" ] || { echo "BUG [#37]: the AI-Knowledge-less ticket added a NEW failure / abort (rc=$NOAK_RC > baseline=$PRE37_RC)"; exit 1; }
+rm -rf "$NOAK"
+echo "  ok [#37] — harness-status completes on a conforming ticket with no AI-Knowledge/ (roster reached, no new failure)"
+
 # Break-and-restore status demonstration — deliberately runs AFTER the R-09 block so that on
 # a lane where a plain `harness-status` aborts under set -e, the R-09 stages have already been
 # witnessed. The first call shows a healthy estate; then we remove a deployed agent and watch

@@ -152,7 +152,12 @@ done < <(find "$WORK_ROOT/General AI-Knowledge" -name '*.md' -type f 2>/dev/null
 while IFS= read -r name; do
   md="$WORK_ROOT/Tickets/$name/$name.md"; [[ -f "$md" ]] || continue
   latest=$(grep -oE '^## [0-9]{14} ' "$md" | tail -1 | tr -dc '0-9' || true)
-  live=$(find "$WORK_ROOT/Tickets/$name/AI-Knowledge" -maxdepth 1 -name '*.md' ! -name '_index.md' 2>/dev/null | wc -l)
+  # A conforming ticket may have no AI-Knowledge/ yet (hand-made or legacy — the validator
+  # tolerates it via the same [[ -d ]] guard). WITHOUT this guard, find on the missing dir
+  # exits non-zero; 2>/dev/null hides stderr but not the exit code, pipefail carries it through
+  # wc, and set -e aborts the roster loop mid-run before any verdict (#37). Absent dir -> 0.
+  ak="$WORK_ROOT/Tickets/$name/AI-Knowledge"
+  live=0; [[ -d "$ak" ]] && live=$(find "$ak" -maxdepth 1 -name '*.md' ! -name '_index.md' 2>/dev/null | wc -l)
   echo "OK: $name — last session ${latest:-none}, knowledge files: $live."
 done < <(for d in "$WORK_ROOT/Tickets"/*/; do [[ -d "$d" ]] && basename "$d"; done 2>/dev/null | grep -E "$TICKET_RE" || true)
 

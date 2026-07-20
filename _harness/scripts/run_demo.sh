@@ -713,6 +713,64 @@ printf '%s\n' "$O38c" | grep -qE 'Tickets/202607E-PROJ-888 tracks .* in its root
 rm -rf "$O"
 echo "  ok [#38 oversize WARN] — fires with Dump/ prescription (yellow), clears when scratch moves to Dump/, honours the knob"
 
+# [#47 + #49 governance gates] revert-proofs for the LOCALLY-decidable gate scripts under
+# .github/scripts/ (the API existence/OPEN check is CI-only and witnessed at the seat, not here).
+# Same shape as #38: these call the very scripts the workflow calls, so weakening a grammar or
+# pattern turns the matching guard RED. CWD is the repo root, so the relative paths resolve.
+
+# [#47 branch-grammar] the NN-slug grammar ACCEPTS the conforming set AND REJECTS the
+# non-conforming set — both directions, so loosening OR tightening the regex reds this guard.
+GRAM=.github/scripts/branch-grammar.sh
+for good in 37-status-abort-fix 47-governance-pair; do
+  bash "$GRAM" "$good" >/dev/null 2>&1 || { echo "BUG [#47 branch-grammar]: conforming '$good' was rejected"; exit 1; }
+done
+for bad in WSL-canonical Feature/Foo 47_governance mixedCase; do
+  bash "$GRAM" "$bad" 47 >/dev/null 2>&1 && { echo "BUG [#47 branch-grammar]: non-conforming '$bad' was accepted"; exit 1; }
+done
+# Capture the miss message before grepping — the script exits non-zero by design, and
+# grepping it through a pipe would let pipefail red this even when the text matches.
+GRAM_MISS=$(bash "$GRAM" "Feature/Foo" 47 2>&1 || true)
+printf '%s\n' "$GRAM_MISS" | grep -q 'git branch -m' \
+  || { echo "BUG [#47 branch-grammar]: miss message lacks the literal 'git branch -m' rename prescription"; exit 1; }
+echo "  ok [#47 branch-grammar] — conforming accepted, non-conforming rejected, rename prescription emitted"
+
+# [#47 coherence] the branch's leading NN must be a MEMBER of the PR's closing-issue set.
+COH=.github/scripts/branch-coherence.sh
+printf '47 49\n' | bash "$COH" 47-governance-pair >/dev/null 2>&1 \
+  || { echo "BUG [#47 coherence]: NN present in the closing set was wrongly red"; exit 1; }
+printf '47 49\n' | bash "$COH" 99-wrong-anchor >/dev/null 2>&1 \
+  && { echo "BUG [#47 coherence]: NN absent from the closing set was wrongly accepted"; exit 1; }
+COH_MISS=$(printf '47 49\n' | bash "$COH" 99-wrong-anchor 2>&1 || true)   # capture: exits non-zero by design
+printf '%s\n' "$COH_MISS" | grep -q 'not among them' \
+  || { echo "BUG [#47 coherence]: mismatch lacks the both-remedies coherence prescription"; exit 1; }
+printf '' | bash "$COH" 47-governance-pair >/dev/null 2>&1 \
+  || { echo "BUG [#47 coherence]: an empty closing set must pass here (it is #49's red), but went red"; exit 1; }
+echo "  ok [#47 coherence] — NN in closing-set green, NN absent red (both remedies), empty set defers to #49"
+
+# [#49 issue-ref] a CLOSING keyword is required, and the closing-set is parsed for coherence.
+REF=.github/scripts/check-issue-ref.sh
+REF_OUT=$(printf 'Title\nFixes #47 and Closes #49\n' | bash "$REF" 2>/dev/null) \
+  || { echo "BUG [#49 issue-ref]: a valid Fixes/Closes body was rejected"; exit 1; }
+[ "$REF_OUT" = "47 49" ] \
+  || { echo "BUG [#49 issue-ref]: closing-set mis-parsed (got '$REF_OUT', want '47 49')"; exit 1; }
+printf 'mentions #38 only\n' | bash "$REF" >/dev/null 2>&1 \
+  && { echo "BUG [#49 issue-ref]: a bare '#38' with no closing keyword was accepted"; exit 1; }
+REF_MISS=$(printf 'no anchor here\n' | bash "$REF" 2>&1 || true)   # capture: exits non-zero by design
+printf '%s\n' "$REF_MISS" | grep -q 'no closing issue reference' \
+  || { echo "BUG [#49 issue-ref]: the missing-anchor prescription is absent"; exit 1; }
+echo "  ok [#49 issue-ref] — closing keyword required + set parsed; bare mention and no-ref both red"
+
+# [#49 label-escape] the gate-waiver label greens the checks AND emits a loud, on-record line.
+WAIV=.github/scripts/gate-waiver.sh
+set +e; WOUT=$(printf 'enhancement\ngate-waiver\n' | bash "$WAIV" "PR #0" 2>&1); WRC=$?; set -e
+[ "$WRC" -eq 0 ] \
+  || { echo "BUG [#49 label-escape]: the gate-waiver label did not green the check (rc=$WRC)"; exit 1; }
+printf '%s\n' "$WOUT" | grep -q 'GATE-WAIVER' \
+  || { echo "BUG [#49 label-escape]: the waiver fired WITHOUT the mandatory loud log line"; exit 1; }
+printf 'enhancement\n' | bash "$WAIV" "PR #0" >/dev/null 2>&1 \
+  && { echo "BUG [#49 label-escape]: the waiver fired with NO gate-waiver label present"; exit 1; }
+echo "  ok [#49 label-escape] — waiver label greens + emits the loud line; absent label does not waive"
+
 # Break-and-restore status demonstration — deliberately runs AFTER the R-09 block so that on
 # a lane where a plain `harness-status` aborts under set -e, the R-09 stages have already been
 # witnessed. The first call shows a healthy estate; then we remove a deployed agent and watch

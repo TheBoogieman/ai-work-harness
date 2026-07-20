@@ -6,8 +6,8 @@
 # WHY: cond 0 (test-bench isolation) forbids live-fire hook testing on the canonical
 # checkout — a real postToolUse auto-commit must never fire into the product repo. This
 # builds a disposable estate that IS a valid Work-root (the machinery + a generic ticket +
-# a git-init'd record repo) with the CANDIDATE hook config already dropped where the VS Code
-# Copilot IDE agent auto-loads it (.github/hooks/harness.json). The operator opens THIS
+# a git-init'd record repo) with the shipped, verified hook config already dropped where the
+# VS Code Copilot IDE agent auto-loads it (.github/hooks/harness.json). The operator opens THIS
 # folder in VS Code + Copilot, edits a file, and watches postToolUse commit into the SCRATCH
 # repo — never the product repo. It is kept free of work identifiers (G6): only the generic
 # 999912Z-PROJ template ticket (no real board keys) and a generic git identity.
@@ -36,9 +36,10 @@ cp "$REPO_ROOT/.gitattributes" "$DEST/.gitattributes"
 mkdir -p "$DEST/Tickets"
 cp -r "$REPO_ROOT/Tickets/999912Z-PROJ-99999" "$DEST/Tickets/999912Z-PROJ-99999"
 
-# Drop the CANDIDATE hook config where the VS Code Copilot IDE agent auto-loads it.
+# Drop the shipped, verified hook config where the VS Code Copilot IDE agent auto-loads it —
+# so a re-confirmation fires the exact artifact users install (its one home, no separate copy).
 mkdir -p "$DEST/.github/hooks"
-cp "$REPO_ROOT/_harness/hooks/harness.candidate.json" "$DEST/.github/hooks/harness.json"
+cp "$REPO_ROOT/_harness/hooks/hooks.example.json" "$DEST/.github/hooks/harness.json"
 
 # Git-init the disposable RECORD repo (local-only). A generic identity keeps anything
 # personal out of the scratch history (G6). An initial commit gives postToolUse a HEAD to

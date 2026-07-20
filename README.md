@@ -38,10 +38,10 @@ The same demo runs in CI: on every push to `main`, on every pull request into `m
 and on manual dispatch, GitHub Actions runs `run_demo.sh` on both Linux and macOS, so
 the GNU/BSD portability branches are exercised for real on macOS, not via shims.
 
-**Then wire your AI assistant:** follow `INSTALL.md` (~30 minutes) —
-personalise the backbone, pin real model IDs into the six agents, deploy
-them, install the hooks, run the acceptance test. `setup-prompt.md` lets a
-strong-model Copilot session drive the install for you.
+**Then wire your AI assistant:** follow `INSTALL.md` (~10 minutes) — run
+`install.sh` (it lays down the estate, inits git, deploys agents, installs the
+hooks, runs the validator + status), then paste `setup.md` into your AI
+assistant of choice as the final validation gate.
 
 ## Assumptions
 
@@ -89,8 +89,8 @@ Anything marked *swappable* degrades gracefully if you differ.
 - `Tickets/999912Z-PROJ-99999/` — the template ticket.
 - `General AI-Knowledge/AI Harness/` — the two blueprint sheets + design
   notes.
-- `INSTALL.md` / `setup-prompt.md` — the flat-pack instructions and the
-  prompt that assembles it.
+- `INSTALL.md` / `install.sh` / `setup.md` — the flat-pack instructions, the
+  installer that assembles the estate, and the AI-assistant final-gate prompt.
 
 ## The drawings
 

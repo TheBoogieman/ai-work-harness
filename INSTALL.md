@@ -9,71 +9,47 @@ git. Time: ~30 minutes.
 Register its Jupyter kernel and set it as your workspace default interpreter.
 `pip install` works directly INSIDE the activated venv. If instead you install
 `nbformat` into a **system** Python, modern distros (PEP 668) require
-`pip install nbformat --break-system-packages` — as CLAUDE.md's environment note shows.
+`pip install nbformat --break-system-packages`.
 
-## 1. Place the workspace
-Clone into (or copy over) your work root so `folder-structure.md` sits at the
-top — the harness self-anchors: **the Work root is the directory containing
-that file.** Keep your real code checkouts under `GitHub/` (gitignored here;
-this repo never touches them).
+## 1. Run the installer
+    bash install.sh /path/to/your/Work
+`install.sh` is a non-destructive **dumb creator**: it lays down PRODUCT files
+only (per `.github/ship-manifest.txt` — a fresh estate has **zero** dev files),
+scaffolds any absent ticket anatomy, initialises a whitelist-scoped,
+**local-only** git repo with a day-zero commit, copies the verified hook config
+to `.github/hooks/harness.json`, deploys the agents, and runs the validator +
+status. It **never edits an existing file** — a re-run finds nothing absent and
+says "nothing to do".
 
-## 2. Personalise (5 minutes)
-- `folder-structure.md`: Owner line; your board key (replace `PROJ`); your
-  key-repos list.
-- `_agents/*.agent.md`: replace `PICK-A-CHEAP-MODEL` / `PICK-A-SONNET-CLASS-MODEL`
-  with real model IDs enabled in YOUR Copilot org (scalar strings only —
-  arrays break the CLI loader).
-- `LICENSE`: your name.
-- `_harness/scripts/make_context_pack.sh`: seed the SCRUB table with your
-  identifier classes (employee ID, org domains, cloud account IDs).
+It asks for your **board key** (offering the documented grammar-widening if your
+board key contains a hyphen) and **model pins** — press Enter to accept each
+suggested default; on a re-run it offers the ESTABLISHED values so you can
+review and Enter-through, and a changed answer is warned-and-routed, never
+applied (the installer edits nothing that pre-exists). Flags: `--dry-run` prints the full plan
+and touches nothing; `--yes` accepts every default non-interactively. Read the
+closing **SUMMARY** — it records every choice and every tunable knob with its
+default and its one env-var home.
 
-## 3. Git safety net
-    git init && git add -A && git commit -m "harness: day zero"
-Verify `git status` shows ONLY the record set (whitelist `.gitignore` does
-this). Never add a remote to this repo — publish a SANITISED copy separately
-if you want one (that is what this repo is).
+> **Hook activation caveat (honest — what was actually seen, not the wish).**
+> The hook schema is *witnessed firing* on the VS Code Copilot IDE agent
+> (v1.129.1, 2026-07-20) on an **established, trusted** workspace. On a
+> **freshly-created** workspace, `postToolUse` did **not** auto-fire immediately
+> in testing — even after trusting the folder and reloading. The exact
+> fresh-estate activation trigger is not fully characterised: trust the folder,
+> and expect a first real session or a Copilot restart may be needed. The git
+> safety net is the backstop — if a write wasn't auto-committed, commit it by
+> hand; nothing in the record depends on the hook firing. (CLI and cloud Copilot
+> surfaces are UNVERIFIED — their schema may differ.)
 
-## 4. Deploy agents
-    _harness/scripts/deploy_agents.sh
-Verify all six appear in your Copilot agent picker. Discovery directory is
-preview-grade: override with `HARNESS_AGENT_DEPLOY_DIR` if yours differs.
-
-## 5. Hooks
-Copy the verified config into place — the VS Code Copilot IDE agent auto-loads
-`.github/hooks/*.json` in the workspace:
-
-```bash
-mkdir -p .github/hooks
-cp _harness/hooks/hooks.example.json .github/hooks/harness.json
-```
-
-The config is already generic: it uses relative paths and `cwd: "."` (the
-workspace root), so there is nothing to substitute. It validates on
-sessionStart, auto-commits on postToolUse, and runs a bonus validate+commit on
-sessionEnd. If your Copilot surface rejects unknown top-level keys, delete the
-`$comment` header line. **CLI and cloud Copilot surfaces are UNVERIFIED** — their
-hook schema may differ; verify before relying on them.
-
-> **Activation caveat (honest — this is what was actually seen, not the wish).**
-> The schema is *witnessed firing* on the VS Code Copilot IDE agent (v1.129.1,
-> 2026-07-20) on an **established, trusted** workspace. On a **freshly-created**
-> workspace, `postToolUse` did **not** auto-fire immediately in testing — even
-> after trusting the folder and reloading the window. The exact fresh-estate
-> activation trigger is not fully characterised: trust the folder, and expect that
-> a first real agent session or a Copilot restart may be needed before
-> `postToolUse` begins firing. The git safety net is the backstop regardless — if a
-> write wasn't auto-committed, commit it by hand; nothing in the record depends on
-> the hook firing.
-
-## 6. Acceptance test (do not skip)
-1. `_harness/scripts/check_ticket_log.sh` → validates the template (OK); re-run → vacuous pass.
-2. Copy the template to a scratch ticket, edit its `.md`, re-run → OK + stamped.
-3. Delete an index line for a knowledge file → re-run → FAIL with a working fix.
-4. `_harness/scripts/harness-status.sh` → zero FAILs; rename one deployed
-   agent → FAIL with fix; restore.
-5. `_harness/scripts/make_context_pack.sh --ticket <scratch>` → zip on your
-   Desktop; MANIFEST reads "self-audit: zero scrub-table hits".
-6. Delete the scratch ticket; commit.
+## 2. Final gate — hand the estate to your AI assistant
+Paste the prompt in **`setup.md`** into your AI assistant of choice, working in
+the new estate. It is the last step and the **final validation gate**: the
+assistant reads what the installer established, confirms the validator + status
+are green, spot-checks the scaffolded tickets, walks you through the
+personalisation the installer left to you (any model pin still `PICK-A-*`, the
+`LICENSE` name, the `make_context_pack.sh` scrub-table seeds, the
+`folder-structure.md` Owner/key-repos lines), does the live hook-fire check, and
+nudges you to fix anything red — on the record.
 
 ## 7. Daily use
 New ticket: pick **ticket-init** in Copilot, paste the issue link, answer

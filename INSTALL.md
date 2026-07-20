@@ -22,8 +22,10 @@ status. It **never edits an existing file** — a re-run finds nothing absent an
 says "nothing to do".
 
 It asks for your **board key** (offering the documented grammar-widening if your
-board key contains a hyphen), **workspace root**, and **model pins** — press
-Enter to accept each suggested default. Flags: `--dry-run` prints the full plan
+board key contains a hyphen) and **model pins** — press Enter to accept each
+suggested default; on a re-run it offers the ESTABLISHED values so you can
+review and Enter-through, and a changed answer is warned-and-routed, never
+applied (the installer edits nothing that pre-exists). Flags: `--dry-run` prints the full plan
 and touches nothing; `--yes` accepts every default non-interactively. Read the
 closing **SUMMARY** — it records every choice and every tunable knob with its
 default and its one env-var home.

@@ -6,42 +6,55 @@ script catches misses, and git undoes mistakes. Born from a 40,000-credit
 month of undisciplined frontier-model use; rebuilt so that never happens
 again — to anyone. MIT licensed.
 
+## Setup
+
+The harness installs onto a **work estate** — a local folder it turns into a
+disciplined, record-keeping workspace. Two steps: prove the machinery runs on
+your machine (the demo — no AI assistant needed), then lay down the estate and
+wire your assistant.
+
+**1 · Prove the machinery — `run_demo.sh` (~60 seconds).** Clone, then run the
+demo in a real shell for your platform:
+
+- **macOS / Linux** — your terminal's bash (stock macOS works as-is; the scripts
+  auto-detect GNU vs BSD userland):
+  ```bash
+  git clone https://github.com/TheBoogieman/ai-work-harness.git ~/Work
+  cd ~/Work && bash _harness/scripts/run_demo.sh
+  ```
+- **Windows** — the integrated **Git-Bash/Cygwin** terminal (plain PowerShell can
+  push git but cannot run the bash machinery):
+  ```bash
+  git clone https://github.com/TheBoogieman/ai-work-harness.git ~/Work
+  cd ~/Work && bash _harness/scripts/run_demo.sh
+  ```
+
+It must end with **ALL 6 DEMO STAGES PASSED**. The demo inits the local git
+safety net, validates the template ticket, runs a scratch ticket through the
+happy path, **deliberately corrupts a record and shows the validator refusing
+with an exact fix**, round-trips the notebook helper, breaks and restores an
+agent deployment, and builds a scrubbed context pack with a manifest self-audit.
+The same demo runs in CI on Linux + macOS on every push and PR into `main`, so
+the GNU/BSD portability branches are exercised for real, not via shims.
+
+**2 · Install onto your estate and wire your assistant (~10 minutes).** Follow
+`INSTALL.md` — run `install.sh` (it lays down the estate, inits git, deploys
+agents, installs the hooks, runs the validator + status), then paste `setup.md`
+into your AI assistant of choice as the final validation gate. *(Prerequisites,
+any platform: `python3` with `nbformat`; `unzip` on Linux/macOS — the
+context-pack helper falls back to Python's zipfile if it is missing.)*
+
 ## What it does, plainly
 
 You work on tickets with an AI assistant. The harness makes that work leave
 **records** instead of vibes: every ticket folder keeps its own log, current
-state, and captured knowledge; every ad-hoc check — SQL, Python, whatever your work is — lands in an
-audit-trail notebook; every file write is auto-committed to a local-only git repo (via a Copilot hook, when it fires); and a
-dumb bash validator refuses to let a session start on top of an undocumented
-mess. Six small AI agents do the clerical work (logging, capturing,
-compacting) so the expensive model — and you — only do the thinking. Nothing
-self-heals, nothing phones home, and one markdown file is the law.
-
-## Setup
-
-**Try it in 60 seconds (no AI assistant required):**
-
-```bash
-git clone https://github.com/TheBoogieman/ai-work-harness.git ~/Work
-cd ~/Work
-bash _harness/scripts/run_demo.sh
-```
-
-The demo initialises the local git safety net, validates the template
-ticket, runs a scratch ticket through the happy path, **deliberately
-corrupts a record and shows the validator refusing with an exact fix**,
-round-trips the notebook helper, breaks and manually restores an agent deployment, and
-produces a scrubbed context pack with a manifest self-audit. If all six
-stages pass, the machinery works on your machine.
-
-The same demo runs in CI: on every push to `main`, on every pull request into `main`,
-and on manual dispatch, GitHub Actions runs `run_demo.sh` on both Linux and macOS, so
-the GNU/BSD portability branches are exercised for real on macOS, not via shims.
-
-**Then wire your AI assistant:** follow `INSTALL.md` (~10 minutes) — run
-`install.sh` (it lays down the estate, inits git, deploys agents, installs the
-hooks, runs the validator + status), then paste `setup.md` into your AI
-assistant of choice as the final validation gate.
+state, and captured knowledge; every ad-hoc check — SQL, Python, whatever your
+work is — lands in an audit-trail notebook; every file write auto-commits to a
+local-only git repo (via a Copilot hook, when it fires); and a dumb bash
+validator refuses to let a session start on top of an undocumented mess. Six
+small AI agents do the clerical work (logging, capturing, compacting) so the
+expensive model — and you — only do the thinking. Nothing self-heals, nothing
+phones home, and one markdown file is the law.
 
 ## Assumptions
 

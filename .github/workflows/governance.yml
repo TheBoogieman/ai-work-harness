@@ -1,0 +1,123 @@
+# governance.yml — the merge-gate governance checks (#47 branch grammar +
+# coherence, #49 issue linkage). THIN GLUE only: it reads the PR event, moves
+# the attacker-controlled fields into env, and calls the .github/scripts/*
+# checks that hold all the logic (so the grammar/logic is single-sourced and
+# the local demo revert-proves the same code). API-level checks (does the
+# referenced issue exist / is it open) are necessarily CI-only.
+name: governance
+
+on:
+  # pull_request (NOT pull_request_target): runs from the PR's own HEAD with a
+  # read-only token and no repo secrets — safe for fork PRs. `edited` is included
+  # so that editing the PR body (e.g. removing the Fixes #NN) re-fires the checks.
+  pull_request:
+    branches: [main]
+    types: [opened, edited, synchronize, reopened]
+
+# Per-branch concurrency, mirroring demo.yml: a newer PR-update supersedes the
+# in-progress run for that same source branch; distinct PRs never cancel each other.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+# Least privilege (#49 cond 1 "read-only, no secrets"): read the repo, read
+# issues (for existence/OPEN resolution), read PRs. No write anywhere.
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+
+# INJECTION-SAFE, NON-NEGOTIABLE: the PR title, body, and head ref are
+# attacker-controlled. They are exposed ONLY through env here and referenced as
+# quoted "$VARS" inside run: — never inlined as ${{ ... }} in a run line, which
+# would let a crafted PR body inject shell. Labels arrive as a JSON array string
+# and are parsed with jq. (demo.yml is the commenting precedent; a comment is a
+# claim — G4/G7.)
+env:
+  HEAD_REF: ${{ github.head_ref }}
+  PR_TITLE: ${{ github.event.pull_request.title }}
+  PR_BODY: ${{ github.event.pull_request.body }}
+  PR_NUMBER: ${{ github.event.pull_request.number }}
+  IS_FORK: ${{ github.event.pull_request.head.repo.fork }}
+  LABELS_JSON: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+
+jobs:
+  branch-naming:
+    name: "branch-name grammar (NN-slug)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate branch name + number↔issue coherence
+        run: |
+          set -uo pipefail
+          # Maintainer escape hatch (#49 cond 3): a `gate-waiver` label greens BOTH
+          # jobs. gate-waiver.sh emits the mandatory loud line when it fires.
+          if printf '%s' "$LABELS_JSON" | jq -r '.[]' | bash .github/scripts/gate-waiver.sh "PR #$PR_NUMBER"; then
+            exit 0
+          fi
+          # Parse the PR's closing-issue set ONCE (shared with the coherence check).
+          # The text-gate red for a MISSING anchor is the pr-issue-link job's to
+          # raise, so ignore this call's exit code here (|| true) — we only want the
+          # set, and the first NN as a concrete rename suggestion for the grammar miss.
+          CLOSING="$(printf '%s\n%s\n' "$PR_TITLE" "$PR_BODY" | bash .github/scripts/check-issue-ref.sh || true)"
+          SUGGEST_NN="$(printf '%s' "$CLOSING" | awk '{print $1}')"
+          rc=0
+          bash .github/scripts/branch-grammar.sh "$HEAD_REF" "$SUGGEST_NN" || rc=$?
+          printf '%s' "$CLOSING" | bash .github/scripts/branch-coherence.sh "$HEAD_REF" || rc=$?
+          if [ "$rc" -ne 0 ]; then
+            # Fork courtesy (#47 cond 4): outside contributors are guests — the
+            # grammar/coherence red is downgraded to informational for fork PRs.
+            # (The issue-anchor requirement in the other job is NOT fork-exempt.)
+            if [ "$IS_FORK" = "true" ]; then
+              echo "::notice::[fork PR] branch grammar/coherence is informational for forks (messages above); not enforced."
+              exit 0
+            fi
+            exit 1
+          fi
+          echo "OK: branch name conforms and anchors a closed issue in this PR."
+
+  pr-issue-link:
+    name: "PR references an issue"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Require a closing issue reference that resolves to an OPEN issue
+        env:
+          # gh reads GH_TOKEN; the default job token is read-only per permissions above.
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -uo pipefail
+          # Same maintainer escape hatch — a waiver greens this job too.
+          if printf '%s' "$LABELS_JSON" | jq -r '.[]' | bash .github/scripts/gate-waiver.sh "PR #$PR_NUMBER"; then
+            exit 0
+          fi
+          # Text gate + parse (universal — NOT fork-exempt; every PR needs an anchor).
+          # check-issue-ref.sh prints the closing-set on stdout, its prescription on stderr.
+          if ! CLOSING="$(printf '%s\n%s\n' "$PR_TITLE" "$PR_BODY" | bash .github/scripts/check-issue-ref.sh)"; then
+            exit 1
+          fi
+          # Existence/OPEN validation (#49 cond 1) — CI-only, needs the API. A number
+          # that doesn't resolve is a DISTINCT red from one that resolves but is closed.
+          fail=0
+          for nn in $CLOSING; do
+            # Existence is keyed off gh api's EXIT CODE, not its output: on a 404 gh
+            # still prints the error body, and `--jq` would happily emit {state:null},
+            # so an output/grep test would misread a dangling ref as a live issue. Fetch
+            # the raw issue (no --jq) so a non-zero exit cleanly means "does not resolve".
+            if ! raw="$(gh api "repos/$GITHUB_REPOSITORY/issues/$nn" 2>/dev/null)"; then
+              echo "FAIL [PR references an issue]: #$nn is a dangling reference — no such issue in this repo. Anchor to an existing issue (see CONTRIBUTING.md)."
+              fail=1
+              continue
+            fi
+            # issues/<n> also returns PRs; a non-null .pull_request means it's a PR, not an issue.
+            if printf '%s' "$raw" | jq -e '.pull_request != null' >/dev/null; then
+              echo "FAIL [PR references an issue]: #$nn is a pull request, not an issue. Reference an issue (see CONTRIBUTING.md)."
+              fail=1
+            elif [ "$(printf '%s' "$raw" | jq -r '.state')" = "closed" ]; then
+              echo "FAIL [PR references an issue]: #$nn is already closed. Anchor to an OPEN issue, or reopen #$nn (see CONTRIBUTING.md)."
+              fail=1
+            else
+              echo "OK: #$nn resolves to an open issue."
+            fi
+          done
+          exit $fail

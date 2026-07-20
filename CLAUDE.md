@@ -35,6 +35,15 @@ Doctrine you must never violate when changing this code:
   run URL is the release evidence. STOP at the PR — do not merge; the operator merges
   once CI is green. A red lane means that lane failed; read it — the demo is the
   truth-teller.
+- Branch grammar + PR anchor (enforced at the merge gate by
+  `.github/workflows/governance.yml`, #47 + #49): a merging branch must match
+  `^[0-9]+-[a-z0-9]+(-[a-z0-9]+)*$` (leading issue number + lowercase-kebab slug, e.g.
+  `47-governance-pair`; no exception prefix) and its leading number must be among the
+  PR's `Fixes #NN` set. Every PR body must carry a closing reference
+  (`Fixes`/`Closes`/`Resolves #NN`) to a real, OPEN issue. Local branch names stay free;
+  the gate is the law. The grammar's one editable home is
+  `.github/scripts/branch-grammar.sh` — these checks never ship to a user's estate (#43).
+  See `.github/CONTRIBUTING.md` for the contributor-facing version.
 - Before pushing, self-check: the demo passes, the commit is scoped to one
   concern, and every claim you wrote (including in comments) is true at HEAD.
 

@@ -283,6 +283,17 @@ fix ships with a regression guard in that demo that provably fails on the
 pre-fix code (features are usually guarded too, but the law is bug-scoped). See
 `CLAUDE.md` for the full rules; don't hand-edit the machinery from memory.
 
+**Merge-gate governance:** work is issues-first — open or claim an issue, branch
+or fork, then open a PR whose body closes it (`Fixes #NN`). Beyond the demo, two
+checks gate every PR into `main` (`.github/workflows/governance.yml`): the branch
+name must match `^[0-9]+-[a-z0-9]+(-[a-z0-9]+)*$` (leading issue number +
+lowercase-kebab slug, e.g. `47-governance-pair`) with its number among the PR's
+`Fixes #NN`, and the PR must reference a real, open issue via a closing keyword.
+Local branch names stay free; the gate is the law, and fork PRs get grammar
+leniency but still need the issue anchor. These checks are development
+infrastructure and never ship to an estate. Full contributor guide:
+[CONTRIBUTING.md](.github/CONTRIBUTING.md).
+
 **For an external design review** (rather than local iteration), run
 `_harness/scripts/make_context_pack.sh`: it produces a scrubbed, disposable
 zip of the harness to take to a design session — then come back with an

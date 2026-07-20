@@ -257,6 +257,13 @@ Each fact has exactly one home; everything else points at it.
 
 ## Developing this harness with an AI assistant
 
+> **About the SOURCE repository, not your work estate.** This section is for
+> people hacking on the harness itself (branches, PRs, CI). None of it is estate
+> setup — the files it names (`CLAUDE.md`, `.github/`, `run_demo.sh`) are
+> classified DEV in `.github/ship-manifest.txt` and never ship. To *install* the
+> harness, see [INSTALL.md](INSTALL.md); nothing here points a user at dev
+> machinery.
+
 The harness is built to be developed much the way you'd use it: clone the repo
 locally and point an agentic AI coding assistant at it to work on the harness
 itself. The repo root carries a **`CLAUDE.md`** — machine-facing instructions

@@ -51,4 +51,5 @@ PRODUCT	_harness/scripts/portability.sh
 DEV	_harness/scripts/run_demo.sh
 PRODUCT	_harness/scripts/ticket-grammar.sh
 PRODUCT	folder-structure.md
+PRODUCT	install.sh
 DEV	setup-prompt.md

@@ -3,6 +3,7 @@
 !/.gitignore
 !/.gitattributes
 !/LICENSE
+!/install.sh
 !/README.md
 !/INSTALL.md
 !/setup-prompt.md

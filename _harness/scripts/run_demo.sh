@@ -904,6 +904,42 @@ class_total=$(printf '%s\n' "$class_paths" | grep -c .)
 echo "  ok [#43 classification] — all $class_total tracked files classified exactly once (PRODUCT/DEV), both directions"
 # --- end ship/dev classification guard ------------------------------------------------
 
+# --- installer guards (#39): the non-destructive / dumb-creator claims are the richest revert ---
+# surface, so every one gets a guard that reds if a run WOULD edit/clobber a pre-existing file or
+# leak a DEV file. install.sh is exercised for real into a throwaway estate (agent deploy is sent
+# to a throwaway dir so nothing touches $HOME). Plain-English asserts; guard-per-bug on each claim.
+echo "--- #39 installer: non-destructive, PRODUCT-only, single-schema-home, idempotent ---"
+I39_ROOT=$(mktemp -d); I39_EST="$I39_ROOT/estate"; I39_DEPLOY=$(mktemp -d)
+# (a) single schema home: install.sh must carry NO hook-schema literal (it copies from the one
+#     home, hooks.example.json, by path). A second literal here is the two-homes finding.
+grep -qE '"(sessionStart|postToolUse|sessionEnd|timeoutSec)"' install.sh \
+  && { echo "BUG [#39 schema-home]: install.sh carries a hook-schema literal — the schema must live only in _harness/hooks/hooks.example.json"; exit 1; }
+echo "  ok [#39 schema-home] — install.sh carries no schema literal (single home: hooks.example.json)"
+# (b) PRODUCT-only (#43 cond 2 / #39): a fresh --yes install lays down zero DEV files.
+HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh --yes "$I39_EST" >/dev/null 2>&1 \
+  || { echo "BUG [#39 install]: a clean --yes install failed"; exit 1; }
+i39_leak=0
+while IFS= read -r d; do [ -e "$I39_EST/$d" ] && { echo "  DEV leak: $d"; i39_leak=1; }; done < <(awk -F'\t' '$1=="DEV"{print $2}' .github/ship-manifest.txt)
+[ "$i39_leak" -eq 0 ] || { echo "BUG [#39 product-only]: a DEV file reached the installed estate"; exit 1; }
+echo "  ok [#39 product-only] — fresh estate contains zero DEV files"
+# (c) dumb creator (cond 2, ABSOLUTE): a pre-existing (corrupted) file is byte-UNCHANGED by a re-run.
+echo "GARBAGE" > "$I39_EST/AGENTS.md"; i39_before=$(sha256sum "$I39_EST/AGENTS.md" | awk '{print $1}')
+HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh --yes "$I39_EST" >/dev/null 2>&1
+i39_after=$(sha256sum "$I39_EST/AGENTS.md" | awk '{print $1}')
+[ "$i39_before" = "$i39_after" ] || { echo "BUG [#39 dumb-creator]: install EDITED a pre-existing file (AGENTS.md changed) — it must create only what is absent"; exit 1; }
+echo "  ok [#39 dumb-creator] — pre-existing file left byte-unchanged (creates only what is absent)"
+# (d) idempotency: a re-run finds nothing absent and creates zero.
+i39_plan=$(HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh --yes "$I39_EST" 2>&1 | grep -oE 'PRODUCT files to create: [0-9]+' | head -1)
+[ "$i39_plan" = "PRODUCT files to create: 0" ] || { echo "BUG [#39 idempotency]: a re-run wanted to create files ($i39_plan)"; exit 1; }
+echo "  ok [#39 idempotency] — re-run creates nothing (nothing absent)"
+# (e) --dry-run touches nothing: a dry-run against a fresh path must not create it.
+i39_fresh="$I39_ROOT/dryrun-never"
+HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh --dry-run --yes "$i39_fresh" >/dev/null 2>&1
+[ ! -e "$i39_fresh" ] || { echo "BUG [#39 dry-run]: --dry-run created the target dir — it must touch nothing"; exit 1; }
+echo "  ok [#39 dry-run] — --dry-run plans without touching the filesystem"
+rm -rf "$I39_ROOT" "$I39_DEPLOY"
+# --- end installer guards -------------------------------------------------------------
+
 echo "=== 6/6 scrubbed context pack + self-audit ==="
 bash _harness/scripts/make_context_pack.sh --ticket 999911Z-PROJ-99998
 # The shared PACK_OUT_DIR must hold EXACTLY this one pack before we glob it — every other pack-building

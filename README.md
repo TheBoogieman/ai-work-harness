@@ -75,6 +75,21 @@ validation gate** — it confirms the validator + status are green, spot-checks 
 scaffolded tickets, and walks you through the personalisation the installer left
 you (model pins, `LICENSE`, scrub-table seeds, Owner lines).
 
+### Re-running / reconfiguring
+
+Re-running `install.sh` serves two different intents, each with its own home:
+
+- **Reconfigure** (review or change your board key / model pins): run `install.sh`
+  from **inside the estate** (`cd ~/Work && bash install.sh`). It recognises the estate
+  by its `harness.estate` key, enters **reconfigure-only mode**, and offers your
+  established values as defaults. A changed answer is **WARNed** with the file to edit
+  and an AI-assistant handoff — the installer never edits your config for you; that
+  stays your (or your assistant's) deliberate act via `setup.md`, on the record.
+- **Complete or repair** (add or fix estate files): run `install.sh` from your
+  **source checkout**, targeting the estate (`bash install.sh ~/Work`). The estate's
+  own copy cannot create files — there is no manifest or source to copy from in-estate
+  — and the reconfigure banner points you back to the checkout for this.
+
 ### Hook activation caveat
 
 The auto-commit hook is *witnessed firing* on the VS Code Copilot IDE agent

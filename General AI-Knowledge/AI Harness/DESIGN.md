@@ -12,7 +12,7 @@ four-state entry sweep — how `check_ticket_log.sh` sorts each Tickets/ subdir
 non-silenceable nag · hand-made → status WARN). Deliberately NOT on the runtime
 sheets: the setup/acceptance tooling (`deploy_agents.sh`, `run_demo.sh`) and the
 notebook helper (`append_notebook_cell.py`, named in Sheet 1's footnote) — these
-are install/CI machinery, not runtime layers, and belong to INSTALL/README. For
+are install/CI machinery, not runtime layers, and belong to README's Setup section. For
 current enforcement/status/naming behaviour, `folder-structure.md` (the
 constitution) is the source of truth.
 

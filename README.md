@@ -6,42 +6,94 @@ script catches misses, and git undoes mistakes. Born from a 40,000-credit
 month of undisciplined frontier-model use; rebuilt so that never happens
 again — to anyone. MIT licensed.
 
+## Setup
+
+The harness installs onto a **work estate** — a local folder it turns into a
+disciplined, record-keeping workspace. Two steps: prove the machinery runs on
+your machine (the demo — no AI assistant needed), then lay down the estate and
+wire your assistant.
+
+**1 · Prove the machinery — `run_demo.sh` (~60 seconds).** Clone, then run the
+demo in a real shell for your platform:
+
+- **macOS / Linux** — your terminal's bash (stock macOS works as-is; the scripts
+  auto-detect GNU vs BSD userland):
+  ```bash
+  git clone https://github.com/TheBoogieman/ai-work-harness.git ~/Work
+  cd ~/Work && bash _harness/scripts/run_demo.sh
+  ```
+- **Windows** — the integrated **Git-Bash/Cygwin** terminal (plain PowerShell can
+  push git but cannot run the bash machinery):
+  ```bash
+  git clone https://github.com/TheBoogieman/ai-work-harness.git ~/Work
+  cd ~/Work && bash _harness/scripts/run_demo.sh
+  ```
+
+It must end with **ALL 6 DEMO STAGES PASSED**. The demo inits the local git
+safety net, validates the template ticket, runs a scratch ticket through the
+happy path, **deliberately corrupts a record and shows the validator refusing
+with an exact fix**, round-trips the notebook helper, breaks and restores an
+agent deployment, and builds a scrubbed context pack with a manifest self-audit.
+The same demo runs in CI on Linux + macOS on every push and PR into `main`, so
+the GNU/BSD portability branches are exercised for real, not via shims.
+
+**2 · Install onto your estate and wire your assistant (~10 minutes).**
+
+*Prerequisite you create (the harness never does):* a Python virtualenv named
+exactly **`venv_global`** with `nbformat`, registered as a Jupyter kernel and set
+as the workspace default interpreter. (`unzip` is optional — the context-pack
+helper falls back to Python's zipfile without it.)
+
+```bash
+python3.12 -m venv ~/venvs/venv_global   # 3.12 assumed; a newer python3 also works
+source ~/venvs/venv_global/bin/activate && pip install nbformat   # + your toolchain (dbt etc.)
+```
+
+`pip install` works directly inside the activated venv; installing `nbformat`
+into a **system** Python instead needs `pip install nbformat --break-system-packages`
+on PEP 668 distros. Then run the installer and hand off:
+
+```bash
+bash install.sh /path/to/your/Work
+```
+
+`install.sh` is a non-destructive **dumb creator** — it lays down PRODUCT files
+only, scaffolds any absent ticket anatomy, initialises a whitelist-scoped
+**local-only** git repo with a day-zero commit, copies the verified hook config
+to `.github/hooks/harness.json`, deploys the agents, and runs the validator +
+status; it **never edits an existing file**, so a re-run finds nothing absent. It
+asks for your board key and model pins (Enter accepts each suggested default;
+`--dry-run` plans without touching anything, `--yes` accepts every default). The
+agents deploy to your Copilot version's discovery directory — verify that path
+for your version (override with `HARNESS_AGENT_DEPLOY_DIR`). Finally, paste
+`setup.md` into your AI assistant, working in the new estate: it is the **final
+validation gate** — it confirms the validator + status are green, spot-checks the
+scaffolded tickets, and walks you through the personalisation the installer left
+you (model pins, `LICENSE`, scrub-table seeds, Owner lines).
+
+### Hook activation caveat
+
+The auto-commit hook is *witnessed firing* on the VS Code Copilot IDE agent
+(v1.129.1, 2026-07-20) on an **established, trusted** workspace. On a
+**freshly-created** workspace, `postToolUse` did **not** auto-fire immediately in
+testing — even after trusting the folder and reloading; the exact fresh-estate
+activation trigger is not fully characterised, so expect a first real session or
+a Copilot restart may be needed. The git safety net is the backstop — if a write
+wasn't auto-committed, commit it by hand; nothing in the record depends on the
+hook firing. (CLI and cloud Copilot surfaces are UNVERIFIED — their schema may
+differ.)
+
 ## What it does, plainly
 
 You work on tickets with an AI assistant. The harness makes that work leave
 **records** instead of vibes: every ticket folder keeps its own log, current
-state, and captured knowledge; every ad-hoc check — SQL, Python, whatever your work is — lands in an
-audit-trail notebook; every file write is auto-committed to a local-only git repo (via a Copilot hook, when it fires); and a
-dumb bash validator refuses to let a session start on top of an undocumented
-mess. Six small AI agents do the clerical work (logging, capturing,
-compacting) so the expensive model — and you — only do the thinking. Nothing
-self-heals, nothing phones home, and one markdown file is the law.
-
-## Setup
-
-**Try it in 60 seconds (no AI assistant required):**
-
-```bash
-git clone https://github.com/TheBoogieman/ai-work-harness.git ~/Work
-cd ~/Work
-bash _harness/scripts/run_demo.sh
-```
-
-The demo initialises the local git safety net, validates the template
-ticket, runs a scratch ticket through the happy path, **deliberately
-corrupts a record and shows the validator refusing with an exact fix**,
-round-trips the notebook helper, breaks and manually restores an agent deployment, and
-produces a scrubbed context pack with a manifest self-audit. If all six
-stages pass, the machinery works on your machine.
-
-The same demo runs in CI: on every push to `main`, on every pull request into `main`,
-and on manual dispatch, GitHub Actions runs `run_demo.sh` on both Linux and macOS, so
-the GNU/BSD portability branches are exercised for real on macOS, not via shims.
-
-**Then wire your AI assistant:** follow `INSTALL.md` (~10 minutes) — run
-`install.sh` (it lays down the estate, inits git, deploys agents, installs the
-hooks, runs the validator + status), then paste `setup.md` into your AI
-assistant of choice as the final validation gate.
+state, and captured knowledge; every ad-hoc check — SQL, Python, whatever your
+work is — lands in an audit-trail notebook; every file write auto-commits to a
+local-only git repo (via a Copilot hook, when it fires); and a dumb bash
+validator refuses to let a session start on top of an undocumented mess. Six
+small AI agents do the clerical work (logging, capturing, compacting) so the
+expensive model — and you — only do the thinking. Nothing self-heals, nothing
+phones home, and one markdown file is the law.
 
 ## Assumptions
 
@@ -52,9 +104,9 @@ Anything marked *swappable* degrades gracefully if you differ.
   multi-user access to a shared record repo. The auto-commit-per-write and
   single-writer git model assume one writer.
 - **GitHub Copilot with custom agents + lifecycle hooks** (CLI and/or
-  VS Code). Both features are preview-grade; `INSTALL.md` tells you to
-  verify config schemas against your version's docs. Without Copilot the
-  conventions and scripts still work — you just invoke agents' jobs by hand.
+  VS Code). Both features are preview-grade — verify config schemas against your
+  version's docs (see **Setup**). Without Copilot the conventions and scripts
+  still work — you just invoke agents' jobs by hand.
 - **VS Code** as the editor (*swappable* — nothing hard-depends on it, but
   the notebook/interpreter flow is written for it).
 - **git** installed; the harness creates a **local-only** repo at the
@@ -72,8 +124,9 @@ Anything marked *swappable* degrades gracefully if you differ.
 - **bash** (macOS/Linux; the scripts auto-detect GNU vs BSD userland, so
   stock macOS works without installing coreutils). **Windows:** the integrated
   **Git-Bash/Cygwin** bash runs the machinery (the #8 hooks-parse fix makes it
-  viable); WSL also works. Plain PowerShell can push the repo with git but
-  cannot run the scripts.
+  viable); plain PowerShell can push the repo with git but cannot run the
+  scripts. WSL is for an *ephemeral* Linux check only (clone inside `~`, never a
+  `/mnt/c` mount) — never a standing home.
 
 ## Repository tour
 
@@ -89,8 +142,8 @@ Anything marked *swappable* degrades gracefully if you differ.
 - `Tickets/999912Z-PROJ-99999/` — the template ticket.
 - `General AI-Knowledge/AI Harness/` — the two blueprint sheets + design
   notes.
-- `INSTALL.md` / `install.sh` / `setup.md` — the flat-pack instructions, the
-  installer that assembles the estate, and the AI-assistant final-gate prompt.
+- `install.sh` / `setup.md` — the installer that assembles the estate and the
+  AI-assistant final-gate prompt (setup steps live under **Setup**, above).
 
 ## The drawings
 
@@ -149,29 +202,41 @@ Work/                                        [git root · local-only · whitelis
 └── [GitHub/ · Diagrams/ · Mappings/ · …]    [never enter history — whitelist excludes them]
 ```
 
-**On ticket-folder names:** nothing requires a specific ticket-folder name.
-Name folders however suits your workflow — the tools recognise a recommended
-default pattern but never force it. A `Tickets/` folder is in one of four
-states: **(1)** matches the pattern + holds a ticket record → auto-validated;
-**(2)** hand-made, holds a record, doesn't match → `harness-status` gives a
-heads-up (WARN) to rename it or `touch .not-a-ticket` to silence it — never
-blocked; **(3)** a pending ticket `ticket-init` couldn't name (marked
-`.ticket-pending`) → a **non-silenceable** WARN, completed in two steps
-(rename to a conforming name **and** remove the marker) and nagging until both
-are done — the marker, not the name, is the lifecycle token, so a conforming
-rename alone can't leave a real ticket silently misfiled; it also takes
-precedence over `.not-a-ticket`, so a real ticket can't be dismissed; **(4)**
-no ticket content, or marked `.not-a-ticket` → silent. Nothing is ever blocked
-for a *naming* choice — the tools nudge with yellow, never wall you off. (One
-edge case sits outside these four: a recognised name commits the folder to
-validation, so a conforming folder missing its `.md` record is a validator
-`FAIL` — add the record.) Two markers: `.not-a-ticket`
-("not a ticket, leave it alone") and `.ticket-pending` ("a real ticket
-awaiting completion — rename **and** remove the marker; non-silenceable"). The
-recognition pattern lives in one editable line
-(`_harness/scripts/ticket-grammar.sh`) that both tools share — e.g. a
-hyphenated board key like `DATA-ENG` needs the board segment widened there;
-see `folder-structure.md` for the worked example.
+**On ticket-folder names:** nothing requires a specific ticket-folder name —
+name folders however suits your workflow. The tools recognise a recommended
+default pattern but never force it. A `Tickets/` folder is in one of four states:
+
+- **(1) Conforming + recorded** — matches the pattern *and* holds a ticket
+  record → auto-validated.
+- **(2) Hand-made + recorded** — holds a record but doesn't match the pattern →
+  `harness-status` gives a heads-up (WARN) to either rename it *or* `touch
+  .not-a-ticket` to silence it. Never blocked.
+- **(3) Pending** — a real ticket `ticket-init` couldn't name, marked
+  `.ticket-pending` → a **non-silenceable** WARN. It nags until *both* of its
+  completion steps are done:
+  - Two-step completion: rename to a conforming name **and** remove the marker.
+  - The **marker, not the name, is the lifecycle token** — a conforming rename
+    alone can't leave a real ticket silently misfiled.
+  - `.ticket-pending` takes **precedence over `.not-a-ticket`**, so a real
+    ticket can't be dismissed.
+- **(4) Not a ticket** — no ticket content, *or* explicitly marked
+  `.not-a-ticket` → silent.
+
+**Outside the four states**, one edge case: a recognised name commits the folder
+to validation, so a conforming folder *missing* its `.md` record is a validator
+`FAIL` — add the record.
+
+The two markers:
+
+- `.not-a-ticket` — "not a ticket, leave it alone."
+- `.ticket-pending` — "a real ticket awaiting completion; rename **and** remove
+  the marker — non-silenceable."
+
+Nothing is ever blocked for a *naming* choice: the tools nudge with yellow,
+never wall you off. The recognition pattern lives in one editable line
+(`_harness/scripts/ticket-grammar.sh`) that both tools share — e.g. a hyphenated
+board key like `DATA-ENG` needs the board segment widened there; see
+`folder-structure.md` for the worked example.
 
 ## The layers, bottom to top
 
@@ -253,8 +318,7 @@ Each fact has exactly one home; everything else points at it.
 > people hacking on the harness itself (branches, PRs, CI). None of it is estate
 > setup — the files it names (`CLAUDE.md`, `.github/`, `run_demo.sh`) are
 > classified DEV in `.github/ship-manifest.txt` and never ship. To *install* the
-> harness, see [INSTALL.md](INSTALL.md); nothing here points a user at dev
-> machinery.
+> harness, see **Setup** above; nothing here points a user at dev machinery.
 
 The harness is built to be developed much the way you'd use it: clone the repo
 locally and point an agentic AI coding assistant at it to work on the harness
@@ -294,12 +358,13 @@ Git-Bash/Cygwin terminal, no improvisation needed:
 Do all shell work in the integrated Git-Bash/Cygwin terminal; plain PowerShell
 runs `git` but not the bash machinery.
 
-**Linux / macOS / WSL:** Linux and macOS work identically and are the standing
-fully-tested lanes (CI runs the demo on both on every PR); a `windows-latest`
-MSYS job witnesses the Windows lane informationally. WSL is fine for an
-*ephemeral* Linux check — clone inside your WSL home (`~`, **never** a `/mnt/c`
-Windows-drive mount, which gives slow I/O and unreliable executable bits), run
-the demo, discard — but it is not a standing development copy.
+**Linux / macOS (and WSL for ephemeral checks only):** Linux and macOS work
+identically and are the standing fully-tested lanes (CI runs the demo on both on
+every PR); a `windows-latest` MSYS job witnesses the Windows lane
+informationally. WSL is *only* for a throwaway Linux check — clone inside your
+WSL home (`~`, **never** a `/mnt/c` Windows-drive mount, which gives slow I/O and
+unreliable executable bits), run the demo, discard — never a standing
+development copy.
 
 **The loop:** the assistant applies a change, runs the acceptance demo
 (`bash _harness/scripts/run_demo.sh` — it must end with *ALL 6 DEMO STAGES

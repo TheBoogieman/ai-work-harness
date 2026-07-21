@@ -83,5 +83,79 @@ if printf '%s\n' "$changed" | grep -qE '^(_harness/scripts/|_agents/|_harness/ho
   fi
 fi
 
+# --- C7 DOC-INTEGRITY (#51) — mechanical "no mangled doc" guards over every tracked *.md ----------
+# The simplify pass rewrites prose into lists; lists are where half-closed fences and orphaned links
+# are born. These three detectors gate #51's OWN delivery PR (mechanical, revert-provable per
+# detector) instead of leaving mangling to a human eyeball. SCOPE: intra-repo only — external URLs
+# and template placeholders are skipped, so a required check never reds on the network. Runs on GNU
+# grep only (docs.yml is ubuntu; the dev seat is Cygwin), never on macOS/BSD — the demo owns that.
+
+# C7a FENCE-BALANCE — every *.md has an EVEN number of ``` markers (no code block left unclosed).
+while IFS= read -r f; do
+  fences=$(grep -cE '^[[:space:]]*```' "$f" || true)   # count fence lines (indented fences included)
+  [ $(( fences % 2 )) -eq 0 ] \
+    || { echo "FAIL [docs C7a-fence]: $f has $fences code-fence markers (odd) — a \`\`\` block is unclosed; balance the fences."; fail=1; }
+done < <(git ls-files '*.md')
+
+# C7c NO-CR — no *.md carries a carriage-return byte (the #40 CRLF class, extended to docs). -U keeps
+# grep in binary mode so a lone CR inside a CRLF line is still seen.
+while IFS= read -r f; do
+  ! grep -qU $'\r' -- "$f" 2>/dev/null \
+    || { echo "FAIL [docs C7c-cr]: $f contains carriage-return byte(s) — normalise to LF (docs ship LF-only)."; fail=1; }
+done < <(git ls-files '*.md')
+
+# C7b LINK/ANCHOR RESOLUTION — intra-repo relative links point at a real path; a #fragment matches a
+# heading in its target file. ONE slugify convention (GitHub-style), pure bash — no python dependency
+# added to a required gate. md_slugs() turns each ATX heading into its anchor slug.
+md_slugs() {
+  grep -E '^#{1,6}[[:space:]]+' "$1" \
+    | sed -E 's/^#{1,6}[[:space:]]+//' \
+    | tr '[:upper:]' '[:lower:]' \
+    | sed -E 's/[^a-z0-9 _-]//g; s/ /-/g'
+}
+while IFS= read -r f; do
+  dir=$(dirname "$f")
+  # each link target from [text](target); resolve/skip per scope, then check existence + anchor
+  while IFS= read -r tgt; do
+    case "$tgt" in
+      *://*|mailto:*|tel:*) continue ;;         # external — out of scope (never red on the network)
+      *[[:space:]]*|*'<'*|*'>'*) continue ;;    # placeholder like <PR URL> — not a real intra-repo link
+    esac
+    frag=""; path="$tgt"
+    case "$tgt" in
+      \#*)  frag=${tgt#\#}; path="" ;;          # same-file anchor
+      *\#*) path=${tgt%%#*}; frag=${tgt#*#} ;;  # path + anchor
+    esac
+    target_file="$f"
+    if [ -n "$path" ]; then
+      cand="$dir/$path"; [ "$dir" = "." ] && cand="$path"   # resolve relative to the linking file
+      if [ ! -e "$cand" ]; then
+        echo "FAIL [docs C7b-link]: $f links to '$tgt' but '$cand' does not exist — fix or remove the link."; fail=1; continue
+      fi
+      target_file="$cand"
+    fi
+    if [ -n "$frag" ]; then                     # anchor is checkable only against a .md target's headings
+      case "$target_file" in
+        *.md) [ -f "$target_file" ] && ! md_slugs "$target_file" | grep -Fxq -- "$frag" \
+                && { echo "FAIL [docs C7b-anchor]: $f links to '$tgt' but no heading in $target_file slugifies to '#$frag' — fix the anchor."; fail=1; } ;;
+      esac
+    fi
+  done < <(grep -oE '\]\([^)]+\)' "$f" | sed -E 's/^\]\(//; s/\)$//')
+done < <(git ls-files '*.md')
+
+# C7d ZERO-MENTIONS (#51 collapse) — the standalone flat-pack install doc was folded into README
+# Setup and DELETED (one install home now, nothing to drift). No tracked file may still name it: a
+# dead pointer to a removed file ships dead on a user estate. The needle is assembled from two string
+# pieces so THIS detector's own source never contains the contiguous name it hunts for — a literal
+# here would make the detector match itself forever. Its own detector (not folded into C7b's link
+# check) because it hunts a bare name in ANY tracked text, not just markdown links.
+collapse_needle='INSTALL''.md'
+collapse_hits=$(git grep -l -F -- "$collapse_needle" 2>/dev/null || true)
+if [ -n "$collapse_hits" ]; then
+  echo "FAIL [docs C7d-collapse]: '$collapse_needle' was folded into README Setup and removed, but these tracked files still name it — re-point them to README Setup / the 'Hook activation caveat' section:"
+  printf '  %s\n' $collapse_hits
+  fail=1
+fi
+
 [ "$fail" -eq 0 ] || { echo "docs-check: FAILED — each line above names its fix."; exit 1; }
-echo "docs-check: all detectors pass (inventory, frozen-sweep, grammar-drift, separation, structure, DESIGN-trigger)."
+echo "docs-check: all detectors pass (inventory, frozen-sweep, grammar-drift, separation, structure, DESIGN-trigger, C7 fence/link/CR/collapse)."

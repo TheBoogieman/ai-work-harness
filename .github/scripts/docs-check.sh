@@ -143,5 +143,19 @@ while IFS= read -r f; do
   done < <(grep -oE '\]\([^)]+\)' "$f" | sed -E 's/^\]\(//; s/\)$//')
 done < <(git ls-files '*.md')
 
+# C7d ZERO-MENTIONS (#51 collapse) — the standalone flat-pack install doc was folded into README
+# Setup and DELETED (one install home now, nothing to drift). No tracked file may still name it: a
+# dead pointer to a removed file ships dead on a user estate. The needle is assembled from two string
+# pieces so THIS detector's own source never contains the contiguous name it hunts for — a literal
+# here would make the detector match itself forever. Its own detector (not folded into C7b's link
+# check) because it hunts a bare name in ANY tracked text, not just markdown links.
+collapse_needle='INSTALL''.md'
+collapse_hits=$(git grep -l -F -- "$collapse_needle" 2>/dev/null || true)
+if [ -n "$collapse_hits" ]; then
+  echo "FAIL [docs C7d-collapse]: '$collapse_needle' was folded into README Setup and removed, but these tracked files still name it — re-point them to README Setup / the 'Hook activation caveat' section:"
+  printf '  %s\n' $collapse_hits
+  fail=1
+fi
+
 [ "$fail" -eq 0 ] || { echo "docs-check: FAILED — each line above names its fix."; exit 1; }
-echo "docs-check: all detectors pass (inventory, frozen-sweep, grammar-drift, separation, structure, DESIGN-trigger, C7 fence/link/CR)."
+echo "docs-check: all detectors pass (inventory, frozen-sweep, grammar-drift, separation, structure, DESIGN-trigger, C7 fence/link/CR/collapse)."

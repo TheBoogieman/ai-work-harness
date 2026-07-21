@@ -998,4 +998,4 @@ unzip -p "$PACK_OUT_DIR"/harness-pack-*.zip MANIFEST.txt | tail -1
 
 rm -rf "$S"
 demo_close_commit "$DID_INIT" "."   # gated: commits only if the demo created this repo (issue #10)
-echo; echo "ALL 6 DEMO STAGES PASSED — the machinery works. Next: INSTALL.md to wire Copilot."
+echo; echo "ALL 6 DEMO STAGES PASSED — the machinery works. Next: README Setup to wire Copilot."

@@ -13,4 +13,4 @@ for src in "$WORK_ROOT"/_agents/*.agent.md; do
   cp -f "$src" "$DEPLOY_DIR/"; n=$((n+1))
 done
 echo "OK: deployed $n agent(s) to $DEPLOY_DIR."
-echo "NOTE: verify the discovery directory for YOUR Copilot version (preview-grade; see INSTALL.md) — override with HARNESS_AGENT_DEPLOY_DIR."
+echo "NOTE: verify the discovery directory for YOUR Copilot version (preview-grade; see README Setup) — override with HARNESS_AGENT_DEPLOY_DIR."

@@ -13,20 +13,21 @@ disciplined, record-keeping workspace. Two steps: prove the machinery runs on
 your machine (the demo — no AI assistant needed), then lay down the estate and
 wire your assistant.
 
-**1 · Prove the machinery — `run_demo.sh` (~60 seconds).** Clone, then run the
-demo in a real shell for your platform:
+**1 · Prove the machinery — `run_demo.sh` (~60 seconds).** Clone the repo to a
+**source** location and run the demo from that checkout — the demo needs no estate,
+so running it in place is correct:
 
 - **macOS / Linux** — your terminal's bash (stock macOS works as-is; the scripts
   auto-detect GNU vs BSD userland):
   ```bash
-  git clone https://github.com/TheBoogieman/ai-work-harness.git ~/Work
-  cd ~/Work && bash _harness/scripts/run_demo.sh
+  git clone https://github.com/TheBoogieman/ai-work-harness.git ~/ai-work-harness
+  cd ~/ai-work-harness && bash _harness/scripts/run_demo.sh
   ```
 - **Windows** — the integrated **Git-Bash/Cygwin** terminal (plain PowerShell can
   push git but cannot run the bash machinery):
   ```bash
-  git clone https://github.com/TheBoogieman/ai-work-harness.git ~/Work
-  cd ~/Work && bash _harness/scripts/run_demo.sh
+  git clone https://github.com/TheBoogieman/ai-work-harness.git ~/ai-work-harness
+  cd ~/ai-work-harness && bash _harness/scripts/run_demo.sh
   ```
 
 It must end with **ALL 6 DEMO STAGES PASSED**. The demo inits the local git
@@ -51,10 +52,13 @@ source ~/venvs/venv_global/bin/activate && pip install nbformat   # + your toolc
 
 `pip install` works directly inside the activated venv; installing `nbformat`
 into a **system** Python instead needs `pip install nbformat --break-system-packages`
-on PEP 668 distros. Then run the installer and hand off:
+on PEP 668 distros. Then run the installer, giving it an estate directory
+**separate from this checkout** — `install.sh` needs a target dir distinct from the
+source, and that path is required in practice (a bare re-run from inside the
+checkout is refused, with a concrete fix):
 
 ```bash
-bash install.sh /path/to/your/Work
+bash install.sh ~/Work
 ```
 
 `install.sh` is a non-destructive **dumb creator** — it lays down PRODUCT files

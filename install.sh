@@ -13,7 +13,8 @@
 #   Usage: install.sh [--dry-run] [--yes] [TARGET_DIR]
 #     --dry-run  print the full plan and touch nothing
 #     --yes      non-interactive: accept every suggested default
-#     TARGET_DIR the estate root to create/complete (default: current directory)
+#     TARGET_DIR the estate root to create/complete (default: current directory — but the estate
+#                must be SEPARATE from the source checkout, so in practice pass a target dir)
 set -euo pipefail
 
 SOURCE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

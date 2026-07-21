@@ -16,13 +16,9 @@ are install/CI machinery, not runtime layers, and belong to README's Setup secti
 current enforcement/status/naming behaviour, `folder-structure.md` (the
 constitution) is the source of truth.
 
-**Lag note (#60):** the commit-bearing hooks (postToolUse, sessionEnd) now carry
-an estate-key guard — they auto-commit only where `.git/config` holds
-`harness.estate=true` (written by `install.sh`), so a nested foreign project repo
-under `Github/` is never auto-committed into. The sheets still draw the plain
-auto-commit arrow; the estate's depicted flow is unchanged (a write in the estate
-still auto-commits), so this is a containment precondition for the operator to
-fold into Sheet 2 on the next redraw.
+**Diagram currency (2026-07):** Sheets REV Q/F fold the #60 estate-key containment
+into both layers — commit hooks are drawn keyed-estate-only; the refusal case is
+depicted on Sheet 2.
 
 **The pattern (every layer):** file states the rule → agent does the work →
 hook catches the miss → git undoes the damage. Corollary: status observes,

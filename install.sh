@@ -13,7 +13,8 @@
 #   Usage: install.sh [--dry-run] [--yes] [TARGET_DIR]
 #     --dry-run  print the full plan and touch nothing
 #     --yes      non-interactive: accept every suggested default
-#     TARGET_DIR the estate root to create/complete (default: current directory)
+#     TARGET_DIR the estate root to create/complete (default: current directory — but the estate
+#                must be SEPARATE from the source checkout, so in practice pass a target dir)
 set -euo pipefail
 
 SOURCE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -41,8 +42,15 @@ else
 fi
 
 # ---- safety ---------------------------------------------------------------------------------
-# Never install onto the source itself (that is a dev checkout, not an estate).
-[ "$TARGET" != "$SOURCE" ] || { echo "install: TARGET is the source distribution itself — choose a separate estate dir." >&2; exit 1; }
+# Never install onto the source itself (that is a dev checkout, not an estate). The CONDITION and
+# the source/estate separation law are unchanged (#62) — only the message now PRESCRIBES the fix:
+# a first-timer doesn't yet know the distinction, so name a concrete estate dir OUTSIDE the checkout.
+# $SOURCE's parent is right here, so suggest a real sibling path the user can paste and run.
+[ "$TARGET" != "$SOURCE" ] || {
+  echo "install: TARGET is the source distribution itself — the estate must be a SEPARATE directory." >&2
+  echo "  Pass one outside this checkout, e.g.:  bash install.sh $(dirname "$SOURCE")/Work" >&2
+  exit 1
+}
 # Estates are LOCAL-ONLY: refuse a target whose git repo already has a remote (the prompt path's rule).
 if git -C "$TARGET" rev-parse --git-dir >/dev/null 2>&1 && git -C "$TARGET" remote | grep -q .; then
   echo "install: TARGET already has a git REMOTE configured; estates must be local-only. Remove it first: git -C '$TARGET' remote remove <name>" >&2

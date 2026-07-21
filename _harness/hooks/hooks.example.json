@@ -1,15 +1,15 @@
 {
-  "$comment": "Witnessed firing on the VS Code Copilot IDE agent (v1.129.1, commit 8a7abeba, x64) on 2026-07-20, with the version + hooks-wrapper + bash/cwd/timeoutSec shape below. The witnessed firing config carried NO extra keys — strip this \"$comment\" if your Copilot surface rejects unknown top-level keys. CLI and cloud Copilot surfaces are UNVERIFIED (their schema may differ; no claim transfers to them). Design intent: validate on sessionStart, commit on postToolUse, sessionEnd is a bonus; every command is idempotent and no-op-safe at any frequency. cwd '.' is the workspace root so plain relative git paths work. ACTIVATION: on a freshly-created workspace, postToolUse may not auto-fire immediately even after trusting the folder and reloading — see README's 'Hook activation caveat' section.",
+  "$comment": "Witnessed firing on the VS Code Copilot IDE agent (v1.129.1, commit 8a7abeba, x64) on 2026-07-20, with the version + hooks-wrapper + bash/cwd/timeoutSec shape below. The witnessed firing config carried NO extra keys — strip this \"$comment\" if your Copilot surface rejects unknown top-level keys. CLI and cloud Copilot surfaces are UNVERIFIED (their schema may differ; no claim transfers to them). Design intent: validate on sessionStart, commit on postToolUse, sessionEnd is a bonus; every command is idempotent and no-op-safe at any frequency. cwd '.' is the workspace root so plain relative git paths work. ACTIVATION: on a freshly-created workspace, postToolUse may not auto-fire immediately even after trusting the folder and reloading — see README's 'Hook activation caveat' section. ESTATE-KEY GUARD (#60): both commit-bearing hooks (postToolUse, sessionEnd) no-op unless 'git config --local harness.estate' is 'true' — the positive-identity key install.sh writes into the estate's own .git/config, which the worktree cannot reach or forge, so the hook can never auto-commit into a nested foreign project repo (e.g. under Github/). sessionStart is read-only and stays unguarded.",
   "version": 1,
   "hooks": {
     "sessionStart": [
       { "type": "command", "bash": "bash _harness/scripts/check_ticket_log.sh", "cwd": ".", "timeoutSec": 60 }
     ],
     "postToolUse": [
-      { "type": "command", "bash": "git add -A && git diff-index --quiet HEAD || git commit -q -m \"auto-write $(date +%Y%m%d-%H%M%S): $(git diff --cached --name-only | tr '\\n' ' ')\"", "cwd": ".", "timeoutSec": 60 }
+      { "type": "command", "bash": "[ \"$(git config --local harness.estate 2>/dev/null)\" = \"true\" ] || exit 0; git add -A && git diff-index --quiet HEAD || git commit -q -m \"auto-write $(date +%Y%m%d-%H%M%S): $(git diff --cached --name-only | tr '\\n' ' ')\"", "cwd": ".", "timeoutSec": 60 }
     ],
     "sessionEnd": [
-      { "type": "command", "bash": "bash _harness/scripts/check_ticket_log.sh; git add -A && git diff-index --quiet HEAD || git commit -q -m \"auto-session-end $(date +%Y%m%d-%H%M%S): $(git diff --cached --name-only | tr '\\n' ' ')\"", "cwd": ".", "timeoutSec": 120 }
+      { "type": "command", "bash": "[ \"$(git config --local harness.estate 2>/dev/null)\" = \"true\" ] || exit 0; bash _harness/scripts/check_ticket_log.sh; git add -A && git diff-index --quiet HEAD || git commit -q -m \"auto-session-end $(date +%Y%m%d-%H%M%S): $(git diff --cached --name-only | tr '\\n' ' ')\"", "cwd": ".", "timeoutSec": 120 }
     ]
   }
 }

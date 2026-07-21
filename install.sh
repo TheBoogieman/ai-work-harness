@@ -258,6 +258,16 @@ else
   echo "exists — git repo present; left untouched (no re-commit)."
 fi
 
+# ---- arm the auto-commit hooks: the estate-key that marks THIS repo as a genuine harness estate --
+# The commit-bearing hooks (postToolUse/sessionEnd) refuse to commit unless .git/config carries
+# harness.estate=true — a positive identity a nested foreign project repo cannot reach or forge (#60).
+# Set it on EVERY install run and UNCONDITIONALLY — deliberately NOT inside the NEED_GIT init block
+# above, which runs ONLY for a brand-new repo: an existing-repo re-install (arming an estate created
+# before this version) passes through the `else` branch and must still be armed. git config is
+# idempotent, so re-setting it every run is safe. install.sh already refused a remoted TARGET (top),
+# so this key can only ever land on a local-only estate.
+git -C "$TARGET" config harness.estate true
+
 # ---- deploy agents, then AUDIT with validator + status (agent-as-auditor flow, cond 3) --------
 if [ ${#CREATED[@]} -gt 0 ] || [ "$NEED_GIT" -eq 1 ]; then
   bash "$TARGET/_harness/scripts/deploy_agents.sh" || echo "note: agent deploy reported an issue — see above (verify your Copilot agent dir)."

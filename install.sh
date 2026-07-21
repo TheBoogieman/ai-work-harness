@@ -42,21 +42,31 @@ else
 fi
 
 # ---- safety ---------------------------------------------------------------------------------
-# Never install onto the source itself (that is a dev checkout, not an estate). The CONDITION and
-# the source/estate separation law are unchanged (#62) — only the message now PRESCRIBES the fix:
-# a first-timer doesn't yet know the distinction, so name a concrete estate dir OUTSIDE the checkout.
-# $SOURCE's parent is right here, so suggest a real sibling path the user can paste and run.
-[ "$TARGET" != "$SOURCE" ] || {
-  echo "install: TARGET is the source distribution itself — the estate must be a SEPARATE directory." >&2
-  echo "  Pass one outside this checkout, e.g.:  bash install.sh $(dirname "$SOURCE")/Work" >&2
-  exit 1
-}
+# TARGET==SOURCE has TWO cases (#64). SOURCE is where THIS install.sh lives, so it is SOURCE both for a
+# dev checkout AND for an ESTATE running its OWN shipped copy in place (cd ~/Work && ./install.sh):
+#   - key present (harness.estate=true, the #60 estate marker) -> this IS an estate re-running itself ->
+#     RECONFIGURE-ONLY MODE: review/guide config, create/repair NOTHING (there is no source in-estate).
+#   - key absent -> a genuine source checkout run in place -> BLOCK with #62's concrete-fix message.
+# Additive-only: only a keyed estate gains passage; keyless source-in-place and stripped no-key copies
+# still block, and the remote guard below is unchanged. Pipe-free key test (the #60 guard's own shape).
+RECONFIGURE=0
+if [ "$TARGET" = "$SOURCE" ]; then
+  if [ "$(git -C "$TARGET" config --local harness.estate 2>/dev/null)" = "true" ]; then
+    RECONFIGURE=1
+  else
+    echo "install: TARGET is the source distribution itself — the estate must be a SEPARATE directory." >&2
+    echo "  Pass one outside this checkout, e.g.:  bash install.sh $(dirname "$SOURCE")/Work" >&2
+    exit 1
+  fi
+fi
 # Estates are LOCAL-ONLY: refuse a target whose git repo already has a remote (the prompt path's rule).
 if git -C "$TARGET" rev-parse --git-dir >/dev/null 2>&1 && git -C "$TARGET" remote | grep -q .; then
   echo "install: TARGET already has a git REMOTE configured; estates must be local-only. Remove it first: git -C '$TARGET' remote remove <name>" >&2
   exit 1
 fi
-[ -f "$MANIFEST" ] || { echo "install: cannot find $MANIFEST — run install.sh from the harness source distribution." >&2; exit 1; }
+# The estate's own shipped install.sh has NO manifest (it is DEV, does not ship) and reconfigure-only
+# never reads one — so require the manifest ONLY for the create path (#64).
+[ "$RECONFIGURE" -eq 1 ] || [ -f "$MANIFEST" ] || { echo "install: cannot find $MANIFEST — run install.sh from the harness source distribution." >&2; exit 1; }
 
 # ---- helpers --------------------------------------------------------------------------------
 ask() {  # ask <prompt> <default> ; echoes the answer (default under --yes or on empty Enter)
@@ -70,6 +80,8 @@ ask() {  # ask <prompt> <default> ; echoes the answer (default under --yes or on
 }
 CREATED=()   # paths (relative to TARGET) this run actually created — the ONLY things config may touch
 plan_create=(); plan_exists=()
+NEED_GIT=0   # (#64) default: reconfigure-only skips the create block that computes this, so define it
+             # here (an existing estate needs no init) for the deploy_agents gate below.
 # Portable in-place sed: GNU sed wants `-i`, BSD/macOS sed wants `-i ''`. Detect via --version
 # (GNU prints it, BSD errors). Project rule: no GNU-only flag without a BSD fallback.
 sedi() { if sed --version >/dev/null 2>&1; then sed -i "$@"; else sed -i '' "$@"; fi; }
@@ -110,6 +122,16 @@ route_change() {
 # NOTE on array expansion: stock-macOS bash 3.2 errors on "${arr[@]}" when arr is EMPTY under
 # `set -u`, so every expansion below uses the "${arr[@]+"${arr[@]}"}" idiom — it yields the quoted
 # elements when set (spaces in paths like "General AI-Knowledge/" preserved) and nothing when empty.
+
+# ---- reconfigure-mode banner (#64): announce the mode UP FRONT, before the interview, so BOTH intents
+# are visible immediately — reconfigure is served here; create/repair points back to the source checkout.
+# Every line is true in-estate: there genuinely is no manifest/source here to create or repair from.
+if [ "$RECONFIGURE" -eq 1 ]; then
+  echo "Reconfigure mode — this is your estate's own installer. It can review and guide config changes"
+  echo "(board key, model pins) but CANNOT create or repair files here (there is no source to copy from)."
+  echo "To add or repair files, re-run install.sh from your harness source checkout, targeting this estate."
+  echo
+fi
 
 # ---- identity interview (ask-everything + re-run REVIEW loop; #39 amendment A/C) --------------
 # On a RE-RUN of an established estate, every DETECTABLE established value becomes the OFFERED
@@ -163,6 +185,12 @@ if [ "$ESTABLISHED" -eq 1 ]; then
   [ "$CHEAP_MODEL" = "$cheap_default" ]   || { route_change "cheap model pin" "$cheap_default" "$CHEAP_MODEL" "_agents/*.agent.md (cheap-tier agents)"; CHEAP_MODEL="$cheap_default"; }
   [ "$SONNET_MODEL" = "$sonnet_default" ] || { route_change "sonnet model pin" "$sonnet_default" "$SONNET_MODEL" "_agents/*.agent.md (sonnet-class agents)"; SONNET_MODEL="$sonnet_default"; }
 fi
+
+# ---- CREATE PATH (#64): laydown plan -> file-copy execute -> git init. SKIPPED WHOLESALE in
+# reconfigure-only mode — every step reads the manifest or copies from $SOURCE, none of which exists
+# in-estate. The body below is kept at its original indentation so the #64 change reads as a wrapper,
+# not a reindent of ~100 lines; the matching `else`/`fi` is just above the estate-key arming.
+if [ "$RECONFIGURE" -eq 0 ]; then
 
 # ---- PRODUCT laydown plan (create-absent-only, from the manifest) ----------------------------
 # The manifest is TAB-delimited "CLASS<TAB>path"; take PRODUCT paths only. install.sh and setup.md
@@ -266,6 +294,13 @@ else
   echo "exists — git repo present; left untouched (no re-commit)."
 fi
 
+else
+  # ---- reconfigure-only (#64): the interview + route_change above WAS the whole job — no plan, no
+  # laydown, no copy. Announce it, honour --dry-run, then fall through to the estate-local audit below.
+  echo "=== reconfigure-only for estate: $TARGET — reviewing config; creating and repairing nothing ==="
+  [ "$DRY" -eq 0 ] || { echo "=== --dry-run: nothing was touched. ==="; exit 0; }
+fi
+
 # ---- arm the auto-commit hooks: the estate-key that marks THIS repo as a genuine harness estate --
 # The commit-bearing hooks (postToolUse/sessionEnd) refuse to commit unless .git/config carries
 # harness.estate=true — a positive identity a nested foreign project repo cannot reach or forge (#60).
@@ -294,7 +329,11 @@ echo "      or mark it '.not-a-ticket'. The installer changes nothing here."
 echo
 echo "======================== INSTALL SUMMARY ========================"
 echo "Estate: $TARGET"
-echo "Created this run: ${#CREATED[@]} file(s); ${#plan_exists[@]} PRODUCT file(s) already existed (untouched)."
+if [ "$RECONFIGURE" -eq 1 ]; then
+  echo "Created this run: 0 file(s) — reconfigure-only mode (reviewed config; created and repaired nothing)."
+else
+  echo "Created this run: ${#CREATED[@]} file(s); ${#plan_exists[@]} PRODUCT file(s) already existed (untouched)."
+fi
 echo "Choices (asked or defaulted):"
 if [ "$ESTABLISHED" -eq 1 ]; then
   if [ "$DETECTED_BOARD_REAL" -eq 1 ]; then

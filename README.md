@@ -83,6 +83,14 @@ wasn't auto-committed, commit it by hand; nothing in the record depends on the
 hook firing. (CLI and cloud Copilot surfaces are UNVERIFIED — their schema may
 differ.)
 
+**Arming on migration.** The auto-commit hooks commit only where the estate's
+`.git/config` carries `harness.estate=true` — a positive-identity key `install.sh`
+sets, so the hooks can never auto-commit into a nested foreign project repo (e.g.
+under `Github/`). Estates created before this version, or migrated via `git clone`
+(clone does not copy local config), arrive with auto-commit **disarmed**; run
+`git -C <estate> config harness.estate true` to arm it. A plain folder copy or move
+keeps the key and needs nothing.
+
 ## What it does, plainly
 
 You work on tickets with an AI assistant. The harness makes that work leave

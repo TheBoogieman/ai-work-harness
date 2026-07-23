@@ -824,6 +824,63 @@ rm -rf "$R11T"
 echo "  ok [R-11 guard: stale-commit WARN] — fires when session activity outpaces the last commit, silent within margin"
 # --- end status consolidation guards -------------------------------------------------
 
+# --- [#80 append_entry] one-home mechanical record appender guards --------------------
+# append_entry.sh is a DUMB creator: text+ticket+section -> a stamped, ATOMIC append under an
+# EXISTING header. Its pre-flight validates the LANDING ZONE only (file/header present+unique)
+# and DECLINES otherwise; its post-flight composes with check_ticket_log.sh (write-then-validate),
+# so a red NEVER rolls back a good write. These three guards are revert-provable BOTH directions:
+# break the write and (1)/(3) red; stop declining on a duplicate header and (2) reds byte-changed.
+echo "--- #80 append_entry: healthy lands+validator passes; dup-header declines byte-unchanged; red passes through ---"
+# a80_make builds a conforming, validator-ready ticket from the template plus a seed session entry
+# (so the appended-to file already has a Session Log the watermark check can read).
+a80_make() {
+  local dir="$1" base; base=$(basename "$dir")
+  rm -rf "$dir"; cp -r Tickets/999912Z-PROJ-99999 "$dir"
+  mv "$dir/999912Z-PROJ-99999.md" "$dir/$base.md"
+  printf '\n## %s - a80 seed\n- seed session\n' "$(date +%Y%m%d%H%M%S)" >> "$dir/$base.md"
+}
+
+# 1) HEALTHY -> the stamped entry lands UNDER the requested header AND the post-flight validator
+#    runs and its verdict passes through (this ticket validates OK). The awk asserts the probe text
+#    appears at/after the '## Session Log' header, i.e. inside the right section.
+A80H="Tickets/202607T-PROJ-8001"; a80_make "$A80H"
+set +e; A80_OUT=$(bash _harness/scripts/append_entry.sh 202607T-PROJ-8001 "Session Log" "a80 healthy probe #80"); set -e
+awk '/^## Session Log/{f=1} f&&/a80 healthy probe #80/{ok=1} END{exit !ok}' "$A80H/202607T-PROJ-8001.md" \
+  || { echo "BUG [#80 append_entry]: healthy append did NOT land the entry under the '## Session Log' header"; exit 1; }
+printf '%s\n' "$A80_OUT" | grep -q "OK: 202607T-PROJ-8001 validated." \
+  || { echo "BUG [#80 append_entry]: post-flight validator did not run / verdict not passed through on the healthy ticket:"; printf '%s\n' "$A80_OUT"; exit 1; }
+rm -rf "$A80H"
+echo "  ok [#80 append_entry] — healthy: entry lands under the right header and the validator verdict passes through"
+
+# 2) DUPLICATED HEADER -> the appender DECLINES with a NAMED fix and the file is BYTE-UNCHANGED
+#    (pre-flight refuses an ambiguous landing zone; nothing is written). cmp is a byte comparison,
+#    not an eyeball. The '.before' snapshot lives OUTSIDE AI-Knowledge/ so it cannot mint an orphan.
+A80D="Tickets/202607T-PROJ-8002"; a80_make "$A80D"
+printf '\n## Notes\nalpha\n## Notes\nbeta\n' >> "$A80D/202607T-PROJ-8002.md"   # two identical '## Notes' headers
+cp "$A80D/202607T-PROJ-8002.md" "$A80D/before.snap"                            # exact byte snapshot pre-append
+set +e; A80_OUT=$(bash _harness/scripts/append_entry.sh 202607T-PROJ-8002 "Notes" "must not land"); A80_RC=$?; set -e
+[ "$A80_RC" -ne 0 ] || { echo "BUG [#80 append_entry]: duplicated header did NOT cause a decline (rc=0):"; printf '%s\n' "$A80_OUT"; exit 1; }
+printf '%s\n' "$A80_OUT" | grep -q "Fix:" \
+  || { echo "BUG [#80 append_entry]: the decline did not NAME a fix:"; printf '%s\n' "$A80_OUT"; exit 1; }
+cmp -s "$A80D/202607T-PROJ-8002.md" "$A80D/before.snap" \
+  || { echo "BUG [#80 append_entry]: a declined append still MUTATED the file (not byte-unchanged)"; exit 1; }
+rm -rf "$A80D"
+echo "  ok [#80 append_entry] — duplicated header: declines with a named fix, file byte-unchanged"
+
+# 3) PRE-EXISTING UNRELATED RED -> the append STILL lands and the red passes through: write-then-validate,
+#    a red must not roll back a good write. The red is an orphan AI-Knowledge file (unrelated to the entry).
+A80R="Tickets/202607T-PROJ-8003"; a80_make "$A80R"
+echo "orphan body" > "$A80R/AI-Knowledge/orphan.md"   # not listed in _index.md -> validator FAILs, unrelated to the append
+set +e; A80_OUT=$(bash _harness/scripts/append_entry.sh 202607T-PROJ-8003 "Session Log" "a80 red-passthrough probe #80"); A80_RC=$?; set -e
+grep -q "a80 red-passthrough probe #80" "$A80R/202607T-PROJ-8003.md" \
+  || { echo "BUG [#80 append_entry]: a pre-existing red ROLLED BACK the write — the entry is gone"; exit 1; }
+printf '%s\n' "$A80_OUT" | grep -q "orphan file AI-Knowledge/orphan.md not in _index.md" \
+  || { echo "BUG [#80 append_entry]: the pre-existing unrelated red did NOT pass through the appender:"; printf '%s\n' "$A80_OUT"; exit 1; }
+[ "$A80_RC" -ne 0 ] || { echo "BUG [#80 append_entry]: appender masked the validator's red (rc=0 despite a FAIL passing through)"; exit 1; }
+rm -rf "$A80R"
+echo "  ok [#80 append_entry] — pre-existing red: append lands, red passes through, write not rolled back"
+# --- end #80 append_entry guards -----------------------------------------------------
+
 # [#37] harness-status must NOT abort on a conforming ticket that has NO AI-Knowledge/ dir
 # (hand-made/legacy — the validator tolerates it). Pre-fix, the unguarded find at
 # harness-status.sh:155 exits non-zero on the missing dir and (pipefail + set -e) aborts the

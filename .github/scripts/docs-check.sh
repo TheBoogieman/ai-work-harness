@@ -25,6 +25,55 @@ for s in _harness/scripts/* install.sh setup.md; do
 done
 [ "$fail" -ne 0 ] || echo "  ok [docs B1-inventory] — $b1_total shipped surfaces named in README"
 
+# --- #68 DEV-LOOP — DEVELOPMENT.md + dev-loop/ starter kit: three method-doc invariants -----------
+# This lane ships a method doc plus empty adopt-and-fill templates. Three things must hold or the
+# artifact lies. (1) Templates stay EMPTY: a filled field is instance material leaking into the repo.
+# (2) The method files name NO AI vendor: the method is assistant-agnostic, so a product name breaks
+# that claim. (3) DEVELOPMENT.md actually carries the four role names and five working laws it claims
+# to teach. Scoped to THIS lane's own files (DEVELOPMENT.md + dev-loop/**) so README's legitimate
+# vendor mention elsewhere is never touched. dl_fail_before snapshots $fail so the ok-line prints
+# only when all three invariants held this run.
+dl_fail_before=$fail
+
+# 1. TEMPLATES STAY EMPTY — every dev-loop/*.template.md keeps at least one literal <FILL> token, so
+# a template whose blanks were filled in (content instead of skeleton) reds by name.
+for dl_t in dev-loop/*.template.md; do
+  grep -Fq -- '<FILL>' "$dl_t" \
+    || { echo "FAIL [docs #68 dev-loop]: $dl_t has no <FILL> token — a template field was filled in; templates ship EMPTY, restore the <FILL> blanks."; fail=1; }
+done
+
+# 2. VENDOR-NEUTRAL — no AI product name appears in DEVELOPMENT.md or dev-loop/**. Word-anchored (-w)
+# and case-insensitive (-i) so the method-level prose stays product-free; scoped by git ls-files to
+# this lane's files only, never README.
+dl_vendors='claude|copilot|chatgpt|gpt|anthropic|openai|gemini|cursor'
+while IFS= read -r dl_f; do
+  dl_hit=$(grep -niwE -- "$dl_vendors" "$dl_f" | head -1 || true)
+  [ -z "$dl_hit" ] \
+    || { echo "FAIL [docs #68 dev-loop]: $dl_f names an AI vendor ($dl_hit) — DEVELOPMENT.md and dev-loop/** are vendor-neutral; remove the product name."; fail=1; }
+done < <(git ls-files DEVELOPMENT.md 'dev-loop/*')
+
+# 3. ROLES AND LAWS PRESENT — DEVELOPMENT.md carries the four role words and one needle per working
+# law, each pinned as its own named assertion (the b2_pairs style above) so a dropped role or law
+# reds by name rather than vanishing silently. Format: "LABEL<TAB>literal string in DEVELOPMENT.md".
+dl_pairs=(
+  "role-architect	ARCHITECT"
+  "role-reviewer	REVIEWER/PRODUCT-OWNER"
+  "role-implementer	IMPLEMENTER"
+  "role-operator	OPERATOR"
+  "law1-verbatim-specs	verbatim issue bodies"
+  "law2-audit-confirms	confirms or reopens"
+  "law3-regression-guard	provably fails on pre-fix code"
+  "law4-attack-cycle	attack cycle"
+  "law5-claims-at-head	live at HEAD"
+)
+for dl_pair in "${dl_pairs[@]}"; do
+  dl_label=${dl_pair%%	*}; dl_needle=${dl_pair#*	}
+  grep -Fq -- "$dl_needle" DEVELOPMENT.md \
+    || { echo "FAIL [docs #68 dev-loop:$dl_label]: DEVELOPMENT.md no longer states this (missing \"$dl_needle\") — restore it."; fail=1; }
+done
+
+[ "$fail" -ne "$dl_fail_before" ] || echo "  ok [docs #68 dev-loop] — templates empty, vendor-neutral, 4 roles + 5 laws present in DEVELOPMENT.md"
+
 # --- B2 FROZEN SWEEP SET — the cond-1 zero-gap matrix, pinned as ONE named grep per surface -----
 # Each swept user-facing surface = one assertion with its own prescriptive miss, so coverage of a
 # surface cannot silently regress (cond 3 "cannot regress"). Extend this list when a NEW surface is

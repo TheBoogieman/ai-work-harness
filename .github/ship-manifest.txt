@@ -47,6 +47,7 @@ PRODUCT	_harness/scripts/check_ticket_log.sh
 PRODUCT	_harness/scripts/deploy_agents.sh
 PRODUCT	_harness/scripts/harness-housekeeping.sh
 PRODUCT	_harness/scripts/harness-status.sh
+PRODUCT	_harness/scripts/literate_capture.py
 PRODUCT	_harness/scripts/make_context_pack.sh
 PRODUCT	_harness/scripts/portability.sh
 DEV	_harness/scripts/run_demo.sh

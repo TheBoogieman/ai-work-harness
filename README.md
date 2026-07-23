@@ -200,6 +200,7 @@ Work/                                        [git root · local-only · whitelis
 │       ├── portability.sh                   shared GNU/BSD shims: ts14→epoch, sourced by validator + status (one home · no drift)
 │       ├── append_notebook_cell.py          ← check-scribe · runs on venv_global [user-created prereq]
 │       ├── literate_capture.py              transport: delimited SQL/python blocks → notebook cells (hash-deduped)
+│       ├── check_run.sh                     run-and-record: runs a command, appends one notebook cell (command, output, exit code, timestamp)
 │       ├── make_context_pack.sh             → ~/Desktop/harness-pack-*.zip [disposable · outside repo]
 │       ├── deploy_agents.sh                 → user-level agent dir (sync source → live)
 │       ├── harness-housekeeping.sh          human-run · git gc + size report · never touches records
@@ -343,6 +344,20 @@ results enter the notebook by hand or by the format's own result section.
   a clean no-op with one prescriptive line naming the fix.
 - **Generic** — it knows two comment tokens and `%%`, nothing dialect-specific;
   dialect-aware sugar is fork-layer material, out of the shared product.
+
+### `check_run.sh` — capture an ad-hoc check the moment you run it
+
+Some verification never makes it into a `.sql` or `.py` file: you just type a
+command at the terminal, read the result, and it vanishes. `check_run.sh
+"<command>"` is the dumb wrapper that keeps it. It runs your **literal** command
+in your own shell session — your environment, your credentials — and appends
+**one** notebook cell recording four fields: the command, its output, its exit
+code, and a timestamp (through the same `append_notebook_cell.py` writer). It
+adds no auth surface, stores no credential material, executes nothing beyond the
+command, and never touches the network. It **fails open**: if recording breaks,
+your command's result still reaches you and the wrapper's exit code still
+reflects the command's, never the recorder's. Point it at a notebook with the
+`CHECK_RUN_NOTEBOOK` environment variable.
 
 ## The one pattern, repeated everywhere
 

@@ -4,7 +4,7 @@
 >
 > **Context budget (STRICT):** By default, load only (1) **PART I** of this file and (2) the target ticket's header + **Current State** section. Do **not** read the full Session Log, the `AI-Knowledge/` contents, or `Logs/` unless the user explicitly asks for a deep dive or the Current State points you at a specific file. Context is metered — organise it, don't hoard it.
 >
-> **PART II routing (load only the section your task needs):** initialising a ticket → *Ticket Initialisation Procedure* · a FAIL/WARN at entry, or any operational question → *Session States* · building a review pack → *Context Pack Convention* · estate health → *Harness Status Convention*.
+> **PART II routing (load only the section your task needs):** initialising a ticket → *Ticket Initialisation Procedure* · a FAIL/WARN at entry, or any operational question → *Session States* · building a review pack → *Context Pack Convention* · estate health → *Harness Status Convention* · craft work (writing SQL, a dbt model, a script) → *Skills Convention*.
 >
 > **Check logging (STRICT):** record every ad-hoc verification — SQL, Python, shell, whatever your work is — in the ticket's `Checks/checks_master.ipynb`, so the check + its result are kept; see the note under §2.
 
@@ -473,6 +473,20 @@ record (it drops the saved cell outputs), so the housekeeping script only
 consistent with *status observes, failures prescribe, nothing heals itself*.
 No hook invokes the script; you do. It compacts *storage*; it never alters or
 deletes the *content* of a record.
+
+---
+
+## Skills Convention (worker-tier craft modules)
+
+Prescriptive craft guidance and tool knowledge for the worker tier live in a Skills tree at
+`General AI-Knowledge/Skills/`, discovered **index-first**: an agent matches its task against
+`Skills/_index.md` and reads only the matching `SKILL.md`, never crawling the tree. **The rules
+live with the skills** — the convention text, the frozen module shape (WHEN TO USE / CRAFT GUIDANCE
+/ NAMED TOOLS / Last reviewed), the tool-availability requirement, and the *tools advise, never
+gate* law are all stated in `Skills/_index.md` and `Skills/SKILL-TEMPLATE.md`. This constitution
+only points; read those two files for the convention itself. New skills are minted through
+`knowledge-curator` on explicit user approval — the same promote-with-approval gate as General
+AI-Knowledge.
 
 ---
 

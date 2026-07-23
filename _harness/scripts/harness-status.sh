@@ -79,10 +79,19 @@ fi
 # The threshold is tunable via HARNESS_GIT_WARN_MB (default 50 MiB) — high enough to stay quiet
 # on a young repo, low enough to catch real bloat before it hurts. du -sk is portable (GNU/BSD);
 # the working-tree size is total-minus-.git since du --exclude is GNU-only.
-if [[ -d "$WORK_ROOT/.git" ]]; then
+# The store is resolved by git, not by path (issue #86): in a linked worktree .git is a pointer
+# file, so the old `[[ -d "$WORK_ROOT/.git" ]]` test skipped this whole check without a word.
+# The working-tree figure subtracts the store only when the store actually sits inside the tree —
+# in a worktree the shared store lives elsewhere, and subtracting it would go negative.
+git_store="$(harness_git_store "$WORK_ROOT")"
+if [[ -n "$git_store" ]]; then
   git_warn_mb="${HARNESS_GIT_WARN_MB:-50}"
-  git_kb=$(du -sk "$WORK_ROOT/.git" 2>/dev/null | awk '{print $1}')
-  work_kb=$(( $(du -sk "$WORK_ROOT" 2>/dev/null | awk '{print $1}') - git_kb ))
+  git_kb=$(du -sk "$git_store" 2>/dev/null | awk '{print $1}')
+  total_kb=$(du -sk "$WORK_ROOT" 2>/dev/null | awk '{print $1}')
+  case "$git_store/" in
+    "$WORK_ROOT"/*) work_kb=$(( total_kb - git_kb )) ;;
+    *)              work_kb=$total_kb ;;
+  esac
   git_mib=$(awk -v k="$git_kb" 'BEGIN{ printf "%.1f", k/1024 }')
   work_mib=$(awk -v k="$work_kb" 'BEGIN{ printf "%.1f", k/1024 }')
   if (( git_kb > git_warn_mb * 1024 )); then

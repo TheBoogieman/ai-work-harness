@@ -18,6 +18,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORK_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
+# Shared helper: resolves the real git store even from a linked worktree (issue #86).
+source "$SCRIPT_DIR/portability.sh"
+
 AGGRESSIVE=0
 TARGET=""
 while [[ $# -gt 0 ]]; do
@@ -40,9 +43,17 @@ git -C "$REPO" rev-parse --git-dir >/dev/null 2>&1 \
 dir_kb() { du -sk "$1" 2>/dev/null | awk '{print $1}'; }
 
 # ---- 1) REPORT THE "BEFORE" so the human sees the starting point --------------------
-git_kb_before=$(dir_kb "$REPO/.git")
+# Resolved by git, not by path (issue #86): from a linked worktree "$REPO/.git" is a ~4 KiB
+# pointer file, so the sizes below would have been a fiction while the repack itself worked.
+GIT_STORE="$(harness_git_store "$REPO")"
+git_kb_before=$(dir_kb "$GIT_STORE")
 total_kb=$(dir_kb "$REPO")
-work_kb=$(( total_kb - git_kb_before ))               # working tree minus history
+# Subtract the store only when it lives inside the tree being measured; in a worktree it does
+# not, and subtracting it would report a negative working tree.
+case "$GIT_STORE/" in
+  "$REPO"/*) work_kb=$(( total_kb - git_kb_before )) ;;   # working tree minus history
+  *)         work_kb=$total_kb ;;                          # store is elsewhere: nothing to subtract
+esac
 commits=$(git -C "$REPO" rev-list --count HEAD 2>/dev/null || echo 0)
 # Ratio of history to live tree — the number that climbs as per-write commits pile up.
 # Only meaningful when the working tree has measurable size; print "n/a" otherwise.
@@ -62,7 +73,7 @@ else
   echo "REPACK: git gc ..."
   git -C "$REPO" gc --quiet
 fi
-git_kb_after=$(dir_kb "$REPO/.git")
+git_kb_after=$(dir_kb "$GIT_STORE")
 reclaimed_kb=$(( git_kb_before - git_kb_after ))       # negative on a tiny/tidy repo (pack overhead)
 # Phrase the outcome honestly: real reclaim on a bloated repo, "already compact" when there was
 # nothing loose to collapse (a small repo can even grow a little from fresh pack structures).

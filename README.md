@@ -199,6 +199,7 @@ Work/                                        [git root · local-only · whitelis
 │       ├── ticket-grammar.sh                recognition home: TICKET_RE + ticket predicates · validator + status both source it (edit to retarget your board)
 │       ├── portability.sh                   shared GNU/BSD shims: ts14→epoch, sourced by validator + status (one home · no drift)
 │       ├── append_notebook_cell.py          ← check-scribe · runs on venv_global [user-created prereq]
+│       ├── literate_capture.py              transport: delimited SQL/python blocks → notebook cells (hash-deduped)
 │       ├── make_context_pack.sh             → ~/Desktop/harness-pack-*.zip [disposable · outside repo]
 │       ├── deploy_agents.sh                 → user-level agent dir (sync source → live)
 │       ├── harness-housekeeping.sh          human-run · git gc + size report · never touches records
@@ -311,6 +312,37 @@ board key like `DATA-ENG` needs the board segment widened there; see
   repack and reclaim the space — it preserves all history and records, deletes
   nothing. See *Repo Health / Housekeeping* in `folder-structure.md` for the
   full growth story and the optional notebook-stripping step.
+
+## Literate capture (delimited blocks → notebook cells)
+
+Hand-written SQL and helper scripts carry the work but not the *why*. The
+literate-capture format fixes that without making the files stop being files: you
+mark blocks with **host-language comments**, so the file stays natively executable
+in its own tool.
+
+- **Delimiter** — a comment whose body is `%%`, with an optional `[label]`:
+  - SQL: `-- %% [row-parity]`
+  - python (Jupytext-style): `# %% [null-check]`
+- **The why-note** — the run of comment lines *immediately above* a delimiter
+  becomes that block's markdown cell.
+- **The code** — every line after the delimiter, up to the next block (or
+  end-of-file), becomes the code cell.
+
+`_harness/scripts/literate_capture.py` is the **transport**: point it at one file
+or a whole folder and it appends each block as a markdown-note + code-cell pair —
+through the same `append_notebook_cell.py` writer, never by hand-editing notebook
+JSON. It is **transport, never execution**: it runs nothing and judges nothing;
+results enter the notebook by hand or by the format's own result section.
+
+- **Re-runnable** — every block is content-hashed and the hash is recorded in its
+  markdown cell, so a re-run over the same file or folder lands only the blocks
+  that aren't already there.
+- **Provenance** — each markdown cell records the source path, block label,
+  capture timestamp, and content hash.
+- **Safe** — source files are byte-unchanged, always; a file with no delimiter is
+  a clean no-op with one prescriptive line naming the fix.
+- **Generic** — it knows two comment tokens and `%%`, nothing dialect-specific;
+  dialect-aware sugar is fork-layer material, out of the shared product.
 
 ## The one pattern, repeated everywhere
 

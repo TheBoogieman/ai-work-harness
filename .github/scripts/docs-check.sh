@@ -63,6 +63,49 @@ svg_refs=$(grep -c '\.svg' "$README" || true)
 [ "$svg_refs" -eq 0 ] \
   || { echo "FAIL [docs B3-separation]: README references a diagram ($svg_refs .svg mention(s)) — README must not embed diagrams; keep only the pointer to General AI-Knowledge/AI Harness/."; fail=1; }
 
+# --- [docs #69 ADR] — SPEC.md + the decisions/ ADR backfill are well-formed (#69) ----------------
+# The project's decisions must stay readable: each ADR carries the four canonical headings, every
+# real ADR cites at least one clickable evidence link, the shipped template stays empty, and SPEC.md
+# keeps its glossary + decoder. Pure greps, each miss naming its exact fix — the demo owns behaviour,
+# this owns doc-shape (cond 2/3). An evidence link is an issue ref (#NN) or a git commit sha (7+ hex).
+adr_ev_re='#[0-9]+|\b[0-9a-f]{7,40}\b'   # what counts as a clickable evidence link in an ADR
+while IFS= read -r adr; do
+  # 1. every ADR (template included) must carry all four canonical section headings verbatim, so the
+  #    guard — and a human — can read any ADR the same way.
+  for h in '## Context' '## Decision' '## Consequences' '## Status'; do
+    grep -Fqx -- "$h" "$adr" \
+      || { echo "FAIL [docs #69 ADR]: $adr is missing the heading '$h' — every ADR carries Context/Decision/Consequences/Status verbatim; add it."; fail=1; }
+  done
+  case "$(basename "$adr")" in
+    000-adr-template.md)
+      # 3. the template is an empty starter: it must carry <FILL> and must NOT carry a real evidence
+      #    link — a filled-in template is a defect (a copy that forgot to become its own ADR).
+      grep -Fq -- '<FILL>' "$adr" \
+        || { echo "FAIL [docs #69 ADR]: $adr is the template but has no <FILL> placeholder — restore the empty <FILL> sections."; fail=1; }
+      grep -qE -- "$adr_ev_re" "$adr" \
+        && { echo "FAIL [docs #69 ADR]: $adr is the template but carries a real evidence link (#NN or a sha) — a filled template is a defect; keep it empty."; fail=1; }
+      ;;
+    *)
+      # 2. every real ADR must cite at least one evidence link so a stranger can click through to the
+      #    issue or commit that motivated the decision.
+      grep -qE -- "$adr_ev_re" "$adr" \
+        || { echo "FAIL [docs #69 ADR]: $adr cites no evidence link — every backfilled ADR must reference at least one issue (#NN) or commit sha; add one."; fail=1; }
+      ;;
+  esac
+done < <(git ls-files 'decisions/[0-9][0-9][0-9]-*.md')
+# 4. SPEC.md must name every glossary term and carry the decoder, so the tracker shorthand stays
+#    legible to a newcomer. Each needle is checked case-insensitively with its own prescriptive miss.
+if [ -f SPEC.md ]; then
+  spec_body=$(cat SPEC.md)
+  for term in 'estate' 'guard' 'red/yellow' 'one-home' 'dumb inspector' 'decoder'; do
+    grep -Fiq -- "$term" <<<"$spec_body" \
+      || { echo "FAIL [docs #69 ADR]: SPEC.md does not name '$term' — its glossary+decoder must cover estate, guard, red/yellow, one-home, dumb inspector, and the decoder; add it."; fail=1; }
+  done
+else
+  echo "FAIL [docs #69 ADR]: SPEC.md is missing — the project spec (glossary + decoder) must exist at the repo root; restore it."; fail=1
+fi
+[ "$fail" -ne 0 ] || echo "  ok [docs #69 ADR] — SPEC.md glossary+decoder present and every decisions/ ADR well-formed"
+
 # --- B4 STRUCTURE — DESIGN.md carries a dated currency-note section (cond 4 / amendment) ----------
 grep -qiE 'Diagram currency \([0-9]{4}-[0-9]{2}-[0-9]{2}\)' "$DESIGN" \
   || { echo "FAIL [docs B4-structure]: $DESIGN is missing its dated 'Diagram currency (YYYY-MM-DD)' note section — add/restore it."; fail=1; }
@@ -158,4 +201,4 @@ if [ -n "$collapse_hits" ]; then
 fi
 
 [ "$fail" -eq 0 ] || { echo "docs-check: FAILED — each line above names its fix."; exit 1; }
-echo "docs-check: all detectors pass (inventory, frozen-sweep, grammar-drift, separation, structure, DESIGN-trigger, C7 fence/link/CR/collapse)."
+echo "docs-check: all detectors pass — see the ok-lines above for the detector set at HEAD."

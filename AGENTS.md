@@ -13,3 +13,6 @@
    Files in the ticket's `AI-Knowledge/` (indexed) are the only memory store.
 6. On a FAIL from the validator: fix before new work. Red blocks, yellow
    schedules. Never fabricate a record.
+7. Before craft work (writing SQL, a dbt model, a transform, a script), check
+   `General AI-Knowledge/Skills/_index.md` for a matching module and read only
+   that `SKILL.md` — index-first, never crawl the tree.

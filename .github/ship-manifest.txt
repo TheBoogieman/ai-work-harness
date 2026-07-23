@@ -27,6 +27,9 @@ DEV	DEVELOPMENT.md
 PRODUCT	General AI-Knowledge/AI Harness/DESIGN.md
 PRODUCT	General AI-Knowledge/AI Harness/harness-architecture.svg
 PRODUCT	General AI-Knowledge/AI Harness/harness-session-flow.svg
+PRODUCT	General AI-Knowledge/Skills/SKILL-TEMPLATE.md
+PRODUCT	General AI-Knowledge/Skills/SQL-Writing/SKILL.md
+PRODUCT	General AI-Knowledge/Skills/_index.md
 PRODUCT	LICENSE
 PRODUCT	README.md
 PRODUCT	SPEC.md
@@ -46,6 +49,7 @@ PRODUCT	_agents/ticket-scribe.agent.md
 PRODUCT	_harness/hooks/hooks.example.json
 PRODUCT	_harness/scripts/append_entry.sh
 PRODUCT	_harness/scripts/append_notebook_cell.py
+PRODUCT	_harness/scripts/check_run.sh
 PRODUCT	_harness/scripts/check_ticket_log.sh
 PRODUCT	_harness/scripts/deploy_agents.sh
 PRODUCT	_harness/scripts/harness-housekeeping.sh

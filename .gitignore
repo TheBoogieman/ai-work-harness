@@ -5,6 +5,7 @@
 !/LICENSE
 !/install.sh
 !/README.md
+!/SPEC.md
 !/setup.md
 !/folder-structure.md
 !/AGENTS.md
@@ -13,6 +14,7 @@
 !/_harness/
 !/Tickets/
 !/General AI-Knowledge/
+!/decisions/
 !/.github/
 
 # working bulk inside tickets is never a record

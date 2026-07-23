@@ -28,6 +28,7 @@ PRODUCT	General AI-Knowledge/AI Harness/harness-architecture.svg
 PRODUCT	General AI-Knowledge/AI Harness/harness-session-flow.svg
 PRODUCT	LICENSE
 PRODUCT	README.md
+PRODUCT	SPEC.md
 PRODUCT	Tickets/999912Z-PROJ-99999/999912Z-PROJ-99999.md
 PRODUCT	Tickets/999912Z-PROJ-99999/AI-Knowledge/_index.md
 PRODUCT	Tickets/999912Z-PROJ-99999/Checks/checks_master.ipynb
@@ -52,6 +53,19 @@ PRODUCT	_harness/scripts/make_context_pack.sh
 PRODUCT	_harness/scripts/portability.sh
 DEV	_harness/scripts/run_demo.sh
 PRODUCT	_harness/scripts/ticket-grammar.sh
+DEV	decisions/000-adr-template.md
+DEV	decisions/001-local-only-no-remote.md
+DEV	decisions/002-estate-identity-lineage.md
+DEV	decisions/003-dumb-inspector.md
+DEV	decisions/004-hooks-as-convenience.md
+DEV	decisions/005-whitelist-containment.md
+DEV	decisions/006-one-home-doctrine.md
+DEV	decisions/007-ship-dev-manifest-split.md
+DEV	decisions/008-reconfigure-only-mode.md
+DEV	decisions/009-four-state-sweep-two-step-completion.md
+DEV	decisions/010-red-blocks-yellow-schedules.md
+DEV	decisions/011-guard-per-bug.md
+DEV	decisions/012-source-not-estate.md
 PRODUCT	folder-structure.md
 PRODUCT	install.sh
 PRODUCT	setup.md

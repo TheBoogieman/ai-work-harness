@@ -23,6 +23,7 @@ DEV	.github/workflows/windows-witness.yml
 PRODUCT	.gitignore
 PRODUCT	AGENTS.md
 DEV	CLAUDE.md
+DEV	DEVELOPMENT.md
 PRODUCT	General AI-Knowledge/AI Harness/DESIGN.md
 PRODUCT	General AI-Knowledge/AI Harness/harness-architecture.svg
 PRODUCT	General AI-Knowledge/AI Harness/harness-session-flow.svg
@@ -66,6 +67,10 @@ DEV	decisions/009-four-state-sweep-two-step-completion.md
 DEV	decisions/010-red-blocks-yellow-schedules.md
 DEV	decisions/011-guard-per-bug.md
 DEV	decisions/012-source-not-estate.md
+DEV	dev-loop/SETUP.md
+DEV	dev-loop/message-format.template.md
+DEV	dev-loop/role-charter.template.md
+DEV	dev-loop/working-agreement.template.md
 PRODUCT	folder-structure.md
 PRODUCT	install.sh
 PRODUCT	setup.md

@@ -74,6 +74,7 @@ DEV	decisions/009-four-state-sweep-two-step-completion.md
 DEV	decisions/010-red-blocks-yellow-schedules.md
 DEV	decisions/011-guard-per-bug.md
 DEV	decisions/012-source-not-estate.md
+DEV	decisions/013-estate-gains-a-reader.md
 DEV	decisions/014-status-primary-observation.md
 DEV	dev-loop/SETUP.md
 DEV	dev-loop/message-format.template.md

@@ -195,6 +195,7 @@ Work/                                        [git root · local-only · whitelis
 │   └── scripts/                             THE MACHINERY (versioned)
 │       ├── check_ticket_log.sh              ← sessionStart hook │ sessionEnd (bonus)
 │       │       └── watermark →              ~/.harness/validated/<ticket>  [state · unversioned]
+│       │       └── append_entry.sh          record appender: text+ticket+section → stamped atomic append under an existing header, then check_ticket_log verdict
 │       ├── harness-status.sh                stdout only · roster = _agents/ · checks siblings
 │       ├── ticket-grammar.sh                recognition home: TICKET_RE + ticket predicates · validator + status both source it (edit to retarget your board)
 │       ├── portability.sh                   shared GNU/BSD shims: ts14→epoch, sourced by validator + status (one home · no drift)
@@ -333,6 +334,18 @@ or a whole folder and it appends each block as a markdown-note + code-cell pair 
 through the same `append_notebook_cell.py` writer, never by hand-editing notebook
 JSON. It is **transport, never execution**: it runs nothing and judges nothing;
 results enter the notebook by hand or by the format's own result section.
+
+The ticket **record** files get the same one-home discipline:
+`_harness/scripts/append_entry.sh` is the sanctioned way to add an entry to a
+ticket `.md`, the way `append_notebook_cell.py` is for notebooks. Give it text,
+a target ticket, and an **existing** section header; it stamps the entry and
+drops it under that header with an atomic write (temp file, then rename), so a
+half-written record is never seen. Its pre-flight validates the landing zone
+only — the file exists and the header is present and **unique** — and otherwise
+**declines with the fix named**; it never invents structure and never edits an
+existing line. After a successful append it runs `check_ticket_log.sh` and passes
+that verdict straight through: write-then-validate, and a red never un-writes a
+good record (a fixed record is a human act).
 
 - **Re-runnable** — every block is content-hashed and the hash is recorded in its
   markdown cell, so a re-run over the same file or folder lands only the blocks

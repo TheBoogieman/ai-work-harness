@@ -35,11 +35,12 @@ done
 # only when all three invariants held this run.
 dl_fail_before=$fail
 
-# 1. TEMPLATES STAY EMPTY — every dev-loop/*.template.md keeps at least one literal <FILL> token, so
-# a template whose blanks were filled in (content instead of skeleton) reds by name.
+# 1. TEMPLATES KEEP A <FILL> BLANK — every dev-loop/*.template.md must retain AT LEAST ONE literal
+# <FILL> token. The check is presence-of-one, so it fires only when NONE is left (a FULLY-filled
+# template), not on a partial fill — the message and ok-line say exactly that, no stronger (#82).
 for dl_t in dev-loop/*.template.md; do
   grep -Fq -- '<FILL>' "$dl_t" \
-    || { echo "FAIL [docs #68 dev-loop]: $dl_t has no <FILL> token — a template field was filled in; templates ship EMPTY, restore the <FILL> blanks."; fail=1; }
+    || { echo "FAIL [docs #68 dev-loop]: $dl_t has no <FILL> token left — a template must keep at least one <FILL> blank as proof it ships as a skeleton; restore a <FILL> blank."; fail=1; }
 done
 
 # 2. VENDOR-NEUTRAL — no AI product name appears in DEVELOPMENT.md or dev-loop/**. Word-anchored (-w)
@@ -72,7 +73,7 @@ for dl_pair in "${dl_pairs[@]}"; do
     || { echo "FAIL [docs #68 dev-loop:$dl_label]: DEVELOPMENT.md no longer states this (missing \"$dl_needle\") — restore it."; fail=1; }
 done
 
-[ "$fail" -ne "$dl_fail_before" ] || echo "  ok [docs #68 dev-loop] — templates empty, vendor-neutral, 4 roles + 5 laws present in DEVELOPMENT.md"
+[ "$fail" -ne "$dl_fail_before" ] || echo "  ok [docs #68 dev-loop] — each template keeps a <FILL> blank, vendor-neutral, 4 roles + 5 laws present in DEVELOPMENT.md"
 
 # --- de-number (#82 / #85) — no NUMERIC agent-count claim survives #85's de-numbering conversion --
 # #85 turned the roster count into role-named prose because the agent set GROWS (six → ten over the

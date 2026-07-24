@@ -47,6 +47,7 @@ PRODUCT	_agents/knowledge-keeper.agent.md
 PRODUCT	_agents/ticket-init.agent.md
 PRODUCT	_agents/ticket-recall.agent.md
 PRODUCT	_agents/ticket-scribe.agent.md
+PRODUCT	_agents/weekly-digest.agent.md
 PRODUCT	_harness/hooks/hooks.example.json
 PRODUCT	_harness/scripts/append_entry.sh
 PRODUCT	_harness/scripts/append_notebook_cell.py

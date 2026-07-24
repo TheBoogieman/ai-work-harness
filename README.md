@@ -160,7 +160,7 @@ Anything marked *swappable* degrades gracefully if you differ.
 - `folder-structure.md` — **the constitution.** Part I loads every session;
   Part II on demand. Start here.
 - `AGENTS.md` — the six-rule contract Copilot reads on every surface.
-- `_agents/` — seven agent definitions (source of truth; deployed copies are
+- `_agents/` — eight agent definitions (source of truth; deployed copies are
   derived).
 - `_harness/scripts/` — validator, status, notebook helper, context pack,
   deploy, demo. All tested; every failure line ends with its fix.
@@ -216,7 +216,8 @@ Work/                                        [git root · local-only · whitelis
 │   ├── check-scribe.agent.md                │   [live · derived · unversioned]
 │   ├── doc-writer.agent.md                  │   drift check (status): differ ⇒ FAIL
 │   ├── knowledge-keeper.agent.md            │   fix ⇒ re-run deploy_agents.sh
-│   └── knowledge-curator.agent.md           ┘
+│   ├── knowledge-curator.agent.md           │
+│   └── weekly-digest.agent.md               ┘
 │
 ├── Tickets/                                 RECORDS ONLY
 │   ├── README.md                            thin pointer (the map lives at the Work root)
@@ -289,7 +290,7 @@ board key like `DATA-ENG` needs the board segment widened there; see
   every rule; each ticket folder holds its own log, state, and knowledge;
   `General AI-Knowledge/` holds the durable stuff; `AGENTS.md` is the
   six-rule contract Copilot loads on every surface.
-- **L4 — Seven agents** — the workers:
+- **L4 — Eight agents** — the workers:
   - `ticket-init` (smart, at pickup) — pulls Jira, interviews you (your
     words, non-negotiables, repos), suggests branch names, births the folder
   - `ticket-recall` (cheap, at pickup) — read-only; narrates one ticket in
@@ -300,6 +301,9 @@ board key like `DATA-ENG` needs the board segment widened there; see
   - `knowledge-keeper` (cheap) — captures learnings into `AI-Knowledge/`
   - `knowledge-curator` (smart, rare) — compacts and promotes, with human
     approval; direct invocation only
+  - `weekly-digest` (cheap, at a boundary) — read-only; narrates a period
+    (default 14 days) from the record — active tickets, knowledge, status
+    deltas — writes nothing
 - **L5 — You + a frontier model** — the thinking. Everything below exists so
   this layer stays cheap, focused, and honest.
 

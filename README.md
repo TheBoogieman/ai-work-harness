@@ -100,7 +100,8 @@ activation trigger is not fully characterised, so expect a first real session or
 a Copilot restart may be needed. The git safety net is the backstop — if a write
 wasn't auto-committed, commit it by hand; nothing in the record depends on the
 hook firing. (CLI and cloud Copilot surfaces are UNVERIFIED — their schema may
-differ.)
+differ.) The hook config design ships as `_harness/hooks/hooks.example.json` —
+verify its schema against your Copilot version.
 
 **Arming on migration.** The auto-commit hooks commit only where the estate's
 `.git/config` carries `harness.estate=true` — a positive-identity key `install.sh`
@@ -154,30 +155,6 @@ Anything marked *swappable* degrades gracefully if you differ.
   viable); plain PowerShell can push the repo with git but cannot run the
   scripts. WSL is for an *ephemeral* Linux check only (clone inside `~`, never a
   `/mnt/c` mount) — never a standing home.
-
-## Repository tour
-
-- `folder-structure.md` — **the constitution.** Part I loads every session;
-  Part II on demand. Start here.
-- `AGENTS.md` — the seven-rule contract Copilot reads on every surface.
-- `_agents/` — the agent contracts, one file per agent (source of truth; deployed
-  copies are derived).
-- `_harness/scripts/` — validator, status, notebook helper, context pack,
-  deploy, demo. All tested; every failure line ends with its fix.
-- `_harness/hooks/hooks.example.json` — the hook design (verify schema
-  against your Copilot version).
-- `Tickets/999912Z-PROJ-99999/` — the template ticket.
-- `General AI-Knowledge/AI Harness/` — the two blueprint sheets + design
-  notes.
-- `install.sh` / `setup.md` — the installer that assembles the estate and the
-  AI-assistant final-gate prompt (setup steps live under **Setup**, above).
-
-## The drawings
-
-Two blueprint sheets — **Architecture** (what the machine is) and **Session
-flow** (how a day moves through it) — live at
-`General AI-Knowledge/AI Harness/`. They are operator-maintained diagrams; open
-them there. (Their currency is tracked in that folder's `DESIGN.md`.)
 
 ---
 
@@ -532,8 +509,8 @@ home; everything else points at it.
 | `DEVELOPMENT.md` | developer | The dev-loop method doc: the four roles + five working laws (DEV). | `dev-loop/`, `docs-check` (#68) |
 | `dev-loop/` (`SETUP.md` + three `*.template.md`) | developer | Starter kit to stand up the multi-seat dev loop; the templates ship **empty**. | `DEVELOPMENT.md`, `docs-check` (#68) |
 | `decisions/` (`000` template + `001`–`018`) | developer | Architecture Decision Records — *the why* of each design choice. | `docs-check` (#69 ADR); later ADRs cross-cite |
-| `General AI-Knowledge/AI Harness/DESIGN.md` | developer / user | Design notes + the dated diagram-currency ledger (the honest-lag record). | this README (The drawings), `docs-check` (B4) |
-| `General AI-Knowledge/AI Harness/` (Architecture + Session-flow sheets) | user | The two operator-maintained blueprint drawings — what the machine is, and how a day moves through it. | this README (The drawings), `DESIGN.md` |
+| `General AI-Knowledge/AI Harness/DESIGN.md` | developer / user | Design notes + the dated diagram-currency ledger (the honest-lag record). | the folder map, `docs-check` (B4) |
+| `General AI-Knowledge/AI Harness/` (Architecture + Session-flow sheets) | user | The two operator-maintained blueprint drawings — what the machine is, and how a day moves through it. | the folder map, `DESIGN.md` |
 | `General AI-Knowledge/Skills/` (`_index.md`, `SKILL-TEMPLATE.md`, `SQL-Writing/SKILL.md`) | user / machine | Worker-tier craft modules, discovered index-first. | `AGENTS.md` (rule 7), constitution (Skills Convention) |
 | `Tickets/README.md` | estate | Thin pointer — the map lives at the `Work/` root. | the Work-root folder map |
 

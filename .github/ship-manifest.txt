@@ -79,6 +79,7 @@ DEV	decisions/012-source-not-estate.md
 DEV	decisions/013-estate-gains-a-reader.md
 DEV	decisions/014-status-primary-observation.md
 DEV	decisions/015-pluggable-tracker-fetch-seam.md
+DEV	decisions/016-multi-machine-ferry-declined.md
 DEV	dev-loop/SETUP.md
 DEV	dev-loop/message-format.template.md
 DEV	dev-loop/role-charter.template.md

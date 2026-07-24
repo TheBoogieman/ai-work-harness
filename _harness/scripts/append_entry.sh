@@ -24,9 +24,11 @@ if [[ $# -ne 3 ]]; then
 fi
 ticket="$1"; section_arg="$2"; text="$3"
 
-# Resolve the target record file: an existing path is used as-is; otherwise the argument
-# is treated as a ticket name and resolved to its record under Tickets/ (the harness layout).
-if [[ -f "$ticket" ]]; then
+# Resolve the target record file. A ticket-folder NAME never contains a slash, so any slash-bearing
+# argument is a PATH and is used as-is — even a non-existent one, so the decline below names the
+# LITERAL path the caller gave, never a doubled Tickets/<path>/Tickets/<path> from name-resolving a
+# path by mistake (#82 truth-up). A bare, slash-free name resolves to its record under Tickets/.
+if [[ -f "$ticket" || "$ticket" == */* ]]; then
   md="$ticket"
 else
   md="$WORK_ROOT/Tickets/$ticket/$ticket.md"

@@ -358,58 +358,19 @@ States — Operational Rules*.
 > classified DEV in `.github/ship-manifest.txt` and never ship. To *install* the
 > harness, see **Setup** above; nothing here points a user at dev machinery.
 
-The harness is built to be developed much the way you'd use it: clone the repo
-locally and point an agentic AI coding assistant at it to work on the harness
-itself. The repo root carries a **`CLAUDE.md`** — machine-facing instructions
-the assistant reads automatically — holding the full development rules (the
-working loop, the edit constraints, the acceptance gate).
-
-**Recommended setup — native Windows (the documented lane):**
-
-Follow these from zero; the shell steps run verbatim in the integrated
-Git-Bash/Cygwin terminal, no improvisation needed:
-
-1. Install **Git for Windows** (which provides Git Bash) — or Cygwin with git —
-   and **VS Code**. *(Operator-confirmed step: exact installers are recorded
-   during the walkthrough.)*
-2. Clone the repo and pin LF line endings before anything else:
-   ```bash
-   git clone <repo-url>
-   cd ai-work-harness
-   git config core.autocrlf input
-   ```
-   `.gitattributes` already pins `*.sh`/`*.py` to LF, so the scripts stay
-   byte-for-byte LF even under `core.autocrlf=true`; setting `input` also keeps
-   your own edits clean at the source. This is the first thing to get right — a
-   CRLF in a shell shebang or heredoc breaks the machinery.
-3. Open the folder in VS Code and install your agent extension (e.g. Claude
-   Code), then sign in. *(Operator-confirmed GUI step: the extension name and
-   sign-in flow are recorded as evidence during the walkthrough.)*
-4. In the integrated bash, install the demo's dependencies: `python3` with
-   `nbformat` (`pip install nbformat`) and `unzip` (`zip` is optional —
-   `make_context_pack` falls back to Python's zipfile).
-5. Verify the machinery end to end — it must end with *ALL 6 DEMO STAGES PASSED*:
-   ```bash
-   bash _harness/scripts/run_demo.sh
-   ```
-
-Do all shell work in the integrated Git-Bash/Cygwin terminal; plain PowerShell
-runs `git` but not the bash machinery.
-
-**Linux / macOS (and WSL for ephemeral checks only):** Linux and macOS work
-identically and are the standing fully-tested lanes (CI runs the demo on both on
-every PR); a `windows-latest` MSYS job witnesses the Windows lane
-informationally. WSL is *only* for a throwaway Linux check — clone inside your
-WSL home (`~`, **never** a `/mnt/c` Windows-drive mount, which gives slow I/O and
-unreliable executable bits), run the demo, discard — never a standing
-development copy.
-
-**The loop:** the assistant applies a change, runs the acceptance demo
-(`bash _harness/scripts/run_demo.sh` — it must end with *ALL 6 DEMO STAGES
-PASSED*), and commits, with you reviewing before anything is pushed. Every bug
-fix ships with a regression guard in that demo that provably fails on the
-pre-fix code (features are usually guarded too, but the law is bug-scoped). See
-`CLAUDE.md` for the full rules; don't hand-edit the machinery from memory.
+The harness is developed the way you'd use it: clone the repo and point an
+agentic AI assistant at it. The repo root's **`CLAUDE.md`** — read automatically
+by the assistant — holds the full development rules **and** the environment setup:
+LF line endings (`core.autocrlf input` + the `.gitattributes` pins), the demo
+dependencies, the Linux/macOS standing lanes, and WSL as an ephemeral check only
+(never a `/mnt/c` home). On native Windows (the documented lane): install **Git
+for Windows** (or Cygwin) and **VS Code** with your agent extension, and do all
+shell work in the integrated Git-Bash/Cygwin terminal — plain PowerShell runs
+`git` but not the bash machinery. Verify end to end with
+`bash _harness/scripts/run_demo.sh` (it must end with *ALL 6 DEMO STAGES PASSED*).
+**The loop:** apply a change, run that demo, commit — with you reviewing before any
+push; every bug fix ships a demo regression guard that provably fails on the
+pre-fix code. Full rules in `CLAUDE.md`; don't hand-edit the machinery from memory.
 
 **Merge-gate governance:** work is issues-first — open or claim an issue, branch
 or fork, then open a PR whose body closes it (`Fixes #NN`). Beyond the demo, two
@@ -422,11 +383,9 @@ leniency but still need the issue anchor. These checks are development
 infrastructure and never ship to an estate. Full contributor guide:
 [CONTRIBUTING.md](.github/CONTRIBUTING.md).
 
-**For an external design review** (rather than local iteration), run
-`_harness/scripts/make_context_pack.sh`: it produces a scrubbed, disposable
-zip of the harness to take to a design session — then come back with an
-updated build prompt and let the acceptance tests prove the change before you
-trust it. The system was built that way; keep it that way.
+**For an external design review**, take the scrubbed, disposable zip from
+`make_context_pack.sh` (the maintenance port, above) to a design session, then let
+the acceptance demo prove the change you bring back. The system was built that way.
 
 ## Document catalogue
 

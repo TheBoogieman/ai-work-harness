@@ -27,7 +27,8 @@ Work/
 ├── Tickets/        Active and completed Jira ticket working folders
 │   └── README.md   Thin pointer (the validator only validates recognised names; harness-status surfaces the rest)
 ├── GitHub/         Local checkouts of your code repos (primary dev work; never touched by the harness)
-├── General AI-Knowledge/  Non-ticket knowledge base — tooling/setup/how-to docs (one subfolder per topic)
+├── General AI-Knowledge/  Non-ticket knowledge base — tooling/setup/how-to docs (one subfolder per topic) — what the machinery READS
+├── General Human Knowledge/  Human-facing OUTPUTS the machinery writes (e.g. Retrospectives/) — mirrors General AI-Knowledge the other way: what it WRITES for you (append-only, versioned)
 ├── _harness/scripts/   THE MACHINERY — validator, status, notebook helper, context pack, agent deploy (versioned: the enforcement layer has undo + history)
 ├── _agents/        SOURCE OF TRUTH for all .agent.md definitions (versioned; deployed to the user-level Copilot agent directory — live copies are derived and disposable; filesystem wins on drift)
 ├── <anything else>/  Your other folders — untracked by the whitelist, no conventions imposed
@@ -36,7 +37,12 @@ Work/
 
 Ticket folders live **outside** the VS Code multi-repo workspace (`GitHub/<your>.code-workspace`), so nothing under `Tickets/` can be committed to a team repo by mistake.
 
-`Work/` is the root of a **LOCAL-ONLY git repository**, scoped by a WHITELIST `.gitignore`: everything is untracked by default, and only the record set is re-included — `folder-structure.md`, `AGENTS.md`, `_agents/`, `_harness/`, `Tickets/`, and `General AI-Knowledge/`. Within tickets, each `Logs/` and `Dump/` is ignored too (regenerable output and re-droppable inputs — working bulk, not records; the record is the ticket `.md`, `AI-Knowledge/`, and the `Checks/` notebook). Every other folder in `Work/` — `GitHub/` and any other folder you keep here — never enters history by construction, so new folders are automatically outside. One history for all records means promotion never exits version control and culling stale knowledge is safe. The repo versions records, not the warehouse. No remote ever exists; nothing ever pushes. For personal, uncommitted ignores beyond the shared whitelist, use `.git/info/exclude` (local-only, never shared or tracked).
+`Work/` is the root of a **LOCAL-ONLY git repository**, scoped by a WHITELIST `.gitignore`: everything is untracked by default, and only the record set is re-included — `folder-structure.md`, `AGENTS.md`, `_agents/`, `_harness/`, `Tickets/`, `General AI-Knowledge/`, and `General Human Knowledge/`. Within tickets, each `Logs/` and `Dump/` is ignored too (regenerable output and re-droppable inputs — working bulk, not records; the record is the ticket `.md`, `AI-Knowledge/`, and the `Checks/` notebook). Every other folder in `Work/` — `GitHub/` and any other folder you keep here — never enters history by construction, so new folders are automatically outside. One history for all records means promotion never exits version control and culling stale knowledge is safe. The repo versions records, not the warehouse. No remote ever exists; nothing ever pushes. For personal, uncommitted ignores beyond the shared whitelist, use `.git/info/exclude` (local-only, never shared or tracked).
+
+`General Human Knowledge/` mirrors `General AI-Knowledge/` the other way round: GAK is what the machinery **reads**, GHK is what it **writes for you** — human-facing outputs (the first is `Retrospectives/`, written by the `retrospective` agent). Two rules govern it:
+
+- **APPEND-ONLY.** Files are timestamped on creation and **never edited** — the never-rewrite-the-record doctrine applied to human deliverables. A retrospective is a dated statement of what was true when it was written, not a living document; a later run writes a **new** file, it never rewrites an old one.
+- **INSIDE THE WHITELIST.** These artifacts **are** record — a review deliverable is worth keeping and versioning — so the folder is re-included above and its contents are tracked and auto-committed like any other record, never treated as disposable scratch.
 
 ---
 
@@ -426,7 +432,7 @@ It reports, with `OK` / `WARN` / `FAIL` prefixes:
   `HARNESS_KNOWLEDGE_STALE_DAYS`), and entries carrying no `Last reviewed:`
   date at all — each names the knowledge-curator as the next act (#72).
 - Liveness: last commit in the Work local git (auto-commit is alive),
-  hooks config parses, all eight `.agent.md` files present and registered
+  hooks config parses, every `.agent.md` file present and registered
   (agents can fail to load *silently* after Copilot updates).
 
 Every `FAIL` line includes the exact command or edit that fixes it.

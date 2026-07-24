@@ -30,6 +30,7 @@ PRODUCT	General AI-Knowledge/AI Harness/harness-session-flow.svg
 PRODUCT	General AI-Knowledge/Skills/SKILL-TEMPLATE.md
 PRODUCT	General AI-Knowledge/Skills/SQL-Writing/SKILL.md
 PRODUCT	General AI-Knowledge/Skills/_index.md
+PRODUCT	General Human Knowledge/Retrospectives/.gitkeep
 PRODUCT	LICENSE
 PRODUCT	README.md
 PRODUCT	SPEC.md
@@ -44,6 +45,7 @@ PRODUCT	_agents/check-scribe.agent.md
 PRODUCT	_agents/doc-writer.agent.md
 PRODUCT	_agents/knowledge-curator.agent.md
 PRODUCT	_agents/knowledge-keeper.agent.md
+PRODUCT	_agents/retrospective.agent.md
 PRODUCT	_agents/ticket-init.agent.md
 PRODUCT	_agents/ticket-recall.agent.md
 PRODUCT	_agents/ticket-scribe.agent.md
@@ -60,6 +62,7 @@ PRODUCT	_harness/scripts/harness-status.sh
 PRODUCT	_harness/scripts/literate_capture.py
 PRODUCT	_harness/scripts/make_context_pack.sh
 PRODUCT	_harness/scripts/portability.sh
+PRODUCT	_harness/scripts/retro_stats.sh
 DEV	_harness/scripts/run_demo.sh
 PRODUCT	_harness/scripts/ticket-grammar.sh
 PRODUCT	_harness/scripts/tracker_sweep.sh
@@ -80,6 +83,7 @@ DEV	decisions/013-estate-gains-a-reader.md
 DEV	decisions/014-status-primary-observation.md
 DEV	decisions/015-pluggable-tracker-fetch-seam.md
 DEV	decisions/016-multi-machine-ferry-declined.md
+DEV	decisions/017-estate-gains-an-output-surface.md
 DEV	dev-loop/SETUP.md
 DEV	dev-loop/message-format.template.md
 DEV	dev-loop/role-charter.template.md

@@ -160,8 +160,8 @@ Anything marked *swappable* degrades gracefully if you differ.
 - `folder-structure.md` — **the constitution.** Part I loads every session;
   Part II on demand. Start here.
 - `AGENTS.md` — the six-rule contract Copilot reads on every surface.
-- `_agents/` — eight agent definitions (source of truth; deployed copies are
-  derived).
+- `_agents/` — the agent contracts, one file per agent (source of truth; deployed
+  copies are derived).
 - `_harness/scripts/` — validator, status, notebook helper, context pack,
   deploy, demo. All tested; every failure line ends with its fix.
 - `_harness/hooks/hooks.example.json` — the hook design (verify schema
@@ -204,6 +204,7 @@ Work/                                        [git root · local-only · whitelis
 │       ├── check_run.sh                     run-and-record: runs a command, appends one notebook cell (command, output, exit code, timestamp)
 │       ├── make_context_pack.sh             → ~/Desktop/harness-pack-*.zip [disposable · outside repo]
 │       ├── tracker_sweep.sh                 human-run · on-demand board-vs-estate drift report · pluggable fetch seam · tracker-agnostic · fails open offline
+│       ├── retro_stats.sh                    dumb counter for the retrospective agent · tickets-by-month + checks + promotions · offline · exits 0 always
 │       ├── deploy_agents.sh                 → user-level agent dir (sync source → live)
 │       ├── harness-housekeeping.sh          human-run · git gc + size report · never touches records
 │       ├── harness-drill.sh                 human-run · rehearse restore/bundle/undo · read-only toward the estate
@@ -217,7 +218,8 @@ Work/                                        [git root · local-only · whitelis
 │   ├── doc-writer.agent.md                  │   drift check (status): differ ⇒ FAIL
 │   ├── knowledge-keeper.agent.md            │   fix ⇒ re-run deploy_agents.sh
 │   ├── knowledge-curator.agent.md           │
-│   └── weekly-digest.agent.md               ┘
+│   ├── weekly-digest.agent.md               │
+│   └── retrospective.agent.md               ┘
 │
 ├── Tickets/                                 RECORDS ONLY
 │   ├── README.md                            thin pointer (the map lives at the Work root)
@@ -290,7 +292,7 @@ board key like `DATA-ENG` needs the board segment widened there; see
   every rule; each ticket folder holds its own log, state, and knowledge;
   `General AI-Knowledge/` holds the durable stuff; `AGENTS.md` is the
   six-rule contract Copilot loads on every surface.
-- **L4 — Eight agents** — the workers:
+- **L4 — The agents** — the workers:
   - `ticket-init` (smart, at pickup) — pulls Jira, interviews you (your
     words, non-negotiables, repos), suggests branch names, births the folder
   - `ticket-recall` (cheap, at pickup) — read-only; narrates one ticket in
@@ -304,6 +306,9 @@ board key like `DATA-ENG` needs the board segment widened there; see
   - `weekly-digest` (cheap, at a boundary) — read-only; narrates a period
     (default 14 days) from the record — active tickets, knowledge, status
     deltas — writes nothing
+  - `retrospective` (smart, at review time) — writes a period retrospective
+    (default 12 months) FOR THE HUMAN in accomplishment register — one
+    timestamped file to `General Human Knowledge/Retrospectives/`, nothing else
 - **L5 — You + a frontier model** — the thinking. Everything below exists so
   this layer stays cheap, focused, and honest.
 

@@ -132,7 +132,7 @@ assistant-agnostic and works with any AI coding tool. (This repo is in fact
 developed using Claude Code, not Copilot, which exercises that portability.)
 The three Copilot-specific pieces:
 
-1. **`_agents/*.agent.md`** (eight files) use Copilot's agent format —
+1. **`_agents/*.agent.md`** (one file per agent) use Copilot's agent format —
    frontmatter like `user-invocable` and `tools`. The instruction *content* is
    portable; only the wrapper format is Copilot-specific.
 2. **`_harness/hooks/hooks.example.json`** uses Copilot's `postToolUse` hook
@@ -157,6 +157,6 @@ the issue board is clear and the project is self-contained.
   Part I always-load, Part II on-demand).
 - _harness/scripts/ — the machinery (validator, status, context-pack, demo,
   deploy, notebook helper, and the ticket-grammar home).
-- _agents/ — the eight Copilot agent contracts.
+- _agents/ — the Copilot agent contracts.
 - _harness/scripts/run_demo.sh — the 6-stage acceptance demo; the truth-teller
   for any change.

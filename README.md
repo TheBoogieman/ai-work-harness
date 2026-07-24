@@ -100,7 +100,7 @@ activation trigger is not fully characterised, so expect a first real session or
 a Copilot restart may be needed. The git safety net is the backstop — if a write
 wasn't auto-committed, commit it by hand; nothing in the record depends on the
 hook firing. (CLI and cloud Copilot surfaces are UNVERIFIED — their schema may
-differ.)
+differ.) The hook config design ships as `_harness/hooks/hooks.example.json`.
 
 **Arming on migration.** The auto-commit hooks commit only where the estate's
 `.git/config` carries `harness.estate=true` — a positive-identity key `install.sh`
@@ -116,8 +116,8 @@ You work on tickets with an AI assistant. The harness makes that work leave
 **records** instead of vibes: every ticket folder keeps its own log, current
 state, and captured knowledge; every ad-hoc check — SQL, Python, whatever your
 work is — lands in an audit-trail notebook; every file write auto-commits to a
-local-only git repo (via a Copilot hook, when it fires); and a dumb bash
-validator refuses to let a session start on top of an undocumented mess. Small
+local-only git repo; and a dumb bash validator refuses to let a session start on
+top of an undocumented mess. Small
 AI agents do the clerical work (logging, capturing, compacting) so the
 expensive model — and you — only do the thinking. Nothing self-heals, nothing
 phones home, and one markdown file is the law.
@@ -137,8 +137,8 @@ Anything marked *swappable* degrades gracefully if you differ.
 - **VS Code** as the editor (*swappable* — nothing hard-depends on it, but
   the notebook/interpreter flow is written for it).
 - **git** installed; the harness creates a **local-only** repo at the
-  workspace root (whitelist-scoped; it must never get a remote — this
-  public repo is the sanitised exception that proves the rule).
+  workspace root (it must never get a remote — this public repo is the
+  sanitised exception that proves the rule).
 - **Python 3.12** and a venv named exactly **`venv_global`** (with
   `nbformat`), created by you, set as the workspace default interpreter.
   The harness depends on it and never creates it.
@@ -154,30 +154,6 @@ Anything marked *swappable* degrades gracefully if you differ.
   viable); plain PowerShell can push the repo with git but cannot run the
   scripts. WSL is for an *ephemeral* Linux check only (clone inside `~`, never a
   `/mnt/c` mount) — never a standing home.
-
-## Repository tour
-
-- `folder-structure.md` — **the constitution.** Part I loads every session;
-  Part II on demand. Start here.
-- `AGENTS.md` — the seven-rule contract Copilot reads on every surface.
-- `_agents/` — the agent contracts, one file per agent (source of truth; deployed
-  copies are derived).
-- `_harness/scripts/` — validator, status, notebook helper, context pack,
-  deploy, demo. All tested; every failure line ends with its fix.
-- `_harness/hooks/hooks.example.json` — the hook design (verify schema
-  against your Copilot version).
-- `Tickets/999912Z-PROJ-99999/` — the template ticket.
-- `General AI-Knowledge/AI Harness/` — the two blueprint sheets + design
-  notes.
-- `install.sh` / `setup.md` — the installer that assembles the estate and the
-  AI-assistant final-gate prompt (setup steps live under **Setup**, above).
-
-## The drawings
-
-Two blueprint sheets — **Architecture** (what the machine is) and **Session
-flow** (how a day moves through it) — live at
-`General AI-Knowledge/AI Harness/`. They are operator-maintained diagrams; open
-them there. (Their currency is tracked in that folder's `DESIGN.md`.)
 
 ---
 
@@ -321,98 +297,40 @@ board key like `DATA-ENG` needs the board segment widened there; see
 
 ## The maintenance port (offline, on demand)
 
-- `_harness/scripts/harness-status.sh` — estate-wide health report: ticket ages,
-  index nags, stale general knowledge, git/hook/agent liveness. Every FAIL
-  line ends with the exact fix.
-- `_harness/scripts/tracker_sweep.sh` — on-demand board-vs-estate drift report.
-  After a ticket is created the estate and the external board can drift silently
-  (closed upstream, still Active locally). This human-run sweep reads each active
-  ticket's upstream status through a **pluggable fetch seam** and WARNs per
-  divergence with the fix named. It ships **tracker-agnostic**: the public product
-  names no board and makes no network call of its own — you point it at your own
-  fetcher (`HARNESS_TRACKER_FETCH_CMD`) at the fork layer, and the one line naming
-  which statuses mean "closed" is user-editable (the `ticket-grammar.sh`
-  precedent). It **fails open**: an unreachable tracker or no fetcher yields one
-  quiet note, never a red, so an offline estate stays fully functional. Any token
-  lives in the environment or a keychain at runtime — never on disk. See
-  `decisions/015-pluggable-tracker-fetch-seam.md`.
-- `_harness/scripts/make_context_pack.sh` — scrubbed, datestamped
-  zip of the harness for external design review, landing on your Desktop.
-  Disposable: upload, delete, regenerate anytime. Structure travels, payload
-  never. Skim before it leaves the machine.
-- `_harness/scripts/harness-housekeeping.sh` — the repo grows with use
-  (an auto-write commit per file mutation, plus tracked `Checks/` notebooks
-  rewritten whole on each append), so `.git` becomes several times the
-  working-tree size over months. Run this by hand periodically to `git gc` /
-  repack and reclaim the space — it preserves all history and records, deletes
-  nothing. See *Repo Health / Housekeeping* in `folder-structure.md` for the
-  full growth story and the optional notebook-stripping step.
-- `_harness/scripts/harness-drill.sh` — a recovery *rehearsal* you run on a
-  calm day. Backups exist, but a restore nobody has practised is a hope, not a
-  capability, and the git undo net is doctrine read rather than muscle memory.
-  Three read-only modes prove the record can be rebuilt before you ever need it:
-  `restore-drill` rebuilds the record from the estate's own `.git` into a temp
-  dir and checks it validates; `bundle-drill` makes a local `git bundle`,
-  restores from *that*, and checks it validates (the bundle stays local);
-  `undo-drill` walks you through undoing an uncommitted and a committed mistake
-  on a throwaway fixture. Every mode leaves the live estate byte-untouched.
+Five human-run tools; each has a one-line purpose in the folder map, and its full
+telling lives in `folder-structure.md` (Part II) or the home named inline.
 
-## Literate capture (delimited blocks → notebook cells)
+- `harness-status.sh` — estate-wide health report; every FAIL line ends with its fix.
+- `tracker_sweep.sh` — board-vs-estate drift through a pluggable, tracker-agnostic
+  fetch seam that fails open offline (`decisions/015-pluggable-tracker-fetch-seam.md`).
+- `make_context_pack.sh` — scrubbed, disposable zip of the harness for external
+  review; skim before it leaves the machine.
+- `harness-housekeeping.sh` — `git gc`/repack to reclaim `.git` growth, all history kept.
+- `harness-drill.sh` — rehearse recovery on a calm day: three read-only modes
+  (`restore-drill`, `bundle-drill`, `undo-drill`); modes documented in the script's header.
 
-Hand-written SQL and helper scripts carry the work but not the *why*. The
-literate-capture format fixes that without making the files stop being files: you
-mark blocks with **host-language comments**, so the file stays natively executable
-in its own tool.
+## Capture — checks, records, literate blocks
 
-- **Delimiter** — a comment whose body is `%%`, with an optional `[label]`:
-  - SQL: `-- %% [row-parity]`
-  - python (Jupytext-style): `# %% [null-check]`
-- **The why-note** — the run of comment lines *immediately above* a delimiter
-  becomes that block's markdown cell.
-- **The code** — every line after the delimiter, up to the next block (or
-  end-of-file), becomes the code cell.
+Everything you verify or record goes through a dumb, one-home writer — never a
+hand-edit — so half-written records are never seen and the format detail lives in
+exactly one place: each script's own commented header. Three capture tools:
 
-`_harness/scripts/literate_capture.py` is the **transport**: point it at one file
-or a whole folder and it appends each block as a markdown-note + code-cell pair —
-through the same `append_notebook_cell.py` writer, never by hand-editing notebook
-JSON. It is **transport, never execution**: it runs nothing and judges nothing;
-results enter the notebook by hand or by the format's own result section.
-
-The ticket **record** files get the same one-home discipline:
-`_harness/scripts/append_entry.sh` is the sanctioned way to add an entry to a
-ticket `.md`, the way `append_notebook_cell.py` is for notebooks. Give it text,
-a target ticket, and an **existing** section header; it stamps the entry and
-drops it under that header with an atomic write (temp file, then rename), so a
-half-written record is never seen. Its pre-flight validates the landing zone
-only — the file exists and the header is present and **unique** — and otherwise
-**declines with the fix named**; it never invents structure and never edits an
-existing line. After a successful append it runs `check_ticket_log.sh` and passes
-that verdict straight through: write-then-validate, and a red never un-writes a
-good record (a fixed record is a human act).
-
-- **Re-runnable** — every block is content-hashed and the hash is recorded in its
-  markdown cell, so a re-run over the same file or folder lands only the blocks
-  that aren't already there.
-- **Provenance** — each markdown cell records the source path, block label,
-  capture timestamp, and content hash.
-- **Safe** — source files are byte-unchanged, always; a file with no delimiter is
-  a clean no-op with one prescriptive line naming the fix.
-- **Generic** — it knows two comment tokens and `%%`, nothing dialect-specific;
-  dialect-aware sugar is fork-layer material, out of the shared product.
-
-### `check_run.sh` — capture an ad-hoc check the moment you run it
-
-Some verification never makes it into a `.sql` or `.py` file: you just type a
-command at the terminal, read the result, and it vanishes. `check_run.sh
-"<command>"` is the dumb wrapper that keeps it. It runs your **literal** command
-in your own shell session — your environment, your credentials — and appends
-**one** notebook cell recording four fields: the command, its output, its exit
-code, and a timestamp (through the same `append_notebook_cell.py` writer). It
-adds no auth surface, stores no credential material, executes nothing beyond the
-command, and never touches the network. It **fails open**: if recording breaks,
-your command's result still reaches you and the wrapper's exit code still
-reflects the command's, never the recorder's. Point it at a notebook with the
-`CHECK_RUN_NOTEBOOK` environment variable.
+- **`_harness/scripts/literate_capture.py`** — *literate capture*: mark blocks in
+  your `.sql`/`.py` with a `%%` host-language comment (the comment lines above
+  become the why-note), and it appends each as a markdown + code cell pair —
+  content-hashed and re-runnable, sources byte-unchanged, transport never
+  execution. The delimiter grammar and properties live in the script's header.
+- **`_harness/scripts/append_entry.sh`** — the sanctioned way to add an entry to a
+  ticket `.md` (as `append_notebook_cell.py` is for notebooks): text + ticket +
+  an **existing** header → a stamped, atomic append, then `check_ticket_log.sh`
+  runs and its verdict passes straight through (write-then-validate; a red never
+  un-writes a good record). It **declines with the fix named**, never invents
+  structure. Detail: the script's header.
+- **`_harness/scripts/check_run.sh`** — capture an ad-hoc terminal check as you run
+  it: `check_run.sh "<command>"` runs your literal command and records four fields
+  (command, output, exit code, timestamp) to the notebook named by
+  `CHECK_RUN_NOTEBOOK`. Adds no auth surface, fails open, never touches the
+  network. Detail: the script's header.
 
 ## The one pattern, repeated everywhere
 
@@ -439,58 +357,19 @@ States — Operational Rules*.
 > classified DEV in `.github/ship-manifest.txt` and never ship. To *install* the
 > harness, see **Setup** above; nothing here points a user at dev machinery.
 
-The harness is built to be developed much the way you'd use it: clone the repo
-locally and point an agentic AI coding assistant at it to work on the harness
-itself. The repo root carries a **`CLAUDE.md`** — machine-facing instructions
-the assistant reads automatically — holding the full development rules (the
-working loop, the edit constraints, the acceptance gate).
-
-**Recommended setup — native Windows (the documented lane):**
-
-Follow these from zero; the shell steps run verbatim in the integrated
-Git-Bash/Cygwin terminal, no improvisation needed:
-
-1. Install **Git for Windows** (which provides Git Bash) — or Cygwin with git —
-   and **VS Code**. *(Operator-confirmed step: exact installers are recorded
-   during the walkthrough.)*
-2. Clone the repo and pin LF line endings before anything else:
-   ```bash
-   git clone <repo-url>
-   cd ai-work-harness
-   git config core.autocrlf input
-   ```
-   `.gitattributes` already pins `*.sh`/`*.py` to LF, so the scripts stay
-   byte-for-byte LF even under `core.autocrlf=true`; setting `input` also keeps
-   your own edits clean at the source. This is the first thing to get right — a
-   CRLF in a shell shebang or heredoc breaks the machinery.
-3. Open the folder in VS Code and install your agent extension (e.g. Claude
-   Code), then sign in. *(Operator-confirmed GUI step: the extension name and
-   sign-in flow are recorded as evidence during the walkthrough.)*
-4. In the integrated bash, install the demo's dependencies: `python3` with
-   `nbformat` (`pip install nbformat`) and `unzip` (`zip` is optional —
-   `make_context_pack` falls back to Python's zipfile).
-5. Verify the machinery end to end — it must end with *ALL 6 DEMO STAGES PASSED*:
-   ```bash
-   bash _harness/scripts/run_demo.sh
-   ```
-
-Do all shell work in the integrated Git-Bash/Cygwin terminal; plain PowerShell
-runs `git` but not the bash machinery.
-
-**Linux / macOS (and WSL for ephemeral checks only):** Linux and macOS work
-identically and are the standing fully-tested lanes (CI runs the demo on both on
-every PR); a `windows-latest` MSYS job witnesses the Windows lane
-informationally. WSL is *only* for a throwaway Linux check — clone inside your
-WSL home (`~`, **never** a `/mnt/c` Windows-drive mount, which gives slow I/O and
-unreliable executable bits), run the demo, discard — never a standing
-development copy.
-
-**The loop:** the assistant applies a change, runs the acceptance demo
-(`bash _harness/scripts/run_demo.sh` — it must end with *ALL 6 DEMO STAGES
-PASSED*), and commits, with you reviewing before anything is pushed. Every bug
-fix ships with a regression guard in that demo that provably fails on the
-pre-fix code (features are usually guarded too, but the law is bug-scoped). See
-`CLAUDE.md` for the full rules; don't hand-edit the machinery from memory.
+The harness is developed the way you'd use it: clone the repo and point an
+agentic AI assistant at it. The repo root's **`CLAUDE.md`** — read automatically
+by the assistant — holds the full development rules **and** the environment setup:
+LF line endings (`core.autocrlf input` + the `.gitattributes` pins), the demo
+dependencies, the Linux/macOS standing lanes, and WSL as an ephemeral check only
+(never a `/mnt/c` home). On native Windows (the documented lane): install **Git
+for Windows** (or Cygwin) and **VS Code** with your agent extension, and do all
+shell work in the integrated Git-Bash/Cygwin terminal — plain PowerShell runs
+`git` but not the bash machinery. Verify end to end with
+`bash _harness/scripts/run_demo.sh` (it must end with *ALL 6 DEMO STAGES PASSED*).
+**The loop:** apply a change, run that demo, commit — with you reviewing before any
+push; every bug fix ships a demo regression guard that provably fails on the
+pre-fix code. Full rules in `CLAUDE.md`; don't hand-edit the machinery from memory.
 
 **Merge-gate governance:** work is issues-first — open or claim an issue, branch
 or fork, then open a PR whose body closes it (`Fixes #NN`). Beyond the demo, two
@@ -503,11 +382,9 @@ leniency but still need the issue anchor. These checks are development
 infrastructure and never ship to an estate. Full contributor guide:
 [CONTRIBUTING.md](.github/CONTRIBUTING.md).
 
-**For an external design review** (rather than local iteration), run
-`_harness/scripts/make_context_pack.sh`: it produces a scrubbed, disposable
-zip of the harness to take to a design session — then come back with an
-updated build prompt and let the acceptance tests prove the change before you
-trust it. The system was built that way; keep it that way.
+**For an external design review**, take the scrubbed, disposable zip from
+`make_context_pack.sh` (the maintenance port, above) to a design session, then let
+the acceptance demo prove the change you bring back. The system was built that way.
 
 ## Document catalogue
 
@@ -532,8 +409,8 @@ home; everything else points at it.
 | `DEVELOPMENT.md` | developer | The dev-loop method doc: the four roles + five working laws (DEV). | `dev-loop/`, `docs-check` (#68) |
 | `dev-loop/` (`SETUP.md` + three `*.template.md`) | developer | Starter kit to stand up the multi-seat dev loop; the templates ship **empty**. | `DEVELOPMENT.md`, `docs-check` (#68) |
 | `decisions/` (`000` template + `001`–`018`) | developer | Architecture Decision Records — *the why* of each design choice. | `docs-check` (#69 ADR); later ADRs cross-cite |
-| `General AI-Knowledge/AI Harness/DESIGN.md` | developer / user | Design notes + the dated diagram-currency ledger (the honest-lag record). | this README (The drawings), `docs-check` (B4) |
-| `General AI-Knowledge/AI Harness/` (Architecture + Session-flow sheets) | user | The two operator-maintained blueprint drawings — what the machine is, and how a day moves through it. | this README (The drawings), `DESIGN.md` |
+| `General AI-Knowledge/AI Harness/DESIGN.md` | developer / user | Design notes + the dated diagram-currency ledger (the honest-lag record). | the folder map, `docs-check` (B4) |
+| `General AI-Knowledge/AI Harness/` (Architecture + Session-flow sheets) | user | The two operator-maintained blueprint drawings — what the machine is, and how a day moves through it. | the folder map, `DESIGN.md` |
 | `General AI-Knowledge/Skills/` (`_index.md`, `SKILL-TEMPLATE.md`, `SQL-Writing/SKILL.md`) | user / machine | Worker-tier craft modules, discovered index-first. | `AGENTS.md` (rule 7), constitution (Skills Convention) |
 | `Tickets/README.md` | estate | Thin pointer — the map lives at the `Work/` root. | the Work-root folder map |
 

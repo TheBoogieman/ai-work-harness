@@ -334,62 +334,28 @@ board key like `DATA-ENG` needs the board segment widened there; see
   `undo-drill` walks you through undoing an uncommitted and a committed mistake
   on a throwaway fixture. Every mode leaves the live estate byte-untouched.
 
-## Literate capture (delimited blocks → notebook cells)
+## Capture — checks, records, literate blocks
 
-Hand-written SQL and helper scripts carry the work but not the *why*. The
-literate-capture format fixes that without making the files stop being files: you
-mark blocks with **host-language comments**, so the file stays natively executable
-in its own tool.
+Everything you verify or record goes through a dumb, one-home writer — never a
+hand-edit — so half-written records are never seen and the format detail lives in
+exactly one place: each script's own commented header. Three capture tools:
 
-- **Delimiter** — a comment whose body is `%%`, with an optional `[label]`:
-  - SQL: `-- %% [row-parity]`
-  - python (Jupytext-style): `# %% [null-check]`
-- **The why-note** — the run of comment lines *immediately above* a delimiter
-  becomes that block's markdown cell.
-- **The code** — every line after the delimiter, up to the next block (or
-  end-of-file), becomes the code cell.
-
-`_harness/scripts/literate_capture.py` is the **transport**: point it at one file
-or a whole folder and it appends each block as a markdown-note + code-cell pair —
-through the same `append_notebook_cell.py` writer, never by hand-editing notebook
-JSON. It is **transport, never execution**: it runs nothing and judges nothing;
-results enter the notebook by hand or by the format's own result section.
-
-The ticket **record** files get the same one-home discipline:
-`_harness/scripts/append_entry.sh` is the sanctioned way to add an entry to a
-ticket `.md`, the way `append_notebook_cell.py` is for notebooks. Give it text,
-a target ticket, and an **existing** section header; it stamps the entry and
-drops it under that header with an atomic write (temp file, then rename), so a
-half-written record is never seen. Its pre-flight validates the landing zone
-only — the file exists and the header is present and **unique** — and otherwise
-**declines with the fix named**; it never invents structure and never edits an
-existing line. After a successful append it runs `check_ticket_log.sh` and passes
-that verdict straight through: write-then-validate, and a red never un-writes a
-good record (a fixed record is a human act).
-
-- **Re-runnable** — every block is content-hashed and the hash is recorded in its
-  markdown cell, so a re-run over the same file or folder lands only the blocks
-  that aren't already there.
-- **Provenance** — each markdown cell records the source path, block label,
-  capture timestamp, and content hash.
-- **Safe** — source files are byte-unchanged, always; a file with no delimiter is
-  a clean no-op with one prescriptive line naming the fix.
-- **Generic** — it knows two comment tokens and `%%`, nothing dialect-specific;
-  dialect-aware sugar is fork-layer material, out of the shared product.
-
-### `check_run.sh` — capture an ad-hoc check the moment you run it
-
-Some verification never makes it into a `.sql` or `.py` file: you just type a
-command at the terminal, read the result, and it vanishes. `check_run.sh
-"<command>"` is the dumb wrapper that keeps it. It runs your **literal** command
-in your own shell session — your environment, your credentials — and appends
-**one** notebook cell recording four fields: the command, its output, its exit
-code, and a timestamp (through the same `append_notebook_cell.py` writer). It
-adds no auth surface, stores no credential material, executes nothing beyond the
-command, and never touches the network. It **fails open**: if recording breaks,
-your command's result still reaches you and the wrapper's exit code still
-reflects the command's, never the recorder's. Point it at a notebook with the
-`CHECK_RUN_NOTEBOOK` environment variable.
+- **`_harness/scripts/literate_capture.py`** — *literate capture*: mark blocks in
+  your `.sql`/`.py` with a `%%` host-language comment (the comment lines above
+  become the why-note), and it appends each as a markdown + code cell pair —
+  content-hashed and re-runnable, sources byte-unchanged, transport never
+  execution. The delimiter grammar and properties live in the script's header.
+- **`_harness/scripts/append_entry.sh`** — the sanctioned way to add an entry to a
+  ticket `.md` (as `append_notebook_cell.py` is for notebooks): text + ticket +
+  an **existing** header → a stamped, atomic append, then `check_ticket_log.sh`
+  runs and its verdict passes straight through (write-then-validate; a red never
+  un-writes a good record). It **declines with the fix named**, never invents
+  structure. Detail: the script's header.
+- **`_harness/scripts/check_run.sh`** — capture an ad-hoc terminal check as you run
+  it: `check_run.sh "<command>"` runs your literal command and records four fields
+  (command, output, exit code, timestamp) to the notebook named by
+  `CHECK_RUN_NOTEBOOK`. Adds no auth surface, fails open, never touches the
+  network. Detail: the script's header.
 
 ## The one pattern, repeated everywhere
 

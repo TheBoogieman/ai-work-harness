@@ -43,6 +43,7 @@ PRODUCT	Tickets/999912Z-PROJ-99999/Logs/.gitkeep
 PRODUCT	Tickets/README.md
 PRODUCT	_agents/check-scribe.agent.md
 PRODUCT	_agents/doc-writer.agent.md
+PRODUCT	_agents/harness-recall.agent.md
 PRODUCT	_agents/knowledge-curator.agent.md
 PRODUCT	_agents/knowledge-keeper.agent.md
 PRODUCT	_agents/retrospective.agent.md

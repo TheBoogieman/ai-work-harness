@@ -123,6 +123,11 @@ fi
 # --- emit the counts ----------------------------------------------------------------
 # Plain, stable, greppable lines so the agent (and the demo guard) read exact numbers.
 echo "retro-stats since=${SINCE:-all} until=${UNTIL:-all}"
+# A printed label is a claim, so state what the "closed" counts actually measure (the header comment
+# already says this; the OUTPUT must too). This counter cannot tell truly-done from still-in-flight —
+# it buckets by each ticket's LAST-COMMIT month, a proxy. The retrospective agent makes the real
+# closed-vs-active call from each ticket's Current State; these numbers are its dumb arithmetic input.
+echo "note: 'closed' below = bucketed by each ticket's LAST-COMMIT month (a proxy); true done-vs-active is the retrospective agent's judgement, not this counter's."
 echo "tickets-closed-total: $tickets_total"
 echo "tickets-closed-by-month:"
 # Print month buckets in sorted order for a stable, human-readable report.

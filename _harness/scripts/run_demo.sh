@@ -936,8 +936,9 @@ echo "  ok [R-11 guard: stale-commit WARN] — fires when session activity outpa
 # append_entry.sh is a DUMB creator: text+ticket+section -> a stamped, ATOMIC append under an
 # EXISTING header. Its pre-flight validates the LANDING ZONE only (file/header present+unique)
 # and DECLINES otherwise; its post-flight composes with check_ticket_log.sh (write-then-validate),
-# so a red NEVER rolls back a good write. These three guards are revert-provable BOTH directions:
-# break the write and (1)/(3) red; stop declining on a duplicate header and (2) reds byte-changed.
+# so a red NEVER rolls back a good write. These four guards are revert-provable BOTH directions:
+# break the write and (1)/(3) red; stop declining on a duplicate header and (2) reds byte-changed;
+# name-resolve a slash-bearing path (drop the #82 branch) and (4) reds on the doubled Tickets/ echo.
 echo "--- #80 append_entry: healthy lands+validator passes; dup-header declines byte-unchanged; red passes through ---"
 # a80_make builds a conforming, validator-ready ticket from the template plus a seed session entry
 # (so the appended-to file already has a Session Log the watermark check can read).
@@ -987,6 +988,21 @@ printf '%s\n' "$A80_OUT" | grep -q "orphan file AI-Knowledge/orphan.md not in _i
 [ "$A80_RC" -ne 0 ] || { echo "BUG [#80 append_entry]: appender masked the validator's red (rc=0 despite a FAIL passing through)"; exit 1; }
 rm -rf "$A80R"
 echo "  ok [#80 append_entry] — pre-existing red: append lands, red passes through, write not rolled back"
+
+# 4) SLASH-BEARING NON-EXISTENT PATH -> declines naming the LITERAL path, never a DOUBLED Tickets/
+#    construction (#82 truth-up). Pre-fix, a slash-bearing argument fell to Tickets/<arg>/<arg>.md
+#    name-resolution and echoed a doubled 'Tickets/.../Tickets/...' path in the decline. The decline
+#    was always correct (it declines, names a fix); this only asserts the ECHO is clean. Revert-proof:
+#    drop the `|| "$ticket" == */*` branch in append_entry.sh and (4) reds on the doubled path.
+set +e; A80_OUT=$(bash _harness/scripts/append_entry.sh "Tickets/does-not-exist-8004" "Session Log" "must not land"); A80_RC=$?; set -e
+[ "$A80_RC" -ne 0 ] || { echo "BUG [#80 append_entry]: a non-existent slash-bearing path did NOT decline (rc=0):"; printf '%s\n' "$A80_OUT"; exit 1; }
+printf '%s\n' "$A80_OUT" | grep -q "Fix:" \
+  || { echo "BUG [#80 append_entry]: the slash-path decline did not NAME a fix:"; printf '%s\n' "$A80_OUT"; exit 1; }
+printf '%s\n' "$A80_OUT" | grep -q "Tickets/Tickets" \
+  && { echo "BUG [#80 append_entry]: the decline echoed a DOUBLED Tickets/ path (a slash-bearing path was name-resolved):"; printf '%s\n' "$A80_OUT"; exit 1; }
+printf '%s\n' "$A80_OUT" | grep -q "Tickets/does-not-exist-8004" \
+  || { echo "BUG [#80 append_entry]: the decline did not name the LITERAL path the caller gave:"; printf '%s\n' "$A80_OUT"; exit 1; }
+echo "  ok [#80 append_entry] — slash-bearing non-existent path: declines naming the literal path, no doubled Tickets/"
 # --- end #80 append_entry guards -----------------------------------------------------
 
 # --- #71 WARN aging + #72 knowledge staleness guards ----------------------------------

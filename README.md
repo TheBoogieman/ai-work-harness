@@ -117,8 +117,8 @@ You work on tickets with an AI assistant. The harness makes that work leave
 state, and captured knowledge; every ad-hoc check — SQL, Python, whatever your
 work is — lands in an audit-trail notebook; every file write auto-commits to a
 local-only git repo (via a Copilot hook, when it fires); and a dumb bash
-validator refuses to let a session start on top of an undocumented mess. Six
-small AI agents do the clerical work (logging, capturing, compacting) so the
+validator refuses to let a session start on top of an undocumented mess. Small
+AI agents do the clerical work (logging, capturing, compacting) so the
 expensive model — and you — only do the thinking. Nothing self-heals, nothing
 phones home, and one markdown file is the law.
 
@@ -159,7 +159,7 @@ Anything marked *swappable* degrades gracefully if you differ.
 
 - `folder-structure.md` — **the constitution.** Part I loads every session;
   Part II on demand. Start here.
-- `AGENTS.md` — the six-rule contract Copilot reads on every surface.
+- `AGENTS.md` — the seven-rule contract Copilot reads on every surface.
 - `_agents/` — the agent contracts, one file per agent (source of truth; deployed
   copies are derived).
 - `_harness/scripts/` — validator, status, notebook helper, context pack,
@@ -236,6 +236,9 @@ Work/                                        [git root · local-only · whitelis
 ├── General AI-Knowledge/                    durable knowledge (versioned · cull-safe via history)
 │   └── AI Harness/                          the sheets + build/design notes · Last reviewed: dated
 │
+├── General Human Knowledge/                 human-facing OUTPUT the machinery writes (append-only · inside the whitelist)
+│   └── Retrospectives/                      ← retrospective agent · one timestamped file per run
+│
 └── [GitHub/ · Diagrams/ · Mappings/ · …]    [never enter history — whitelist excludes them]
 ```
 
@@ -292,7 +295,7 @@ board key like `DATA-ENG` needs the board segment widened there; see
 - **L3 — Filesystem** — single source of truth. `folder-structure.md` holds
   every rule; each ticket folder holds its own log, state, and knowledge;
   `General AI-Knowledge/` holds the durable stuff; `AGENTS.md` is the
-  six-rule contract Copilot loads on every surface.
+  seven-rule contract Copilot loads on every surface.
 - **L4 — The agents** — the workers:
   - `ticket-init` (smart, at pickup) — pulls Jira, interviews you (your
     words, non-negotiables, repos), suggests branch names, births the folder
@@ -428,16 +431,6 @@ chore at the next natural boundary. Machinery itself misbehaving =
 `harness-status.sh` prescribes. Full state table: backbone, *Session
 States — Operational Rules*.
 
-## Where information lives
-
-- `folder-structure.md` — *the rules* (what the conventions are)
-- `_agents/*.agent.md` — *the how* (each agent's operating instructions;
-  versioned source — the user-level copies Copilot reads are deployments)
-- `General AI-Knowledge/AI Harness/` — *the why* (design notes, the
-  blueprint drawing, debugging guidance)
-
-Each fact has exactly one home; everything else points at it.
-
 ## Developing this harness with an AI assistant
 
 > **About the SOURCE repository, not your work estate.** This section is for
@@ -515,6 +508,34 @@ infrastructure and never ship to an estate. Full contributor guide:
 zip of the harness to take to a design session — then come back with an
 updated build prompt and let the acceptance tests prove the change before you
 trust it. The system was built that way; keep it that way.
+
+## Document catalogue
+
+Every documentation surface in the repo, with its audience and its one home.
+**Pointers only** — a row points at where a thing lives; it never restates the
+thing (the one-home law), and the folder map above owns estate *structure* while
+this owns document *navigation*. **Audiences:** *user* (installs and runs an
+estate) · *estate* (lives inside an installed estate) · *developer* (hacks on the
+harness itself) · *machine* (an AI assistant reads it). Each fact has exactly one
+home; everything else points at it.
+
+| Document | Audience | Purpose (its one home) | Referenced by |
+|----------|----------|------------------------|---------------|
+| `README.md` | user | The front door: setup, usage, the folder map, and this catalogue. | entry point (rendered by GitHub) |
+| `folder-structure.md` | estate | **The constitution — the rules.** Every harness convention; Part I always-load, Part II on demand. | `AGENTS.md`, `setup.md`, this README |
+| `AGENTS.md` | machine | The seven-rule door-note the assistant loads on every surface → points to the constitution. | the AI assistant; this README |
+| `SPEC.md` | developer | The project spec: glossary + decoder for the tracker shorthand. | `docs-check` (#69 glossary check) |
+| `setup.md` | estate | The AI-assistant final-gate prompt: confirms validator + status green, walks the post-install personalisation. | this README (Setup), `install.sh` |
+| `install.sh` | estate | The non-destructive dumb creator that lays down / reconfigures an estate. | this README (Setup), `setup.md` |
+| `LICENSE` | user | MIT licence terms. | this README, `setup.md` |
+| `CLAUDE.md` | developer | Dev instructions the AI reads when working **on** the harness (DEV — never ships to an estate). | this README (Developing), `docs-check` (grammar-drift) |
+| `DEVELOPMENT.md` | developer | The dev-loop method doc: the four roles + five working laws (DEV). | `dev-loop/`, `docs-check` (#68) |
+| `dev-loop/` (`SETUP.md` + three `*.template.md`) | developer | Starter kit to stand up the multi-seat dev loop; the templates ship **empty**. | `DEVELOPMENT.md`, `docs-check` (#68) |
+| `decisions/` (`000` template + `001`–`018`) | developer | Architecture Decision Records — *the why* of each design choice. | `docs-check` (#69 ADR); later ADRs cross-cite |
+| `General AI-Knowledge/AI Harness/DESIGN.md` | developer / user | Design notes + the dated diagram-currency ledger (the honest-lag record). | this README (The drawings), `docs-check` (B4) |
+| `General AI-Knowledge/AI Harness/` (Architecture + Session-flow sheets) | user | The two operator-maintained blueprint drawings — what the machine is, and how a day moves through it. | this README (The drawings), `DESIGN.md` |
+| `General AI-Knowledge/Skills/` (`_index.md`, `SKILL-TEMPLATE.md`, `SQL-Writing/SKILL.md`) | user / machine | Worker-tier craft modules, discovered index-first. | `AGENTS.md` (rule 7), constitution (Skills Convention) |
+| `Tickets/README.md` | estate | Thin pointer — the map lives at the `Work/` root. | the Work-root folder map |
 
 ---
 

@@ -35,11 +35,12 @@ done
 # only when all three invariants held this run.
 dl_fail_before=$fail
 
-# 1. TEMPLATES STAY EMPTY — every dev-loop/*.template.md keeps at least one literal <FILL> token, so
-# a template whose blanks were filled in (content instead of skeleton) reds by name.
+# 1. TEMPLATES KEEP A <FILL> BLANK — every dev-loop/*.template.md must retain AT LEAST ONE literal
+# <FILL> token. The check is presence-of-one, so it fires only when NONE is left (a FULLY-filled
+# template), not on a partial fill — the message and ok-line say exactly that, no stronger (#82).
 for dl_t in dev-loop/*.template.md; do
   grep -Fq -- '<FILL>' "$dl_t" \
-    || { echo "FAIL [docs #68 dev-loop]: $dl_t has no <FILL> token — a template field was filled in; templates ship EMPTY, restore the <FILL> blanks."; fail=1; }
+    || { echo "FAIL [docs #68 dev-loop]: $dl_t has no <FILL> token left — a template must keep at least one <FILL> blank as proof it ships as a skeleton; restore a <FILL> blank."; fail=1; }
 done
 
 # 2. VENDOR-NEUTRAL — no AI product name appears in DEVELOPMENT.md or dev-loop/**. Word-anchored (-w)
@@ -72,7 +73,44 @@ for dl_pair in "${dl_pairs[@]}"; do
     || { echo "FAIL [docs #68 dev-loop:$dl_label]: DEVELOPMENT.md no longer states this (missing \"$dl_needle\") — restore it."; fail=1; }
 done
 
-[ "$fail" -ne "$dl_fail_before" ] || echo "  ok [docs #68 dev-loop] — templates empty, vendor-neutral, 4 roles + 5 laws present in DEVELOPMENT.md"
+[ "$fail" -ne "$dl_fail_before" ] || echo "  ok [docs #68 dev-loop] — each template keeps a <FILL> blank, vendor-neutral, 4 roles + 5 laws present in DEVELOPMENT.md"
+
+# --- de-number (#82 / #85) — no NUMERIC agent-count claim survives #85's de-numbering conversion --
+# #85 turned the roster count into role-named prose because the agent set GROWS (six → ten over the
+# sprint); a re-introduced "six agents" would be false the next time an agent lands. TWO word-anchored,
+# case-insensitive patterns over the de-numbered doc surfaces (README, the constitution, DESIGN.md):
+#   (a) a number-word IMMEDIATELY before "agent(s)"  — e.g. "six agents" (README's "six-rule contract"
+#       says "rule", not "agent", so it is correctly out of this pattern's reach).
+#   (b) a number-word plus "file(s)" on any line naming a ".agent.md" — the agent-file-count shape that
+#       pattern (a) cannot see.
+# EXEMPTION is PARAGRAPH-scoped: DESIGN.md's honest-lag notes legitimately carry the stale sheet
+# counts ("SIX AGENTS"), so lines from one that BEGINS "**Diagram currency" until the next blank line
+# are skipped. Paragraph-scoped, NOT heading-scoped — a heading scope would also swallow the live
+# claims below the notes, the exact regression caught pre-spec and forbidden here.
+dn_fail_before=$fail
+dn_num='one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|[0-9]+'
+for dn_f in "$README" folder-structure.md "$DESIGN"; do
+  dn_exempt=0; dn_lineno=0
+  while IFS= read -r dn_line || [ -n "$dn_line" ]; do
+    dn_lineno=$((dn_lineno+1))
+    # a currency paragraph opens on its "**Diagram currency" line and closes at the next blank line.
+    printf '%s' "$dn_line" | grep -q '^\*\*Diagram currency' && dn_exempt=1
+    [ -z "${dn_line//[[:space:]]/}" ] && dn_exempt=0
+    [ "$dn_exempt" -eq 1 ] && continue           # skip the exempt honest-lag lines
+    # (a) number-word directly before agent(s)
+    if printf '%s' "$dn_line" | grep -qiE "\b(${dn_num})[[:space:]]+agents?\b"; then
+      dn_hit=$(printf '%s' "$dn_line" | grep -oiE "\b(${dn_num})[[:space:]]+agents?\b" | head -1)
+      echo "FAIL [docs de-number:a]: $dn_f:$dn_lineno states a numeric agent count (\"$dn_hit\") — #85 de-numbered the roster because it grows; name the agents by role, not by a count that goes stale."; fail=1
+    fi
+    # (b) number-word + file(s) on a line that names a .agent.md
+    if printf '%s' "$dn_line" | grep -qF '.agent.md' \
+       && printf '%s' "$dn_line" | grep -qiE "\b(${dn_num})\b" \
+       && printf '%s' "$dn_line" | grep -qiE '\bfiles?\b'; then
+      echo "FAIL [docs de-number:b]: $dn_f:$dn_lineno pairs a number with '.agent.md file(s)' — the agent-file count is not fixed; describe the set without a count."; fail=1
+    fi
+  done < "$dn_f"
+done
+[ "$fail" -ne "$dn_fail_before" ] || echo "  ok [docs de-number] — no numeric agent-count claim outside the DESIGN.md currency notes (README, constitution, DESIGN.md)"
 
 # --- B2 FROZEN SWEEP SET — the cond-1 zero-gap matrix, pinned as ONE named grep per surface -----
 # Each swept user-facing surface = one assertion with its own prescriptive miss, so coverage of a
@@ -106,6 +144,27 @@ else
       || { echo "FAIL [docs grammar-drift]: $gd_home does not quote the branch regex verbatim ($gd_re) — sync it to branch-grammar.sh."; fail=1; }
   done
 fi
+
+# --- map-complete (#82, operator ruling) — every top-level directory shipping PRODUCT files appears
+# in README's folder map. #85 shipped General Human Knowledge/ as PRODUCT but no wave added it to the
+# map; the rule closes that class of gap. MANIFEST-KEYED, not a hardcoded list: the directory set is
+# derived from the PRODUCT paths in ship-manifest.txt, so a newly-shipped top-level dir is caught
+# automatically. Directory names contain spaces, so match the literal path string — and ONLY inside
+# the map's own fenced tree block (a prose mention elsewhere in README is NOT the map: the map is
+# estate STRUCTURE). Revert-proof: remove a map line and this reds naming the directory.
+mc_fail_before=$fail
+# the fenced tree block under "## The folder map" (content between its first pair of ``` fences).
+mc_map=$(awk '
+  /^## The folder map/ {seen=1; next}
+  seen && /^```/ {fence++; if(fence==2) exit; next}
+  seen && fence==1 {print}
+' "$README")
+# top-level dir of each PRODUCT manifest path that lives under a directory (path contains a "/").
+while IFS= read -r mc_dir; do
+  grep -Fq -- "$mc_dir/" <<<"$mc_map" \
+    || { echo "FAIL [docs map-complete]: top-level directory '$mc_dir/' ships PRODUCT files (per .github/ship-manifest.txt) but is absent from README's folder map — add its tree line."; fail=1; }
+done < <(awk -F'\t' '$1=="PRODUCT" && $2 ~ /\// { sub(/\/.*/,"",$2); print $2 }' .github/ship-manifest.txt | sort -u)
+[ "$fail" -ne "$mc_fail_before" ] || echo "  ok [docs map-complete] — every PRODUCT top-level directory appears in README's folder map"
 
 # --- B3 SEPARATION — diagrams have EXITED README: zero .svg references (amendment 4-revised-a) ----
 svg_refs=$(grep -c '\.svg' "$README" || true)
@@ -154,6 +213,31 @@ else
   echo "FAIL [docs #69 ADR]: SPEC.md is missing — the project spec (glossary + decoder) must exist at the repo root; restore it."; fail=1
 fi
 [ "$fail" -ne 0 ] || echo "  ok [docs #69 ADR] — SPEC.md glossary+decoder present and every decisions/ ADR well-formed"
+
+# --- reader-agent (#82 / decisions/018) — the reader spine, asserted PER-NAME not blanket ---------
+# The estate's four readers narrate the record with NO validator behind them, so the fabrication
+# clause IS their whole safety story and must be present in each. The three EPHEMERAL readers write
+# nothing, so they must hold no `edit` tool. The `retrospective` reader is the single-door WRITER
+# (decisions/018): it legitimately holds `edit`, so in place of a no-edit assert it must state its one
+# write door AND its append-only discipline. Per-name so relaxing any one contract reds by name; a
+# fifth reader is added to the loop when it ships. Basis: decisions/018.
+ra_fail_before=$fail
+for ra in ticket-recall weekly-digest harness-recall; do
+  ra_f="_agents/$ra.agent.md"
+  grep -Fq -- 'FABRICATED RECORD' "$ra_f" \
+    || { echo "FAIL [docs reader-agent:$ra]: $ra_f dropped the fabrication clause (no 'FABRICATED RECORD') — every reader carries it verbatim; a reader that invents is caught by nothing else. Restore it."; fail=1; }
+  ra_tools=$(grep -iE '^tools:' "$ra_f" | head -1)
+  printf '%s' "$ra_tools" | grep -qiwE 'edit' \
+    && { echo "FAIL [docs reader-agent:$ra]: $ra_f lists an 'edit' tool — an ephemeral reader writes NOTHING; remove edit from its frontmatter tools."; fail=1; }
+done
+ra_r=_agents/retrospective.agent.md
+grep -Fq -- 'FABRICATED RECORD' "$ra_r" \
+  || { echo "FAIL [docs reader-agent:retrospective]: $ra_r dropped the fabrication clause (no 'FABRICATED RECORD') — restore it verbatim."; fail=1; }
+grep -Fq -- 'EXACTLY ONE DOOR' "$ra_r" \
+  || { echo "FAIL [docs reader-agent:retrospective]: $ra_r no longer states its single write door ('EXACTLY ONE DOOR') — one output surface is its whole safety story; restore it."; fail=1; }
+grep -Fiq -- 'append-only' "$ra_r" \
+  || { echo "FAIL [docs reader-agent:retrospective]: $ra_r no longer states its append-only discipline ('append-only') — a retrospective is never rewritten; restore it."; fail=1; }
+[ "$fail" -ne "$ra_fail_before" ] || echo "  ok [docs reader-agent] — 4 readers carry the fabrication clause; 3 ephemeral readers hold no edit tool; retrospective states single-door + append-only (edit permitted)"
 
 # --- B4 STRUCTURE — DESIGN.md carries a dated currency-note section (cond 4 / amendment) ----------
 grep -qiE 'Diagram currency \([0-9]{4}-[0-9]{2}-[0-9]{2}\)' "$DESIGN" \

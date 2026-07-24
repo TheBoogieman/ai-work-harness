@@ -28,6 +28,14 @@ SVG — the sheets are operator-maintained; this note records the lag until the
 operator redraws them to show the seventh agent (the estate's only reader).
 Refresh owed under `#83`.
 
+**Diagram currency (2026-07-24):** the roster grew again to EIGHT agents — `#73`
+adds `weekly-digest`, a read-only period reader that narrates a window of the
+record (active tickets, their knowledge, status deltas). The sheets fall further
+behind: the sheets depict six agents, `#70` added the seventh, `#73` the eighth.
+Sheet 1 still labels the L4 box "SIX AGENTS" and Sheet 2 still draws the
+six-writer roster. No wave edits an SVG — this note records the lag; the operator
+redraws on their own schedule. Refresh owed under `#83`.
+
 **The pattern (every layer):** file states the rule → agent does the work →
 hook catches the miss → git undoes the damage. Corollary: status observes,
 failures prescribe, nothing heals itself — a fixed record is a human act.
@@ -48,7 +56,7 @@ failures prescribe, nothing heals itself — a fixed record is a human act.
   moves ticket → General AI-Knowledge inside one history; culling is safe.
 - Determinism over intelligence wherever possible: notebook edits via
   nbformat helper (any language), linting via linters, validation via bash. Models are for
-  judgment only; the seven agents are tiered accordingly.
+  judgment only; the eight agents are tiered accordingly.
 - Growth is governed: mint a new agent on the THIRD repetition of a task,
   authored in _agents/, inheriting all constraints. PR review — not agent
   restraint — is the standards gate for shared code.

@@ -426,7 +426,7 @@ It reports, with `OK` / `WARN` / `FAIL` prefixes:
   `HARNESS_KNOWLEDGE_STALE_DAYS`), and entries carrying no `Last reviewed:`
   date at all — each names the knowledge-curator as the next act (#72).
 - Liveness: last commit in the Work local git (auto-commit is alive),
-  hooks config parses, all seven `.agent.md` files present and registered
+  hooks config parses, all eight `.agent.md` files present and registered
   (agents can fail to load *silently* after Copilot updates).
 
 Every `FAIL` line includes the exact command or edit that fixes it.

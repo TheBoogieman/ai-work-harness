@@ -100,8 +100,7 @@ activation trigger is not fully characterised, so expect a first real session or
 a Copilot restart may be needed. The git safety net is the backstop — if a write
 wasn't auto-committed, commit it by hand; nothing in the record depends on the
 hook firing. (CLI and cloud Copilot surfaces are UNVERIFIED — their schema may
-differ.) The hook config design ships as `_harness/hooks/hooks.example.json` —
-verify its schema against your Copilot version.
+differ.) The hook config design ships as `_harness/hooks/hooks.example.json`.
 
 **Arming on migration.** The auto-commit hooks commit only where the estate's
 `.git/config` carries `harness.estate=true` — a positive-identity key `install.sh`
@@ -117,8 +116,8 @@ You work on tickets with an AI assistant. The harness makes that work leave
 **records** instead of vibes: every ticket folder keeps its own log, current
 state, and captured knowledge; every ad-hoc check — SQL, Python, whatever your
 work is — lands in an audit-trail notebook; every file write auto-commits to a
-local-only git repo (via a Copilot hook, when it fires); and a dumb bash
-validator refuses to let a session start on top of an undocumented mess. Small
+local-only git repo; and a dumb bash validator refuses to let a session start on
+top of an undocumented mess. Small
 AI agents do the clerical work (logging, capturing, compacting) so the
 expensive model — and you — only do the thinking. Nothing self-heals, nothing
 phones home, and one markdown file is the law.
@@ -138,8 +137,8 @@ Anything marked *swappable* degrades gracefully if you differ.
 - **VS Code** as the editor (*swappable* — nothing hard-depends on it, but
   the notebook/interpreter flow is written for it).
 - **git** installed; the harness creates a **local-only** repo at the
-  workspace root (whitelist-scoped; it must never get a remote — this
-  public repo is the sanitised exception that proves the rule).
+  workspace root (it must never get a remote — this public repo is the
+  sanitised exception that proves the rule).
 - **Python 3.12** and a venv named exactly **`venv_global`** (with
   `nbformat`), created by you, set as the workspace default interpreter.
   The harness depends on it and never creates it.

@@ -61,6 +61,7 @@ PRODUCT	_harness/scripts/make_context_pack.sh
 PRODUCT	_harness/scripts/portability.sh
 DEV	_harness/scripts/run_demo.sh
 PRODUCT	_harness/scripts/ticket-grammar.sh
+PRODUCT	_harness/scripts/tracker_sweep.sh
 DEV	decisions/000-adr-template.md
 DEV	decisions/001-local-only-no-remote.md
 DEV	decisions/002-estate-identity-lineage.md
@@ -76,6 +77,7 @@ DEV	decisions/011-guard-per-bug.md
 DEV	decisions/012-source-not-estate.md
 DEV	decisions/013-estate-gains-a-reader.md
 DEV	decisions/014-status-primary-observation.md
+DEV	decisions/015-pluggable-tracker-fetch-seam.md
 DEV	dev-loop/SETUP.md
 DEV	dev-loop/message-format.template.md
 DEV	dev-loop/role-charter.template.md

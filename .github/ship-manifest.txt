@@ -52,6 +52,7 @@ PRODUCT	_harness/scripts/append_notebook_cell.py
 PRODUCT	_harness/scripts/check_run.sh
 PRODUCT	_harness/scripts/check_ticket_log.sh
 PRODUCT	_harness/scripts/deploy_agents.sh
+PRODUCT	_harness/scripts/harness-drill.sh
 PRODUCT	_harness/scripts/harness-housekeeping.sh
 PRODUCT	_harness/scripts/harness-status.sh
 PRODUCT	_harness/scripts/literate_capture.py

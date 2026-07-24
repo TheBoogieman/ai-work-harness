@@ -205,6 +205,7 @@ Work/                                        [git root · local-only · whitelis
 │       ├── make_context_pack.sh             → ~/Desktop/harness-pack-*.zip [disposable · outside repo]
 │       ├── deploy_agents.sh                 → user-level agent dir (sync source → live)
 │       ├── harness-housekeeping.sh          human-run · git gc + size report · never touches records
+│       ├── harness-drill.sh                 human-run · rehearse restore/bundle/undo · read-only toward the estate
 │       └── run_demo.sh                      the acceptance demo: proves the machinery end-to-end on this host (see Setup) · wired to no hook
 │
 ├── _agents/                                 SOURCE OF TRUTH (versioned)
@@ -314,6 +315,15 @@ board key like `DATA-ENG` needs the board segment widened there; see
   repack and reclaim the space — it preserves all history and records, deletes
   nothing. See *Repo Health / Housekeeping* in `folder-structure.md` for the
   full growth story and the optional notebook-stripping step.
+- `_harness/scripts/harness-drill.sh` — a recovery *rehearsal* you run on a
+  calm day. Backups exist, but a restore nobody has practised is a hope, not a
+  capability, and the git undo net is doctrine read rather than muscle memory.
+  Three read-only modes prove the record can be rebuilt before you ever need it:
+  `restore-drill` rebuilds the record from the estate's own `.git` into a temp
+  dir and checks it validates; `bundle-drill` makes a local `git bundle`,
+  restores from *that*, and checks it validates (the bundle stays local);
+  `undo-drill` walks you through undoing an uncommitted and a committed mistake
+  on a throwaway fixture. Every mode leaves the live estate byte-untouched.
 
 ## Literate capture (delimited blocks → notebook cells)
 

@@ -85,6 +85,7 @@ DEV	decisions/014-status-primary-observation.md
 DEV	decisions/015-pluggable-tracker-fetch-seam.md
 DEV	decisions/016-multi-machine-ferry-declined.md
 DEV	decisions/017-estate-gains-an-output-surface.md
+DEV	decisions/018-the-reader-spine.md
 DEV	dev-loop/SETUP.md
 DEV	dev-loop/message-format.template.md
 DEV	dev-loop/role-charter.template.md

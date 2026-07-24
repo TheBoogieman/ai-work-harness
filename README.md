@@ -298,41 +298,23 @@ board key like `DATA-ENG` needs the board segment widened there; see
 
 ## The maintenance port (offline, on demand)
 
-- `_harness/scripts/harness-status.sh` — estate-wide health report: ticket ages,
-  index nags, stale general knowledge, git/hook/agent liveness. Every FAIL
-  line ends with the exact fix.
-- `_harness/scripts/tracker_sweep.sh` — on-demand board-vs-estate drift report.
-  After a ticket is created the estate and the external board can drift silently
-  (closed upstream, still Active locally). This human-run sweep reads each active
-  ticket's upstream status through a **pluggable fetch seam** and WARNs per
-  divergence with the fix named. It ships **tracker-agnostic**: the public product
-  names no board and makes no network call of its own — you point it at your own
-  fetcher (`HARNESS_TRACKER_FETCH_CMD`) at the fork layer, and the one line naming
-  which statuses mean "closed" is user-editable (the `ticket-grammar.sh`
-  precedent). It **fails open**: an unreachable tracker or no fetcher yields one
-  quiet note, never a red, so an offline estate stays fully functional. Any token
-  lives in the environment or a keychain at runtime — never on disk. See
+Human-run; each also carries a one-line purpose in the folder map, and the full
+telling lives at the named home.
+
+- `_harness/scripts/harness-status.sh` — estate-wide health report; every FAIL line
+  ends with its fix. Full: *Harness Status Convention* in `folder-structure.md`.
+- `_harness/scripts/tracker_sweep.sh` — on-demand board-vs-estate drift through a
+  pluggable, tracker-agnostic fetch seam that fails open offline. Full:
   `decisions/015-pluggable-tracker-fetch-seam.md`.
-- `_harness/scripts/make_context_pack.sh` — scrubbed, datestamped
-  zip of the harness for external design review, landing on your Desktop.
-  Disposable: upload, delete, regenerate anytime. Structure travels, payload
-  never. Skim before it leaves the machine.
-- `_harness/scripts/harness-housekeeping.sh` — the repo grows with use
-  (an auto-write commit per file mutation, plus tracked `Checks/` notebooks
-  rewritten whole on each append), so `.git` becomes several times the
-  working-tree size over months. Run this by hand periodically to `git gc` /
-  repack and reclaim the space — it preserves all history and records, deletes
-  nothing. See *Repo Health / Housekeeping* in `folder-structure.md` for the
-  full growth story and the optional notebook-stripping step.
-- `_harness/scripts/harness-drill.sh` — a recovery *rehearsal* you run on a
-  calm day. Backups exist, but a restore nobody has practised is a hope, not a
-  capability, and the git undo net is doctrine read rather than muscle memory.
-  Three read-only modes prove the record can be rebuilt before you ever need it:
-  `restore-drill` rebuilds the record from the estate's own `.git` into a temp
-  dir and checks it validates; `bundle-drill` makes a local `git bundle`,
-  restores from *that*, and checks it validates (the bundle stays local);
-  `undo-drill` walks you through undoing an uncommitted and a committed mistake
-  on a throwaway fixture. Every mode leaves the live estate byte-untouched.
+- `_harness/scripts/make_context_pack.sh` — scrubbed, disposable zip of the harness
+  for external review, on your Desktop; skim before it leaves the machine. Full:
+  *Context Pack Convention* in `folder-structure.md`.
+- `_harness/scripts/harness-housekeeping.sh` — `git gc`/repack to reclaim `.git`
+  growth, preserving all history and records. Full: *Repo Health / Housekeeping* in
+  `folder-structure.md`.
+- `_harness/scripts/harness-drill.sh` — rehearse recovery on a calm day; three
+  read-only modes (`restore-drill`, `bundle-drill`, `undo-drill`) that leave the
+  live estate byte-untouched. Modes documented in the script's header.
 
 ## Capture — checks, records, literate blocks
 

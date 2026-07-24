@@ -298,23 +298,17 @@ board key like `DATA-ENG` needs the board segment widened there; see
 
 ## The maintenance port (offline, on demand)
 
-Human-run; each also carries a one-line purpose in the folder map, and the full
-telling lives at the named home.
+Five human-run tools; each has a one-line purpose in the folder map, and its full
+telling lives in `folder-structure.md` (Part II) or the home named inline.
 
-- `_harness/scripts/harness-status.sh` — estate-wide health report; every FAIL line
-  ends with its fix. Full: *Harness Status Convention* in `folder-structure.md`.
-- `_harness/scripts/tracker_sweep.sh` — on-demand board-vs-estate drift through a
-  pluggable, tracker-agnostic fetch seam that fails open offline. Full:
-  `decisions/015-pluggable-tracker-fetch-seam.md`.
-- `_harness/scripts/make_context_pack.sh` — scrubbed, disposable zip of the harness
-  for external review, on your Desktop; skim before it leaves the machine. Full:
-  *Context Pack Convention* in `folder-structure.md`.
-- `_harness/scripts/harness-housekeeping.sh` — `git gc`/repack to reclaim `.git`
-  growth, preserving all history and records. Full: *Repo Health / Housekeeping* in
-  `folder-structure.md`.
-- `_harness/scripts/harness-drill.sh` — rehearse recovery on a calm day; three
-  read-only modes (`restore-drill`, `bundle-drill`, `undo-drill`) that leave the
-  live estate byte-untouched. Modes documented in the script's header.
+- `harness-status.sh` — estate-wide health report; every FAIL line ends with its fix.
+- `tracker_sweep.sh` — board-vs-estate drift through a pluggable, tracker-agnostic
+  fetch seam that fails open offline (`decisions/015-pluggable-tracker-fetch-seam.md`).
+- `make_context_pack.sh` — scrubbed, disposable zip of the harness for external
+  review; skim before it leaves the machine.
+- `harness-housekeeping.sh` — `git gc`/repack to reclaim `.git` growth, all history kept.
+- `harness-drill.sh` — rehearse recovery on a calm day: three read-only modes
+  (`restore-drill`, `bundle-drill`, `undo-drill`); modes documented in the script's header.
 
 ## Capture — checks, records, literate blocks
 

@@ -9,10 +9,18 @@
 # so a red here is a signal about the MSYS lane, never a reason to block a merge. Promotion to
 # a required check must wait for a later wave that proves this lane stable. (A comment is a
 # claim — G4: this job is informational today, full stop.)
+#
+# TRIGGER — PER-MERGE, not per-PR-push (#91). Because the job is informational/non-gating (above),
+# a per-merge tripwire (push to main = the merge commit, plus manual workflow_dispatch) serves the
+# same standing-witness purpose as running on every pull_request push, at a fraction of the CI
+# load. The honest trade: a lane-red now surfaces post-merge on main rather than on the PR — which
+# is consistent with "never a reason to block a merge", since it cannot even run before the merge.
 name: windows-witness
 
 on:
-  pull_request:
+  # Per-merge coverage: the merge commit landing on main, plus manual dispatch. NOT pull_request —
+  # see the trigger note in the header for the load-vs-post-merge-visibility trade (#91).
+  push:
     branches: [main]
   workflow_dispatch:
 

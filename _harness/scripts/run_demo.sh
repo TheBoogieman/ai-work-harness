@@ -1008,20 +1008,43 @@ rm -rf "$KS72_DIR"
 echo "  ok [#72 knowledge staleness] — old note listed w/ curator named, fresh silent, undated draws its own WARN, exit 0"
 
 # [#71 warn aging] PORCELAIN — a full status run must NOT dirty the estate (A2). The global
-# HARNESS_WARN_STATE_FILE export (top of this script) sends status's one write to a throwaway path, so
-# running status leaves the tracked tree untouched. Revert-proof: drop that export (or point a call at
-# the default in-repo path) and status writes _harness/state/warn-aging.tsv INTO the tree — this reds.
-# We compare against a BASELINE snapshot so a developer's own uncommitted edits don't false-red; only a
-# demo-INDUCED tracked change trips it. A scratch unrecognised ticket guarantees an active WARN, so a
-# mis-routed write would actually land a file (an empty WARN set would write nothing and hide the bug).
+# HARNESS_WARN_STATE_FILE export (top of this script) sends status's one write to a throwaway path.
+# TWO PROBES, covering the wall from different sides, because one of them used to cover neither.
+# PROBE 1 (primary, fixture): a FRESH estate, committed so its baseline is EMPTY BY CONSTRUCTION.
+#   The earlier version compared a baseline of the REAL tree snapshotted at this guard's own start,
+#   and self-masked: with the global export dropped, earlier demo stages had ALREADY written
+#   _harness/state/ into the real tree, so the pollution sat in the baseline and BASE==NOW compared
+#   equal while the tree was dirty (#71 reopen). Nothing upstream can pollute a fixture.
+# PROBE 2 (secondary, real tree, BASELINE-RELATIVE): catches a mis-pointed call in THIS region that
+#   newly dirties the real tree. It is deliberately baseline-relative, NOT absolute: a developer's
+#   own uncommitted edits are always present here and an absolute check would false-red every local
+#   run. That is why the original was written this way; the mistake was making it the ONLY probe.
+#   Its cover is CONDITIONAL — if the tree already carries _harness/state/ from an earlier run, this
+#   probe swallows it too. Probe 1 is the one that always holds.
+# status derives its root from its own location, so the scripts must live inside the fixture. A
+# scratch unrecognised ticket guarantees an active WARN: with no WARN there is no write at all, and
+# either probe would pass for the wrong reason.
+P71F=$(mktemp -d)
+mkdir -p "$P71F/estate/Tickets/porcelain check 71"
+cp -R _harness "$P71F/estate/_harness"
+printf '# rec\n## Current State\nx\n' > "$P71F/estate/Tickets/porcelain check 71/rec.md"
+git -C "$P71F/estate" init -q
+git -C "$P71F/estate" -c user.email=demo@local -c user.name=demo add -A
+git -C "$P71F/estate" -c user.email=demo@local -c user.name=demo commit -q -m "fixture"
+P71_FBASE=$(git -C "$P71F/estate" status --porcelain)
+bash "$P71F/estate/_harness/scripts/harness-status.sh" >/dev/null 2>&1 || true
+P71_FNOW=$(git -C "$P71F/estate" status --porcelain)
+[ "$P71_FBASE" = "$P71_FNOW" ] \
+  || { echo "BUG [#71 warn aging]: a status run dirtied a CLEAN FIXTURE estate — the global HARNESS_WARN_STATE_FILE export is not covering every write (status must be side-effect-free on the estate). New/changed:"; diff <(printf '%s\n' "$P71_FBASE") <(printf '%s\n' "$P71_FNOW") || true; rm -rf "$P71F"; exit 1; }
+rm -rf "$P71F"
 P71_BASE=$(git -C "$DEMO_ROOT" status --porcelain)
 P71T="$DEMO_ROOT/Tickets/porcelain check 71"; mkdir -p "$P71T"; printf '# rec\n## Current State\nx\n' > "$P71T/rec.md"
 bash _harness/scripts/harness-status.sh >/dev/null 2>&1 || true
 rm -rf "$P71T"
 P71_NOW=$(git -C "$DEMO_ROOT" status --porcelain)
 [ "$P71_BASE" = "$P71_NOW" ] \
-  || { echo "BUG [#71 warn aging]: a status run changed the tracked tree — the global HARNESS_WARN_STATE_FILE export is not covering every write (status must be side-effect-free on the estate). New/changed:"; diff <(printf '%s\n' "$P71_BASE") <(printf '%s\n' "$P71_NOW") || true; exit 1; }
-echo "  ok [#71 warn aging] PORCELAIN — a full status run leaves the tracked tree unchanged (the write lands in the exported temp path)"
+  || { echo "BUG [#71 warn aging]: a status run in this region newly changed the real tree — a call here is mis-pointed at the default in-repo state path. New/changed:"; diff <(printf '%s\n' "$P71_BASE") <(printf '%s\n' "$P71_NOW") || true; exit 1; }
+echo "  ok [#71 warn aging] PORCELAIN — a status run leaves a clean fixture estate untouched, and adds nothing to the real tree"
 
 # [#71 warn aging] FAILS-OPEN — a bookkeeping write to an unwritable state path must NOT change the
 # tool's answer (A3, the same law #79 shipped for its recorder). We point the state file under a

@@ -97,16 +97,37 @@ undo_drill() {
   local fix; fix=$(mktemp -d)
   say "=== undo-drill — a calm-conditions revert on a THROWAWAY fixture (never live data) ==="
   git -C "$fix" init --quiet
+  # Pin the fixture's line endings so the byte-identical self-checks below test git's RECOVERY, not
+  # the host's autocrlf: on a Windows checkout git would convert the LF-seeded record to CRLF on
+  # restore, making a byte compare against the LF-seeded golden fail for a reason that has nothing to
+  # do with whether the undo net worked (#106). autocrlf=false keeps checkout bytes == committed bytes
+  # on every platform, so the fixture is deterministic and the compare means what it says.
+  git -C "$fix" config core.autocrlf false
   printf 'good record v1\n' > "$fix/record.md"
   git -C "$fix" -c user.email=drill@local -c user.name=drill add -A
   git -C "$fix" -c user.email=drill@local -c user.name=drill commit --quiet -m "good record"
   say "  fixture seeded with one good commit."
+  # Golden reference for the byte-identical self-checks below (#106): the exact seeded bytes, kept
+  # OUTSIDE git tracking (created AFTER the initial add/commit, so `git add -A` and the later
+  # `commit -am` never pick it up). Each recovery is asserted to reproduce THIS file byte-for-byte,
+  # not merely to contain the seed string. Removed with $fix at the end (and on every failure path).
+  printf 'good record v1\n' > "$fix/good.md"
   # Rehearsal 1 — an UNCOMMITTED mistake is undone by restoring the file from the index/HEAD.
   printf 'OOPS destructive edit\n' > "$fix/record.md"
   say "  simulated an uncommitted bad edit; recovering with: git restore record.md"
   git -C "$fix" restore record.md
-  if grep -q 'good record v1' "$fix/record.md"; then
+  # Byte-identical compare (cmp -s), NOT a substring grep: 'git restore' must reproduce the seeded
+  # record EXACTLY — a file carrying the seed line plus garbage is a FAILED restore, not a pass.
+  # The else branch exists because a silent miss here (no PROVED, no warning, exit 0) would tell the
+  # human the undo net works in the very mode they run to gain that confidence (#106); match
+  # restore_drill's shape — prescribe a next step and return non-zero, cleaning $fix first.
+  if cmp -s "$fix/good.md" "$fix/record.md"; then
     say "  PROVED: an uncommitted mistake is undone by 'git restore <file>' — the file is back."
+  else
+    say "  FAILED: 'git restore record.md' did NOT bring the record back to its seeded content."
+    say "          The undo net did not work in this rehearsal — do NOT rely on it for a real recovery."
+    say "          Check your git version (older git: try 'git checkout -- record.md') and re-run this drill."
+    rm -rf "$fix"; return 1
   fi
   # Rehearsal 2 — a COMMITTED mistake is undone by git revert, which records the undo AS history
   # (nothing is erased: the estate keeps both the mistake and its reversal — late-but-true).
@@ -114,9 +135,17 @@ undo_drill() {
   git -C "$fix" -c user.email=drill@local -c user.name=drill commit --quiet -am "bad commit"
   say "  simulated a committed bad change; recovering with: git revert HEAD"
   git -C "$fix" -c user.email=drill@local -c user.name=drill revert --no-edit --quiet HEAD
-  if grep -q 'good record v1' "$fix/record.md"; then
+  # Same byte-identical standard: 'git revert' must restore the record to its pre-mistake bytes.
+  # A silent miss here would report a working recovery when the revert actually left bad content —
+  # the exact dishonesty this mode exists to catch — so fail loudly and return non-zero (#106).
+  if cmp -s "$fix/good.md" "$fix/record.md"; then
     say "  PROVED: a committed mistake is undone by 'git revert HEAD' — history keeps both the"
     say "          mistake and its reversal, so the record stays honest."
+  else
+    say "  FAILED: 'git revert HEAD' did NOT restore the record to its seeded content."
+    say "          Recovery via revert is NOT trustworthy here — do NOT rely on it for a real bad commit."
+    say "          Inspect the fixture history ('git -C <dir> log --oneline') and resolve the revert by hand."
+    rm -rf "$fix"; return 1
   fi
   say "  FOR REAL: uncommitted damage -> 'git restore <path>'; a bad commit -> 'git revert <sha>'."
   rm -rf "$fix"

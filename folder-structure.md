@@ -401,9 +401,17 @@ To see the health of the whole estate — not just the last session — run:
 _harness/scripts/harness-status.sh
 ```
 
-Read-only, deterministic, no AI, no credits. **It prints to stdout and writes
-nothing to disk** — status output is a derived view of the filesystem, never
-stored state (derived views are regenerated, not kept). Want a snapshot? Redirect it yourself, deliberately.
+Deterministic, no AI, no credits. **It is side-effect-free and prints its report
+to stdout; the only thing it keeps on disk is one *primary observation* — the day
+each WARN was first seen, so a parked yellow can visibly age (#71).** Everything
+status *derives* stays unstored: a derived view is regenerated, never kept, so it
+can't drift. But the filesystem does not remember *when* a condition began, and
+status is the only observer present at onset — that first-seen record is an
+observation the tool must make, not a view it can recompute, so it is stored (once,
+inside the estate whitelist — the aging record is itself part of the record). See
+`decisions/014`. Running status still cannot corrupt an estate: the write is atomic,
+fails open, and mutates only when the WARN set changes. Want a snapshot of the
+report? Redirect it yourself, deliberately.
 It reports, with `OK` / `WARN` / `FAIL` prefixes:
 
 - Per active ticket: last Session Log timestamp and `AI-Knowledge/` file count.
@@ -414,7 +422,9 @@ It reports, with `OK` / `WARN` / `FAIL` prefixes:
 - Repo size past the threshold, and session activity newer than the last
   commit (auto-commit-lag) — both WARNs.
 - `General AI-Knowledge/`: entries whose `Last reviewed:` date is older than
-  6 months.
+  the staleness threshold (default 90 days, tunable via
+  `HARNESS_KNOWLEDGE_STALE_DAYS`), and entries carrying no `Last reviewed:`
+  date at all — each names the knowledge-curator as the next act (#72).
 - Liveness: last commit in the Work local git (auto-commit is alive),
   hooks config parses, all six `.agent.md` files present and registered
   (agents can fail to load *silently* after Copilot updates).

@@ -7,6 +7,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/../.."
 DEMO_ROOT=$PWD
 export HARNESS_STATE_DIR=$(mktemp -d) HARNESS_AGENT_DEPLOY_DIR=$(mktemp -d) PACK_OUT_DIR=$(mktemp -d)
+# #71 A2 — ONE global override for status's first-seen record, exported ONCE at the top so it covers
+# EVERY harness-status invocation in this demo (29 today) and every future guard for free. Threading
+# an override per call site would be the wrong shape: a single missed site in a later wave would
+# silently write the real estate. Individual guards may still layer a guard-LOCAL state path on top
+# for determinism — the global export is the SAFETY floor under all of them.
+export HARNESS_WARN_STATE_DIR=$(mktemp -d)
+export HARNESS_WARN_STATE_FILE="$HARNESS_WARN_STATE_DIR/warn-aging.tsv"
 
 # cleanup runs on EXIT — normal, a set -e abort, or Ctrl-C. It removes the temp dirs AND any
 # Tickets/ folder THIS run created but didn't tear down. Success-path teardown is explicit below,
@@ -18,7 +25,7 @@ export HARNESS_STATE_DIR=$(mktemp -d) HARNESS_AGENT_DEPLOY_DIR=$(mktemp -d) PACK
 # exists, so a very early death can't delete real tickets.
 DEMO_PRE_TICKETS=""; DEMO_SNAPSHOT_DONE=0
 cleanup() {
-  rm -rf "$HARNESS_STATE_DIR" "$HARNESS_AGENT_DEPLOY_DIR" "$PACK_OUT_DIR"
+  rm -rf "$HARNESS_STATE_DIR" "$HARNESS_AGENT_DEPLOY_DIR" "$PACK_OUT_DIR" "$HARNESS_WARN_STATE_DIR"
   [ "$DEMO_SNAPSHOT_DONE" = 1 ] || return 0
   local d name
   for d in "$DEMO_ROOT/Tickets"/*/; do
@@ -499,7 +506,9 @@ echo "  ok [G3 housekeeping runs clean] — script runs, reports sizes, repacks,
 # [G3 bloat WARN] harness-status nudges (WARN) when .git exceeds HARNESS_GIT_WARN_MB, and the
 # nudge is YELLOW — exit stays 0, never a red FAIL. Force it by setting the threshold to 0 so
 # any non-empty .git trips it; then set it very high and assert it does NOT fire — pinning both
-# directions. Read-only: harness-status writes nothing, so running it on the real repo is safe.
+# directions. Side-effect-free: status's only write (the #71 first-seen record) is redirected by the
+# global HARNESS_WARN_STATE_FILE export at the top of this script to a throwaway temp path, so running
+# status on the real repo touches nothing tracked — safe.
 set +e; G3W_OUT=$(HARNESS_GIT_WARN_MB=0 bash _harness/scripts/harness-status.sh 2>&1); G3W_RC=$?; set -e
 printf '%s\n' "$G3W_OUT" | grep -q "WARN: the record repo's .git is" \
   || { echo "BUG [G3 bloat WARN]: the .git-size nudge did not fire at threshold 0:"; printf '%s\n' "$G3W_OUT"; exit 1; }
@@ -942,6 +951,98 @@ printf '%s\n' "$A80_OUT" | grep -q "orphan file AI-Knowledge/orphan.md not in _i
 rm -rf "$A80R"
 echo "  ok [#80 append_entry] — pre-existing red: append lands, red passes through, write not rolled back"
 # --- end #80 append_entry guards -----------------------------------------------------
+
+# --- #71 WARN aging + #72 knowledge staleness guards ----------------------------------
+# Inserted AFTER the #80 append_entry block (Batch 2 landed its guard between the historic
+# `# --- end status consolidation guards ---` anchor and here); that anchor line is still a unique
+# string but no longer marks the end-of-guards insertion point, so these land after #80's own end
+# marker. Every string is anchored with [#71 warn aging] or [#72 knowledge staleness]. All seven
+# asserts are revert-provable RED against pre-fix code.
+echo "--- #71 WARN aging + #72 knowledge staleness ---"
+
+# [#71 warn aging] RENDER + GATE — a WARN whose first-seen is OLD renders with escalating threshold
+# styling; a FRESH one (first-seen = today) renders PLAIN; and the gate is unchanged (a yellow WARN
+# keeps exit 0 with aging on). Deterministic via a guard-LOCAL state file (A2 layer 2) that we SEED
+# with an old first-seen for the fixture's exact key, so the age is fixed regardless of wall-clock.
+# The fixture is an unrecognised ticket folder (a guaranteed WARN); its key is "unrecognised:<name>".
+# BUG on miss: aging did not fire / a fresh WARN was decorated / aging flipped a yellow to red.
+AG71T="$DEMO_ROOT/Tickets/aging fixture 71"; mkdir -p "$AG71T"; printf '# rec\n## Current State\nwip\n' > "$AG71T/rec.md"
+AG71_STATE=$(mktemp)
+ag71_old=$(( $(date +%s) - 200*86400 ))                                # 200 days back → past the alarm tier
+printf '%s\tunrecognised:aging fixture 71\n' "$ag71_old" > "$AG71_STATE"
+set +e; AG71_OUT=$(HARNESS_WARN_STATE_FILE="$AG71_STATE" bash _harness/scripts/harness-status.sh 2>&1); AG71_RC=$?; set -e
+# 1. old-dated WARN → age rendered with the escalating (alarm-tier) styling on the fixture's own line
+printf '%s\n' "$AG71_OUT" | grep -F "aging fixture 71" | grep -q "parked 200d" \
+  || { echo "BUG [#71 warn aging]: an aged WARN (first-seen 200d ago) rendered NO parked age — aging did not fire:"; printf '%s\n' "$AG71_OUT" | grep -iF "aging fixture 71"; exit 1; }
+printf '%s\n' "$AG71_OUT" | grep -F "aging fixture 71" | grep -q '!!!' \
+  || { echo "BUG [#71 warn aging]: a WARN past the alarm tier (200d) did not escalate to the loud marker:"; printf '%s\n' "$AG71_OUT" | grep -iF "aging fixture 71"; exit 1; }
+# 3. gate behaviour unchanged: an unrecognised-ticket WARN is YELLOW — rc stays 0 with aging on
+[ "$AG71_RC" -eq 0 ] || { echo "BUG [#71 warn aging]: aging changed the gate — a yellow WARN must keep exit 0, got rc=$AG71_RC"; exit 1; }
+# 2. FRESH WARN (empty state → first-seen = now) → PLAIN, no age decoration on the same line
+AG71_FRESH=$(mktemp); : > "$AG71_FRESH"
+set +e; AG71_OUT2=$(HARNESS_WARN_STATE_FILE="$AG71_FRESH" bash _harness/scripts/harness-status.sh 2>&1); set -e
+printf '%s\n' "$AG71_OUT2" | grep -F "aging fixture 71" | grep -qE 'parked|\[!' \
+  && { echo "BUG [#71 warn aging]: a FRESH WARN rendered age decoration — a just-seen WARN must be plain:"; printf '%s\n' "$AG71_OUT2" | grep -iF "aging fixture 71"; exit 1; }
+rm -rf "$AG71T" "$AG71_STATE" "$AG71_FRESH"
+echo "  ok [#71 warn aging] RENDER — aged WARN shows escalating styled age, fresh WARN is plain, gate stays yellow (rc 0)"
+
+# [#72 knowledge staleness] a note past the threshold is LISTED and NAMES the knowledge-curator; a
+# fresh note is not; an UNDATED note draws its OWN WARN. Pure date arithmetic against controlled dates
+# so it's deterministic on any CI clock. Fixtures live under a scratch AI-Knowledge subfolder we create
+# and remove. BUG on miss: old note not listed w/ curator / fresh flagged / undated silent / not yellow.
+KS72_DIR="$DEMO_ROOT/General AI-Knowledge/staleness fixture 72"; mkdir -p "$KS72_DIR"
+ks72_old=$(date -d "200 days ago" +%Y-%m-%d 2>/dev/null || date -v-200d +%Y-%m-%d)     # GNU || BSD
+ks72_fresh=$(date -d "3 days ago" +%Y-%m-%d 2>/dev/null || date -v-3d +%Y-%m-%d)
+printf '# old note\nLast reviewed: %s\n'   "$ks72_old"   > "$KS72_DIR/old.md"
+printf '# fresh note\nLast reviewed: %s\n' "$ks72_fresh" > "$KS72_DIR/fresh.md"
+printf '# undated note\n(no review stamp at all)\n'      > "$KS72_DIR/undated.md"
+set +e; KS72_OUT=$(bash _harness/scripts/harness-status.sh 2>&1); KS72_RC=$?; set -e
+printf '%s\n' "$KS72_OUT" | grep -F "staleness fixture 72/old.md" | grep -q "knowledge-curator" \
+  || { echo "BUG [#72 knowledge staleness]: the old note was not listed with the knowledge-curator named as the next act:"; printf '%s\n' "$KS72_OUT" | grep -iF "staleness fixture 72"; exit 1; }
+printf '%s\n' "$KS72_OUT" | grep -qF "staleness fixture 72/fresh.md" \
+  && { echo "BUG [#72 knowledge staleness]: a fresh note (3 days) was wrongly flagged stale:"; printf '%s\n' "$KS72_OUT" | grep -iF "staleness fixture 72"; exit 1; }
+printf '%s\n' "$KS72_OUT" | grep -F "staleness fixture 72/undated.md" | grep -q "undated" \
+  || { echo "BUG [#72 knowledge staleness]: an undated note did not draw its own undated WARN:"; printf '%s\n' "$KS72_OUT" | grep -iF "staleness fixture 72"; exit 1; }
+[ "$KS72_RC" -eq 0 ] || { echo "BUG [#72 knowledge staleness]: the staleness sweep must be yellow (exit 0), got rc=$KS72_RC"; exit 1; }
+rm -rf "$KS72_DIR"
+echo "  ok [#72 knowledge staleness] — old note listed w/ curator named, fresh silent, undated draws its own WARN, exit 0"
+
+# [#71 warn aging] PORCELAIN — a full status run must NOT dirty the estate (A2). The global
+# HARNESS_WARN_STATE_FILE export (top of this script) sends status's one write to a throwaway path, so
+# running status leaves the tracked tree untouched. Revert-proof: drop that export (or point a call at
+# the default in-repo path) and status writes _harness/state/warn-aging.tsv INTO the tree — this reds.
+# We compare against a BASELINE snapshot so a developer's own uncommitted edits don't false-red; only a
+# demo-INDUCED tracked change trips it. A scratch unrecognised ticket guarantees an active WARN, so a
+# mis-routed write would actually land a file (an empty WARN set would write nothing and hide the bug).
+P71_BASE=$(git -C "$DEMO_ROOT" status --porcelain)
+P71T="$DEMO_ROOT/Tickets/porcelain check 71"; mkdir -p "$P71T"; printf '# rec\n## Current State\nx\n' > "$P71T/rec.md"
+bash _harness/scripts/harness-status.sh >/dev/null 2>&1 || true
+rm -rf "$P71T"
+P71_NOW=$(git -C "$DEMO_ROOT" status --porcelain)
+[ "$P71_BASE" = "$P71_NOW" ] \
+  || { echo "BUG [#71 warn aging]: a status run changed the tracked tree — the global HARNESS_WARN_STATE_FILE export is not covering every write (status must be side-effect-free on the estate). New/changed:"; diff <(printf '%s\n' "$P71_BASE") <(printf '%s\n' "$P71_NOW") || true; exit 1; }
+echo "  ok [#71 warn aging] PORCELAIN — a full status run leaves the tracked tree unchanged (the write lands in the exported temp path)"
+
+# [#71 warn aging] FAILS-OPEN — a bookkeeping write to an unwritable state path must NOT change the
+# tool's answer (A3, the same law #79 shipped for its recorder). We point the state file under a
+# regular FILE (so the mkdir -p can't succeed on any OS: ENOTDIR) with an active WARN present, and
+# assert the rc is IDENTICAL to a control run on a writable path, the full report still prints, and the
+# one 'aging unavailable' note appears. Revert-proof: drop the fails-open wrapper in warn_state_sync
+# and set -euo pipefail aborts status mid-write — the rc flips and the verdict line vanishes; this reds.
+FO71T="$DEMO_ROOT/Tickets/failsopen check 71"; mkdir -p "$FO71T"; printf '# rec\n## Current State\nx\n' > "$FO71T/rec.md"
+FO71_OK=$(mktemp)                        # control: a writable guard-local state path
+set +e; FO71_CTRL=$(HARNESS_WARN_STATE_FILE="$FO71_OK" bash _harness/scripts/harness-status.sh 2>&1); FO71_CTRL_RC=$?; set -e
+FO71_BADPARENT=$(mktemp)                 # a regular FILE — using it as a directory parent forces ENOTDIR
+set +e; FO71_OUT=$(HARNESS_WARN_STATE_FILE="$FO71_BADPARENT/sub/warn-aging.tsv" bash _harness/scripts/harness-status.sh 2>&1); FO71_RC=$?; set -e
+rm -rf "$FO71T"; rm -f "$FO71_OK" "$FO71_BADPARENT"
+[ "$FO71_RC" -eq "$FO71_CTRL_RC" ] \
+  || { echo "BUG [#71 warn aging]: an unwritable state path changed status's exit code (got rc=$FO71_RC, writable control rc=$FO71_CTRL_RC) — the write must fail open:"; printf '%s\n' "$FO71_OUT"; exit 1; }
+printf '%s\n' "$FO71_OUT" | grep -q "aging unavailable" \
+  || { echo "BUG [#71 warn aging]: an unwritable state path did not emit the 'aging unavailable' fails-open note:"; printf '%s\n' "$FO71_OUT"; exit 1; }
+printf '%s\n' "$FO71_OUT" | grep -qE "estate healthy|issue\(s\) above" \
+  || { echo "BUG [#71 warn aging]: the full status report did not print under an unwritable state path (verdict line missing):"; printf '%s\n' "$FO71_OUT"; exit 1; }
+echo "  ok [#71 warn aging] FAILS-OPEN — unwritable state path: full report prints, one note, exit code unchanged vs control"
+# --- end #71 WARN aging + #72 knowledge staleness guards ------------------------------
 
 # [#37] harness-status must NOT abort on a conforming ticket that has NO AI-Knowledge/ dir
 # (hand-made/legacy — the validator tolerates it). Pre-fix, the unguarded find at

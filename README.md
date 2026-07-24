@@ -196,7 +196,7 @@ Work/                                        [git root · local-only · whitelis
 │       ├── check_ticket_log.sh              ← sessionStart hook │ sessionEnd (bonus)
 │       │       └── watermark →              ~/.harness/validated/<ticket>  [state · unversioned]
 │       │       └── append_entry.sh          record appender: text+ticket+section → stamped atomic append under an existing header, then check_ticket_log verdict
-│       ├── harness-status.sh                stdout only · roster = _agents/ · checks siblings
+│       ├── harness-status.sh                stdout report + one primary-observation record (each WARN's first-seen, for aging #71) · roster = _agents/ · checks siblings
 │       ├── ticket-grammar.sh                recognition home: TICKET_RE + ticket predicates · validator + status both source it (edit to retarget your board)
 │       ├── portability.sh                   shared GNU/BSD shims: ts14→epoch, sourced by validator + status (one home · no drift)
 │       ├── append_notebook_cell.py          ← check-scribe · runs on venv_global [user-created prereq]

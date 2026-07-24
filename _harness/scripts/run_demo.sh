@@ -1172,6 +1172,63 @@ printf '%s\n' "$O38c" | grep -qE 'Tickets/202607E-PROJ-888 tracks .* in its root
 rm -rf "$O"
 echo "  ok [#38 oversize WARN] — fires with Dump/ prescription (yellow), clears when scratch moves to Dump/, honours the knob"
 
+# [#85 retrospective] GUARD 1 — retro_stats.sh is a DUMB counter, so a fixture estate with KNOWN
+# ticket dates, checks, and promotions must yield KNOWN numbers. retro_stats derives the estate it
+# scans from HARNESS_WORK_ROOT, so we point the REAL shipped script at a throwaway fixture (no copy
+# of the script — the exact shipped code runs). Fixture: three conforming tickets (two committed in
+# 2026-03, one in 2026-05, so their last-commit months are deterministic); ticket A carries two
+# promotion tombstones; ticket C carries two checks appended via the real notebook helper (the
+# template's own setup cell is NOT a check and is subtracted out). Revert-proof: break the counting
+# in retro_stats.sh and this guard reds on the asserted numbers. Cleanup is an explicit rm on every
+# exit path — the demo's single `trap cleanup EXIT` already owns the trap slot, so we add NO second
+# one (#86).
+echo "--- #85 retrospective: retro_stats counts a fixture estate ---"
+R85=$(mktemp -d)                                   # throwaway fixture estate (its own git repo)
+git -C "$R85" init -q
+mkdir -p "$R85/Tickets"
+# r85_commit ties a folder's LAST commit to a fixed date so its bucket month is deterministic.
+r85_commit() {  # $1 = commit label, $2 = YYYY-MM-DD
+  git -C "$R85" add -A >/dev/null
+  GIT_AUTHOR_DATE="$2 12:00:00" GIT_COMMITTER_DATE="$2 12:00:00" \
+    git -C "$R85" -c user.email=demo@local -c user.name=demo commit -qm "$1" >/dev/null
+}
+# ticket A — March, with two promotion tombstones in its AI-Knowledge index.
+cp -r Tickets/999912Z-PROJ-99999 "$R85/Tickets/202603A-PROJ-1"
+mv "$R85/Tickets/202603A-PROJ-1/999912Z-PROJ-99999.md" "$R85/Tickets/202603A-PROJ-1/202603A-PROJ-1.md"
+printf -- '- foo.md (promoted -> General AI-Knowledge/Topic)\n- bar.md (promoted -> General AI-Knowledge/Other)\n' >> "$R85/Tickets/202603A-PROJ-1/AI-Knowledge/_index.md"
+r85_commit 202603A-PROJ-1 2026-03-10
+# ticket B — March, no extras.
+cp -r Tickets/999912Z-PROJ-99999 "$R85/Tickets/202603B-PROJ-2"
+mv "$R85/Tickets/202603B-PROJ-2/999912Z-PROJ-99999.md" "$R85/Tickets/202603B-PROJ-2/202603B-PROJ-2.md"
+r85_commit 202603B-PROJ-2 2026-03-20
+# ticket C — May, with two captured checks appended through the real notebook helper.
+cp -r Tickets/999912Z-PROJ-99999 "$R85/Tickets/202605A-PROJ-3"
+mv "$R85/Tickets/202605A-PROJ-3/999912Z-PROJ-99999.md" "$R85/Tickets/202605A-PROJ-3/202605A-PROJ-3.md"
+python3 _harness/scripts/append_notebook_cell.py "$R85/Tickets/202605A-PROJ-3/Checks/checks_master.ipynb" "check one" "SELECT 1;" >/dev/null
+python3 _harness/scripts/append_notebook_cell.py "$R85/Tickets/202605A-PROJ-3/Checks/checks_master.ipynb" "check two" "SELECT 2;" >/dev/null
+r85_commit 202605A-PROJ-3 2026-05-05
+set +e; R85_OUT=$(HARNESS_WORK_ROOT="$R85" bash _harness/scripts/retro_stats.sh); R85_RC=$?; set -e
+[ "$R85_RC" -eq 0 ] || { echo "BUG [#85 retrospective]: retro_stats did not exit 0 on the fixture (rc=$R85_RC):"; printf '%s\n' "$R85_OUT"; rm -rf "$R85"; exit 1; }
+for r85_need in "tickets-closed-total: 3" "  2026-03: 2" "  2026-05: 1" "checks-captured: 2" "knowledge-promoted: 2"; do
+  printf '%s\n' "$R85_OUT" | grep -qF -- "$r85_need" \
+    || { echo "BUG [#85 retrospective]: retro_stats miscounted the fixture — expected line '$r85_need':"; printf '%s\n' "$R85_OUT"; rm -rf "$R85"; exit 1; }
+done
+rm -rf "$R85"
+echo "  ok [#85 retrospective] — retro_stats counts 3 tickets (2 in Mar, 1 in May), 2 checks, 2 promotions on the fixture"
+
+# [#85 retrospective] GUARD 2 — the whitelist re-include (`!/General Human Knowledge/`) must make a
+# file dropped under General Human Knowledge/ TRACKABLE: these are record artifacts, versioned. Probe:
+# create a file there and assert `git add -A --dry-run` WOULD stage it. This is #38's junk-ignore
+# method run in the OPPOSITE direction — #38 proves junk is NEVER staged, this proves record IS.
+# Revert-proof: remove the `!/General Human Knowledge/` line from .gitignore and the probe stops being
+# staged, reddening this guard. The probe is cleaned up with an explicit rm.
+R85_PROBE="General Human Knowledge/whitelist-probe"
+: > "$R85_PROBE"
+R85_STAGED=$(git add -A --dry-run 2>/dev/null | grep -F 'General Human Knowledge/whitelist-probe' || true)
+[ -n "$R85_STAGED" ] || { echo "BUG [#85 retrospective]: a file under General Human Knowledge/ would NOT be staged — the whitelist re-include is missing or broken."; rm -f "$R85_PROBE"; exit 1; }
+rm -f "$R85_PROBE"
+echo "  ok [#85 retrospective] — General Human Knowledge/ is inside the whitelist (a probe file would be staged)"
+
 # [#47 + #49 governance gates] revert-proofs for the LOCALLY-decidable gate scripts under
 # .github/scripts/ (the API existence/OPEN check is CI-only and witnessed at the seat, not here).
 # Same shape as #38: these call the very scripts the workflow calls, so weakening a grammar or

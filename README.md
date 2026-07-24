@@ -203,6 +203,7 @@ Work/                                        [git root · local-only · whitelis
 │       ├── literate_capture.py              transport: delimited SQL/python blocks → notebook cells (hash-deduped)
 │       ├── check_run.sh                     run-and-record: runs a command, appends one notebook cell (command, output, exit code, timestamp)
 │       ├── make_context_pack.sh             → ~/Desktop/harness-pack-*.zip [disposable · outside repo]
+│       ├── tracker_sweep.sh                 human-run · on-demand board-vs-estate drift report · pluggable fetch seam · tracker-agnostic · fails open offline
 │       ├── deploy_agents.sh                 → user-level agent dir (sync source → live)
 │       ├── harness-housekeeping.sh          human-run · git gc + size report · never touches records
 │       ├── harness-drill.sh                 human-run · rehearse restore/bundle/undo · read-only toward the estate
@@ -307,6 +308,18 @@ board key like `DATA-ENG` needs the board segment widened there; see
 - `_harness/scripts/harness-status.sh` — estate-wide health report: ticket ages,
   index nags, stale general knowledge, git/hook/agent liveness. Every FAIL
   line ends with the exact fix.
+- `_harness/scripts/tracker_sweep.sh` — on-demand board-vs-estate drift report.
+  After a ticket is created the estate and the external board can drift silently
+  (closed upstream, still Active locally). This human-run sweep reads each active
+  ticket's upstream status through a **pluggable fetch seam** and WARNs per
+  divergence with the fix named. It ships **tracker-agnostic**: the public product
+  names no board and makes no network call of its own — you point it at your own
+  fetcher (`HARNESS_TRACKER_FETCH_CMD`) at the fork layer, and the one line naming
+  which statuses mean "closed" is user-editable (the `ticket-grammar.sh`
+  precedent). It **fails open**: an unreachable tracker or no fetcher yields one
+  quiet note, never a red, so an offline estate stays fully functional. Any token
+  lives in the environment or a keychain at runtime — never on disk. See
+  `decisions/015-pluggable-tracker-fetch-seam.md`.
 - `_harness/scripts/make_context_pack.sh` — scrubbed, datestamped
   zip of the harness for external design review, landing on your Desktop.
   Disposable: upload, delete, regenerate anytime. Structure travels, payload

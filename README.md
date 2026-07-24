@@ -219,6 +219,7 @@ Work/                                        [git root · local-only · whitelis
 │   ├── knowledge-keeper.agent.md            │   fix ⇒ re-run deploy_agents.sh
 │   ├── knowledge-curator.agent.md           │
 │   ├── weekly-digest.agent.md               │
+│   ├── harness-recall.agent.md              │
 │   └── retrospective.agent.md               ┘
 │
 ├── Tickets/                                 RECORDS ONLY
@@ -306,6 +307,9 @@ board key like `DATA-ENG` needs the board segment widened there; see
   - `weekly-digest` (cheap, at a boundary) — read-only; narrates a period
     (default 14 days) from the record — active tickets, knowledge, status
     deltas — writes nothing
+  - `harness-recall` (cheap, on demand) — read-only; FINDS where a topic
+    appears across tickets and knowledge, one cited hit per line — grep + git,
+    no stored index — writes nothing
   - `retrospective` (smart, at review time) — writes a period retrospective
     (default 12 months) FOR THE HUMAN in accomplishment register — one
     timestamped file to `General Human Knowledge/Retrospectives/`, nothing else

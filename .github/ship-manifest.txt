@@ -43,6 +43,7 @@ PRODUCT	Tickets/999912Z-PROJ-99999/Logs/.gitkeep
 PRODUCT	Tickets/README.md
 PRODUCT	_agents/check-scribe.agent.md
 PRODUCT	_agents/doc-writer.agent.md
+PRODUCT	_agents/harness-recall.agent.md
 PRODUCT	_agents/knowledge-curator.agent.md
 PRODUCT	_agents/knowledge-keeper.agent.md
 PRODUCT	_agents/retrospective.agent.md
@@ -84,6 +85,7 @@ DEV	decisions/014-status-primary-observation.md
 DEV	decisions/015-pluggable-tracker-fetch-seam.md
 DEV	decisions/016-multi-machine-ferry-declined.md
 DEV	decisions/017-estate-gains-an-output-surface.md
+DEV	decisions/018-the-reader-spine.md
 DEV	dev-loop/SETUP.md
 DEV	dev-loop/message-format.template.md
 DEV	dev-loop/role-charter.template.md

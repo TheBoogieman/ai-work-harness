@@ -44,6 +44,14 @@ labels the L4 box "SIX AGENTS" and Sheet 2 still draws the six-writer roster. No
 edits an SVG — this note records the lag; the operator redraws on their own schedule.
 Refresh owed under `#83`.
 
+**Diagram currency (2026-07-24):** the roster grew again to TEN agents — `#108` adds
+`harness-recall`, a read-only topic reader that FINDS where a subject appears across
+tickets and knowledge (grep + git, no stored index). The sheets fall further behind
+still: they depict six agents, `#70` added the seventh, `#73` the eighth, `#85` the
+ninth, `#108` the tenth. Sheet 1 still labels the L4 box "SIX AGENTS" and Sheet 2 still
+draws the six-writer roster. No wave edits an SVG — this note records the lag; the
+operator redraws on their own schedule. Refresh owed under `#83`.
+
 **The pattern (every layer):** file states the rule → agent does the work →
 hook catches the miss → git undoes the damage. Corollary: status observes,
 failures prescribe, nothing heals itself — a fixed record is a human act.

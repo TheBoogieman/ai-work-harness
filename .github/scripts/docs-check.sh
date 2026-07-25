@@ -135,8 +135,8 @@ oh_surface() { git ls-files | grep -vEi '\.(svg|png|jpe?g|gif|zip)$'; }
 # build read as "this fact has one home" would make the instrument built to enforce claims-truth
 # ship a false claim about itself.
 #
-# THE THREE EXCLUSIONS ARE NOT THREE OF A KIND. A later reader who collapses them into one rule
-# about "things that look like duplicates" will delete the third and break the repository:
+# THE FOUR EXCLUSIONS ARE NOT FOUR OF A KIND. A later reader who collapses them into one rule
+# about "things that look like duplicates" will delete the last two and break the repository:
 #   (1) paths, filenames and manifest rows — a FALSE POSITIVE. The row merely LOOKS like a telling;
 #       the manifest naming a file correctly must never red. Dropped at scan time (oh_pathre /
 #       oh_extre blank every path-ish and filename-ish token before the phrase count).
@@ -148,8 +148,25 @@ oh_surface() { git ls-files | grep -vEi '\.(svg|png|jpe?g|gif|zip)$'; }
 #       declaring it and in the script reporting it, and all three must match character for
 #       character because that name is the contract with branch protection. Register one and this
 #       detector reds on a CORRECT repository — and the obvious way to make it green again is to
-#       break the checks. So an alias that also appears in a workflow file is rejected as a
-#       registration error, loudly and by name, before any counting happens.
+#       break the checks. So an alias that a machine matches on is rejected as a registration
+#       error, loudly and by name, before any counting happens. TWO SOURCES feed it: the workflow
+#       files, and the literal strings the #68 dev-loop detector above REQUIRES DEVELOPMENT.md to
+#       carry. The second is the same exclusion arriving as a REQUIRED NEEDLE rather than as a
+#       check name — that file is obliged by a detector in this very script to state those laws,
+#       so the sentence carrying one is a contract, not a rival telling.
+#   (4) decision records (decisions/**)    — NOT a false positive either, and NOT a matching
+#       accident at all: it is a RULING about what those documents ARE. A record must state what
+#       was decided. Its DECISION SECTION is the primary text of the ruling, and a record whose
+#       Decision section pointed elsewhere for its own decision would not be a record. So a record
+#       restating the rule it recorded is not a rival home, and the directory is dropped when the
+#       census file list is built (below). THE GROUND IS THE DECISION SECTION AND NOTHING ELSE —
+#       it is emphatically NOT "a title states its decision by construction", which is false: a
+#       title need only IDENTIFY its record, and a wrong reason left in doctrine outlasts the
+#       ruling it was invented to justify. The rest of the file rides along with the section
+#       because the only way to green a census over a record is to retitle and reword it, which
+#       makes the document worse in order to serve a gate. SCOPED TO THIS DETECTOR: the #122
+#       no-lookup detector below still reads decision records in full, and must — a retired tag
+#       inside a record is exactly the defect it hunts.
 #
 # THE REGISTRY — one row per registered FACT: "DISPLAY-NAME<TAB>HOME<TAB>alias|alias|...". The
 # display name is for the human reading a failure; it is never a key, because naming a fact the way
@@ -159,8 +176,30 @@ oh_surface() { git ls-files | grep -vEi '\.(svg|png|jpe?g|gif|zip)$'; }
 # telling of every fact it registers (the same self-match the C7d needle is split to avoid). The
 # loader restores the spaces and reds on a literal space, so the rule cannot be forgotten. This
 # registry is expected to GROW as drift is found — add a row, never a second census.
+#
+# THE SECOND ROW REGISTERS THE RULE'S STATEMENT, NOT ITS EXEMPTION LIST (#189). The first row keys
+# on the three exempt-class phrases, so a document that states the rule WITHOUT qualifying it
+# carries none of them and passes unseen — which is precisely the defect that kept recurring, and
+# precisely what the first row cannot see. The alias list is the deliverable: a detector's reach is
+# the sum of what has actually been FOUND, so every alias is one known carrier's own words, taken
+# from that carrier rather than invented. Alias one is the wording the HOME uses and must never be
+# dropped — without it the row reports zero the day the other carriers are corrected, and reds as
+# ROTTED, retiring a row nobody meant to retire. Alias two is the guard-per-bug record's title and
+# opening sentence. Alias three is the enforcement record's former Consequences wording, deleted by
+# #167 and registered here so that phrasing cannot quietly come back. The last two sit inside
+# exclusion 4 today and are kept deliberately: their job is to stop those exact phrasings
+# reappearing OUTSIDE the records, which is where they would be a second home.
+#
+# WHAT THIS ROW DOES NOT REACH, said plainly so nobody reads a green census as a clean repository:
+# DEVELOPMENT.md's third working law states this rule unqualified, and NO alias here is keyed on
+# its wording. That is exclusion 3 above, arriving as a required needle — the #68 detector obliges
+# that file to carry a literal string, and the sentence carrying it is the law's statement. Key an
+# alias on it and one detector in this script demands you break another. The refusal is MECHANICAL
+# rather than remembered: those needles feed the registration check below, so the trap reds at the
+# moment somebody registers into it instead of after they have edited the document.
 oh_registry=(
   "guard-per-bug exempt classes	CLAUDE.md	documentation~and~prose|comment-only~passes|pure~renames~and~moves"
+  "guard-per-bug rule statement	CLAUDE.md	regression~guard~that~provably~fails~on~the~pre-fix~code|every~bug~fix~ships~with~a~regression~guard|every~bug~still~ships~a~guard"
 )
 # oh_ptr_max — "pointer" has to be MECHANICAL or the detector is unarguable. A paragraph at or under
 # this many characters that NAMES the fact's home file is a pointer and is skipped; anything longer,
@@ -174,9 +213,14 @@ oh_ptr_max=200
 oh_pathre='[^ ]*[/][^ ]*'
 oh_extre='[^ ]*[.](md|sh|py|txt|json|ya?ml|svg|ipynb)([^a-z0-9]|$)'
 oh_fail_before=$fail
-oh_workflows=$(cat .github/workflows/*.yml 2>/dev/null || true)
+# EXCLUSION 3's haystack — every string in this repository that a MACHINE matches literally, so a
+# registration can be tested against all of them at once: the workflow files, plus the dev-loop
+# needles declared at the top of this script (a required needle is an identifier for this purpose).
+oh_machined=$(cat .github/workflows/*.yml 2>/dev/null || true; printf '%s\n' "${dl_pairs[@]}")
+# EXCLUSION 4 applies HERE and only here — the decision records are dropped from THIS detector's
+# census while oh_surface, which #122 below reads, keeps them. "${oh_f%%/*}" is the top directory.
 oh_files=()
-while IFS= read -r oh_f; do [ -f "$oh_f" ] && oh_files+=("$oh_f"); done < <(oh_surface)
+while IFS= read -r oh_f; do [ -f "$oh_f" ] && [ "${oh_f%%/*}" != decisions ] && oh_files+=("$oh_f"); done < <(oh_surface)
 for oh_row in "${oh_registry[@]}"; do
   oh_name=${oh_row%%	*}; oh_tail=${oh_row#*	}
   oh_home=${oh_tail%%	*}; oh_alias_field=${oh_tail#*	}
@@ -190,8 +234,8 @@ for oh_row in "${oh_registry[@]}"; do
   oh_al=$oh_alias_field; oh_rejected=0
   while [ -n "$oh_al" ]; do
     oh_a=${oh_al%%|*}; [ "$oh_al" = "$oh_a" ] && oh_al="" || oh_al=${oh_al#*|}
-    grep -Fqi -- "$oh_a" <<<"$oh_workflows" \
-      && { echo "FAIL [docs one-home:$oh_name]: the registered phrase \"$oh_a\" also appears in .github/workflows/ — that makes it an IDENTIFIER, and an identifier's repetition is the contract, not a duplication. Delete the alias from the registry; never register a string that a machine matches."; fail=1; oh_rejected=1; }
+    grep -Fqi -- "$oh_a" <<<"$oh_machined" \
+      && { echo "FAIL [docs one-home:$oh_name]: the registered phrase \"$oh_a\" is also matched literally by a machine — it appears in .github/workflows/, or among the strings the #68 dev-loop detector requires DEVELOPMENT.md to carry. That makes it an IDENTIFIER, and an identifier's repetition is the contract, not a duplication: registering it would red this detector on a CORRECT repository, and the obvious way to green it again is to break the other check. Delete the alias from the registry; never register a string that a machine matches."; fail=1; oh_rejected=1; }
   done
   [ "$oh_rejected" -eq 0 ] || continue
   # THE CENSUS, in one awk pass over the whole surface. RS="" reads a PARAGRAPH at a time and the
@@ -460,10 +504,10 @@ done < <(git ls-files 'decisions/[0-9][0-9][0-9]-*.md')
 #    harness cannot use. Those rules now live in full, under descriptive names, in the development
 #    instructions (CLAUDE.md, DEV, never shipped). Requiring the word here would have forced the
 #    shipped file to keep carrying development material to stay green.
-#    UNOWNED (#123): README's document-catalogue row for SPEC.md still calls it "glossary +
-#    decoder", which the deletion above makes false. README is not this change's to edit, so the
-#    row is left standing and reported rather than corrected across an ownership line. No detector
-#    reds on it — that catalogue is prose, not a pinned claim — so it needs a human to route it.
+#    The UNOWNED note that stood here — README's catalogue row still calling SPEC.md "glossary +
+#    decoder" — is DISCHARGED: 703bb9b (#154) rewrote that row to describe what the file is for its
+#    reader, so it no longer names a section that was deleted. The routing worked; the note is gone
+#    rather than kept as a memorial: a discharged warning read later is itself a false claim.
 if [ -f SPEC.md ]; then
   spec_body=$(cat SPEC.md)
   for term in 'estate' 'guard' 'red/yellow' 'one-home' 'dumb inspector'; do

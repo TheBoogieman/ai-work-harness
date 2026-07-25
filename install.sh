@@ -162,6 +162,20 @@ detect_model() {
   local f="$1/_agents/$2"
   [ -f "$f" ] && grep -m1 '^model:' "$f" | sed -E 's/^model:[[:space:]]*//'
 }
+# read_version <root> — the harness version recorded at <root>, or the word "unknown" when no
+# VERSION file is there. It READS the stamp; it never restates the number, so VERSION stays the one
+# home of that fact and this script carries no version literal to drift from it. "unknown" is the
+# honest answer for an estate laid down before the stamp existed — a number inferred from what the
+# estate happens to contain would be a guess that a reader would take for a fact. Only the FIRST
+# line is read (the stamp is one line) and a trailing carriage return is stripped, because a clone
+# with core.autocrlf=true checks the file out CRLF and the version would otherwise carry a CR.
+read_version() {
+  local v=""
+  [ -f "$1/VERSION" ] && { IFS= read -r v < "$1/VERSION" || true; }
+  v="${v%$'\r'}"
+  [ -n "$v" ] || v="unknown"
+  printf '%s' "$v"
+}
 # route_change <label> <established> <typed> <file-to-edit> — a re-run answer that DIFFERS from the
 # established value is ROUTED, never applied: the installer edits NOTHING pre-existing (cond 2).
 # It warns, names the exact file to edit, and offers the AI-assistant handoff (setup.md).
@@ -500,6 +514,7 @@ print_summary() {
   echo
   echo "======================== INSTALL SUMMARY ========================"
   echo "Estate: $TARGET"
+  print_summary_version
   print_summary_created
   echo "Choices (asked or defaulted):"
   print_summary_board
@@ -507,6 +522,22 @@ print_summary() {
   echo "  cheap model pin   = $CHEAP_MODEL"
   echo "  sonnet model pin  = $SONNET_MODEL"
   print_summary_knobs
+  return 0
+}
+
+# print_summary_version — the version line of the record. It reports the ESTATE's stamp, because
+# that is the only version true OF THE ESTATE: the installer creates only what is ABSENT, so a
+# repair run from a NEWER source leaves an older estate's stamp exactly where it found it. When the
+# two differ, say so plainly instead of printing the source's number over an estate that does not
+# carry it — that would be the summary claiming an upgrade the installer never performed. On a
+# fresh install the two are the same file, so the note stays silent.
+print_summary_version() {
+  est_version="$(read_version "$TARGET")"
+  src_version="$(read_version "$SOURCE")"
+  echo "Harness version: $est_version   (this estate's VERSION stamp)"
+  [ "$est_version" = "$src_version" ] && return 0
+  echo "  NOTE: the source you ran is $src_version. The installer creates only what is absent, so"
+  echo "        it did NOT replace this estate's stamp. Nothing here upgrades an estate."
   return 0
 }
 

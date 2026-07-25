@@ -108,3 +108,21 @@ witnessed and by whom — and supersedes NONE of its substance: the guard, and i
 provable red, remain mandatory. It is deliberately decoupled from the
 sabotage-fixture machinery it authorises, which lands several phases later; the
 law is recorded first so no seat runs on an unwritten amendment in between.
+
+UNOWNED — read by the seat that corrected the reopen citation above (`#189`) and
+deliberately NOT corrected by it, because none of these was in that item's scope.
+Recorded so a later reader does not mistake unchecked text for checked text:
+
+- The gain is written in the PRESENT tense against machinery that does not exist
+  at HEAD. "What is GAINED" says every guard is exercised on every CI run, and the
+  Decision section says what was manual becomes continuous; no sabotage fixture,
+  and no job that applies one, is tracked in this repository today — which the
+  paragraph directly above concedes in the same breath. The identical class of
+  present-tense CI claim was corrected in this record once already (`#180`).
+- "shipped fixtures" under Consequences names an artefact no guard yet ships, so
+  the failure mode it warns about cannot occur yet either.
+- The interim is not disclosed anywhere. This record retires the reviewer's
+  exhaustive red-side pass on the day it is accepted, while the automation meant
+  to replace that pass lands later, so in between the coverage is thinner than
+  under either the old law or the new one. What is SPENT is stated against the
+  automated end state and never against the gap opened on the way to it.

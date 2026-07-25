@@ -159,8 +159,26 @@ oh_surface() { git ls-files | grep -vEi '\.(svg|png|jpe?g|gif|zip)$'; }
 # telling of every fact it registers (the same self-match the C7d needle is split to avoid). The
 # loader restores the spaces and reds on a literal space, so the rule cannot be forgotten. This
 # registry is expected to GROW as drift is found — add a row, never a second census.
+#
+# THE SECOND ROW REGISTERS THE RULE'S STATEMENT, NOT ITS EXEMPTION LIST (#123). The first row keys
+# on the three exempt-class phrases, so a document that states the rule WITHOUT qualifying it
+# carries none of them and passes unseen — which is precisely the defect that kept recurring, and
+# precisely what the first row cannot see. The alias list is the deliverable: a detector's reach is
+# the sum of what has actually been found, so each alias after the first is one known carrier's own
+# opening words, taken from that carrier rather than invented. The FIRST alias is the wording the
+# HOME uses and must never be dropped — with no alias the home matches, the row would report zero
+# the day the carriers are corrected and red as ROTTED, retiring a row nobody meant to retire.
+#
+# KNOWN TENSION, written down because a later reader meets it as a contradiction and will otherwise
+# "fix" one side of it: the #68 dev-loop detector above REQUIRES DEVELOPMENT.md to carry the guard
+# law's needle, while this row counts DEVELOPMENT.md's statement of the rule as a second telling.
+# They coexist ONLY because they key on different strings — that needle is a fragment this row does
+# not register. So the cheap way to satisfy both is to reorder the law's words, which removes no
+# telling at all; and the honest fix, turning that law into a pointer, REDS the detector above. The
+# two must move together, in one change, or not at all.
 oh_registry=(
   "guard-per-bug exempt classes	CLAUDE.md	documentation~and~prose|comment-only~passes|pure~renames~and~moves"
+  "guard-per-bug rule statement	CLAUDE.md	regression~guard~that~provably~fails~on~the~pre-fix~code|every~bug~fix~ships~with~a|every~bug~still~ships~a~guard|every~bug~closes~with~a~guard"
 )
 # oh_ptr_max — "pointer" has to be MECHANICAL or the detector is unarguable. A paragraph at or under
 # this many characters that NAMES the fact's home file is a pointer and is skipped; anything longer,

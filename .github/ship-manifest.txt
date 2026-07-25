@@ -22,6 +22,7 @@ DEV	.github/ship-manifest.txt
 DEV	.github/workflows/demo.yml
 DEV	.github/workflows/docs.yml
 DEV	.github/workflows/governance.yml
+DEV	.github/workflows/shape.yml
 DEV	.github/workflows/shell-lint.yml
 DEV	.github/workflows/windows-witness.yml
 PRODUCT	.gitignore

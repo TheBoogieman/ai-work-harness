@@ -1140,9 +1140,9 @@ echo "  ok [warn-aging-fails-open] — unwritable state path: full report prints
 # --- end #71 WARN aging + #72 knowledge staleness guards ------------------------------
 
 # [roster-completes] harness-status must NOT abort on a conforming ticket with NO AI-Knowledge/ dir
-# (hand-made/legacy — the validator tolerates it). Pre-fix, the unguarded find at
-# harness-status.sh:155 exits non-zero on the missing dir and (pipefail + set -e) aborts the
-# roster loop BEFORE this ticket's line prints — suppressing the whole estate's roster. This
+# (hand-made/legacy — the validator tolerates it). Pre-fix, the unguarded find in
+# harness-status's roster loop exits non-zero on the missing dir and (pipefail + set -e) aborts
+# that loop BEFORE this ticket's line prints — suppressing the whole estate's roster. This
 # is the FIRST conforming-ticket-without-AI-Knowledge fixture in the demo (r09_make builds its
 # conforming fixtures WITH AI-Knowledge, so the field hit a case the demo never covered).
 # NOTE: the demo runs with CWD = repo root and never defines WORK_ROOT (harness-status resolves

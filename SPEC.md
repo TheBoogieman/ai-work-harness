@@ -6,8 +6,9 @@ a defect — fix the product or fix the line. README is the tour and Setup guide
 this file is the contract and the reader's key. The rules the product enforces
 live in `folder-structure.md` (the constitution); the reasoning behind each
 design choice lives in `decisions/` (the ADR backfill). This file sits between
-them: the guarantees, plus a glossary and a decoder so a newcomer can read the
-project's own shorthand.
+them: the guarantees, plus a glossary so a newcomer can read the vocabulary the
+product uses about itself. The rules that govern DEVELOPMENT of the harness are
+not here — they live with the development instructions, which never ship.
 
 ## Original goals
 
@@ -68,10 +69,10 @@ operator, one active session at a time, and no remote — ever.
 - **estate** — the local work folder `install.sh` turns into a disciplined,
   record-keeping workspace (the git root). Distinct from the **source** checkout
   you develop the harness in; the two are never the same directory.
-- **guard** — a mechanical check that refuses to let a defect through. Two
-  families: the runtime `R-NN` regression guards baked into the demo and
-  scripts, and the `GN` project rules that govern development of the harness
-  itself (see the decoder).
+- **guard** — a mechanical check that refuses to let a defect through. In the
+  product they are the `R-NN` regression guards baked into the demo and the
+  scripts; an `R-NN` tag (e.g. `R-09`) is a stable internal name for one such
+  check, so it can be cited across files without its logic being repeated.
 - **red/yellow** — the two-tone signalling law. **Red** (`FAIL`) blocks: fix
   before working. **Yellow** (`WARN`/`NOTE`) schedules: keep working, handle the
   chore at the next natural boundary. Nothing self-heals; a fixed record is
@@ -83,25 +84,3 @@ operator, one active session at a time, and no remote — ever.
   checks facts only and prescribes fixes, but forms no opinion and repairs
   nothing. "Dumb" is the design goal, not a limitation — judgment lives in the
   operator, not the checker.
-
-## Decoder — reading the project's shorthand
-
-The tracker history and the code cite short identifiers. Two of them are not
-self-explanatory to a newcomer:
-
-- **A goal number** is written `#NN` — a GitHub issue number. Each architectural
-  change is anchored to an issue: the branch is named `NN-slug`, the PR body
-  carries `Fixes #NN`, and the commit and ADR cite `#NN`. So a goal number is a
-  durable, clickable pointer to the issue that motivated a change and the PR that
-  landed it. It is the ONLY project-history reference that is stable — ephemeral
-  labels (wave or milestone tags) are never used in public text because they
-  drift.
-- **A guard tag** comes in two forms. An **`R-NN`** tag (e.g. `R-09`) is a stable
-  internal name for one regression guard in the demo and scripts — it lets a
-  specific behavioural check be referred to across files without repeating its
-  logic. A **`GN`** tag (e.g. `G4`, `G5`, `G6`, `G7`) is a project rule
-  governing how the harness itself is developed: `G4` claims-truth (nothing false
-  at HEAD ships), `G5` guard-per-bug (every fix ships a guard that provably fails
-  on the pre-fix code), `G6` public-surface privacy, `G7` plain-English comments.
-  So a guard tag names *which* check or rule is in play; a goal number names
-  *why* a change exists.

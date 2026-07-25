@@ -26,10 +26,9 @@ Doctrine you must never violate when changing this code:
 ## Working on this harness
 - Make the change that's asked for; don't invent scope. If it seems to need
   reading or editing a file that wasn't named, flag that before doing it.
-- Comment every CODE change in plain English — WHAT it does and WHY, not a
-  restatement of syntax (project rule "G7"). This applies to bash/python and
-  hooks.example.json. Agent .md files and the constitution are prose and are
-  exempt from line-comments but must stay clear.
+- Comment every code change in plain English. That rule's one home — its full
+  statement, the reason it exists, and what enforces it — is PLAIN-ENGLISH
+  COMMENTS under "Hard rules" below; it is not restated here.
 - Run the demo — `bash _harness/scripts/run_demo.sh` — for every BEHAVIOUR CHANGE
   TO SHIPPED MACHINERY. It must end with "ALL 6 DEMO STAGES PASSED"; it is the
   truth-teller for such a change and nothing here weakens that. (Stage 5
@@ -70,24 +69,87 @@ Doctrine you must never violate when changing this code:
   concern, and every claim you wrote (including in comments) is true at HEAD.
 
 ## Hard rules for changing this codebase
-- GUARD-PER-BUG: a guard is required for a behaviour change to shipped machinery
-  that no existing guard already catches — a regression guard that provably FAILS
-  on the pre-fix code (prove it by reverting the fix and watching the guard go
-  red). No such change is "fixed" without one. FOUR EXEMPTIONS, and no others:
-  (1) documentation and prose, (2) comment-only passes, (3) pure renames and
-  moves — the three CLASSES OF CHANGE that are not behaviour changes to shipped
-  machinery — and (4) a defect an existing guard already catches, which is not a
-  class of change but a coverage condition inside the machinery class. This list
-  is the ONE home for those classes — nothing else in the repo restates them; a
-  rule that needs them cites this list. Two of the four would self-certify
-  without a proof, so each owes one: "pure rename or move" is a claim, not a
-  fact — the proof is BYTE-IDENTICAL OUTPUT (a change that alters a printed
-  string can never produce it); "an existing guard already catches it" is never
-  asserted — that guard is SHOWN failing against the pre-fix code.
-  (Project rule "G5".)
-- Every claim in README and the constitution must be true at HEAD
+
+### The four standing rules
+
+Four rules bind every change to this repository. This section is their ONE home:
+each carries a descriptive name, its full statement, the reason it exists, and
+the instrument that enforces it — so a rule can be obeyed from this file, with no
+tag to look up somewhere else. Where the instrument is a person rather than a
+script, that is said plainly: an honest "no detector yet" is worth more than an
+enforcement claim the repository cannot cash.
+
+**CLAIMS-TRUTH — nothing false at HEAD ships.**
+- *Statement.* Every claim in README and the constitution must be true at HEAD
   or removed. A code comment is a claim too — a comment that misdescribes the
-  code is a defect. (Project rule "G4".)
+  code it sits over is a defect, and gets fixed like one rather than left as a
+  stale note.
+- *Why it exists.* What this repository builds is a record a human trusts
+  without having been in the room, and the same standard binds the repository's
+  own documents. A document that is right about most things is worse than one
+  that is silent: it teaches its reader to stop checking.
+- *What enforces it.* The docs gate — `.github/scripts/docs-check.sh`, reported
+  by the required check named "docs completeness + separation" — pins a NAMED
+  SET of claims, and each detector reds when its claim leaves the document that
+  owns it, or drifts from the code it describes. That set is a growing subset of
+  the prose and never all of it: no script judges an arbitrary sentence. Every
+  claim outside the set rests on the pre-push self-check and on review.
+
+**GUARD-PER-BUG — a fix is finished when a guard has been WATCHED failing.**
+- *Statement.* A guard is required for a behaviour change to shipped machinery
+  that no existing guard already catches — a regression guard that provably
+  FAILS on the pre-fix code (prove it by reverting the fix and watching the
+  guard go red). No such change is "fixed" without one. FOUR EXEMPTIONS, and no
+  others: (1) documentation and prose, (2) comment-only passes, (3) pure renames
+  and moves — the three CLASSES OF CHANGE that are not behaviour changes to
+  shipped machinery — and (4) a defect an existing guard already catches, which
+  is not a class of change but a coverage condition inside the machinery class.
+  This list is the ONE home for those classes — nothing else in the repo
+  restates them; a rule that needs them cites this list. Two of the four would
+  self-certify without a proof, so each owes one: "pure rename or move" is a
+  claim, not a fact — the proof is BYTE-IDENTICAL OUTPUT (a change that alters a
+  printed string can never produce it); "an existing guard already catches it"
+  is never asserted — that guard is SHOWN failing against the pre-fix code.
+- *Why it exists.* A guard that has never been run to failure is
+  indistinguishable from a guard that CANNOT fail, because green is what both
+  look like from the outside; only an executed red tells them apart. The
+  reasoning is recorded in `decisions/011`, and how that red is witnessed was
+  later amended — the amendment lives in `decisions/019` and is NOT restated
+  here; read it before relying on a sampled review pass.
+- *What enforces it.* The acceptance demo, `_harness/scripts/run_demo.sh`, is
+  where a guard lives and where it is shown failing. CI runs it on Linux and
+  macOS as two required checks, and both must be green before a merge.
+
+**PUBLIC-SURFACE PRIVACY — no work context reaches a public surface.**
+- *Statement.* Never put work-context identifiers (employer, internal workspace
+  names, board keys, internal IDs) in repo files, issue text, or commit
+  messages. Generic language only.
+- *Why it exists.* This repository is public and its history is permanent. An
+  employer name or a real board key committed once is not removed by editing the
+  file afterwards, so this rule has to hold BEFORE the commit — there is no
+  version of it that can be applied late.
+- *What enforces it.* No detector — a human, at the pre-push self-check and at
+  review. That gap is stated rather than papered over: nothing mechanical here
+  can tell a generic example from a real one. What the repository does instead
+  is remove the occasions — the development fixtures are generic by construction
+  (`.github/scripts/make-scratch-estate.sh` builds its scratch estate from the
+  shipped template ticket, carrying no real board key), so an author who wants a
+  realistic example already has one that costs nothing to use.
+
+**PLAIN-ENGLISH COMMENTS — a code change says WHAT it does and WHY.**
+- *Statement.* Comment every CODE change in plain English — WHAT it does and
+  WHY, not a restatement of syntax. This applies to bash/python and
+  hooks.example.json. Agent `.md` files and the constitution are prose and are
+  exempt from line-comments, but must stay clear.
+- *Why it exists.* WHAT and WHY are the parts of a change a diff cannot recover
+  on its own; a comment that restates the syntax costs a line and returns
+  nothing. The next reader here is routinely an assistant with no memory of the
+  session that wrote the code, and it acts on what the comment says.
+- *What enforces it.* No detector — review, and the pre-push self-check. Two
+  required checks constrain the code a comment sits over but never the comment
+  itself: "shellcheck (all tracked *.sh)" and "code-shape (all tracked *.sh)".
+
+### The other standing obligations
 - Comment-only passes commit SEPARATELY from behaviour changes.
 - Keep commits focused — one concern each — and messages honest (the message
   must describe what the diff actually does).
@@ -99,9 +161,6 @@ Doctrine you must never violate when changing this code:
   durable public reference gets a GitHub issue number. (The existing
   `[R-09]`-style guard labels already baked into the demo are internal, stable
   test names — leave them; this rule governs NEW public references to findings.)
-- Public-surface privacy: never put work-context identifiers (employer,
-  internal workspace names, board keys, internal IDs) in repo files, issue
-  text, or commit messages. Generic language only. (Project rule "G6".)
 - The ticket-recognition pattern lives in ONE home
   (_harness/scripts/ticket-grammar.sh), sourced by both the validator and
   status. Never duplicate it — an edit there must move both tools.
@@ -186,4 +245,5 @@ the issue board is clear and the project is self-contained.
   deploy, notebook helper, and the ticket-grammar home).
 - _agents/ — the Copilot agent contracts.
 - _harness/scripts/run_demo.sh — the 6-stage acceptance demo; the truth-teller
-  for any change.
+  for the shipped product. WHICH changes must run it is stated once, under
+  "Working on this harness" above — it is not every change.

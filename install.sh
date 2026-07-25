@@ -529,8 +529,10 @@ print_summary() {
 # that is the only version true OF THE ESTATE: the installer creates only what is ABSENT, so a
 # repair run from a NEWER source leaves an older estate's stamp exactly where it found it. When the
 # two differ, say so plainly instead of printing the source's number over an estate that does not
-# carry it — that would be the summary claiming an upgrade the installer never performed. On a
-# fresh install the two are the same file, so the note stays silent.
+# carry it — that would be the summary claiming an upgrade the installer never performed. The note
+# stays silent in the two ordinary cases: on a fresh install the estate's stamp was just copied
+# from the source's, and in reconfigure-only mode TARGET and SOURCE are the same directory, so both
+# reads return the same number.
 print_summary_version() {
   est_version="$(read_version "$TARGET")"
   src_version="$(read_version "$SOURCE")"

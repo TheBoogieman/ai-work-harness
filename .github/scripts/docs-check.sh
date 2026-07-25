@@ -504,10 +504,10 @@ done < <(git ls-files 'decisions/[0-9][0-9][0-9]-*.md')
 #    harness cannot use. Those rules now live in full, under descriptive names, in the development
 #    instructions (CLAUDE.md, DEV, never shipped). Requiring the word here would have forced the
 #    shipped file to keep carrying development material to stay green.
-#    UNOWNED (#123): README's document-catalogue row for SPEC.md still calls it "glossary +
-#    decoder", which the deletion above makes false. README is not this change's to edit, so the
-#    row is left standing and reported rather than corrected across an ownership line. No detector
-#    reds on it — that catalogue is prose, not a pinned claim — so it needs a human to route it.
+#    The UNOWNED note that stood here — README's catalogue row still calling SPEC.md "glossary +
+#    decoder" — is DISCHARGED: 703bb9b (#154) rewrote that row to describe what the file is for its
+#    reader, so it no longer names a section that was deleted. The routing worked; the note is gone
+#    rather than kept as a memorial: a discharged warning read later is itself a false claim.
 if [ -f SPEC.md ]; then
   spec_body=$(cat SPEC.md)
   for term in 'estate' 'guard' 'red/yellow' 'one-home' 'dumb inspector'; do

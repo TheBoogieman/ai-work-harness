@@ -130,12 +130,19 @@ Permanently and beyond reach: commit subjects and bodies, and issue titles and
 bodies. Issue #86's title, for one, quotes an acceptance-suite guard label with a
 tag inside it.
 
-In the working tree, and excluding this note itself: 27 occurrences across 10
-tracked files — code comments, two workflow comments, two decision records, an
-agent contract, the installer, and the acceptance suite's guard labels. Removing
-those is #127. This note creates only the place a reader lands afterwards; it
-deliberately changes none of them, because two changes editing the same tokens in
-the same files would collide.
+In the working tree, and excluding this note itself: measured at commit
+`eea6bb2`, 14 occurrences across 9 tracked files — code comments in four scripts
+including the installer, two workflow comments, two decision records, and an
+agent contract. Removing those is #127. This note creates only the place a reader
+lands afterwards; it deliberately changes none of them, because two changes
+editing the same tokens in the same files would collide.
+
+That count is pinned to a commit because it moves. At `9f36e49`, where this note
+was written earlier the same day, it was 27 occurrences across 10 tracked files;
+the tenth file was the acceptance suite, and #125 renamed every guard label there
+to a behaviour name, taking the suite off the list entirely. A census in a dated
+note is a measurement of one commit and was never a live index — read the commit
+it names, not the date on the heading.
 
 An earlier census quoted in issues #122 and #124 counted thirty-seven. That was
 measured before #123 landed, which deleted the shorthand decoder from `SPEC.md`

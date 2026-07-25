@@ -425,7 +425,7 @@ svg_refs=$(grep -c '\.svg' "$README" || true)
 # --- [docs #69 ADR] — SPEC.md + the decisions/ ADR backfill are well-formed (#69) ----------------
 # The project's decisions must stay readable: each ADR carries the four canonical headings, every
 # real ADR cites at least one clickable evidence link, the shipped template stays empty, and SPEC.md
-# keeps its glossary + decoder. Pure greps, each miss naming its exact fix — the demo owns behaviour,
+# keeps its glossary. Pure greps, each miss naming its exact fix — the demo owns behaviour,
 # this owns doc-shape (cond 2/3). An evidence link is an issue ref (#NN) or a git commit sha (7+ hex).
 adr_ev_re='#[0-9]+|\b[0-9a-f]{7,40}\b'   # what counts as a clickable evidence link in an ADR
 while IFS= read -r adr; do
@@ -452,18 +452,28 @@ while IFS= read -r adr; do
       ;;
   esac
 done < <(git ls-files 'decisions/[0-9][0-9][0-9]-*.md')
-# 4. SPEC.md must name every glossary term and carry the decoder, so the tracker shorthand stays
-#    legible to a newcomer. Each needle is checked case-insensitively with its own prescriptive miss.
+# 4. SPEC.md must name every glossary term, so the product's own vocabulary stays legible to a
+#    newcomer. Each needle is checked case-insensitively with its own prescriptive miss.
+#    THE DECODER TERM WAS REMOVED FROM THIS LIST (#123), and the reason is worth keeping: SPEC.md is
+#    classified PRODUCT, so it installs onto a user's estate, while the shorthand the decoder
+#    explained was the DEVELOPMENT rule numbering — content a user who will never develop the
+#    harness cannot use. Those rules now live in full, under descriptive names, in the development
+#    instructions (CLAUDE.md, DEV, never shipped). Requiring the word here would have forced the
+#    shipped file to keep carrying development material to stay green.
+#    UNOWNED (#123): README's document-catalogue row for SPEC.md still calls it "glossary +
+#    decoder", which the deletion above makes false. README is not this change's to edit, so the
+#    row is left standing and reported rather than corrected across an ownership line. No detector
+#    reds on it — that catalogue is prose, not a pinned claim — so it needs a human to route it.
 if [ -f SPEC.md ]; then
   spec_body=$(cat SPEC.md)
-  for term in 'estate' 'guard' 'red/yellow' 'one-home' 'dumb inspector' 'decoder'; do
+  for term in 'estate' 'guard' 'red/yellow' 'one-home' 'dumb inspector'; do
     grep -Fiq -- "$term" <<<"$spec_body" \
-      || { echo "FAIL [docs #69 ADR]: SPEC.md does not name '$term' — its glossary+decoder must cover estate, guard, red/yellow, one-home, dumb inspector, and the decoder; add it."; fail=1; }
+      || { echo "FAIL [docs #69 ADR]: SPEC.md does not name '$term' — its glossary must cover estate, guard, red/yellow, one-home and dumb inspector; add it."; fail=1; }
   done
 else
-  echo "FAIL [docs #69 ADR]: SPEC.md is missing — the project spec (glossary + decoder) must exist at the repo root; restore it."; fail=1
+  echo "FAIL [docs #69 ADR]: SPEC.md is missing — the project spec (the guarantees + the glossary) must exist at the repo root; restore it."; fail=1
 fi
-[ "$fail" -ne 0 ] || echo "  ok [docs #69 ADR] — SPEC.md glossary+decoder present and every decisions/ ADR well-formed"
+[ "$fail" -ne 0 ] || echo "  ok [docs #69 ADR] — SPEC.md glossary present and every decisions/ ADR well-formed"
 
 # --- reader-agent (#82 / decisions/018) — the reader spine, asserted PER-NAME not blanket ---------
 # The estate's four readers narrate the record with NO validator behind them, so the fabrication

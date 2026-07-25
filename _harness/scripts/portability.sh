@@ -2,7 +2,7 @@
 # portability.sh — the ONE home for computations shared by more than one harness tool.
 # check_ticket_log.sh (recency: is the newest header at/after the watermark?) and harness-status.sh
 # (commit-vs-session liveness) BOTH turn a YYYYMMDDHHMMSS session-log header into an epoch, so they
-# must do it IDENTICALLY or their views disagree. It was duplicated once (M3) and that copy risked
+# must do it IDENTICALLY or their views disagree. It was duplicated once, and that copy risked
 # silent drift (R-21); sourcing this single definition in both tools makes drift impossible.
 # (Single-consumer shims stay local: file_mtime lives in the validator, epoch_from_date in status —
 # only computations with MORE THAN ONE consumer live here.)

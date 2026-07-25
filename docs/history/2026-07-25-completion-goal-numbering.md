@@ -44,7 +44,7 @@ never publicly recorded" below.
 
 | tag | what it named | issue | where it lives now |
 | --- | --- | --- | --- |
-| `G1` | one of a pair decoded together below: the cross-platform goal, or a deployment goal for a private estate. Which tag took which is the one thing still unrecorded. | #13 for the cross-platform goal, closed 2026-07-19; none for the other, by design | No live rule. The cross-platform commitment is the "Cross-platform" section of `CLAUDE.md`. |
+| `G1` | one of a pair decoded together below: the cross-platform goal, or a deployment goal for a private estate. Which tag took which is the one thing still unrecorded. | #13 for the cross-platform goal, closed 2026-07-19; none for the other, by design | No live rule from either. The cross-platform commitment is the "Cross-platform" section of `CLAUDE.md`; the private-estate goal left nothing in this repository and was never meant to. |
 | `G2` | the other of that same pair — see the `G1` row; the two are decodable only together | as above | as above |
 | `G3` | "Local record repo must not bloat over months of use" | #16, closed 2026-07-19 | No live rule. It closed as delivered machinery: `_harness/scripts/harness-housekeeping.sh`, plus the repository-size nudge in `_harness/scripts/harness-status.sh`. |
 | `G4` | "Every documented claim is true at HEAD or removed" | #17, closed 2026-07-19 | Live, as CLAIMS-TRUTH under "Hard rules for changing this codebase" in `CLAUDE.md`. |
@@ -52,7 +52,10 @@ never publicly recorded" below.
 | `G6` | "No work-context identifiers on any public surface" | #19, closed 2026-07-19 | Live, as PUBLIC-SURFACE PRIVACY in `CLAUDE.md`. |
 | `G7` | "All code commented in plain English" | #20, closed 2026-07-19 | Live, as PLAIN-ENGLISH COMMENTS in `CLAUDE.md`. |
 
-## How the five mappings were established
+## How the five in-repository mappings were established
+
+These five are the ones this repository's own record establishes; the sixth and
+seventh come from outside it and are dealt with in the next section.
 
 Three are stated outright in a commit subject, which is the strongest evidence
 available because a commit subject cannot be edited after the fact:

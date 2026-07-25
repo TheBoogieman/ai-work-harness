@@ -56,9 +56,21 @@ Doctrine you must never violate when changing this code:
   concern, and every claim you wrote (including in comments) is true at HEAD.
 
 ## Hard rules for changing this codebase
-- Every bug fix ships with a regression guard that provably FAILS on the
-  pre-fix code (prove it by reverting the fix and watching the guard go red).
-  No bug is "fixed" without one. (Project rule "G5".)
+- GUARD-PER-BUG: a guard is required for a behaviour change to shipped machinery
+  that no existing guard already catches — a regression guard that provably FAILS
+  on the pre-fix code (prove it by reverting the fix and watching the guard go
+  red). No such change is "fixed" without one. FOUR EXEMPTIONS, and no others:
+  (1) documentation and prose, (2) comment-only passes, (3) pure renames and
+  moves — the three CLASSES OF CHANGE that are not behaviour changes to shipped
+  machinery — and (4) a defect an existing guard already catches, which is not a
+  class of change but a coverage condition inside the machinery class. This list
+  is the ONE home for those classes — nothing else in the repo restates them; a
+  rule that needs them cites this list. Two of the four would self-certify
+  without a proof, so each owes one: "pure rename or move" is a claim, not a
+  fact — the proof is BYTE-IDENTICAL OUTPUT (a change that alters a printed
+  string can never produce it); "an existing guard already catches it" is never
+  asserted — that guard is SHOWN failing against the pre-fix code.
+  (Project rule "G5".)
 - Every claim in README and the constitution must be true at HEAD
   or removed. A code comment is a claim too — a comment that misdescribes the
   code is a defect. (Project rule "G4".)

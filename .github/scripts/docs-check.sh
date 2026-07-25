@@ -223,6 +223,63 @@ for oh_row in "${oh_registry[@]}"; do
 done
 [ "$fail" -ne "$oh_fail_before" ] || echo "  ok [docs one-home] — ${#oh_registry[@]} registered fact(s), each told in exactly ONE document. LIMIT: green means no REGISTERED phrase reached a second document — verbatim re-telling and reintroduced registered phrasings only, NEVER paraphrase; the registry grows as drift is found."
 
+# --- #122 NO IDENTIFIER THAT NEEDS A LOOKUP OUTSIDE THE FILE --------------------------------------
+# Same family, same census surface (oh_surface), same registry-as-data shape. What cannot be
+# automated is the rule's real test — that a sentence still makes sense with every reference
+# deleted. What CAN be automated is the token SHAPES, and shapes are what catch REINTRODUCTION,
+# which is the durable value: once a token family has been purged, this stops it coming back.
+#
+# THE SINGLE EXEMPTION is the history decoder — the one document that names the retired families so
+# that a reader doing archaeology on the commit history has a dictionary. It is exempt because the
+# git log CANNOT be purged: the tags are in commit messages and issue text forever, so something
+# tracked has to decode them, and this detector must not red on the dictionary itself. There is no
+# second exemption; a new legal home for a retired tag is a change to which file IS the decoder.
+id_decoder='CLAUDE.md'   # the public-text rule there is the retired-family dictionary
+#
+# NEVER BANNED, and the reasons matter more than the list:
+#   * the layer labels (the estate's L1..L5) — each is DEFINED IN THE PARAGRAPH THAT USES IT, so it
+#     needs no lookup anywhere; that is precisely the property this detector tests for.
+#   * the ticket-pattern variable (TICKET_RE) — already plain English: it reads as "the ticket
+#     regular expression" to anyone who meets it.
+#   * the estate configuration key (harness.estate) — also plain English, and renaming it would
+#     SILENTLY DE-ARM every installed estate, because the commit-bearing hooks refuse to commit
+#     unless that exact key is set. A cosmetic gain is not worth disarming a live safety net.
+# These three are asserted below rather than merely promised: if a future shape starts matching one
+# of them, the assertion reds and names it.
+id_never=('L1' 'L5' 'TICKET_RE' 'harness.estate')
+#
+# THE SHAPES — one row per retired token family: "LABEL<TAB>ERE<TAB>what a reader would have to look
+# up". Add a row as each family is purged; this is a registry, not a fixed list. Both shapes below
+# require a non-identifier character on each side and forbid a leading "$" or a trailing "=", which
+# is how they see a PROSE REFERENCE and not a shell variable. That is deliberate: the
+# ordinal-prefixed variable names inside the acceptance suite are OUT OF SCOPE here — the suite
+# split deletes them, so renaming them in this phase would be work thrown away.
+id_shapes=(
+  "wave-milestone-tag	(^|[^\$A-Za-z0-9_])[MW][0-9]{1,2}(\$|[^A-Za-z0-9_=])	a wave or milestone tag"
+  "ordinal-wave-tag	(^|[^A-Za-z0-9_.-])0[0-9]{2}[a-z](\$|[^A-Za-z0-9_-])	a zero-padded ordinal wave tag"
+)
+id_fail_before=$fail
+for id_row in "${id_shapes[@]}"; do
+  id_label=${id_row%%	*}; id_tail=${id_row#*	}
+  id_re=${id_tail%%	*}; id_why=${id_tail#*	}
+  # The never-banned assertion, run against each string in the context it appears in (delimited by
+  # spaces), so a shape that grew too greedy is caught here rather than by a red on a correct file.
+  for id_n in "${id_never[@]}"; do
+    printf ' %s ' "$id_n" | grep -qE -- "$id_re" \
+      && { echo "FAIL [docs no-lookup:$id_label]: this shape now matches '$id_n', which is ruled EXEMPT — a layer label is defined where it is used, and the ticket pattern and the estate config key are plain English (and renaming the config key de-arms every installed estate). Narrow the shape."; fail=1; }
+  done
+  while IFS= read -r id_f; do
+    [ "$id_f" = "$id_decoder" ] && continue          # THE single exemption — the history decoder
+    [ -f "$id_f" ] || continue
+    id_hits=$(grep -nE -- "$id_re" "$id_f" | head -3)
+    [ -z "$id_hits" ] && continue
+    echo "FAIL [docs no-lookup:$id_label]: $id_f cites $id_why — a reader cannot decode it without leaving the file, and this family is retired. Cite the GitHub issue number instead, or delete the reference; the ONLY tracked place these are legal is the history decoder ($id_decoder)."
+    printf '%s\n' "$id_hits" | sed 's/^/    /'
+    fail=1
+  done < <(oh_surface)
+done
+[ "$fail" -ne "$id_fail_before" ] || echo "  ok [docs no-lookup] — ${#id_shapes[@]} retired token shape(s), zero occurrences outside the history decoder ($id_decoder). LIMIT: this catches SHAPES, so it stops a retired family coming back; it cannot judge whether a live identifier is decodable."
+
 # --- B2 FROZEN SWEEP SET — the cond-1 zero-gap matrix, pinned as ONE named grep per surface -----
 # Each swept user-facing surface = one assertion with its own prescriptive miss, so coverage of a
 # surface cannot silently regress (cond 3 "cannot regress"). Extend this list when a NEW surface is

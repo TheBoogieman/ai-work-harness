@@ -30,10 +30,21 @@ Doctrine you must never violate when changing this code:
   restatement of syntax (project rule "G7"). This applies to bash/python and
   hooks.example.json. Agent .md files and the constitution are prose and are
   exempt from line-comments but must stay clear.
-- Run the demo: `bash _harness/scripts/run_demo.sh`. It must end with
-  "ALL 6 DEMO STAGES PASSED" — it is the truth-teller for any change. (Stage 5
+- Run the demo — `bash _harness/scripts/run_demo.sh` — for every BEHAVIOUR CHANGE
+  TO SHIPPED MACHINERY. It must end with "ALL 6 DEMO STAGES PASSED"; it is the
+  truth-teller for such a change and nothing here weakens that. (Stage 5
   deliberately breaks and restores a deployment — an internal FAIL followed by
-  "healthy after fix" is that stage working, not a failure.)
+  "healthy after fix" is that stage working, not a failure.) Which changes fall
+  OUTSIDE that class is written in exactly one place: the exempt classes of the
+  guard-per-bug rule under "Hard rules" below. Its first three exemptions are
+  classes of change, they are precisely the changes that are not behaviour
+  changes to shipped machinery, and they do not require the full run — a rename
+  or move still owes that rule's byte-identical-output proof, which is how you
+  know it was one. Its fourth exemption is a coverage condition, not a class of
+  change: an existing guard already catching a defect excuses writing a NEW
+  guard, never the demo — the demo is where that guard is SHOWN failing. That
+  list is not repeated here, and this loop is not repeated in README; README
+  points at this file.
 - Branch workflow — never commit to `main` directly (a direct push is rejected). Per
   change: branch from the issue (`NN-slug`), commit (behaviour and docs in SEPARATE
   commits), run the demo, then push the BRANCH (branch pushes are safe; `main` is

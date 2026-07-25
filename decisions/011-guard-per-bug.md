@@ -15,6 +15,10 @@ is "fixed" without one (project rule `G5`). The guards are the `R-NN` checks in
 the demo and scripts; the demo (`run_demo.sh`) is the truth-teller that runs them
 end-to-end on every push and PR.
 
+AMENDED (`#117`): every telling of the rule in this record is the unqualified one
+as taken; the rule live at HEAD is bounded and its exempt classes have one home,
+`CLAUDE.md`. Not restated here.
+
 ## Consequences
 
 Regressions are caught the moment they reappear, and a fix that does not actually

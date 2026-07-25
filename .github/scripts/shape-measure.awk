@@ -24,11 +24,13 @@
 #
 # 1. LINE LENGTH — CHARACTERS, not bytes. This repository's prose is full of em dashes, which cost
 #    three bytes each, so a byte rule would measure something no author can see in their editor.
-#    nchars() subtracts UTF-8 continuation bytes from the byte length, which yields the same answer
-#    under a UTF-8 locale and under LC_ALL=C, and under gawk (dev seat) and mawk (Ubuntu runner) —
-#    awk's own length() does NOT, and that divergence would make CI and the dev seat disagree about
-#    a passing file. A BEGIN probe proves the counter on a known string and emits a fatal row if it
-#    is wrong, so a miscounting awk reds loudly instead of quietly reporting smaller numbers.
+#    awk's own length() cannot be used for it: gawk counts characters in a UTF-8 locale but BYTES
+#    under the LC_ALL=C that shape-check.sh sets for determinism, and mawk counts bytes in either.
+#    So length() alone makes the verdict depend on the locale and the implementation that happened
+#    to run. nchars() subtracts UTF-8 continuation bytes from the byte length instead, which
+#    returns the character count under every combination of the two. A BEGIN probe proves the
+#    counter on a known string and emits a fatal row if it is wrong, so a miscounting awk reds
+#    loudly instead of quietly reporting smaller numbers.
 #
 # 2. LINES OF CODE OUTSIDE ANY FUNCTION — non-blank, non-comment-only lines, minus every line from
 #    a column-zero definition through its matched close (so a single-line definition contributes

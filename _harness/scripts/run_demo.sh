@@ -704,7 +704,7 @@ rm -rf "$G10"
 echo "  ok [#10 guard: real clone WIP not absorbed] — dirty tracked WIP stays uncommitted under DID_INIT=0"
 
 # [R-21 guard: ts14->epoch has one home] — epoch_from_ts14 must live ONCE (portability.sh), sourced by
-# both the validator and status so they can't drift (they were duplicated in M3). Assert: neither
+# both the validator and status so they can't drift (they were duplicated once). Assert: neither
 # script defines its own copy; both source portability.sh; and the one shared function converts a
 # known header correctly. Re-introducing a local copy in either script reddens this.
 grep -qE '^[[:space:]]*epoch_from_ts14\(\)' _harness/scripts/check_ticket_log.sh \

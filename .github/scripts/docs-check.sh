@@ -112,6 +112,174 @@ for dn_f in "$README" folder-structure.md "$DESIGN"; do
 done
 [ "$fail" -ne "$dn_fail_before" ] || echo "  ok [docs de-number] — no numeric agent-count claim outside the DESIGN.md currency notes (README, constitution, DESIGN.md)"
 
+# ================================================================================================
+# ONE-HOME FAMILY (#121, #122) — an EXTENSION of the de-number detector above, not a second
+# detector stood beside it. Shared conventions, and every later member joins them: each registry is
+# DATA inside this script (a bash array of TAB-delimited rows, so it cannot drift from the check
+# that reads it), the census surface is ONE function (oh_surface) with ONE drawing exclusion, and
+# every miss names its locations and its exact fix.
+
+# oh_surface — the files every detector in this family reads. DRAWINGS ARE EXCLUDED BY
+# CONSTRUCTION, not by an exemption list that every future sheet must be added to: a drawing is a
+# picture of a fact, so a rendered label inside an .svg is not a telling of it. The sheets are
+# operator-owned and no wave may edit one, so counting their labels would make every new sheet a
+# gate liability. Binary blobs carry no prose and are dropped with them.
+oh_surface() { git ls-files | grep -vEi '\.(svg|png|jpe?g|gif|zip)$'; }
+
+# --- #121 ONE TELLING PER REGISTERED PHRASE ------------------------------------------------------
+# The assertion is NARROW and the narrowness is the deliverable: no REGISTERED PHRASE appears in
+# more than one document. It is NOT "each fact is told once" — phrase matching cannot decide that.
+# Each fact may register several phrasings so that known restatements are caught and not only exact
+# copies; it catches verbatim re-telling and the reintroduction of a registered phrasing, and it
+# NEVER catches paraphrase. That limit is printed in this detector's own ok-line, because a green
+# build read as "this fact has one home" would make the instrument built to enforce claims-truth
+# ship a false claim about itself.
+#
+# THE THREE EXCLUSIONS ARE NOT THREE OF A KIND. A later reader who collapses them into one rule
+# about "things that look like duplicates" will delete the third and break the repository:
+#   (1) paths, filenames and manifest rows — a FALSE POSITIVE. The row merely LOOKS like a telling;
+#       the manifest naming a file correctly must never red. Dropped at scan time (oh_pathre /
+#       oh_extre blank every path-ish and filename-ish token before the phrase count).
+#   (2) rendered labels inside drawings    — a FALSE POSITIVE. A drawing is a picture of a fact, not
+#       a rival home. Dropped at scan time, by construction (oh_surface).
+#   (3) strings that are also IDENTIFIERS  — NOT a false positive, and it drops nothing at scan
+#       time. It refuses the REGISTRATION, because for these strings repetition is REQUIRED: a
+#       continuous-integration check name appears in the document explaining it, in the workflow
+#       declaring it and in the script reporting it, and all three must match character for
+#       character because that name is the contract with branch protection. Register one and this
+#       detector reds on a CORRECT repository — and the obvious way to make it green again is to
+#       break the checks. So an alias that also appears in a workflow file is rejected as a
+#       registration error, loudly and by name, before any counting happens.
+#
+# THE REGISTRY — one row per registered FACT: "DISPLAY-NAME<TAB>HOME<TAB>alias|alias|...". The
+# display name is for the human reading a failure; it is never a key, because naming a fact the way
+# a human names it is the worst possible key for it. Matching is lowercase and whitespace-flattened,
+# so aliases are written lowercase. WORDS INSIDE AN ALIAS ARE JOINED WITH "~", NOT A SPACE: this
+# file is itself on the census surface, so a contiguous alias here would make the registry a second
+# telling of every fact it registers (the same self-match the C7d needle is split to avoid). The
+# loader restores the spaces and reds on a literal space, so the rule cannot be forgotten. This
+# registry is expected to GROW as drift is found — add a row, never a second census.
+oh_registry=(
+  "guard-per-bug exempt classes	CLAUDE.md	documentation~and~prose|comment-only~passes|pure~renames~and~moves"
+)
+# oh_ptr_max — "pointer" has to be MECHANICAL or the detector is unarguable. A paragraph at or under
+# this many characters that NAMES the fact's home file is a pointer and is skipped; anything longer,
+# or anything that does not name the home, is a telling and is counted.
+oh_ptr_max=200
+# EXCLUSION 1's two shapes: any token carrying a slash, and any token ending in a known file
+# extension. Passed to awk as strings, and written with BRACKET EXPRESSIONS rather than backslash
+# escapes on purpose: awk's -v processes escape sequences before the regex is compiled, so a
+# backslash here is consumed once and then re-read, which silently turned an earlier draft of the
+# path shape into a pattern that swallowed whole paragraphs. No backslash, no second reading.
+oh_pathre='[^ ]*[/][^ ]*'
+oh_extre='[^ ]*[.](md|sh|py|txt|json|ya?ml|svg|ipynb)([^a-z0-9]|$)'
+oh_fail_before=$fail
+oh_workflows=$(cat .github/workflows/*.yml 2>/dev/null || true)
+oh_files=()
+while IFS= read -r oh_f; do [ -f "$oh_f" ] && oh_files+=("$oh_f"); done < <(oh_surface)
+for oh_row in "${oh_registry[@]}"; do
+  oh_name=${oh_row%%	*}; oh_tail=${oh_row#*	}
+  oh_home=${oh_tail%%	*}; oh_alias_field=${oh_tail#*	}
+  oh_home_lc=$(printf '%s' "$oh_home" | tr 'A-Z' 'a-z')
+  case "$oh_alias_field" in
+    *\ *) echo "FAIL [docs one-home:$oh_name]: an alias in this row contains a literal space — join an alias's words with '~' so this script's own source never carries the contiguous phrase it hunts for, or the registry becomes a second telling of the fact."; fail=1 ;;
+  esac
+  oh_alias_field=${oh_alias_field//\~/ }
+  # EXCLUSION 3, enforced at REGISTRATION time (see the note above) — never at scan time. A rejected
+  # row is not then counted: the registration is the defect, and one cause gets one message.
+  oh_al=$oh_alias_field; oh_rejected=0
+  while [ -n "$oh_al" ]; do
+    oh_a=${oh_al%%|*}; [ "$oh_al" = "$oh_a" ] && oh_al="" || oh_al=${oh_al#*|}
+    grep -Fqi -- "$oh_a" <<<"$oh_workflows" \
+      && { echo "FAIL [docs one-home:$oh_name]: the registered phrase \"$oh_a\" also appears in .github/workflows/ — that makes it an IDENTIFIER, and an identifier's repetition is the contract, not a duplication. Delete the alias from the registry; never register a string that a machine matches."; fail=1; oh_rejected=1; }
+  done
+  [ "$oh_rejected" -eq 0 ] || continue
+  # THE CENSUS, in one awk pass over the whole surface. RS="" reads a PARAGRAPH at a time and the
+  # gsub squeezes its newlines to single spaces, which is what makes the match
+  # WHITESPACE-INSENSITIVE — and that is not a nicety: prose wraps, so a registered phrase can sit
+  # across a line break, and a line-oriented census then returns ZERO for it, which is the wrong
+  # answer rather than a near miss. tolower() matters for the same reason: a doctrine written as a
+  # capitalised banner is the same telling as the same words in a sentence. One file counts once.
+  oh_homes=$(awk -v aliases="$oh_alias_field" -v home="$oh_home_lc" -v ptrmax="$oh_ptr_max" \
+                 -v pathre="$oh_pathre" -v extre="$oh_extre" '
+    BEGIN { RS=""; n = split(aliases, A, "|") }
+    {
+      if (FILENAME in hit) next
+      p = tolower($0); gsub(/[[:space:]]+/, " ", p); sub(/^ /, "", p)
+      if (index(p, home) > 0 && length(p) <= ptrmax) next          # a short paragraph naming the home is a POINTER
+      b = p; gsub(pathre, " ", b); gsub(extre, " ", b)             # EXCLUSION 1
+      for (i = 1; i <= n; i++) if (index(b, A[i]) > 0) { hit[FILENAME] = A[i]; break }
+    }
+    END { for (f in hit) print f " (matched: \"" hit[f] "\")" }
+  ' "${oh_files[@]}" | sort)
+  oh_count=$(printf '%s' "$oh_homes" | grep -c . || true)
+  if [ "$oh_count" -gt 1 ]; then
+    echo "FAIL [docs one-home:$oh_name]: this registered fact is told in $oh_count documents — a registered fact has exactly ONE home ($oh_home). Delete the other telling(s) and leave a pointer to the home, or drop the alias if the second occurrence is not a telling. Locations:"
+    printf '%s\n' "$oh_homes" | sed 's/^/    /'
+    fail=1
+  elif [ "$oh_count" -eq 0 ]; then
+    echo "FAIL [docs one-home:$oh_name]: no registered phrase for this fact matches anything tracked — the registry has rotted (the telling was reworded, so the row now guards nothing). Re-key the row to the wording that is live at HEAD, or delete the row."; fail=1
+  fi
+done
+[ "$fail" -ne "$oh_fail_before" ] || echo "  ok [docs one-home] — ${#oh_registry[@]} registered fact(s), each told in exactly ONE document. LIMIT: green means no REGISTERED phrase reached a second document — verbatim re-telling and reintroduced registered phrasings only, NEVER paraphrase; the registry grows as drift is found."
+
+# --- #122 NO IDENTIFIER THAT NEEDS A LOOKUP OUTSIDE THE FILE --------------------------------------
+# Same family, same census surface (oh_surface), same registry-as-data shape. What cannot be
+# automated is the rule's real test — that a sentence still makes sense with every reference
+# deleted. What CAN be automated is the token SHAPES, and shapes are what catch REINTRODUCTION,
+# which is the durable value: once a token family has been purged, this stops it coming back.
+#
+# THE SINGLE EXEMPTION is the history decoder — the one document that names the retired families so
+# that a reader doing archaeology on the commit history has a dictionary. It is exempt because the
+# git log CANNOT be purged: the tags are in commit messages and issue text forever, so something
+# tracked has to decode them, and this detector must not red on the dictionary itself. There is no
+# second exemption; a new legal home for a retired tag is a change to which file IS the decoder.
+id_decoder='CLAUDE.md'   # the public-text rule there is the retired-family dictionary
+#
+# NEVER BANNED, and the reasons matter more than the list:
+#   * the layer labels (the estate's L1..L5) — each is DEFINED IN THE PARAGRAPH THAT USES IT, so it
+#     needs no lookup anywhere; that is precisely the property this detector tests for.
+#   * the ticket-pattern variable (TICKET_RE) — already plain English: it reads as "the ticket
+#     regular expression" to anyone who meets it.
+#   * the estate configuration key (harness.estate) — also plain English, and renaming it would
+#     SILENTLY DE-ARM every installed estate, because the commit-bearing hooks refuse to commit
+#     unless that exact key is set. A cosmetic gain is not worth disarming a live safety net.
+# These three are asserted below rather than merely promised: if a future shape starts matching one
+# of them, the assertion reds and names it.
+id_never=('L1' 'L5' 'TICKET_RE' 'harness.estate')
+#
+# THE SHAPES — one row per retired token family: "LABEL<TAB>ERE<TAB>what a reader would have to look
+# up". Add a row as each family is purged; this is a registry, not a fixed list. Both shapes below
+# require a non-identifier character on each side and forbid a leading "$" or a trailing "=", which
+# is how they see a PROSE REFERENCE and not a shell variable. That is deliberate: the
+# ordinal-prefixed variable names inside the acceptance suite are OUT OF SCOPE here — the suite
+# split deletes them, so renaming them in this phase would be work thrown away.
+id_shapes=(
+  "wave-milestone-tag	(^|[^\$A-Za-z0-9_])[MW][0-9]{1,2}(\$|[^A-Za-z0-9_=])	a wave or milestone tag"
+  "ordinal-wave-tag	(^|[^A-Za-z0-9_.-])0[0-9]{2}[a-z](\$|[^A-Za-z0-9_-])	a zero-padded ordinal wave tag"
+)
+id_fail_before=$fail
+for id_row in "${id_shapes[@]}"; do
+  id_label=${id_row%%	*}; id_tail=${id_row#*	}
+  id_re=${id_tail%%	*}; id_why=${id_tail#*	}
+  # The never-banned assertion, run against each string in the context it appears in (delimited by
+  # spaces), so a shape that grew too greedy is caught here rather than by a red on a correct file.
+  for id_n in "${id_never[@]}"; do
+    printf ' %s ' "$id_n" | grep -qE -- "$id_re" \
+      && { echo "FAIL [docs no-lookup:$id_label]: this shape now matches '$id_n', which is ruled EXEMPT — a layer label is defined where it is used, and the ticket pattern and the estate config key are plain English (and renaming the config key de-arms every installed estate). Narrow the shape."; fail=1; }
+  done
+  while IFS= read -r id_f; do
+    [ "$id_f" = "$id_decoder" ] && continue          # THE single exemption — the history decoder
+    [ -f "$id_f" ] || continue
+    id_hits=$(grep -nE -- "$id_re" "$id_f" | head -3)
+    [ -z "$id_hits" ] && continue
+    echo "FAIL [docs no-lookup:$id_label]: $id_f cites $id_why — a reader cannot decode it without leaving the file, and this family is retired. Cite the GitHub issue number instead, or delete the reference; the ONLY tracked place these are legal is the history decoder ($id_decoder)."
+    printf '%s\n' "$id_hits" | sed 's/^/    /'
+    fail=1
+  done < <(oh_surface)
+done
+[ "$fail" -ne "$id_fail_before" ] || echo "  ok [docs no-lookup] — ${#id_shapes[@]} retired token shape(s), zero occurrences outside the history decoder ($id_decoder). LIMIT: this catches SHAPES, so it stops a retired family coming back; it cannot judge whether a live identifier is decodable."
+
 # --- B2 FROZEN SWEEP SET — the cond-1 zero-gap matrix, pinned as ONE named grep per surface -----
 # Each swept user-facing surface = one assertion with its own prescriptive miss, so coverage of a
 # surface cannot silently regress (cond 3 "cannot regress"). Extend this list when a NEW surface is

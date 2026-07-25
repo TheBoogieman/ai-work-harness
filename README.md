@@ -418,7 +418,7 @@ home; everything else points at it.
 | `README.md` | user | The front door: setup, usage, the folder map, and this catalogue. | entry point (rendered by GitHub) |
 | `folder-structure.md` | estate | **The constitution — the rules.** Every harness convention; Part I always-load, Part II on demand. | `AGENTS.md`, `setup.md`, this README |
 | `AGENTS.md` | machine | The seven-rule door-note the assistant loads on every surface → points to the constitution. | the AI assistant; this README |
-| `SPEC.md` | developer | The project spec: glossary + decoder for the tracker shorthand. | `docs-check` (#69 glossary check) |
+| `SPEC.md` | user | The project spec: what the harness guarantees today, and the vocabulary those guarantees are written in. | `docs-check` (#69 glossary check) |
 | `setup.md` | estate | The AI-assistant final-gate prompt: confirms validator + status green, walks the post-install personalisation. | this README (Setup), `install.sh` |
 | `install.sh` | estate | The non-destructive dumb creator that lays down / reconfigures an estate. | this README (Setup), `setup.md` |
 | `LICENSE` | user | MIT licence terms. | this README, `setup.md` |

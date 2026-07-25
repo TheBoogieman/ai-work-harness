@@ -101,7 +101,11 @@ self-explanatory to a newcomer:
   specific behavioural check be referred to across files without repeating its
   logic. A **`GN`** tag (e.g. `G4`, `G5`, `G6`, `G7`) is a project rule
   governing how the harness itself is developed: `G4` claims-truth (nothing false
-  at HEAD ships), `G5` guard-per-bug (every fix ships a guard that provably fails
-  on the pre-fix code), `G6` public-surface privacy, `G7` plain-English comments.
+  at HEAD ships), `G5` guard-per-bug (a behaviour change to shipped machinery
+  ships a guard that provably fails on the pre-fix code — not every change, since
+  the rule carries a closed set of exempt classes), `G6` public-surface privacy,
+  `G7` plain-English comments. The exempt classes are NOT listed here: they have
+  one editable home, `CLAUDE.md` in the source checkout you develop the harness
+  in, and an installed estate does not carry that file.
   So a guard tag names *which* check or rule is in play; a goal number names
   *why* a change exists.

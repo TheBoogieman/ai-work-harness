@@ -425,7 +425,7 @@ home; everything else points at it.
 | `CLAUDE.md` | developer | Dev instructions the AI reads when working **on** the harness (DEV — never ships to an estate). | this README (Developing), `docs-check` (grammar-drift) |
 | `DEVELOPMENT.md` | developer | The dev-loop method doc: the four roles + five working laws (DEV). | `dev-loop/`, `docs-check` (#68) |
 | `dev-loop/` (`SETUP.md` + three `*.template.md`) | developer | Starter kit to stand up the multi-seat dev loop; the templates ship **empty**. | `DEVELOPMENT.md`, `docs-check` (#68) |
-| `decisions/` (`000` template + `001`–`018`) | developer | Architecture Decision Records — *the why* of each design choice. | `docs-check` (#69 ADR); later ADRs cross-cite |
+| `decisions/` (`000` template + the numbered records) | developer | Architecture Decision Records — *the why* of each design choice. | `docs-check` (#69 ADR); later ADRs cross-cite |
 | `General AI-Knowledge/AI Harness/DESIGN.md` | developer / user | Design notes + the dated diagram-currency ledger (the honest-lag record). | the folder map, `docs-check` (B4) |
 | `General AI-Knowledge/AI Harness/` (Architecture + Session-flow sheets) | user | The two operator-maintained blueprint drawings — what the machine is, and how a day moves through it. | the folder map, `DESIGN.md` |
 | `General AI-Knowledge/Skills/` (`_index.md`, `SKILL-TEMPLATE.md`, `SQL-Writing/SKILL.md`) | user / machine | Worker-tier craft modules, discovered index-first. | `AGENTS.md` (rule 7), constitution (Skills Convention) |

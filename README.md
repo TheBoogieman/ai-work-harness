@@ -24,7 +24,8 @@ so running it in place is correct:
   cd ~/ai-work-harness && bash _harness/scripts/run_demo.sh
   ```
 - **Windows** — the integrated **Git-Bash/Cygwin** terminal (plain PowerShell can
-  push git but cannot run the bash machinery):
+  push git but cannot run the bash machinery). This run, by hand on real Windows
+  hardware, *is* how the Windows lane is verified — see **Assumptions**:
   ```bash
   git clone https://github.com/TheBoogieman/ai-work-harness.git ~/ai-work-harness
   cd ~/ai-work-harness && bash _harness/scripts/run_demo.sh
@@ -156,6 +157,16 @@ Anything marked *swappable* degrades gracefully if you differ.
   viable); plain PowerShell can push the repo with git but cannot run the
   scripts. WSL is for an *ephemeral* Linux check only (clone inside `~`, never a
   `/mnt/c` mount) — never a standing home.
+  **How the Windows lane is verified (the one home for this fact):** by the
+  maintainer, by hand — `run_demo.sh` ending in *ALL 6 DEMO STAGES PASSED* in
+  Git-Bash/Cygwin on real Windows hardware, which is the seat this harness is
+  developed on. **No automated check gates Windows.** The lanes that gate a
+  change are the Linux + macOS ones named in **Setup**; a `windows-latest`
+  runner does re-run the demo under MSYS bash, but only after a merge and on
+  manual request — never on a pull request — and it is declared informational,
+  so it can neither block a change nor vouch for one. On your own Windows box
+  the demo you run (**Setup**, step 1) is the proof; there is no green badge
+  standing in for it.
 
 ---
 
@@ -368,7 +379,9 @@ dependencies, the Linux/macOS standing lanes, and WSL as an ephemeral check only
 for Windows** (or Cygwin) and **VS Code** with your agent extension, and do all
 shell work in the integrated Git-Bash/Cygwin terminal — plain PowerShell runs
 `git` but not the bash machinery. Verify the host once, end to end, with
-`bash _harness/scripts/run_demo.sh` (it must end with *ALL 6 DEMO STAGES PASSED*).
+`bash _harness/scripts/run_demo.sh` (it must end with *ALL 6 DEMO STAGES PASSED*)
+— that hand-run is the whole of the Windows lane's verification, because no merge
+gate covers Windows (**Assumptions**, above, is the one home for that fact).
 **The development loop is stated once, in `CLAUDE.md`, and this section does not
 restate it** — which changes must run the demo, which classes of change are exempt,
 and the regression guard a fix owes all live there, in one home, so the two

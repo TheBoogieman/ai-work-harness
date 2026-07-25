@@ -11,7 +11,7 @@ on:
   # read-only token and no repo secrets — safe for fork PRs. `edited` is included
   # so that editing the PR body (e.g. removing the Fixes #NN) re-fires the checks.
   pull_request:
-    branches: [main]
+    branches: [main, 115-proof-base]
     types: [opened, edited, synchronize, reopened]
 
 # Per-branch concurrency, mirroring demo.yml: a newer PR-update supersedes the

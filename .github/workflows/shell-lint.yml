@@ -23,7 +23,7 @@ on:
   # from the PR's own HEAD with a read-only token and no secrets, which is safe even for fork PRs
   # because linting is a pure read-only parse.
   pull_request:
-    branches: [main]
+    branches: [main, 115-proof-base]
   workflow_dispatch:
 
 # Per-branch concurrency, matching demo.yml/docs.yml: a newer push to the same PR supersedes the

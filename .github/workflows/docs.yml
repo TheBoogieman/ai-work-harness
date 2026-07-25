@@ -14,7 +14,7 @@ on:
   # `edited` is included so that editing the PR body (e.g. adding the
   # [diagrams-unaffected: reason] token the DESIGN.md trigger looks for) re-fires this check.
   pull_request:
-    branches: [main]
+    branches: [main, 115-proof-base]
     types: [opened, edited, synchronize, reopened]
 
 concurrency:

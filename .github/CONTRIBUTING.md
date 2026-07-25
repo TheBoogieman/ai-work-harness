@@ -54,8 +54,37 @@ demo:
   this repo. A dangling number or an already-closed one reds with its own
   message.
 
-The acceptance demo also runs on **ubuntu-latest** and **macos-latest** (see
-`.github/workflows/demo.yml`); it is the truth-teller for any behaviour change.
+## What the acceptance demo covers (and when it is skipped)
+
+`CLAUDE.md` and `README.md` point at this section rather than restating it —
+one telling to keep true, so the three documents cannot drift apart.
+
+The demo's two lanes — **`demo (ubuntu-latest)`** and **`demo (macos-latest)`** —
+are required checks. They **report on every PR into `main`**, and both must be
+green before it can merge. Reporting is not the same as running: the job always
+reports, so a required check is never left pending, but its expensive steps are
+conditional and a documentation-only PR goes green in seconds *without running
+the demo*.
+
+A PR skips the demo only when **both** of these hold (the decision is made by
+the step "Decide whether this change can affect the demo" in
+`.github/workflows/demo.yml` — read it there, it is the authority):
+
+- every file in the PR is a content **edit** — one addition, deletion or rename
+  anywhere, of any file, and the demo runs; **and**
+- every one of those edited paths is a `*.md` **at the repository root**,
+  something under `decisions/`, or something under
+  `General AI-Knowledge/AI Harness/`.
+
+Everything else runs the demo in full — including markdown deliberately left off
+that list (`_agents/*.agent.md`, `General AI-Knowledge/Skills/**`, `Tickets/**`),
+a push to `main`, a manual dispatch, and any run that cannot work out what
+changed.
+
+When the body is skipped the job prints a notice saying so, and the demo runs in
+full on the push to `main` after the merge. The demo is still the truth-teller
+for any behaviour change — so read the job log, not the check mark, and say which
+of the two happened.
 
 ## Outside contributors (forks)
 

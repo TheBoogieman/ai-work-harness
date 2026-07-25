@@ -15,16 +15,17 @@ is "fixed" without one (project rule `G5`). The guards are the `R-NN` checks in
 the demo and scripts; the demo (`run_demo.sh`) is the truth-teller that runs them
 end-to-end on every push and PR.
 
-**AMENDED — READ THE PARAGRAPH ABOVE AS THE DECISION TAKEN, NOT AS THE RULE TO
-OBEY.** As decided here the rule was absolute, and absolute is not what is live
-at HEAD: its scope was narrowed to a behaviour change to shipped machinery, and a
-closed set of exempt classes was written down (`#117`). The unqualified sentence
-above is therefore false as a statement of the current rule — including about the
-correction you are reading, which one of the exemptions covers and which
-consequently ships no guard. Those classes are not repeated here and no reader
-should look for them here: they have exactly one editable home, `CLAUDE.md` under
-"Hard rules for changing this codebase", and a second telling of them in this
-record is the drift a one-home fact exists to prevent (`#167`).
+**AMENDED — READ THIS RECORD AS THE DECISION TAKEN, NOT AS THE RULE TO OBEY.**
+That covers every "every fix" in it: the paragraph above and the cost sentence
+under Consequences alike. As decided here the rule was absolute, and absolute is
+not what is live at HEAD: its scope was narrowed to a behaviour change to shipped
+machinery, and a closed set of exempt classes was written down (`#117`). Those
+unqualified sentences are therefore false as statements of the current rule —
+including about the correction you are reading, which one of the exemptions
+covers and which consequently ships no guard. The classes are not repeated here
+and no reader should look for them here: they have one editable home, `CLAUDE.md`
+under "Hard rules for changing this codebase", and a second telling of them in
+this record is the drift a one-home fact exists to prevent (`#167`).
 
 ## Consequences
 

@@ -313,6 +313,89 @@ else
   done
 fi
 
+# --- #168 CI NAME CONTRACT — the demo workflow still DECLARES the shape two required checks are
+# built from. Two of this repository's required check names are written nowhere as literal strings:
+# ONE job declares a name TEMPLATE over a two-value operating-system matrix, and the forge renders
+# one check name per matrix value. Copy the template wrongly, or drop an operating system from the
+# matrix, and those two checks stop reporting — which leaves every pull request PENDING FOREVER
+# instead of failing visibly, the one failure mode a merge gate cannot survive because there is
+# nothing red to read.
+#
+# WHY HERE AND NOT IN THE ACCEPTANCE DEMO: the demo is the truth-teller for the SHIPPED product;
+# .github/workflows/** is development configuration that never reaches an installed estate (#43).
+# Asserting a development fact from inside the product's own prover is precisely the classification
+# confusion this gate exists to hold apart — and it is the obvious implementation, which is why the
+# reason is written down here rather than left to be rediscovered.
+#
+# IT ASSERTS THE DECLARED SHAPE, NEVER A RENDERED NAME. The two reported names are a PRODUCT of the
+# template and the matrix, so pinning a rendered string would assert a derived value — and would go
+# green on a repository whose matrix had silently lost an operating system, because the surviving
+# name still renders. The two declared parts are therefore read out of the job block and compared
+# SEPARATELY, so a red names which half moved. The matrix is compared as a SORTED SET, so rewriting
+# the flow list as a block list is not a false red while narrowing it is a true one.
+#
+# THE LIMIT, WHICH A GREEN HERE IS EASY TO OVER-READ: branch protection is the authority for WHICH
+# check names are required, and that setting is NOT readable from the repository. This can only
+# assert that the workflow still declares what it declared; it cannot see whether the names this
+# shape renders are the names branch protection is waiting for. Nor does it assert that the job
+# always REPORTS — a `paths:` filter or a job-level `if:` would break the same contract by a route
+# this detector does not watch. Both are named in the ok-line rather than left implied.
+#
+# FOR A LATER READER OF THE #121 ONE-HOME DETECTOR: the strings below are DELIBERATELY a second
+# copy of strings living in the workflow file. That is exclusion 3 in action — a check name is an
+# IDENTIFIER, and an identifier's repetition IS the contract, not a duplicated telling.
+ci_fail_before=$fail
+ci_wf=.github/workflows/demo.yml
+ci_job=demo                                # the job KEY as declared under `jobs:` in that file
+ci_name_expect='demo (${{ matrix.os }})'   # the name TEMPLATE, verbatim (single-quoted so bash never reads it)
+ci_os_expect='macos-latest ubuntu-latest'  # the matrix's operating systems, as a SORTED set
+# The job's own block: from its key line at the jobs-child indent, down to the next key at that
+# same indent. Reading the block (rather than the whole file) is what keeps the two extractions
+# below pointed at THIS job when a second job is added to the workflow later.
+ci_block=$(awk -v job="$ci_job" '
+  $0 ~ "^  " job ":[[:space:]]*$" { inblk=1; next }
+  inblk && /^  [^[:space:]#]/     { inblk=0 }
+  inblk                           { print }
+' "$ci_wf")
+# The job's own name: line — a step is written "- name:", so anchoring on `name:` after whitespace
+# only ever sees the job's. Surrounding quotes are stripped because either spelling is the same
+# declaration (docs.yml quotes its job name, demo.yml does not).
+ci_name=$(printf '%s\n' "$ci_block" | sed -n -E 's/^[[:space:]]*name:[[:space:]]*//p' | head -1 \
+          | tr -d "\"'" | sed -E 's/[[:space:]]+$//')
+# The matrix's operating systems, from EITHER YAML list spelling: a flow list on the `os:` line
+# itself, or block-list "- item" lines under it. Sorted so the comparison is set-wise, not
+# order-wise — reordering the list changes no check name and must not red.
+ci_os=$(printf '%s\n' "$ci_block" | awk '
+  /^[[:space:]]*os:/ {
+    v = $0; sub(/^[[:space:]]*os:[[:space:]]*/, "", v)
+    gsub(/[][,]/, " ", v)                                  # a flow list becomes bare words
+    n = split(v, W, " "); for (i = 1; i <= n; i++) if (W[i] != "") print W[i]
+    inos = 1; next
+  }
+  inos && /^[[:space:]]*-[[:space:]]*[^[:space:]]/ {       # a block-list item under os:
+    v = $0; sub(/^[[:space:]]*-[[:space:]]*/, "", v); sub(/[[:space:]]*$/, "", v); print v; next
+  }
+  inos { inos = 0 }
+' | tr -d "\"'" | sort | tr '\n' ' ' | sed -E 's/[[:space:]]+$//')
+if [ -z "$ci_block" ]; then
+  echo "FAIL [docs #168 ci-name-contract:job]: $ci_wf declares no '$ci_job:' job under jobs: — that job is what generates the two matrix-built required check names. Restore the job key; if it was renamed deliberately, change branch protection's required names FIRST, then re-point this detector."; fail=1
+else
+  [ "$ci_name" = "$ci_name_expect" ] \
+    || { echo "FAIL [docs #168 ci-name-contract:template]: the '$ci_job' job in $ci_wf declares its name as \"$ci_name\", not \"$ci_name_expect\" — that template, rendered once per matrix value, IS the required-check contract, and a check that reports under a new name leaves every pull request pending rather than red. Restore the template; if the rename is intended, change branch protection's required names FIRST, then update this line."; fail=1; }
+  [ "$ci_os" = "$ci_os_expect" ] \
+    || { echo "FAIL [docs #168 ci-name-contract:matrix]: the '$ci_job' job in $ci_wf declares the operating-system matrix as \"$ci_os\", not \"$ci_os_expect\" — narrowing the matrix silently stops one required check reporting at all, which is worse than a red because nothing fails, the pull request simply never becomes mergeable. Restore both operating systems; if the drop is intended, change branch protection's required names FIRST, then update this line."; fail=1; }
+fi
+if [ "$fail" -eq "$ci_fail_before" ]; then
+  # Render the names from the two declared parts and print them, so the log shows what this shape
+  # produces today WITHOUT any assertion above resting on a rendered string.
+  read -ra ci_os_arr <<<"$ci_os"
+  ci_rendered=""
+  for ci_o in "${ci_os_arr[@]}"; do
+    ci_rendered="$ci_rendered${ci_rendered:+, }$(printf '%s' "$ci_name_expect" | sed "s/\${{ matrix.os }}/$ci_o/")"
+  done
+  echo "  ok [docs #168 ci-name-contract] — $ci_wf still declares the name template and both matrix operating systems; that shape reports as: $ci_rendered. LIMIT: branch protection is the authority for WHICH names are required and that setting is not readable from the repository, so this asserts only that the workflow still declares what it declared — and it does not assert that the job always reports."
+fi
+
 # --- map-complete (#82, operator ruling) — every top-level directory shipping PRODUCT files appears
 # in README's folder map. #85 shipped General Human Knowledge/ as PRODUCT but no wave added it to the
 # map; the rule closes that class of gap. MANIFEST-KEYED, not a hardcoded list: the directory set is

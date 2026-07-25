@@ -15,6 +15,9 @@ DEV	.github/scripts/check-issue-ref.sh
 DEV	.github/scripts/docs-check.sh
 DEV	.github/scripts/gate-waiver.sh
 DEV	.github/scripts/make-scratch-estate.sh
+DEV	.github/scripts/shape-check.sh
+DEV	.github/scripts/shape-measure.awk
+DEV	.github/shape-exemptions.txt
 DEV	.github/ship-manifest.txt
 DEV	.github/workflows/demo.yml
 DEV	.github/workflows/docs.yml

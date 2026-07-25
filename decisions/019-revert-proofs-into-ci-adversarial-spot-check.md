@@ -19,7 +19,7 @@ whole point, since the seat that authored a guard is not a credible witness that
 it can fail. The project's single reopen is the standing proof that this failure
 mode is real rather than theoretical: a guard that had never been run to failure
 shipped green, and the independent audit had to reopen a closed issue to say so
-(`#118`).
+(`#71`).
 
 Per-merge manual execution does not scale with the guard set, and the operator
 ruled that revert-proofs automate into CI and the reviewer's red-side pass

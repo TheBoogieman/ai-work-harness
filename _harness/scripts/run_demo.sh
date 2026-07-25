@@ -16,7 +16,7 @@ HARNESS_AGENT_DEPLOY_DIR=$(mktemp -d)
 PACK_OUT_DIR=$(mktemp -d)
 export HARNESS_STATE_DIR HARNESS_AGENT_DEPLOY_DIR PACK_OUT_DIR
 # #71 A2 — ONE global override for status's first-seen record, exported ONCE at the top so it covers
-# EVERY harness-status invocation in this demo (29 today) and every future guard for free. Threading
+# EVERY harness-status invocation in this demo and every future guard for free. Threading
 # an override per call site would be the wrong shape: a single missed site in a later wave would
 # silently write the real estate. Individual guards may still layer a guard-LOCAL state path on top
 # for determinism — the global export is the SAFETY floor under all of them.

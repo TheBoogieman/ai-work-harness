@@ -4,7 +4,9 @@
 # It is a DUMB CREATOR (#39 cond 2, ABSOLUTE): it creates only what is ABSENT and NEVER edits,
 # appends to, or repairs any file that already exists — even a broken one. Surfacing and fixing
 # broken state is the validator's/status's/agent's job, on the record; the installer judges
-# nothing and heals nothing. A second run finds nothing absent and says "nothing to do."
+# nothing and heals nothing. A second run finds nothing absent, so it creates nothing: the plan
+# reports "PRODUCT files to create: 0" and each prerequisite already in place says so and is left
+# untouched.
 #
 # It is the SHIPPING BOUNDARY (#43 cond 2): it lays down PRODUCT files ONLY, read from
 # .github/ship-manifest.txt (the one classification home). A fresh estate contains ZERO dev files.

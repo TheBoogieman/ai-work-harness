@@ -96,14 +96,14 @@ warn_age_suffix() {
   fi   # d == 0 → no suffix (a fresh WARN is plain)
 }
 
-# warn — the ONE chokepoint every NON-dated WARN class routes through (ruling 4c). Aging lives in a
-# single home: one edit here ages ALL classes; seven edited call sites would be seven chances
-# to miss one, and an un-aged class looks fresh forever. It (1) looks up or assigns this WARN's
-# first-seen day,
-# (2) records the key as active so the end-of-run reconcile keeps it, (3) prints "WARN: <body>" with
-# the age suffix. It NEVER changes an exit code — yellow stays yellow. $1 = a STABLE key (identifies
-# the CONDITION across runs, not the wording, so a size/date that changes each run doesn't churn the
-# record); $2 = the message body (printed verbatim after "WARN: ", so existing greps still match).
+# warn — the ONE chokepoint every NON-dated WARN class routes through (ruling 4c). Aging lives
+# in a single home: one edit here ages ALL classes; six edited call sites would be six chances to
+# miss one, and an un-aged class looks fresh forever. It (1) looks up or assigns this WARN's
+# first-seen day, (2) records the key as active so the end-of-run reconcile keeps it, and
+# (3) prints "WARN: <body>" with the age suffix. It NEVER changes an exit code — yellow stays
+# yellow. $1 = a STABLE key (identifies the CONDITION across runs, not the wording, so a size/date
+# that changes each run doesn't churn the record); $2 = the message body (printed verbatim after
+# "WARN: ", so existing greps still match).
 warn() {
   local key="$1" body="$2" today seen age_days
   today=$(date +%s)

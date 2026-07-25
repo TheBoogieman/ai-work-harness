@@ -25,7 +25,8 @@ TICKET=""
 [[ "${1:-}" == "--ticket" ]] && TICKET="${2:?--ticket needs an ID}"
 
 stage_one() { # $1 = path relative to WORK_ROOT
-  local rel="$1" src="$WORK_ROOT/$1" dst="$STAGE/$1"
+  # src and dst are both built from "$1" directly, so no separate copy of the relative path is kept.
+  local src="$WORK_ROOT/$1" dst="$STAGE/$1"
   [[ -f "$src" ]] || return 0
   mkdir -p "$(dirname "$dst")"; cp "$src" "$dst"
   for rule in "${SCRUB[@]}"; do sed -E "$rule" "$dst" > "$dst.tmp" && mv "$dst.tmp" "$dst"; done

@@ -1,0 +1,61 @@
+# shape.yml — CI-side code-shape enforcement (#120). Runs .github/scripts/shape-check.sh, which
+# measures four shapes over EVERY tracked *.sh — line length, lines of code outside any function,
+# nesting depth, and function length — and fails on any file that exceeds a limit it is not exempt
+# from. DEV infrastructure: it never ships to a user estate (#43) and no PRODUCT script depends on
+# it.
+#
+# ITS OWN FILE, not a step bolted onto the documentation gate. That is the precedent the shell
+# linter set and it matters beyond tidiness: the docs gate is the most contended file on the board,
+# and a shape check added there would collide with a dozen unrelated items. Its own file makes this
+# uncontended, which is why it can run beside anything.
+#
+# ONE ubuntu-only job — the measurement is a pure read of the source and its verdict is the same on
+# every operating system, so a second runner would witness nothing and only cost minutes. The
+# script pins LC_ALL=C and counts characters by subtracting UTF-8 continuation bytes rather than
+# trusting awk's length(), precisely so that no runner and no development seat can disagree about
+# a passing file; if the awk here cannot count UTF-8, the script says so and reds rather than
+# quietly reporting smaller numbers. The runner's awk is named in the log below because that is
+# the first thing to compare when a number here ever disagrees with a number measured elsewhere.
+#
+# NOT ADDED TO BRANCH PROTECTION by this change. Promoting it to a REQUIRED check is the operator's
+# act, and #120 asks for the gate to be required from the day it lands — so this workflow makes the
+# evidence exist and the flip is the operator's, exactly as it was for the shell linter.
+name: shape
+
+on:
+  # Every PR into main. pull_request (NOT pull_request_target): the job runs from the PR's own HEAD
+  # with a read-only token and no secrets, which is safe even for a fork PR because measuring is a
+  # read-only parse that executes none of the scripts it reads.
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# Per-branch concurrency, matching the other workflows: a newer push to the same PR supersedes the
+# in-progress run, so only the latest commit's verdict stands.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  shape:
+    name: "code-shape (all tracked *.sh)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Named in the log because the measurement's portability rests on it: when a number here ever
+      # disagrees with a number on a development seat, this line is the first thing to compare.
+      - name: Name the awk doing the measuring
+        run: awk --version 2>/dev/null | head -1 || awk -W version 2>&1 | head -1
+
+      # The full report prints BEFORE the verdict, so the numbers are witnessed by this log rather
+      # than asserted by whoever last read them.
+      - name: Measure every tracked shell script
+        run: |
+          set -euo pipefail
+          bash .github/scripts/shape-check.sh --report
+          echo "---------------------------------------------------------------"
+          bash .github/scripts/shape-check.sh

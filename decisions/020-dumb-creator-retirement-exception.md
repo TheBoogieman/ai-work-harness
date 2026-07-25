@@ -10,20 +10,22 @@ and says so.
 
 That law is not merely written down. It is structurally true of the code: the
 installer performs no remove and no move operation anywhere. There is no `rm`,
-no `mv`, no `rmdir`, no `unlink`, no `git rm` and no `git mv` in it. Its only
-write verbs are a copy into a path it has just established as absent, a
-here-and-now creation of empty scaffolding, and an in-place substitution
-guarded to files THIS RUN created. Nothing an estate already holds is reachable
-by it.
+no `mv`, no `rmdir`, no `unlink`, no `git rm` and no `git mv` in it. Its
+file-creating verbs are a copy into a path it has just established as absent
+and a here-and-now creation of empty scaffolding; its one in-place substitution
+is guarded to files THIS RUN created. It writes git's own metadata besides — an
+init, a day-zero commit, and the estate key that arms the hooks — but no file an
+estate already holds as record or as machinery is reachable by it.
 
-The law is stated in its ABSOLUTE form in more than one home — in the project's
-working rules, and again in the installer's own header comment, where the word
-used is "ABSOLUTE". That is why an exception cannot be introduced quietly, and
-why it is recorded here before any machinery relies on it.
+The law is stated in its ABSOLUTE form in more than one home — in `README.md`
+and `SPEC.md`, which both call the installer non-destructive, and again in the
+installer's own header comment, where the word used is "ABSOLUTE". That is why
+an exception cannot be introduced quietly, and why it is recorded here before
+any machinery relies on it.
 
-The pressure that forces the exception is renaming. Restructuring work renames
-shipped files inside a live estate — scripts and the constitution among them.
-Under the law as written, an upgraded estate ends up holding BOTH names for
+The pressure that forces the exception is renaming. A planned restructuring
+renames shipped files inside a live estate — scripts and the constitution among
+them. Under the law as written, an upgraded estate ends up holding BOTH names for
 every renamed file: the old one, which nothing removes, and the new one, which
 the installer creates because it is absent. The estate accumulates its own
 history as clutter, and a reader cannot tell which of the two the machinery
@@ -128,18 +130,25 @@ upgrade had succeeded. The model-pin case is quieter and no better: pins revert
 to their placeholders, and the installer's own summary already states that an
 unset placeholder means the agents will not run.
 
-A canary for the derivation, worth stating before the machinery exists. A
-version stamp should have NO declined-edit handler, because the installer
-maintains it. If one is ever written, that is the moment the stamp becomes
-user-owned — and a generated list catches the change on the next run instead of
-waiting for somebody to notice.
+How the union and the ownership test fit together, since a reader can take them
+for two answers to one question. The union yields CANDIDATES — every file the
+installer treats as per-estate. Ownership then decides which candidates are
+class 3: a candidate whose per-estate content is installer-owned is plain
+machinery and may be replaced outright.
 
-Routing. The law is stated in its absolute form in the working rules and in the
-installer's own header comment, and those statements are incomplete without this
-record. Anyone who meets the absolute form comes here. Amending those homes to
-point at this record belongs with the machinery that implements retirement, not
-with the law: this record lands first precisely so the amendment is not carried
-in conversation while that machinery is built.
+A canary for that, worth stating before the machinery exists. A version stamp
+would appear in the substitution half and be excluded by ownership, and it
+should have NO declined-edit handler, because the installer maintains it. If
+such a handler is ever written, that is the moment the stamp became user-owned
+— and a generated list catches the change on the next run instead of waiting
+for somebody to notice.
+
+Routing. The law is stated in its absolute form in `README.md`, in `SPEC.md`,
+and in the installer's own header comment, and those statements are incomplete
+without this record. Anyone who meets the absolute form comes here. Amending
+those homes to point at this record belongs with the machinery that implements
+retirement, not with the law: this record lands first precisely so the
+amendment is not carried in conversation while that machinery is built.
 
 ## Status
 

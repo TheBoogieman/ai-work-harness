@@ -474,8 +474,9 @@ bash _harness/scripts/check_ticket_log.sh >/dev/null 2>&1 || true
 #   misread this and the OK below would vanish.
 sleep 1
 printf '\n## %s - local-clock session\n- work recorded in local machine time\n' "$(date +%Y%m%d%H%M%S)" >> "$R10/202607R-PROJ-10.md"
-# This guard asserts on the validator's MESSAGE (the greps below), not on its exit code, so the rc
-# is no longer captured. set +e still wraps the call so a non-zero rc cannot abort the demo here.
+# What this guard reads is the validator's MESSAGE (the greps below). Its EXIT CODE — the half that
+# establishes whether it BLOCKED — is not asserted here, and that is a known gap rather than a
+# design decision (#161). set +e wraps the call so a non-zero rc cannot abort the demo here.
 set +e; R10_OUT=$(bash _harness/scripts/check_ticket_log.sh 2>&1); set -e
 printf '%s\n' "$R10_OUT" | grep -q "202607R-PROJ-10 changed but no new Session Log entry" \
   && { echo "BUG [local-clock-ok]: a LOCAL-time header was misread as stale (false FAIL) — clock frames disagree:"; printf '%s\n' "$R10_OUT"; exit 1; }
@@ -490,8 +491,9 @@ echo "  ok [local-clock-ok] — local-time session header accepted (header and w
 #   honest work. Naming the clock as local in the convention and the ticket-scribe agent is what stops a scribe writing this header.
 sleep 1
 printf '\n## %s - utc-clock session (wrong clock)\n- work stamped in UTC by mistake\n' "$(date -u +%Y%m%d%H%M%S)" >> "$R10/202607R-PROJ-10.md"
-# As above: the assertion is on the message, not the rc, so the rc is not captured. set +e stays
-# because this call is EXPECTED to exit non-zero (it refuses the stale header) and must not abort.
+# As above: what is read here is the message, not the exit code — the same known gap (#161). set +e
+# stays because this call is EXPECTED to exit non-zero (it refuses the stale header) and must not
+# abort.
 set +e; R10_OUT=$(bash _harness/scripts/check_ticket_log.sh 2>&1); set -e
 printf '%s\n' "$R10_OUT" | grep -q "202607R-PROJ-10 changed but no new Session Log entry" \
   || { echo "BUG [utc-clock-stale]: a UTC header on a non-UTC machine was NOT caught — the guard is blind to the clock frame:"; printf '%s\n' "$R10_OUT"; exit 1; }

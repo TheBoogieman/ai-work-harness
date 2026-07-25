@@ -34,3 +34,5 @@ failures prescribe, nothing heals itself — a fixed record is a human act.
 
 **Operational doctrine:** red blocks, yellow schedules, never fabricate,
 late-but-true beats fiction. Full state table: backbone PART II.
+
+<!-- THROWAWAY proof edit for #115 — documentation-only change, not for merge. -->

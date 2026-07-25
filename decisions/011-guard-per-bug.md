@@ -12,8 +12,10 @@ genuinely fixed and stays fixed.
 Every bug fix ships with a **regression guard that provably FAILS on the pre-fix
 code** — demonstrated by reverting the fix and watching the guard go red. No bug
 is "fixed" without one (project rule `G5`). The guards are the `R-NN` checks in
-the demo and scripts; the demo (`run_demo.sh`) is the truth-teller that runs them
-end-to-end on every push and PR.
+the demo and scripts; the demo (`run_demo.sh`) is the truth-teller, and CI runs
+them end-to-end on every push to `main` and on every pull request whose changes
+can move its verdict — a documentation-only pull request reports green without
+running them, on criteria whose one home is `.github/CONTRIBUTING.md`.
 
 AMENDED (`#117`): every telling of the rule in this record is the unqualified one
 as taken; the rule live at HEAD is bounded and its exempt classes have one home,

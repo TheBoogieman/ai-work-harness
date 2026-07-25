@@ -12,8 +12,14 @@ genuinely fixed and stays fixed.
 Every bug fix ships with a **regression guard that provably FAILS on the pre-fix
 code** — demonstrated by reverting the fix and watching the guard go red. No bug
 is "fixed" without one (project rule `G5`). The guards are the `R-NN` checks in
-the demo and scripts; the demo (`run_demo.sh`) is the truth-teller that runs them
-end-to-end on every push and PR.
+the demo and scripts; the demo (`run_demo.sh`) is the truth-teller, and CI runs
+them end-to-end on every push to `main` and on every pull request whose changes
+can move its verdict — a documentation-only pull request reports green without
+running them, on criteria whose one home is `.github/CONTRIBUTING.md`.
+
+AMENDED (`#117`): every telling of the rule in this record is the unqualified one
+as taken; the rule live at HEAD is bounded and its exempt classes have one home,
+`CLAUDE.md`. Not restated here.
 
 ## Consequences
 
@@ -27,3 +33,22 @@ makes the fix credible rather than asserted.
 Accepted, foundational rule (`G5`). Exercised across the demo's guard set; recent
 examples include `#35` (a portability guard) and `#86` (a demo guard proving the
 git store resolves from a worktree).
+
+UNOWNED — read by the seat that made the two corrections above (`#167`, `#180`)
+and deliberately NOT corrected by it, because neither was in that seat's scope.
+Recorded so a later reader does not mistake unchecked text for checked text:
+
+- The guard set is described twice as the `R-NN` checks in the demo — above and
+  in this section. It is narrower than the truth: the demo also carries checks
+  labelled `G3` rather than `R-NN`, and revert-provable guards now live in the
+  documentation-state gate (`.github/scripts/docs-check.sh`) outside the demo
+  entirely.
+- The red-side proof is described here as a hand-executed revert. That
+  ENFORCEMENT was amended by `decisions/019` — the sabotage runs in CI and the
+  reviewer's pass became an adversarial spot-check — and this record carries no
+  pointer to it, although that record names itself the routing target for
+  exactly this.
+- "recent examples" names `#35` and `#86`, both long past.
+- The cost sentence under Consequences ("every fix carries the extra work") is
+  the record's second unqualified telling of the rule. The AMENDED note under
+  Decision governs it; the sentence itself was left as taken.

@@ -2,16 +2,16 @@
 
 ## Context
 
-`decisions/011` made guard-per-bug mechanical: a bug is not fixed until a guard
-has been watched going RED against the pre-fix code. The load-bearing part of
-that rule was never the guard's existence — it was somebody having run it to
-failure. And that proof had nowhere mechanical to live. Revert-proofs have never
-run in continuous integration, by design: CI runs the demo forwards, over code
-that is supposed to work, and nothing in it reverts a fix and demands the guard
-notice. So a guard that CANNOT fail ships green, joins the demo's ok-lines, and
-proves nothing — because green is exactly what a working guard looks like too.
-The two states are indistinguishable from the outside, and only an executed
-sabotage tells them apart.
+`decisions/011` made guard-per-bug mechanical: a defect the rule covers is not
+fixed until a guard has been watched going RED against the pre-fix code. The
+load-bearing part of that rule was never the guard's existence — it was somebody
+having run it to failure. And that proof had nowhere mechanical to live.
+Revert-proofs have never run in continuous integration, by design: CI runs the
+demo forwards, over code that is supposed to work, and nothing in it reverts a
+fix and demands the guard notice. So a guard that CANNOT fail ships green, joins
+the demo's ok-lines, and proves nothing — because green is exactly what a
+working guard looks like too. The two states are indistinguishable from the
+outside, and only an executed sabotage tells them apart.
 
 The standing law closed that gap with a human. The reviewer independently
 executes every sabotage, per merge, in merge order — independence being the
@@ -69,10 +69,13 @@ everything else is checked by, the two reductions multiply rather than add.
 ## Consequences
 
 What is UNCHANGED: guard-per-bug itself (`decisions/011`, project rule `G5`).
-Every bug still ships a guard that provably fails on pre-fix code. Red still
-blocks, nothing self-heals, and the demo is still the truth-teller for the
-product. What changed is only WHO executes the sabotage and HOW OFTEN — the
-standard of proof did not move.
+Nothing here widens or narrows what that rule covers. Red still blocks, nothing
+self-heals, and the demo is still the truth-teller for the product. What changed
+is only WHO executes the sabotage and HOW OFTEN — the standard of proof did not
+move.
+
+The rule's bound and its exempt classes have ONE home, `CLAUDE.md`. They are not
+restated, named or paraphrased in this record.
 
 What is GAINED: every guard is exercised on every CI run instead of once at its
 merge, so a guard that decays into vacuity later is caught later, which manual

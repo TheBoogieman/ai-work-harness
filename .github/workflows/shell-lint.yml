@@ -1,0 +1,82 @@
+# shell-lint.yml — CI-side shell linting (#119). Runs shellcheck at warning level over EVERY
+# tracked *.sh and fails the job on any finding, so shell defects are caught by the gate rather
+# than by whoever happens to read the diff. DEV infrastructure: it never ships to a user estate
+# (#43) and no PRODUCT script references it.
+#
+# ONE ubuntu-only job — shellcheck's verdict is OS-independent (it parses, it does not execute),
+# so a macOS runner would witness nothing new and would only cost minutes.
+#
+# NOT ADDED TO BRANCH PROTECTION by this change. Promoting it to a REQUIRED check is the
+# operator's decision; this workflow only makes the evidence exist.
+#
+# FORMATTER HALF DELIBERATELY ABSENT: #119 also asked for an shfmt --diff check. That half is NOT
+# shipped here because shfmt cannot format this repository as a whitespace-only pass — it rewrites
+# `cmd_a; cmd_b` one-liners into separate lines, deleting 902 semicolons across the 20 tracked
+# scripts and growing run_demo.sh from 1773 to 2681 lines. No shfmt flag or EditorConfig key
+# disables that, so adopting the formatter is a code-shape decision, not a whitespace pass, and it
+# belongs to the architect rather than to this workflow. Adding the check now would ship a
+# knowingly-RED gate, which the repo's "red blocks" doctrine forbids. See the #119 pull request.
+name: shell-lint
+
+on:
+  # Every PR into main — the pre-merge gate. pull_request (NOT pull_request_target): the job runs
+  # from the PR's own HEAD with a read-only token and no secrets, which is safe even for fork PRs
+  # because linting is a pure read-only parse.
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# Per-branch concurrency, matching demo.yml/docs.yml: a newer push to the same PR supersedes the
+# in-progress run, so only the latest commit's verdict stands.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  shellcheck:
+    name: "shellcheck (all tracked *.sh)"
+    runs-on: ubuntu-latest
+    # PINNED version, downloaded rather than taken from the runner image. The image's preinstalled
+    # shellcheck floats, and a version bump can invent or retire findings — which would red a PR
+    # that changed no shell at all. Pinning makes the gate's verdict reproducible and makes a local
+    # run agree with CI exactly.
+    env:
+      SHELLCHECK_VERSION: v0.10.0
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pinned shellcheck
+        run: |
+          set -euo pipefail
+          url="https://github.com/koalaman/shellcheck/releases/download/${SHELLCHECK_VERSION}/shellcheck-${SHELLCHECK_VERSION}.linux.x86_64.tar.xz"
+          curl -fsSL "$url" | tar -xJf - -C /tmp
+          sudo install -m 0755 "/tmp/shellcheck-${SHELLCHECK_VERSION}/shellcheck" /usr/local/bin/shellcheck
+          shellcheck --version
+
+      # The file set is `git ls-files '*.sh'` — every TRACKED shell script, resolved at run time.
+      # Enumerating by git (not a hand-written list) means a script added in a later wave is linted
+      # the day it lands, with nobody having to remember to extend this workflow.
+      - name: Lint every tracked shell script
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(git ls-files '*.sh')
+          echo "Linting ${#files[@]} tracked shell scripts at --severity=warning:"
+          printf '  %s\n' "${files[@]}"
+          echo "---------------------------------------------------------------"
+          # Output is printed UNCONDITIONALLY and in full before the job's verdict: #119's whole
+          # point is that the finding count is witnessed by this log, not asserted by a person.
+          # The `|| rc=$?` form is what keeps that promise under Actions' default `bash -e`: a bare
+          # failing shellcheck would kill the step before the summary below ever printed.
+          rc=0
+          shellcheck --severity=warning "${files[@]}" || rc=$?
+          echo "---------------------------------------------------------------"
+          if [ "$rc" -eq 0 ]; then
+            echo "PASS: shellcheck reports ZERO findings across ${#files[@]} tracked shell scripts."
+          else
+            echo "FAIL: shellcheck reported findings (exit $rc). Fix them above — do not add a"
+            echo "      suppression directive without saying in the PR why the finding is wrong."
+          fi
+          exit "$rc"

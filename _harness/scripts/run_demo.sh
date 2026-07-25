@@ -6,13 +6,24 @@ export HARNESS_DEMO=1   # lets status treat a template-clone remote as a NOTE, n
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/../.."
 DEMO_ROOT=$PWD
-export HARNESS_STATE_DIR=$(mktemp -d) HARNESS_AGENT_DEPLOY_DIR=$(mktemp -d) PACK_OUT_DIR=$(mktemp -d)
+# Assign each temp dir on its OWN line, THEN export the names. `export VAR=$(cmd)` returns
+# export's own status — always 0 — so under `set -euo pipefail` a failing mktemp would leave the
+# variable EMPTY and the demo would run on with an unset state dir, mis-pointing every guard
+# beneath it. Split apart, the assignment's status is the script's status: a failing mktemp
+# aborts here, loudly, instead of producing a silently wrong run.
+HARNESS_STATE_DIR=$(mktemp -d)
+HARNESS_AGENT_DEPLOY_DIR=$(mktemp -d)
+PACK_OUT_DIR=$(mktemp -d)
+export HARNESS_STATE_DIR HARNESS_AGENT_DEPLOY_DIR PACK_OUT_DIR
 # #71 A2 — ONE global override for status's first-seen record, exported ONCE at the top so it covers
 # EVERY harness-status invocation in this demo (29 today) and every future guard for free. Threading
 # an override per call site would be the wrong shape: a single missed site in a later wave would
 # silently write the real estate. Individual guards may still layer a guard-LOCAL state path on top
 # for determinism — the global export is the SAFETY floor under all of them.
-export HARNESS_WARN_STATE_DIR=$(mktemp -d)
+# Assigned then exported for the same reason as the temp dirs above: a failing mktemp must abort
+# the demo, not hand the WARN-aging guards an empty state path that quietly writes the real estate.
+HARNESS_WARN_STATE_DIR=$(mktemp -d)
+export HARNESS_WARN_STATE_DIR
 export HARNESS_WARN_STATE_FILE="$HARNESS_WARN_STATE_DIR/warn-aging.tsv"
 
 # cleanup runs on EXIT — normal, a set -e abort, or Ctrl-C. It removes the temp dirs AND any
@@ -271,7 +282,9 @@ echo "--- R-09: unrecognised ticket folders are surfaced, never enforced ---"
 # Baseline: status's rc on the UNTOUCHED estate, captured before any fixture exists. Wrapped
 # in set +e so this call itself never aborts the demo — the whole point is to witness R-09
 # even on a lane where the later plain status call would die.
-set +e; BASELINE_OUT=$(bash _harness/scripts/harness-status.sh 2>&1); BASELINE_RC=$?; set -e
+# The run's OUTPUT is not part of this assertion — only its exit code is — so it goes to /dev/null
+# rather than into a variable nothing reads. The call itself must stay: it is what produces the rc.
+set +e; bash _harness/scripts/harness-status.sh >/dev/null 2>&1; BASELINE_RC=$?; set -e
 R09_SPACE="Tickets/My Random Ticket 42"        # real ticket record under a space-bearing, non-matching name
 R09_CONF="Tickets/202607A-PROJ-7"              # conforming, low ticket number
 R09_LONG="Tickets/202607AB-LONGBOARD-1000000"  # conforming, multi-letter seq + long number (pins the expansion)
@@ -461,7 +474,9 @@ bash _harness/scripts/check_ticket_log.sh >/dev/null 2>&1 || true
 #   misread this and the OK below would vanish.
 sleep 1
 printf '\n## %s - local-clock session\n- work recorded in local machine time\n' "$(date +%Y%m%d%H%M%S)" >> "$R10/202607R-PROJ-10.md"
-set +e; R10_OUT=$(bash _harness/scripts/check_ticket_log.sh 2>&1); R10_RC=$?; set -e
+# This guard asserts on the validator's MESSAGE (the greps below), not on its exit code, so the rc
+# is no longer captured. set +e still wraps the call so a non-zero rc cannot abort the demo here.
+set +e; R10_OUT=$(bash _harness/scripts/check_ticket_log.sh 2>&1); set -e
 printf '%s\n' "$R10_OUT" | grep -q "202607R-PROJ-10 changed but no new Session Log entry" \
   && { echo "BUG [R-10]: a LOCAL-time header was misread as stale (false FAIL) — clock frames disagree:"; printf '%s\n' "$R10_OUT"; exit 1; }
 printf '%s\n' "$R10_OUT" | grep -q "OK: 202607R-PROJ-10 validated" \
@@ -475,7 +490,9 @@ echo "  ok [R-10 local] — local-time session header accepted (header and water
 #   honest work. Naming the clock as local in the convention and the ticket-scribe agent is what stops a scribe writing this header.
 sleep 1
 printf '\n## %s - utc-clock session (wrong clock)\n- work stamped in UTC by mistake\n' "$(date -u +%Y%m%d%H%M%S)" >> "$R10/202607R-PROJ-10.md"
-set +e; R10_OUT=$(bash _harness/scripts/check_ticket_log.sh 2>&1); R10_RC=$?; set -e
+# As above: the assertion is on the message, not the rc, so the rc is not captured. set +e stays
+# because this call is EXPECTED to exit non-zero (it refuses the stale header) and must not abort.
+set +e; R10_OUT=$(bash _harness/scripts/check_ticket_log.sh 2>&1); set -e
 printf '%s\n' "$R10_OUT" | grep -q "202607R-PROJ-10 changed but no new Session Log entry" \
   || { echo "BUG [R-10]: a UTC header on a non-UTC machine was NOT caught — the guard is blind to the clock frame:"; printf '%s\n' "$R10_OUT"; exit 1; }
 echo "  ok [R-10 skew] — UTC-on-non-UTC header refused as stale (clock frame matters; convention must name it)"
@@ -1107,7 +1124,9 @@ echo "  ok [#71 warn aging] PORCELAIN — a status run leaves a clean fixture es
 # and set -euo pipefail aborts status mid-write — the rc flips and the verdict line vanishes; this reds.
 FO71T="$DEMO_ROOT/Tickets/failsopen check 71"; mkdir -p "$FO71T"; printf '# rec\n## Current State\nx\n' > "$FO71T/rec.md"
 FO71_OK=$(mktemp)                        # control: a writable guard-local state path
-set +e; FO71_CTRL=$(HARNESS_WARN_STATE_FILE="$FO71_OK" bash _harness/scripts/harness-status.sh 2>&1); FO71_CTRL_RC=$?; set -e
+# Only the control run's exit CODE is compared below (against FO71_RC), never its text, so the
+# output is discarded rather than captured into a variable nothing reads. The run itself stays.
+set +e; HARNESS_WARN_STATE_FILE="$FO71_OK" bash _harness/scripts/harness-status.sh >/dev/null 2>&1; FO71_CTRL_RC=$?; set -e
 FO71_BADPARENT=$(mktemp)                 # a regular FILE — using it as a directory parent forces ENOTDIR
 set +e; FO71_OUT=$(HARNESS_WARN_STATE_FILE="$FO71_BADPARENT/sub/warn-aging.tsv" bash _harness/scripts/harness-status.sh 2>&1); FO71_RC=$?; set -e
 rm -rf "$FO71T"; rm -f "$FO71_OK" "$FO71_BADPARENT"
@@ -1128,7 +1147,9 @@ echo "  ok [#71 warn aging] FAILS-OPEN — unwritable state path: full report pr
 # conforming fixtures WITH AI-Knowledge, so the field hit a case the demo never covered).
 # NOTE: the demo runs with CWD = repo root and never defines WORK_ROOT (harness-status resolves
 # it internally); like every other fixture here the ticket path is relative to Tickets/.
-set +e; PRE37_OUT=$(bash _harness/scripts/harness-status.sh 2>&1); PRE37_RC=$?; set -e
+# Pre-fixture baseline: only the rc is used (compared against NOAK_RC below), so the output is
+# discarded instead of captured. The call must stay — it is what establishes the baseline rc.
+set +e; bash _harness/scripts/harness-status.sh >/dev/null 2>&1; PRE37_RC=$?; set -e
 NOAK="Tickets/202607D-PROJ-777"
 mkdir -p "$NOAK"     # deliberately NO AI-Knowledge/ subdir — the bug trigger
 cat > "$NOAK/202607D-PROJ-777.md" <<'MD'

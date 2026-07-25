@@ -460,6 +460,28 @@ rm -rf "$R09_SPACE" "$R09_CONF" "$R09_LONG" "$R09_BAD" "$R09_PEND" "$R09_HAND" "
 # clock-sensitive, so the convention MUST name the clock. Runs before the first abort-prone
 # harness-status call, like the block above. TZ is forced to a fixed non-UTC zone here and
 # restored afterwards so it never leaks into the rest of the demo.
+
+# r10_validate — run the validator once for the two guards below, capturing BOTH halves of its
+# answer: the MESSAGE into R10_OUT (the greps at each site read it) and the EXIT CODE into R10_RC,
+# which is asserted HERE. $1 is what the calling site requires of that code — "clean" (0: an
+# accepted header must not block) or "blocked" (non-zero: a refusal must actually red-block) — and
+# $2 is the guard label for the BUG line. The exit-code half lives in ONE place so the two sites
+# cannot drift apart on it; the message assertions stay at their sites because each names a
+# different outcome. Neither half subsumes the other — the message says WHICH failure fired, the
+# exit code says that it BLOCKED, and a validator that printed the right words while exiting the
+# wrong way is exactly what this pairing catches (#161). set +e brackets the call so an expected
+# non-zero rc cannot abort the demo before the assertions read it.
+r10_validate() {
+  set +e; R10_OUT=$(bash _harness/scripts/check_ticket_log.sh 2>&1); R10_RC=$?; set -e
+  if [ "$1" = clean ] && [ "$R10_RC" -ne 0 ]; then
+    echo "BUG [$2]: the validator exited $R10_RC on a header it must ACCEPT — honest work blocked:"
+    printf '%s\n' "$R10_OUT"; exit 1
+  fi
+  if [ "$1" = blocked ] && [ "$R10_RC" -eq 0 ]; then
+    echo "BUG [$2]: the validator exited 0 on a header it must REFUSE — the refusal did not block:"
+    printf '%s\n' "$R10_OUT"; exit 1
+  fi
+}
 echo "--- session-clock: session-log header clock is LOCAL machine time ---"
 R10="Tickets/202607R-PROJ-10"
 R10_TZ_SAVE="${TZ-__unset__}"
@@ -474,9 +496,11 @@ bash _harness/scripts/check_ticket_log.sh >/dev/null 2>&1 || true
 #   misread this and the OK below would vanish.
 sleep 1
 printf '\n## %s - local-clock session\n- work recorded in local machine time\n' "$(date +%Y%m%d%H%M%S)" >> "$R10/202607R-PROJ-10.md"
-# This guard asserts on the validator's MESSAGE (the greps below), not on its exit code, so the rc
-# is no longer captured. set +e still wraps the call so a non-zero rc cannot abort the demo here.
-set +e; R10_OUT=$(bash _harness/scripts/check_ticket_log.sh 2>&1); set -e
+# BOTH halves of the validator's answer are asserted at this site: r10_validate checks the EXIT
+# CODE — 0, because an accepted header must not block honest work — and the greps below check the
+# MESSAGE, which names the outcome. Neither subsumes the other, so a validator that printed the
+# right words while exiting the wrong way no longer passes here (#161).
+r10_validate clean local-clock-ok      # exit code asserted here; message asserted below
 printf '%s\n' "$R10_OUT" | grep -q "202607R-PROJ-10 changed but no new Session Log entry" \
   && { echo "BUG [local-clock-ok]: a LOCAL-time header was misread as stale (false FAIL) — clock frames disagree:"; printf '%s\n' "$R10_OUT"; exit 1; }
 printf '%s\n' "$R10_OUT" | grep -q "OK: 202607R-PROJ-10 validated" \
@@ -490,9 +514,12 @@ echo "  ok [local-clock-ok] — local-time session header accepted (header and w
 #   honest work. Naming the clock as local in the convention and the ticket-scribe agent is what stops a scribe writing this header.
 sleep 1
 printf '\n## %s - utc-clock session (wrong clock)\n- work stamped in UTC by mistake\n' "$(date -u +%Y%m%d%H%M%S)" >> "$R10/202607R-PROJ-10.md"
-# As above: the assertion is on the message, not the rc, so the rc is not captured. set +e stays
-# because this call is EXPECTED to exit non-zero (it refuses the stale header) and must not abort.
-set +e; R10_OUT=$(bash _harness/scripts/check_ticket_log.sh 2>&1); set -e
+# As above, both halves: r10_validate requires a NON-ZERO exit code (this refusal must actually
+# BLOCK) and the grep below requires the stale-record message (that the RIGHT refusal fired). A
+# validator that printed this refusal and exited 0 satisfies the message check on its own — that is
+# precisely the failure this pairing closes (#161). The expected non-zero rc cannot abort the demo:
+# the helper brackets the call in set +e.
+r10_validate blocked utc-clock-stale   # exit code asserted here; message asserted below
 printf '%s\n' "$R10_OUT" | grep -q "202607R-PROJ-10 changed but no new Session Log entry" \
   || { echo "BUG [utc-clock-stale]: a UTC header on a non-UTC machine was NOT caught — the guard is blind to the clock frame:"; printf '%s\n' "$R10_OUT"; exit 1; }
 echo "  ok [utc-clock-stale] — UTC-on-non-UTC header refused as stale (clock frame matters; convention must name it)"

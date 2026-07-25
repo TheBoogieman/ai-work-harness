@@ -87,6 +87,14 @@ that no job renders never goes red; it stays pending forever** — so if a check
 you were expecting simply never appears, say so on the PR rather than waiting it
 out.
 
+<!-- UNOWNED (raised by #181, not this file's to fix): the second half of that
+     warning is live today. `.github/workflows/shell-lint.yml` and
+     `.github/workflows/shape.yml` both still carry a header comment saying
+     "NOT ADDED TO BRANCH PROTECTION" — the operator promoted both after those
+     workflows landed, and each is a required context on `main` now. Whoever
+     owns those two files next should date the comment or drop it. -->
+
+
 ## What the acceptance demo covers (and when it is skipped)
 
 `CLAUDE.md` and `README.md` point at this section rather than restating it —

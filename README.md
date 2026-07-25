@@ -365,11 +365,13 @@ dependencies, the Linux/macOS standing lanes, and WSL as an ephemeral check only
 (never a `/mnt/c` home). On native Windows (the documented lane): install **Git
 for Windows** (or Cygwin) and **VS Code** with your agent extension, and do all
 shell work in the integrated Git-Bash/Cygwin terminal — plain PowerShell runs
-`git` but not the bash machinery. Verify end to end with
+`git` but not the bash machinery. Verify the host once, end to end, with
 `bash _harness/scripts/run_demo.sh` (it must end with *ALL 6 DEMO STAGES PASSED*).
-**The loop:** apply a change, run that demo, commit — with you reviewing before any
-push; every bug fix ships a demo regression guard that provably fails on the
-pre-fix code. Full rules in `CLAUDE.md`; don't hand-edit the machinery from memory.
+**The development loop is stated once, in `CLAUDE.md`, and this section does not
+restate it** — which changes must run the demo, which classes of change are exempt,
+and the regression guard a fix owes all live there, in one home, so the two
+documents cannot drift apart. Read it before you change anything; don't hand-edit
+the machinery from memory.
 
 **Merge-gate governance:** work is issues-first — open or claim an issue, branch
 or fork, then open a PR whose body closes it (`Fixes #NN`). Beyond the demo, two

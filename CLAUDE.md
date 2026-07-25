@@ -30,10 +30,21 @@ Doctrine you must never violate when changing this code:
   restatement of syntax (project rule "G7"). This applies to bash/python and
   hooks.example.json. Agent .md files and the constitution are prose and are
   exempt from line-comments but must stay clear.
-- Run the demo: `bash _harness/scripts/run_demo.sh`. It must end with
-  "ALL 6 DEMO STAGES PASSED" — it is the truth-teller for any change. (Stage 5
+- Run the demo — `bash _harness/scripts/run_demo.sh` — for every BEHAVIOUR CHANGE
+  TO SHIPPED MACHINERY. It must end with "ALL 6 DEMO STAGES PASSED"; it is the
+  truth-teller for such a change and nothing here weakens that. (Stage 5
   deliberately breaks and restores a deployment — an internal FAIL followed by
-  "healthy after fix" is that stage working, not a failure.)
+  "healthy after fix" is that stage working, not a failure.) Which changes fall
+  OUTSIDE that class is written in exactly one place: the exempt classes of the
+  guard-per-bug rule under "Hard rules" below. Its first three exemptions are
+  classes of change, they are precisely the changes that are not behaviour
+  changes to shipped machinery, and they do not require the full run — a rename
+  or move still owes that rule's byte-identical-output proof, which is how you
+  know it was one. Its fourth exemption is a coverage condition, not a class of
+  change: an existing guard already catching a defect excuses writing a NEW
+  guard, never the demo — the demo is where that guard is SHOWN failing. That
+  list is not repeated here, and this loop is not repeated in README; README
+  points at this file.
 - Branch workflow — never commit to `main` directly (a direct push is rejected). Per
   change: branch from the issue (`NN-slug`), commit (behaviour and docs in SEPARATE
   commits), run the demo, then push the BRANCH (branch pushes are safe; `main` is
@@ -56,9 +67,21 @@ Doctrine you must never violate when changing this code:
   concern, and every claim you wrote (including in comments) is true at HEAD.
 
 ## Hard rules for changing this codebase
-- Every bug fix ships with a regression guard that provably FAILS on the
-  pre-fix code (prove it by reverting the fix and watching the guard go red).
-  No bug is "fixed" without one. (Project rule "G5".)
+- GUARD-PER-BUG: a guard is required for a behaviour change to shipped machinery
+  that no existing guard already catches — a regression guard that provably FAILS
+  on the pre-fix code (prove it by reverting the fix and watching the guard go
+  red). No such change is "fixed" without one. FOUR EXEMPTIONS, and no others:
+  (1) documentation and prose, (2) comment-only passes, (3) pure renames and
+  moves — the three CLASSES OF CHANGE that are not behaviour changes to shipped
+  machinery — and (4) a defect an existing guard already catches, which is not a
+  class of change but a coverage condition inside the machinery class. This list
+  is the ONE home for those classes — nothing else in the repo restates them; a
+  rule that needs them cites this list. Two of the four would self-certify
+  without a proof, so each owes one: "pure rename or move" is a claim, not a
+  fact — the proof is BYTE-IDENTICAL OUTPUT (a change that alters a printed
+  string can never produce it); "an existing guard already catches it" is never
+  asserted — that guard is SHOWN failing against the pre-fix code.
+  (Project rule "G5".)
 - Every claim in README and the constitution must be true at HEAD
   or removed. A code comment is a claim too — a comment that misdescribes the
   code is a defect. (Project rule "G4".)

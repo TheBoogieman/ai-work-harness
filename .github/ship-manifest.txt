@@ -49,6 +49,7 @@ PRODUCT	Tickets/999912Z-PROJ-99999/Checks/scratch.sql
 PRODUCT	Tickets/999912Z-PROJ-99999/Dump/.gitkeep
 PRODUCT	Tickets/999912Z-PROJ-99999/Logs/.gitkeep
 PRODUCT	Tickets/README.md
+PRODUCT	VERSION
 PRODUCT	_agents/check-scribe.agent.md
 PRODUCT	_agents/doc-writer.agent.md
 PRODUCT	_agents/harness-recall.agent.md
@@ -97,11 +98,11 @@ DEV	decisions/017-estate-gains-an-output-surface.md
 DEV	decisions/018-the-reader-spine.md
 DEV	decisions/019-revert-proofs-into-ci-adversarial-spot-check.md
 DEV	decisions/020-dumb-creator-retirement-exception.md
-DEV	dev-history/2026-07-25-completion-goal-numbering.md
 DEV	dev-loop/SETUP.md
 DEV	dev-loop/message-format.template.md
 DEV	dev-loop/role-charter.template.md
 DEV	dev-loop/working-agreement.template.md
+DEV	docs/history/2026-07-25-completion-goal-numbering.md
 PRODUCT	folder-structure.md
 PRODUCT	install.sh
 PRODUCT	setup.md

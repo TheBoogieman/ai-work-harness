@@ -49,9 +49,12 @@ Doctrine you must never violate when changing this code:
   change: branch from the issue (`NN-slug`), commit (behaviour and docs in SEPARATE
   commits), run the demo, then push the BRANCH (branch pushes are safe; `main` is
   protected). Open a PR that closes the issue (`Fixes #NN`). Opening or updating the PR
-  runs the demo workflow (`.github/workflows/demo.yml`) on Linux + macOS; both lanes
-  must be green before merge (enforced as required status checks on `main`), and the CI
-  run URL is the release evidence. STOP at the PR — do not merge; the operator merges
+  REPORTS the demo workflow's two lanes (`.github/workflows/demo.yml`, Linux + macOS);
+  both must be green before merge (enforced as required status checks on `main`), and the
+  CI run URL is the release evidence. A green lane is NOT proof the demo ran: the job
+  always reports, but skips its body on changes that cannot move its verdict — read the
+  run log and say which of the two happened. Which changes skip it is stated once, in
+  `.github/CONTRIBUTING.md`. STOP at the PR — do not merge; the operator merges
   once CI is green. A red lane means that lane failed; read it — the demo is the
   truth-teller.
 - Branch grammar + PR anchor (enforced at the merge gate by
@@ -119,11 +122,12 @@ work in the integrated Git-Bash/Cygwin bash (the MSYS-path/Windows-Store-Python
 hooks-parse issue that once made Git Bash fragile is fixed, #8). Agents working on
 THIS repo execute shell via that native integrated bash, NOT WSL. Linux and macOS
 remain the STANDING fully-tested lanes via CI (the demo runs on ubuntu-latest +
-macos-latest on every push to `main` and every PR into `main`), so a change is
-proven on both before it merges; a windows-latest MSYS job witnesses the Windows
-lane informationally (non-gating). WSL is used ONLY as ephemeral verification
-(fresh clone → run → discard), never a standing copy; plain PowerShell runs git
-only, not the bash machinery.
+macos-latest on every push to `main`, and on a pull request whose changes could
+move its verdict — `.github/CONTRIBUTING.md` states which pull requests skip it),
+so a machinery change is proven on both before it merges; a windows-latest MSYS
+job witnesses the Windows lane informationally (non-gating). WSL is used ONLY as
+ephemeral verification (fresh clone → run → discard), never a standing copy;
+plain PowerShell runs git only, not the bash machinery.
 Write portably — no GNU-only flags without a BSD/macOS fallback. Verify on the
 platform where a fix's failure mode can actually occur.
 

@@ -933,6 +933,17 @@ dc_c7d_collapse() {
   printf '  %s\n' $collapse_hits
 }
 
+# UNOWNED — found while reading this file end to end for the #129 shape pass, which was scoped to
+# SHAPE ONLY, so each is recorded rather than fixed; other items are queued against this file.
+#   * THE OK-LINES ARE NOT THE DETECTOR SET. The closing line of dc_main points a reader at them
+#     for "the detector set at HEAD", but only nine detectors emit one: B2-sweep, grammar-drift,
+#     B3-separation, B4-structure, DESIGN-trigger and the four C7 detectors print nothing when they
+#     pass. A green log therefore names half the instrument while reading as if it named all of it.
+#   * TWO OK-LINES TEST THE GLOBAL FLAG RATHER THAN A SNAPSHOT OF IT. B1-inventory's and the #69
+#     ADR's are guarded by `[ "$fail" -ne 0 ]`, where the other seven compare against the value
+#     their own detector saved before starting. B1 runs first, so its version is latent; the ADR
+#     one is LIVE — any earlier detector's failure suppresses it even when every ADR is well-formed.
+
 # dc_main — the detectors, in the order their output has to appear. This list IS the running order;
 # nothing else in the file decides it.
 dc_main() {

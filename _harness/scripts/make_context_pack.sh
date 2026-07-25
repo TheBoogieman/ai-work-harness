@@ -12,13 +12,24 @@ STAMP=$(date +%Y%m%d-%H%M)
 STAGE=$(mktemp -d); trap 'rm -rf "$STAGE"' EXIT
 
 # ---- SCRUB TABLE — single source of scrubbing truth. Extend HERE when a new
-# identifier class appears. sed -E 's|find|replace|g' pairs.
+# identifier class appears. sed -E 's|find|replace|gI' pairs.
+# The trailing I makes every rule CASE-INSENSITIVE, which is not decoration: the self-audit below
+# matches the same terms with grep -i, and until #169 these two disagreed. A lowercase placeholder
+# then survived the case-sensitive scrub and tripped the case-insensitive audit — an ordinary prose
+# edit failing the pack build. They are aligned by WIDENING the scrub, never by narrowing the audit:
+# the audit exists as the backstop for the scrub, so a term the audit can see must be a term the
+# scrub removes. Narrowing the audit to the scrub's blind spot would silence the alarm and let the
+# identifier ship in a pack that goes outside the organisation. Over-scrubbing costs a re-read of a
+# disposable export; under-auditing cannot be recalled. Case-insensitivity is also correct for what
+# these rules match: an identifier is the same identifier in any case.
+# Portability: the I flag on s/// is supported by both GNU sed and BSD/macOS sed.
 SCRUB=(
-  's|<YOUR-EMPLOYEE-ID>|<user>|g'
-  's|<YOUR-ORG-DOMAIN>|<org>|g'
-  's|<YOUR-CLOUD-ACCOUNT-ID>|<account>|g'
+  's|<YOUR-EMPLOYEE-ID>|<user>|gI'
+  's|<YOUR-ORG-DOMAIN>|<org>|gI'
+  's|<YOUR-CLOUD-ACCOUNT-ID>|<account>|gI'
 )
-# Terms that must NOT appear in the final pack (self-audit):
+# Terms that must NOT appear in the final pack (self-audit). Matched case-insensitively below
+# (grep -qiE) — keep that in step with the SCRUB rules' I flag; a mismatch in either direction is #169.
 AUDIT_TERMS='<YOUR-EMPLOYEE-ID>|<YOUR-ORG-DOMAIN>|<YOUR-CLOUD-ACCOUNT-ID>'
 
 TICKET=""

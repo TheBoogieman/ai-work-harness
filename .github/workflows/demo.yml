@@ -4,6 +4,13 @@
 # for REAL on macOS here (not via shims). Triggers on push to main, PRs into main,
 # and manual dispatch; no scheduled runs. Per-branch concurrency cancels superseded runs
 # to keep usage minimal.
+#
+# SCOPE (#115): a pull request that changes ONLY documentation does not pay for four full demo
+# runs. The saving is made INSIDE the job, never by a `paths:` filter or a job-level `if:` — the
+# job, its matrix and its two generated names (`demo (ubuntu-latest)`, `demo (macos-latest)`) are
+# REQUIRED checks, and a required check that does not report leaves the PR pending forever, so
+# every documentation change would become unmergeable. The job therefore ALWAYS runs and ALWAYS
+# reports; only its expensive steps are conditional on the scope step below.
 name: demo
 
 on:
@@ -38,15 +45,117 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
     steps:
+      # fetch-depth 0 so the scope step below can diff this PR against its base branch.
+      # (docs.yml already checks out full history for the same reason.)
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # SCOPE DECISION (#115) — the only step that always does work. It answers one question:
+      # can this change possibly move the demo's verdict? It writes `run=true|false` to the step
+      # output; every expensive step below is gated on it. Deciding here (rather than in a
+      # `paths:` filter) is what keeps both matrix-generated check names reporting on every PR.
+      - name: Decide whether this change can affect the demo (#115)
+        id: scope
+        env:
+          # Event name and base branch through env, never inlined into the run line.
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          set -uo pipefail
+
+          # Not a pull request (a post-merge push to main, or a manual dispatch): there is no
+          # "the change" to scope against, and the push run is main's standing integration
+          # proof. Always run the full demo.
+          if [ "$EVENT_NAME" != "pull_request" ]; then
+            echo "SCOPE: event '$EVENT_NAME' is not a pull request — running the full demo."
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # This PR's changed set, against the merge-base with its base branch. --name-status so
+          # an add/delete/rename is distinguishable from a plain content edit (they are treated
+          # differently below); -M so a rename reads as R rather than as an unrelated D+A pair.
+          git fetch --quiet origin "$BASE_REF"
+          changed=$(git -c core.quotePath=false diff --name-status -M "origin/$BASE_REF...HEAD")
+
+          # An empty diff means we could not establish what changed (a shallow or broken fetch).
+          # Unknown is not the same as safe — fall back to running everything.
+          if [ -z "$changed" ]; then
+            echo "SCOPE: could not determine the changed file set — running the full demo."
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "SCOPE: changed files against origin/$BASE_REF (status<TAB>path):"
+          printf '%s\n' "$changed" | sed 's/^/  /'
+
+          # THE DOCUMENTATION RULE (#115), stated so a reader can check it against the demo:
+          #  (1) Anything other than a content EDIT (status M) runs the demo — whatever the path,
+          #      documentation included. The demo's #43 classification guard asserts over the
+          #      TRACKED FILE SET (every tracked file classified in the ship-manifest, and every
+          #      manifest line a real file), so an add/delete/rename can red the demo even when
+          #      the file itself is pure prose.
+          #  (2) An edit is skippable only if its path is one of: a *.md at the repository root,
+          #      anything under decisions/ (the ADRs), or anything under
+          #      "General AI-Knowledge/AI Harness/" (the DESIGN note and the operator's drawings).
+          #      Nothing else — the default is to run.
+          # Deliberately NOT skippable although they are markdown: _agents/*.agent.md (the demo
+          # asserts their frontmatter and the reader spine), General AI-Knowledge/Skills/** (the
+          # #84 index<->tree guard), and Tickets/** (the demo's own fixture ticket).
+          # KNOWN RESIDUAL COUPLING, recorded rather than hidden: make_context_pack.sh stages
+          # README.md, AGENTS.md, folder-structure.md and "General AI-Knowledge/AI Harness/" into
+          # the pack that stage 6 builds, and audits the result for scrub-table placeholder
+          # tokens. An edit that introduced such a token in a case the SCRUB table does not
+          # rewrite would red the demo and would be skipped here; the post-merge push-to-main run
+          # is the backstop. Changing the scrub/audit table itself is a machinery edit, which runs.
+          run=false
+          # Fed by process substitution, not a pipe: the loop must run in THIS shell so the
+          # `run` it sets survives past `done`. A rename line carries a third field, which
+          # lands harmlessly inside "$path" — renames break out one line further down anyway.
+          while IFS=$'\t' read -r status path; do
+            [ -n "$status" ] || continue
+            if [ "$status" != "M" ]; then
+              echo "SCOPE: '$status  $path' changes the tracked file set — running the demo."
+              run=true
+              break
+            fi
+            case "$path" in
+              */*) ;;                                              # nested: fall through to the directory list
+              *.md) continue ;;                                    # a root-level *.md is documentation
+            esac
+            case "$path" in
+              decisions/*|"General AI-Knowledge/AI Harness/"*) continue ;;
+            esac
+            echo "SCOPE: '$path' is not documentation the demo is blind to — running the demo."
+            run=true
+            break
+          done < <(printf '%s\n' "$changed")
+
+          if [ "$run" = true ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "SCOPE: documentation-only change — the demo's body is skipped for this PR."
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Says so in the log, on the record, when the green below was earned by skipping rather
+      # than by passing — so nobody mistakes a fast green for a demo that ran.
+      - name: Documentation-only change — demo body skipped (#115)
+        if: steps.scope.outputs.run != 'true'
+        run: |
+          echo "::notice::Documentation-only change: the acceptance demo's body did not run on this PR (#115). The job reports green so the required check is not left pending; the demo runs in full on the push to main after merge."
+
       # A hosted-tool Python (NOT externally-managed), so `pip install` works directly — no PEP 668,
       # no --break-system-packages needed. Sets `python3` on PATH, which is what the demo calls.
       - uses: actions/setup-python@v5
+        if: steps.scope.outputs.run == 'true'
         with:
           python-version: '3.12'
       - name: Install nbformat (the notebook helper's only dependency)
+        if: steps.scope.outputs.run == 'true'
         run: python3 -m pip install nbformat
       - name: Verify zip + unzip are present (context-pack build + stage 6 read)
+        if: steps.scope.outputs.run == 'true'
         run: command -v zip >/dev/null && command -v unzip >/dev/null
       # The harness is case-safe by construction — nothing depends on case-distinct filenames, so it
       # runs identically on either filesystem. This step RECORDS the runner's actual FS mode into the
@@ -54,6 +163,7 @@ jobs:
       # not assumed. The probe runs in a temp dir, so it never touches the repo root or the demo.
       # Expected: macos-latest -> case-INSENSITIVE (a real user's default); ubuntu-latest -> case-SENSITIVE.
       - name: Report filesystem case-sensitivity (documents the runner's FS mode)
+        if: steps.scope.outputs.run == 'true'
         run: |
           probe=$(mktemp -d)
           touch "$probe/_caseprobe"
@@ -62,4 +172,5 @@ jobs:
       # The demo self-anchors, sets HARNESS_DEMO, uses temp dirs, and (on a real clone like this
       # checkout) never commits to the repo — it runs fully headless and exits 0 only on success.
       - name: Run acceptance demo
+        if: steps.scope.outputs.run == 'true'
         run: bash _harness/scripts/run_demo.sh

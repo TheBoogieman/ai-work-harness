@@ -1768,6 +1768,38 @@ n_packs=$(find "$PACK_OUT_DIR" -maxdepth 1 -name 'harness-pack-*.zip' 2>/dev/nul
 [ "$n_packs" = "1" ] || { echo "BUG [stage 6]: expected exactly 1 pack in PACK_OUT_DIR, found $n_packs — a second pack makes the unzip glob ambiguous:"; ls -1 "$PACK_OUT_DIR"; exit 1; }
 unzip -p "$PACK_OUT_DIR"/harness-pack-*.zip MANIFEST.txt | tail -1
 
+# [#169 guard: the scrub and the self-audit agree on case] — the SCRUB rules once matched
+# case-SENSITIVELY while the self-audit matched case-INSENSITIVELY (grep -qiE), so a lowercase
+# placeholder in an ordinary prose file survived the scrub and then tripped the audit that exists to
+# catch what the scrub missed: an honest edit red-blocked the pack build. The fixture is a staged
+# ticket file carrying a scrub-table token in the case that used to escape. Own throwaway pack dir,
+# like [R-09 D] and the [#14 guard] above, so the shared PACK_OUT_DIR keeps exactly one archive.
+# TWO assertions, because there are two ways to make the halves agree and only one is safe: exit 0
+# proves the audit no longer fires, and the scrubbed text proves the fix WIDENED the scrub instead of
+# NARROWING the audit — narrowing it also yields exit 0, while shipping the raw token in the pack.
+# The token is ASSEMBLED at runtime, never written contiguously in this file, and that is
+# load-bearing: run_demo.sh is itself staged into every pack (make_context_pack stages
+# _harness/scripts/*), so a literal token here would ride into every pack the demo builds and, on
+# pre-fix code, would red the FIRST pack build ([R-09 D], hundreds of lines above) with that guard's
+# message instead of this one. Split, the fixture is the only carrier and the red lands here.
+# Keep it split if you edit this block.
+G169_TOKEN=$(printf '<your-org-%s>' domain)
+G169_TICKET="999911Z-PROJ-99169"
+G169_OUT_DIR=$(mktemp -d)
+mkdir -p "Tickets/$G169_TICKET"
+printf '# case fixture\nReach us at %s for access.\n' "$G169_TOKEN" > "Tickets/$G169_TICKET/$G169_TICKET.md"
+set +e; G169_OUT=$(PACK_OUT_DIR="$G169_OUT_DIR" bash _harness/scripts/make_context_pack.sh --ticket "$G169_TICKET" 2>&1); G169_RC=$?; set -e
+g169zip=$(ls "$G169_OUT_DIR"/harness-pack-*.zip 2>/dev/null | head -1 || true)   # no-match must not trip set -e/pipefail
+G169_TXT=""
+[ -n "$g169zip" ] && G169_TXT=$(unzip -p "$g169zip" "Tickets/$G169_TICKET/$G169_TICKET.md" 2>/dev/null || true)
+rm -rf "Tickets/$G169_TICKET" "$G169_OUT_DIR"   # fixture is scratch: gone before anything else sees it
+[ "$G169_RC" -eq 0 ] || { echo "BUG [#169 guard]: a lowercase scrub-table token failed the pack build (rc=$G169_RC) — the scrub missed what the audit caught:"; printf '%s\n' "$G169_OUT"; exit 1; }
+printf '%s\n' "$G169_TXT" | grep -q '<org>' \
+  || { echo "BUG [#169 guard]: the lowercase token was not replaced by its scrub-table substitute:"; printf '%s\n' "$G169_TXT"; exit 1; }
+printf '%s\n' "$G169_TXT" | grep -qiF -- "$G169_TOKEN" \
+  && { echo "BUG [#169 guard]: a scrub-table token survived into the pack — the audit was narrowed instead of the scrub widened:"; printf '%s\n' "$G169_TXT"; exit 1; }
+echo "  ok [#169 guard: scrub and self-audit agree on case] — a lowercase token is scrubbed out, not merely tolerated"
+
 rm -rf "$S"
 demo_close_commit "$DID_INIT" "."   # gated: commits only if the demo created this repo (issue #10)
 echo; echo "ALL 6 DEMO STAGES PASSED — the machinery works. Next: README Setup to wire Copilot."

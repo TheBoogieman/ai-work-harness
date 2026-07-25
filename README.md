@@ -35,8 +35,10 @@ safety net, validates the template ticket, runs a scratch ticket through the
 happy path, **deliberately corrupts a record and shows the validator refusing
 with an exact fix**, round-trips the notebook helper, breaks and restores an
 agent deployment, and builds a scrubbed context pack with a manifest self-audit.
-The same demo runs in CI on Linux + macOS on every push and PR into `main`, so
-the GNU/BSD portability branches are exercised for real, not via shims.
+The same demo runs in CI on Linux + macOS — in full on every push to `main`, and
+on a pull request whose changes could move its verdict — so the GNU/BSD
+portability branches are exercised for real, not via shims. Which pull requests
+skip it is stated once, in `.github/CONTRIBUTING.md`.
 
 **2 · Install onto your estate and wire your assistant (~10 minutes).**
 
@@ -165,7 +167,7 @@ Work/                                        [git root · local-only · whitelis
 ├── .gitignore                               /* deny-all → re-include record set
 ├── folder-structure.md                      THE CONSTITUTION · Part I always / Part II on demand
 ├── AGENTS.md                                door-note → folder-structure.md
-├── .github/workflows/                       CI — runs the demo on Linux + macOS on every push to main and PR into main
+├── .github/workflows/                       CI — the demo on Linux + macOS: every push to main; PRs by scope (see .github/CONTRIBUTING.md)
 │
 ├── _harness/
 │   └── scripts/                             THE MACHINERY (versioned)

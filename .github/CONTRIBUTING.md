@@ -39,8 +39,10 @@ exception prefix** — a merging branch either conforms or is renamed.
 
 The branch's leading number must also be one of the issues the PR closes
 (its `Fixes #NN` set) — so a branch never auto-closes an issue it wasn't for.
-If a check reds, its message prints the exact `git branch -m` + re-push
-commands; nothing to re-derive.
+If a check reds, its message carries the remedy: a grammar miss prints the exact
+`git branch -m` + re-push commands, and a number-mismatch prints both ways out —
+add `Fixes #NN` for the number the branch leads with, or rename the branch to an
+issue the PR does close.
 
 ## The merge gates (and where the authoritative list lives)
 

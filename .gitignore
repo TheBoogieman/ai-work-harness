@@ -3,6 +3,7 @@
 !/.gitignore
 !/.gitattributes
 !/LICENSE
+!/VERSION
 !/install.sh
 !/README.md
 !/SPEC.md

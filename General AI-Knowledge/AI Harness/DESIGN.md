@@ -31,9 +31,18 @@ failures prescribe, nothing heals itself — a fixed record is a human act.
 - Determinism over intelligence wherever possible: notebook edits via
   nbformat helper (any language), linting via linters, validation via bash. Models are for
   judgment only; the agents are tiered accordingly.
-- Growth is governed: mint a new agent on the THIRD repetition of a task,
-  authored in _agents/, inheriting all constraints. PR review — not agent
-  restraint — is the standards gate for shared code.
+- Growth, as first sketched: mint a new agent on the THIRD repetition of a
+  task, authored in _agents/, inheriting all constraints. RECORDED INTENT, NOT
+  LAW (`#227` determined this) — the sentence dates to this repository's first
+  commit and is still the only place it appears: nothing counts repetitions,
+  no constitution clause or agent contract owns it, and no commit in the
+  history cites it as the reason an agent was minted. The roster grew issue by
+  issue instead. It is kept because it records what the design wanted; it is
+  not a rule, and nothing is out of compliance for ignoring it. Contrast the
+  SKILLS growth rule, which IS law and is fully homed — the constitution's
+  *Skills Convention* states it, `knowledge-curator` owns it, and a skill lands
+  only on explicit user approval. PR review — not agent restraint — is the
+  standards gate for shared code.
 
 **Operational doctrine:** red blocks, yellow schedules, never fabricate,
 late-but-true beats fiction. Full state table: backbone PART II.

@@ -18,8 +18,11 @@ failures prescribe, nothing heals itself — a fixed record is a human act.
   never fire, or fire per-turn) → commits anchor to WRITES (postToolUse),
   validation anchors to ENTRY (sessionStart), sessionEnd is a bonus.
 - Whitelist repo: records versioned (tickets minus Logs/Dump, constitution,
-  AGENTS.md, _agents/, _harness/, General AI-Knowledge); everything else
-  never enters history — containment by construction.
+  AGENTS.md, _agents/, _harness/, General AI-Knowledge, General Human
+  Knowledge), alongside the harness's own shipped files; everything else
+  never enters history — containment by construction. `.gitignore` IS the
+  whitelist and settles the exact set; this list describes it, never
+  overrides it.
 - Source vs deployment everywhere: _agents/ is truth, the Copilot discovery
   dir is a derived copy (drift-checked); status output and
   context packs are derived views, never stored state.

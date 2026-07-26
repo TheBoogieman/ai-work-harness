@@ -69,10 +69,12 @@ operator, one active session at a time, and no remote — ever.
 - **estate** — the local work folder `install.sh` turns into a disciplined,
   record-keeping workspace (the git root). Distinct from the **source** checkout
   you develop the harness in; the two are never the same directory.
-- **guard** — a mechanical check that refuses to let a defect through. In the
-  product they are the `R-NN` regression guards baked into the demo and the
-  scripts; an `R-NN` tag (e.g. `R-09`) is a stable internal name for one such
-  check, so it can be cited across files without its logic being repeated.
+- **guard** — a mechanical check that refuses to let a defect through. A guard
+  is proven rather than asserted: it is written against a real defect and shown
+  failing on the code that still carried it, so a later green run is evidence
+  and not merely an absence. Guards live in the acceptance suite and in the
+  scripts themselves, and each is cited by the behaviour it defends, so its
+  logic is never repeated in the documents that refer to it.
 - **red/yellow** — the two-tone signalling law. **Red** (`FAIL`) blocks: fix
   before working. **Yellow** (`WARN`/`NOTE`) schedules: keep working, handle the
   chore at the next natural boundary. Nothing self-heals; a fixed record is

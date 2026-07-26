@@ -156,11 +156,13 @@ enforcement claim the repository cannot cash.
 - Public text — repo files, code comments, output strings, commit messages,
   and issue text — cites only immutable identifiers: GitHub issue numbers and
   commit hashes. NEVER internal or ephemeral labels (wave/milestone tags like
-  "M1"/"W3"/"004a", or transient review/finding numbers) — they drift, and mean
+  "M1"/"W3"/"004a", or review-finding tags like "R-09") — they drift, and mean
   nothing (or something different) to a later reader; a finding that needs a
-  durable public reference gets a GitHub issue number. (The existing
-  `[R-09]`-style guard labels already baked into the demo are internal, stable
-  test names — leave them; this rule governs NEW public references to findings.)
+  durable public reference gets a GitHub issue number. These instructions name
+  those retired tags so they stay decodable: the commit messages and issue text
+  carrying them can never be rewritten, so a reader doing archaeology needs
+  somewhere to meet them. Naming them here is a dictionary, not a licence —
+  this rule still governs every NEW public reference.
 - The ticket-recognition pattern lives in ONE home
   (_harness/scripts/ticket-grammar.sh), sourced by both the validator and
   status. Never duplicate it — an edit there must move both tools.

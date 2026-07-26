@@ -140,6 +140,8 @@ DEV	dev-loop/message-format.template.md
 DEV	dev-loop/role-charter.template.md
 DEV	dev-loop/working-agreement.template.md
 DEV	docs/history/2026-07-25-completion-goal-numbering.md
+PRODUCT	folder-map.md
 PRODUCT	folder-structure.md
 PRODUCT	install.sh
+PRODUCT	installing.md
 PRODUCT	setup.md

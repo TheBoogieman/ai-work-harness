@@ -1635,6 +1635,51 @@ i39_used=$(grep -oE 'board key += +[A-Za-z0-9-]+' "$I39_ROOT/id.out" | head -1 |
 [ -n "$i39_hint" ] && [ "$i39_hint" = "$i39_used" ] \
   || { echo "BUG [prompt-default]: the board prompt advertised default '$i39_hint' but Enter used '$i39_used' — the hint is a lie"; exit 1; }
 echo "  ok [prompt-default] — the Enter-to-accept hint names the value actually used ($i39_hint)"
+# (k) missing-value-audible (#200): on an ESTABLISHED estate missing an agent file, detect_model
+#     returned non-zero; under install.sh's `set -euo pipefail` the command substitution that
+#     assigned it killed the run with ZERO output, one line ABOVE the placeholder fallback written
+#     for exactly that case — so the fallback could never execute.
+#     WHAT THIS GUARD MEASURES IS REACHABILITY, NOT THAT A MESSAGE APPEARED. Asserting a message
+#     would be the cheaper question: a line can print while the fallback below it still never runs.
+#     The load-bearing assertion is the SUMMARY'S CHEAP-PIN VALUE — PICK-A-CHEAP-MODEL can only
+#     reach that line if the fallback ASSIGNMENT itself executed. Two fixture facts stop that value
+#     arriving by any other route: ticket-grammar.sh is present (so the run takes the ESTABLISHED
+#     branch, not the fresh branch that placeholders both tiers), and the sonnet pin is set to a
+#     marker the run must DETECT — the summary carrying marker AND placeholder side by side proves
+#     the established branch ran and that only the cheap tier fell back. The stderr check at the
+#     end is a SEPARATE, WEAKER claim (the run said WHICH file it could not read); it is not what
+#     proves reachability, and it would still pass on code whose fallback never ran.
+i39_mv="$I39_ROOT/mvest"
+HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh --yes "$i39_mv" >/dev/null 2>&1
+# Marker on the sonnet tier's reference agent; awk-to-tmp+mv is BSD-portable (no in-place edit).
+i39_mvti="$i39_mv/_agents/ticket-init.agent.md"
+awk '/^model:/{print "model: MVSONNET"; next} {print}' "$i39_mvti" > "$I39_ROOT/mvti.tmp" \
+  && mv "$I39_ROOT/mvti.tmp" "$i39_mvti"
+rm -f "$i39_mv/_agents/doc-writer.agent.md"   # THE FIXTURE: one agent file absent
+[ -e "$i39_mv/_harness/scripts/ticket-grammar.sh" ] \
+  || { echo "BUG [missing-value-audible]: fixture is not an ESTABLISHED estate — the guard would"; \
+       echo "    be testing the fresh branch, which placeholders both tiers anyway"; exit 1; }
+set +e
+HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh --yes "$i39_mv" \
+  >"$I39_ROOT/mv.out" 2>"$I39_ROOT/mv.err"
+i39_mvrc=$?
+set -e
+i39_mvbytes=$(( $(wc -c <"$I39_ROOT/mv.out") + $(wc -c <"$I39_ROOT/mv.err") ))
+[ "$i39_mvrc" -eq 0 ] \
+  || { echo "BUG [missing-value-audible]: install EXITED rc=$i39_mvrc, one agent file absent,"; \
+       echo "    emitting $i39_mvbytes bytes of output — a silent exit is the defect"; exit 1; }
+# THE REACHABILITY ASSERTION: the fallback's VALUE arrived in the summary.
+grep -qE 'cheap model pin += +PICK-A-CHEAP-MODEL' "$I39_ROOT/mv.out" \
+  || { echo "BUG [missing-value-audible]: the placeholder fallback never RAN — no cheap-pin"; \
+       grep -i 'model pin' "$I39_ROOT/mv.out"; exit 1; }
+# ...and the marker beside it proves the established branch is what produced that placeholder.
+grep -qE 'sonnet model pin += +MVSONNET' "$I39_ROOT/mv.out" \
+  || { echo "BUG [missing-value-audible]: established sonnet pin not detected — the run did not"; \
+       echo "    take the established branch, so the cheap placeholder proves nothing"; exit 1; }
+# The separate, weaker claim: the run SAID which value it could not read.
+grep -q 'doc-writer.agent.md' "$I39_ROOT/mv.err" \
+  || { echo "BUG [missing-value-audible]: the run never named the unreadable agent file"; exit 1; }
+echo "  ok [missing-value-audible] — missing value: fallback REACHED (value reaches the summary)"
 rm -rf "$I39_ROOT" "$I39_DEPLOY"
 # --- end installer guards -------------------------------------------------------------
 

@@ -20,7 +20,10 @@ set -uo pipefail
 fail=0
 README=README.md
 DESIGN="General AI-Knowledge/AI Harness/DESIGN.md"
-readme_body=$(cat "$README")
+# The two documents the front page handed work to in #146: the estate structure it used to carry,
+# and the install manual it used to be. Named here because four detectors below now read them.
+MAP=folder-map.md
+INSTALL_DOC=installing.md
 
 # dc_fail / dc_ok — the two output shapes every detector prints, in ONE home each. A message is
 # passed as SEVERAL arguments and joined with a single space, which is what lets a long message be
@@ -30,17 +33,22 @@ readme_body=$(cat "$README")
 dc_fail() { local tag=$1 IFS=' '; shift; printf 'FAIL [docs %s]: %s\n' "$tag" "$*"; fail=1; }
 dc_ok() { local tag=$1 IFS=' '; shift; printf '  ok [docs %s] — %s\n' "$tag" "$*"; }
 
-# --- readme-inventory — every shipped script + the two root surfaces in README's folder map ------
+# --- map-inventory — every shipped script + the two root surfaces named in the folder map --------
 # (the #34 docs-inventory guard, MIGRATED out of run_demo.sh; it gates merges now, not the demo.)
-dc_readme_inventory() {
-  local s base ri_total=0
+# RE-POINTED, NOT REWRITTEN (#146): the folder map left README for its own document, and this check
+# followed it there. Same assertion over the same fact — only the document obliged to carry the
+# names changed. It is also WHY the map had to leave: this check makes the map grow every time the
+# machinery grows, so whichever document holds the map cannot stay short.
+dc_map_inventory() {
+  local s base mi_body ri_total=0
+  mi_body=$(cat "$MAP")
   for s in _harness/scripts/* install.sh setup.md; do
     base=$(basename "$s"); ri_total=$((ri_total+1))
-    grep -Fq -- "$base" <<<"$readme_body" && continue
-    dc_fail readme-inventory "$base ships but is not named in README's folder map" \
+    grep -Fq -- "$base" <<<"$mi_body" && continue
+    dc_fail map-inventory "$base ships but is not named in the folder map ($MAP)" \
                          "— add its tree line."
   done
-  [ "$fail" -ne 0 ] || dc_ok readme-inventory "$ri_total shipped surfaces named in README"
+  [ "$fail" -ne 0 ] || dc_ok map-inventory "$ri_total shipped surfaces named in $MAP"
 }
 
 # --- dev-loop — DEVELOPMENT.md + dev-loop/ starter kit: three method-doc invariants (#68) --------
@@ -55,7 +63,7 @@ dc_readme_inventory() {
 # only when all three invariants held this run.
 
 # dc_dl_pairs — invariant 3's rows, each pinned as its own named assertion (the same style as the
-# readme-sweep's) so a dropped role or law reds by name rather than vanishing silently. Format:
+# doc-sweep's) so a dropped role or law reds by name rather than vanishing silently. Format:
 # "LABEL<TAB>literal string in DEVELOPMENT.md". This is ALSO exclusion 3's second source in the
 # one-home detector below, which is why it is a named surface rather than an inline list.
 dc_dl_pairs() {
@@ -470,30 +478,36 @@ dc_no_lookup() {
     "cannot judge whether a live identifier is decodable."
 }
 
-# --- readme-sweep — the frozen sweep set, pinned as ONE named grep per swept surface -------------
+# --- doc-sweep — the frozen sweep set, pinned as ONE named grep per swept surface ----------------
 # Each swept user-facing surface = one assertion with its own prescriptive miss, so coverage of a
 # surface cannot silently regress (cond 3 "cannot regress"). Extend this list when a NEW surface is
-# swept; never blob it. Format: "LABEL<TAB>literal string that must appear in README".
+# swept; never blob it. Format: "LABEL<TAB>DOCUMENT<TAB>literal string that must appear in it".
+# THE DOCUMENT IS A COLUMN RATHER THAN ONE CONSTANT (#146), because the surfaces this sweeps no
+# longer all live on the front page: the folder map took three of them with it when it moved out.
+# Pinning each row to its OWN document is what keeps the assertion exact — a telling that lands in
+# the wrong document still reds, which is precisely what widening the haystack to "any front-door
+# document" would stop seeing. Hence the rename off "readme-": the set is no longer README's alone.
 dc_sweep_pairs() {
   printf '%s\n' \
-    "ticket-naming	YYYYMM" \
-    "ticket-state-pending	.ticket-pending" \
-    "ticket-state-silenced	.not-a-ticket" \
-    "ticket-init-agent	ticket-init" \
-    "branch-workflow-anchor	Fixes #" \
-    "governance-checks	governance.yml" \
-    "ship-dev-manifest	ship-manifest" \
-    "venv-prerequisite	venv_global" \
-    "contributor-guide	CONTRIBUTING"
+    "ticket-naming	$MAP	YYYYMM" \
+    "ticket-state-pending	$MAP	.ticket-pending" \
+    "ticket-state-silenced	$MAP	.not-a-ticket" \
+    "ticket-init-agent	$README	ticket-init" \
+    "branch-workflow-anchor	$README	Fixes #" \
+    "governance-checks	$README	governance.yml" \
+    "ship-dev-manifest	$README	ship-manifest" \
+    "venv-prerequisite	$README	venv_global" \
+    "contributor-guide	$README	CONTRIBUTING"
 }
 
-dc_readme_sweep() {
-  local pair label needle
+dc_doc_sweep() {
+  local pair label doc needle rest
   while IFS= read -r pair; do
-    label=${pair%%	*}; needle=${pair#*	}
-    grep -Fq -- "$needle" <<<"$readme_body" && continue
-    dc_fail "readme-sweep:$label" \
-      "README no longer documents this surface (missing \"$needle\") — restore its telling."
+    label=${pair%%	*}; rest=${pair#*	}
+    doc=${rest%%	*}; needle=${rest#*	}
+    grep -Fq -- "$needle" "$doc" && continue
+    dc_fail "doc-sweep:$label" \
+      "$doc no longer documents this surface (missing \"$needle\") — restore its telling."
   done < <(dc_sweep_pairs)
 }
 
@@ -638,31 +652,87 @@ dc_ci_name_contract() {
 }
 
 # --- map-complete (#82, operator ruling) — every top-level directory shipping PRODUCT files
-# appears in README's folder map. #85 shipped General Human Knowledge/ as PRODUCT but no wave added
+# appears in the folder map. #85 shipped General Human Knowledge/ as PRODUCT but no wave added
 # it to the map; the rule closes that class of gap. MANIFEST-KEYED, not a hardcoded list: the
 # directory set is derived from the PRODUCT paths in ship-manifest.txt, so a newly-shipped top-level
 # dir is caught automatically. Directory names contain spaces, so match the literal path string —
-# and ONLY inside the map's own fenced tree block (a prose mention elsewhere in README is NOT the
-# map: the map is estate STRUCTURE). Revert-proof: remove a map line and this reds naming the
-# directory.
+# and ONLY inside the map's own fenced tree block (a prose mention elsewhere is NOT the map: the map
+# is estate STRUCTURE). Revert-proof: remove a map line and this reds naming the directory.
+# RE-POINTED WITH THE MAP (#146): it reads $MAP now, and the heading pattern admits any depth of
+# "#" because the map's own document titles the section rather than sub-heading it.
 dc_map_complete() {
   local mc_fail_before=$fail mc_map mc_dir
-  # the fenced tree block under "## The folder map" (content between its first pair of ``` fences).
+  # the fenced tree block under the "The folder map" heading (between its first pair of ``` fences).
   mc_map=$(awk '
-    /^## The folder map/ {seen=1; next}
+    /^#+ The folder map/ {seen=1; next}
     seen && /^```/ {fence++; if(fence==2) exit; next}
     seen && fence==1 {print}
-  ' "$README")
+  ' "$MAP")
   # top-level dir of each PRODUCT manifest path that lives under a directory (path contains a "/").
   while IFS= read -r mc_dir; do
     grep -Fq -- "$mc_dir/" <<<"$mc_map" && continue
     dc_fail map-complete \
       "top-level directory '$mc_dir/' ships PRODUCT files (per .github/ship-manifest.txt) but is" \
-      "absent from README's folder map — add its tree line."
+      "absent from the folder map ($MAP) — add its tree line."
   done < <(awk -F'\t' '$1=="PRODUCT" && $2 ~ /\// { sub(/\/.*/,"",$2); print $2 }' \
              .github/ship-manifest.txt | sort -u)
   [ "$fail" -ne "$mc_fail_before" ] || dc_ok map-complete \
-    "every PRODUCT top-level directory appears in README's folder map"
+    "every PRODUCT top-level directory appears in the folder map ($MAP)"
+}
+
+# --- install-home (#146) — THE INSTALL COMMANDS ARE TOLD ONCE ------------------------------------
+# This is the SAFETY PROPERTY of splitting the install manual off the front page, not paperwork.
+# An earlier collapse deleted the standalone install document and made the front page the only
+# install home FOR A REASON: two install documents drift apart, and the one that drifts is the one
+# somebody is reading when their install fails. Splitting the manual back off without this check
+# would recreate exactly that defect — while looking like tidying.
+#
+# So the guarantee is RELOCATED, not dropped. It used to rest on there being only one document to
+# tell it in; it now rests on an assertion, because there are deliberately two. Each registered
+# command must appear in the manual and must NOT appear in README. BOTH directions are asserted:
+# a command missing from the manual means the registry has rotted, and a rotted registry is green
+# for the wrong reason — the failure mode that makes a gate worse than no gate.
+#
+# WHY NOT A ROW IN THE one-home REGISTRY ABOVE: that census blanks every token carrying a slash or
+# a known file extension before it counts (its exclusion 1, which stops a manifest row reading as a
+# telling). An install command is very nearly nothing but such tokens, so a row there would match
+# nothing and report a rot that is not there. The commands are registered here instead, against the
+# two documents by name.
+#
+# THE REGISTRY — one row per command: "LABEL<TAB>the literal command text". Substring rather than
+# whole line, so a command keeps matching when the sentence around it is reworded. Unlike the
+# one-home census this greps ONLY the two install documents, so this script's own source carrying
+# the literals is not a third telling and needs no obfuscation. run_demo.sh is deliberately NOT
+# registered: README names it in the development section for a different job, and registering it
+# would red on a correct repository.
+dc_ih_commands() {
+  printf '%s\n' \
+    "clone	git clone https://github.com/TheBoogieman/ai-work-harness.git" \
+    "venv-create	python3.12 -m venv" \
+    "nbformat	pip install nbformat" \
+    "installer	bash install.sh ~/Work" \
+    "reconfigure	cd ~/Work && bash install.sh" \
+    "arming	git -C <estate> config harness.estate true"
+}
+
+dc_install_home() {
+  local ih_before=$fail ih_row ih_label ih_cmd
+  while IFS= read -r ih_row; do
+    ih_label=${ih_row%%	*}; ih_cmd=${ih_row#*	}
+    grep -Fq -- "$ih_cmd" "$README" && dc_fail "install-home:$ih_label" \
+      "the install command \"$ih_cmd\" appears in $README as well as in $INSTALL_DOC. Install" \
+      "commands have ONE home ($INSTALL_DOC) because two install documents drift apart — delete" \
+      "the copy from $README and leave the pointer that sends the reader to the manual."
+    grep -Fq -- "$ih_cmd" "$INSTALL_DOC" && continue
+    dc_fail "install-home:$ih_label" \
+      "$INSTALL_DOC no longer carries the install command \"$ih_cmd\" — this registry has rotted," \
+      "and a rotted row is green for the wrong reason. Restore the command to $INSTALL_DOC, or" \
+      "delete its row if the install genuinely no longer uses it."
+  done < <(dc_ih_commands)
+  [ "$fail" -ne "$ih_before" ] || dc_ok install-home \
+    "$(dc_ih_commands | grep -c .) install command(s) told once, in $INSTALL_DOC and not in" \
+    "$README. LIMIT: this pins the REGISTERED commands only — a command nobody registered can" \
+    "still be told twice, so a new install command earns a row here."
 }
 
 # --- readme-no-diagrams — diagrams have EXITED README: zero .svg references (#42) ----------------
@@ -932,8 +1002,8 @@ lc_hard='#69 ADR'                              # the hard validation instance (s
 #   * a label ending in an interpolated variable ("one-home:$oh_name") names a FAMILY, not a label —
 #     truncate at the "$" and keep the stable prefix, which is the part a document can cite at all.
 #   * a label carrying a ":" ALSO registers its prefix, because documents cite by prefix as well as
-#     by full name. Without this a document citing "readme-sweep" reds against a gate that only ever
-#     prints "readme-sweep:<row>" — a false red on a correct repository.
+#     by full name. Without this a document citing "doc-sweep" reds against a gate that only ever
+#     prints "doc-sweep:<row>" — a false red on a correct repository.
 dc_lc_emitted() {
   grep -vE '^[[:space:]]*#' \
     | grep -oE 'dc_(fail|ok)[[:space:]]+("[^"]*"|[^[:space:]]+)' \
@@ -1141,9 +1211,11 @@ dc_link_targets() {
 }
 
 # dead-pointer (#51 collapse) — the standalone flat-pack install doc was folded into README
-# Setup and DELETED (one install home now, nothing to drift). No tracked file may still name it: a
-# dead pointer to a removed file ships dead on a user estate. The needle is assembled from two
-# string
+# Setup and DELETED. No tracked file may still name it: a dead pointer to a removed file ships dead
+# on a user estate. That file stays deleted; what has changed since (#146) is that "one install
+# home" is no longer a consequence of there being one document — the install-home detector above
+# asserts it directly, and $INSTALL_DOC is where a stale pointer should now be sent. The needle is
+# assembled from two string
 # pieces so THIS detector's own source never contains the contiguous name it hunts for — a literal
 # here would make the detector match itself forever. Its own detector (not folded into the link
 # check) because it hunts a bare name in ANY tracked text, not just markdown links.
@@ -1153,37 +1225,38 @@ dc_dead_pointer() {
   collapse_hits=$(git grep -l -F -- "$collapse_needle" 2>/dev/null || true)
   [ -n "$collapse_hits" ] || return 0
   dc_fail dead-pointer \
-    "'$collapse_needle' was folded into README Setup and removed, but these tracked files still" \
-    "name it — re-point them to README Setup / the 'Hook activation caveat' section:"
+    "'$collapse_needle' was folded away and removed, but these tracked files still name it —" \
+    "re-point them to $INSTALL_DOC, which owns the install steps and the hook-activation caveat:"
   printf '  %s\n' $collapse_hits
 }
 
 # UNOWNED — found while reading this file end to end for the #129 shape pass, which was scoped to
 # SHAPE ONLY, so each is recorded rather than fixed; other items are queued against this file.
 #   * THE OK-LINES ARE NOT THE DETECTOR SET. The closing line of dc_main points a reader at them
-#     for "the detector set at HEAD", but only nine detectors emit one: readme-sweep,
+#     for "the detector set at HEAD", but only nine detectors emit one: doc-sweep,
 #     grammar-drift, readme-no-diagrams, currency-note, DESIGN-trigger and the four
 #     doc-integrity detectors (fence-balance, doc-crlf, link-target/link-anchor, dead-pointer)
 #     print nothing when they pass. A green log therefore names half the instrument while
 #     reading as if it named all of it.
-#   * TWO OK-LINES TEST THE GLOBAL FLAG RATHER THAN A SNAPSHOT OF IT. readme-inventory's and
+#   * TWO OK-LINES TEST THE GLOBAL FLAG RATHER THAN A SNAPSHOT OF IT. map-inventory's and
 #     adr-shape's are guarded by `[ "$fail" -ne 0 ]`, where the other seven compare against the
-#     value their own detector saved before starting. readme-inventory runs first, so its
+#     value their own detector saved before starting. map-inventory runs first, so its
 #     version is latent; adr-shape's is LIVE — any earlier detector's failure suppresses it
 #     even when every ADR is well-formed.
 
 # dc_main — the detectors, in the order their output has to appear. This list IS the running order;
 # nothing else in the file decides it.
 dc_main() {
-  dc_readme_inventory
+  dc_map_inventory
   dc_dev_loop
   dc_de_number
   dc_one_home
   dc_no_lookup
-  dc_readme_sweep
+  dc_doc_sweep
   dc_grammar_drift
   dc_ci_name_contract
   dc_map_complete
+  dc_install_home
   dc_readme_no_diagrams
   dc_adr
   dc_reader_agent

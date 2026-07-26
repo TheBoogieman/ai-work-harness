@@ -1401,12 +1401,20 @@ rm -rf "$DW_BAK_DIR"
 # failure here aborts the demo. The guard below proves the path is private; this proves it landed.
 bash _harness/scripts/harness-status.sh >/dev/null && echo "healthy after fix"
 
-# --- [no-fixed-temp] guard (#210): every temporary OUTSIDE the working tree goes through mktemp ---
+# --- [no-fixed-temp] guard (#210): no literal system-temp path in this suite ---------------------
 # WHAT IT ASSERTS: this suite's own source carries no literal system-temp path. It scans the WHOLE
 # file, so it reaches BOTH sites of the break-and-restore stage above — the save AND the restore.
 # That reach is the whole point: a half-fix that routes the save through mktemp and leaves the
 # restore on a fixed name reds here exactly as loudly as no fix at all, where a check aimed only at
 # the save site would pass over it.
+#
+# WHAT IT DOES NOT ASSERT — said plainly so a pass is not read as more than it is: the pattern
+# below recognises the LITERAL system temp roots and NOTHING else. A fixed out-of-tree path built
+# from $HOME, $TMPDIR or ~ is the same defect class #210 exists to retire, and this guard stays
+# GREEN on it. Widening the pattern to reach those is deliberately left as separate work rather
+# than bolted on here, so what stands in its place is an honest message: the success line below
+# names only the property actually measured. A guard whose message outruns its pattern is worse
+# than no guard, because it teaches its reader to trust a check that was never made.
 #
 # SCOPE — STATED, NEVER IMPLIED: temporaries OUTSIDE the working tree. The in-tree scratch ticket
 # S="Tickets/999911Z-PROJ-99998" near the top of this file is also a hard-coded path this suite
@@ -1425,6 +1433,11 @@ bash _harness/scripts/harness-status.sh >/dev/null && echo "healthy after fix"
 # REVERT-PROOF: reinstate a fixed system-temp path at EITHER site above and this guard reds by name.
 echo "--- no-fixed-temp: no hard-coded system-temp path in the suite ---"
 NFT_SELF="$DEMO_ROOT/_harness/scripts/run_demo.sh"
+# The scan target must EXIST before the scan means anything. Without this line a target that
+# stopped resolving would make grep err, the `|| true` below would swallow the error, NFT_HITS
+# would come back empty and the guard would report ok having read nothing — a vacuous pass, the
+# one failure mode a green check cannot show you.
+[ -f "$NFT_SELF" ] || { echo "BUG [no-fixed-temp]: scan target not found: $NFT_SELF"; exit 1; }
 NFT_RE='(^|[^[:alnum:]_.-])/(var/)?tmp([^[:alnum:]]|$)'
 NFT_HITS=$(grep -nE "$NFT_RE" "$NFT_SELF" | grep -vE '^[0-9]+:[[:space:]]*#' || true)
 if [ -n "$NFT_HITS" ]; then
@@ -1433,7 +1446,7 @@ if [ -n "$NFT_HITS" ]; then
   printf '%s\n' "$NFT_HITS"
   exit 1
 fi
-echo "  ok [no-fixed-temp] — every temporary outside the working tree goes through mktemp"
+echo "  ok [no-fixed-temp] — no literal system-temp path in this suite"
 # --- end [no-fixed-temp] ---------------------------------------------------------------------
 
 # --- agent-invocability: every agent is directly human-callable -----------------------

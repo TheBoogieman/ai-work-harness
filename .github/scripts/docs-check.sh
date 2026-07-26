@@ -1278,18 +1278,19 @@ dc_dead_pointer() {
 }
 
 # UNOWNED — found while reading this file end to end for the #129 shape pass, which was scoped to
-# SHAPE ONLY, so each is recorded rather than fixed; other items are queued against this file.
+# SHAPE ONLY, so it is recorded rather than fixed; other items are queued against this file.
 #   * THE OK-LINES ARE NOT THE DETECTOR SET. The closing line of dc_main points a reader at them
 #     for "the detector set at HEAD", but only nine detectors emit one: doc-sweep,
 #     grammar-drift, readme-no-diagrams, currency-note, DESIGN-trigger and the four
 #     doc-integrity detectors (fence-balance, doc-crlf, link-target/link-anchor, dead-pointer)
 #     print nothing when they pass. A green log therefore names half the instrument while
 #     reading as if it named all of it.
-#   * TWO OK-LINES TEST THE GLOBAL FLAG RATHER THAN A SNAPSHOT OF IT. map-inventory's and
-#     adr-shape's are guarded by `[ "$fail" -ne 0 ]`, where the other seven compare against the
-#     value their own detector saved before starting. map-inventory runs first, so its
-#     version is latent; adr-shape's is LIVE — any earlier detector's failure suppresses it
-#     even when every ADR is well-formed.
+# The note that stood beneath it — two ok-lines testing the global flag "where the other seven
+# compare against the value their own detector saved before starting" — is DELETED rather than
+# corrected (#252). Neither half survives: no ok-line tests the shared record directly any more,
+# and the "other seven" was itself a miscount of the snapshot sites, which were ten in two
+# spellings. A discharged warning read later is a false claim in its own right, so it goes; the
+# behaviour it described is now guarded by [docs-gate-ok-lines] in the acceptance suite.
 
 # dc_main — the detectors, in the order their output has to appear. This list IS the running order;
 # nothing else in the file decides it.

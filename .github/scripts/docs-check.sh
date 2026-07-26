@@ -831,15 +831,29 @@ dc_design_depicted() {
   done | sort -u
 }
 
-# dc_design_sentinels — the names that PROVE the extraction above still reads embedded text. Each is
-# drawn inside a sentence ("check_ticket_log.sh audits state left by the PAST", "*via
-# append_notebook_cell.py"), so a pattern that only reads whole text nodes loses exactly these two
-# and keeps the other five, leaving both depicted scripts unwatched while every check stays green.
+# dc_design_sentinels — the basis that PROVES the extraction above still reads the sheets. It is a
+# set of PROPERTIES, not a list of favourite names: each entry is here because it is the name that
+# dies first when one property of the pattern is lost, and the set has to span every axis on which
+# the pattern can degrade. A fourth name earns its place only by covering an axis these do not.
+#   check_ticket_log.sh      EMBEDDED TEXT. Drawn inside a sentence ("check_ticket_log.sh audits
+#                            state left by the PAST"), so a pattern narrowed to whole text nodes
+#                            loses it while the five stand-alone names survive.
+#   append_notebook_cell.py  EMBEDDED TEXT, second witness ("*via append_notebook_cell.py"), and
+#                            the .py side of the extension alternation — a pattern reduced to .sh
+#                            drops it and nothing else.
+#   harness-status.sh        HYPHENATED NAME: the character class still admits "-". This axis is
+#                            invisible to everything else here, because losing the hyphen does not
+#                            delete names, it TRUNCATES them — harness-status.sh reads as
+#                            status.sh, harness-housekeeping.sh as housekeeping.sh,
+#                            ticket-grammar.sh as grammar.sh. The count is still 7, the two
+#                            underscore-only sentinels above are untouched, and three depicted
+#                            scripts go unwatched with every check green. Only a by-name check on
+#                            a hyphenated name sees it.
 dc_design_sentinels() {
-  printf '%s\n' check_ticket_log.sh append_notebook_cell.py
+  printf '%s\n' check_ticket_log.sh append_notebook_cell.py harness-status.sh
 }
 
-# dc_design_derive — validate the pattern against a known-embedded name, THEN publish the count. A
+# dc_design_derive — validate the pattern against every sentinel name, THEN publish the count. A
 # count from an unvalidated pattern is unmeasured, not a result, so the assertion comes first. It is
 # made against NAMES THE SHEETS CARRY, never against the literal 7: seven is today's number and a
 # redraw is meant to move it, whereas "the pattern can still see an embedded name" must keep holding
@@ -857,7 +871,8 @@ dc_design_derive() {
   done < <(dc_design_sentinels)
   [ "$fail" -eq "$derive_before" ] || return 0
   dc_ok DESIGN-derive "$(printf '%s\n' "$depicted" | grep -c .) scripts depicted by the sheets —" \
-    "the currency trigger's watched set, derived from the drawings, validated on an embedded name"
+    "the currency trigger's watched set, derived from the drawings, validated on embedded and" \
+    "hyphenated names"
 }
 
 # --- DESIGN.md TRIGGER — depicted machinery changed without a currency-note disposition ----------

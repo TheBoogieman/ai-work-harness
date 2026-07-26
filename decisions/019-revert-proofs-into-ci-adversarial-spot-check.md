@@ -30,10 +30,16 @@ amendment in the meantime.
 
 ## Decision
 
-Revert-proofs move into CI. Each guard ships with a sabotage fixture; CI applies
-the fixture, asserts the guard reds, restores, and asserts it greens. What was
-manual becomes continuous, and every guard is exercised on every run rather than
-once at its merge.
+Revert-proofs ARE TO MOVE into CI. Each guard is to ship with a sabotage fixture;
+CI is to apply the fixture, assert the guard reds, restore, and assert it greens.
+What is manual is to become continuous, so that every guard is exercised on every
+run rather than once at its merge.
+
+NOT BUILT AT HEAD, and this paragraph is the decision rather than a description
+of the repository: no sabotage fixture, and no job that applies one, is tracked
+here. The item that would build them is `#144`, open at the time of writing.
+Every clause below that depends on this machinery is written as intent for the
+same reason.
 
 The reviewer's red-side pass becomes a SPOT-CHECK — sampled, not exhaustive. And
 the residual duty is stated here precisely, because this is the clause the whole
@@ -43,9 +49,10 @@ record exists for:
 sampled guard the reviewer writes a DIFFERENT sabotage from the shipped one and
 checks that the guard still fails.**
 
-Not "rerun a sample of what CI already did". Rerunning CI's own fixtures is
-worth nothing: CI ran them minutes ago and will run them again on the next push.
-The reviewer's sample is only worth a seat's time if what it applies is new.
+Not "rerun a sample of what CI already did". Rerunning CI's own fixtures will be
+worth nothing: CI will have run them minutes earlier and will run them again on
+the next push. The reviewer's sample is only worth a seat's time if what it
+applies is new.
 
 The rationale is the half that is easy to lose. Each sabotage fixture is written
 by the author of the guard it tests. CI applying that fixture proves the PAIR
@@ -77,17 +84,20 @@ move.
 The rule's bound and its exempt classes have ONE home, `CLAUDE.md`. They are not
 restated, named or paraphrased in this record.
 
-What is GAINED: every guard is exercised on every CI run instead of once at its
-merge, so a guard that decays into vacuity later is caught later, which manual
-per-merge execution never did.
+What is TO BE GAINED, once the Decision's machinery exists (`#144`): every guard
+exercised on every CI run instead of once at its merge, so a guard that decays
+into vacuity later is caught later, which manual per-merge execution never did.
+None of that gain is banked at HEAD.
 
 What is SPENT: exhaustive independent execution. That is a real loss, and the
 adversarial spot-check is the deliberately partial replacement — a sample of
 genuinely independent attacks in place of a full sweep of self-authored ones.
-The failure mode to watch for is a reviewer who reads "spot-check" and reruns
-shipped fixtures; that reviewer is doing zero work while the independence layer
-still looks alive on paper. This record is the routing target for anyone who
-meets the old per-merge law in an older document or an older conversation.
+The failure mode to watch for, ONCE FIXTURES SHIP, is a reviewer who reads
+"spot-check" and reruns them; that reviewer is doing zero work while the
+independence layer still looks alive on paper. No guard ships a fixture yet
+(`#144`), so that particular failure mode is not available today. This record is
+the routing target for anyone who meets the old per-merge law in an older
+document or an older conversation.
 
 A worked example, which is more persuasive than the argument. The
 whitelist-completeness detector — the check that every shipped file is actually
@@ -96,9 +106,9 @@ reachability query is index-aware by default, so after the restructuring every
 shipped file is tracked, and the detector would have reported the whole tree as
 fine while an installed estate ignored all of it. It was caught only because
 somebody ran it against a case it was supposed to catch. That is this record's
-thesis demonstrated inside this repository, before the machinery this record
-governs existed: the fixture that would have accompanied that detector was the
-one its author already had in mind, and it would have passed.
+thesis demonstrated inside this repository, WITHOUT the machinery this record
+authorises: the fixture that would have accompanied that detector was the one its
+author already had in mind, and it would have passed.
 
 ## Status
 
@@ -106,23 +116,22 @@ Accepted; operator ruling, recorded here on the law's own issue `#118`. This
 AMENDS the ENFORCEMENT of `decisions/011` (guard-per-bug) — how the red state is
 witnessed and by whom — and supersedes NONE of its substance: the guard, and its
 provable red, remain mandatory. It is deliberately decoupled from the
-sabotage-fixture machinery it authorises, which lands several phases later; the
-law is recorded first so no seat runs on an unwritten amendment in between.
+sabotage-fixture machinery it authorises, which lands under its own item (`#144`,
+open at the time of writing); the law is recorded first so no seat runs on an
+unwritten amendment in between.
 
-UNOWNED — read by the seat that corrected the reopen citation above (`#189`) and
-deliberately NOT corrected by it, because none of these was in that item's scope.
-Recorded so a later reader does not mistake unchecked text for checked text:
+UNOWNED — three claims were read by the seat that corrected the reopen citation
+above (`#189`) and deliberately NOT corrected by it, because none of them was in
+that item's scope. TWO ARE NOW DISCHARGED by `#199`, which rewrote the Decision,
+the gain and the shipped-fixtures warning as intent: the present-tense gain
+against machinery that does not exist at HEAD, and the warning about a reviewer
+rerunning "shipped fixtures" no guard yet ships. ONE REMAINS, recorded so a later
+reader does not mistake unchecked text for checked text:
 
-- The gain is written in the PRESENT tense against machinery that does not exist
-  at HEAD. "What is GAINED" says every guard is exercised on every CI run, and the
-  Decision section says what was manual becomes continuous; no sabotage fixture,
-  and no job that applies one, is tracked in this repository today — which the
-  paragraph directly above concedes in the same breath. The identical class of
-  present-tense CI claim was corrected in this record once already (`#180`).
-- "shipped fixtures" under Consequences names an artefact no guard yet ships, so
-  the failure mode it warns about cannot occur yet either.
-- The interim is not disclosed anywhere. This record retires the reviewer's
+- The COST of the interim is not disclosed. This record retires the reviewer's
   exhaustive red-side pass on the day it is accepted, while the automation meant
-  to replace that pass lands later, so in between the coverage is thinner than
-  under either the old law or the new one. What is SPENT is stated against the
-  automated end state and never against the gap opened on the way to it.
+  to replace that pass lands later (`#144`), so in between the coverage is
+  thinner than under either the old law or the new one. The `#199` corrections
+  make the absence of the machinery plain, but they do not price the gap: What is
+  SPENT is still stated against the automated end state and never against the
+  interval opened on the way to it.

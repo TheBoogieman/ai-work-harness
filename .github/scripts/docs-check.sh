@@ -30,20 +30,20 @@ readme_body=$(cat "$README")
 dc_fail() { local tag=$1 IFS=' '; shift; printf 'FAIL [docs %s]: %s\n' "$tag" "$*"; fail=1; }
 dc_ok() { local tag=$1 IFS=' '; shift; printf '  ok [docs %s] — %s\n' "$tag" "$*"; }
 
-# --- B1 INVENTORY — every shipped script + the two root surfaces named in README's folder map ---
+# --- readme-inventory — every shipped script + the two root surfaces in README's folder map ------
 # (the #34 docs-inventory guard, MIGRATED out of run_demo.sh; it gates merges now, not the demo.)
-dc_b1_inventory() {
-  local s base b1_total=0
+dc_readme_inventory() {
+  local s base ri_total=0
   for s in _harness/scripts/* install.sh setup.md; do
-    base=$(basename "$s"); b1_total=$((b1_total+1))
+    base=$(basename "$s"); ri_total=$((ri_total+1))
     grep -Fq -- "$base" <<<"$readme_body" && continue
-    dc_fail B1-inventory "$base ships but is not named in README's folder map" \
+    dc_fail readme-inventory "$base ships but is not named in README's folder map" \
                          "— add its tree line."
   done
-  [ "$fail" -ne 0 ] || dc_ok B1-inventory "$b1_total shipped surfaces named in README"
+  [ "$fail" -ne 0 ] || dc_ok readme-inventory "$ri_total shipped surfaces named in README"
 }
 
-# --- #68 DEV-LOOP — DEVELOPMENT.md + dev-loop/ starter kit: three method-doc invariants -----------
+# --- dev-loop — DEVELOPMENT.md + dev-loop/ starter kit: three method-doc invariants (#68) --------
 # This lane ships a method doc plus empty adopt-and-fill templates. Three things must hold or the
 # artifact lies. (1) Templates stay EMPTY: a filled field is instance material leaking into the
 # repo.
@@ -55,9 +55,9 @@ dc_b1_inventory() {
 # only when all three invariants held this run.
 
 # dc_dl_pairs — invariant 3's rows, each pinned as its own named assertion (the same style as the
-# B2 sweep's) so a dropped role or law reds by name rather than vanishing silently. Format:
+# readme-sweep's) so a dropped role or law reds by name rather than vanishing silently. Format:
 # "LABEL<TAB>literal string in DEVELOPMENT.md". This is ALSO exclusion 3's second source in the
-# #121 detector below, which is why it is a named surface rather than an inline list.
+# one-home detector below, which is why it is a named surface rather than an inline list.
 dc_dl_pairs() {
   printf '%s\n' \
     "role-architect	ARCHITECT" \
@@ -78,7 +78,7 @@ dc_dl_templates() {
   local dl_t
   for dl_t in dev-loop/*.template.md; do
     grep -Fq -- '<FILL>' "$dl_t" && continue
-    dc_fail "#68 dev-loop" \
+    dc_fail dev-loop \
       "$dl_t has no <FILL> token left — a template must keep at least one <FILL> blank as proof" \
       "it ships as a skeleton; restore a <FILL> blank."
   done
@@ -94,7 +94,7 @@ dc_dl_vendor_neutral() {
   while IFS= read -r dl_f; do
     dl_hit=$(grep -niwE -- "$dl_vendors" "$dl_f" | head -1 || true)
     [ -z "$dl_hit" ] && continue
-    dc_fail "#68 dev-loop" \
+    dc_fail dev-loop \
       "$dl_f names an AI vendor ($dl_hit) — DEVELOPMENT.md and dev-loop/** are vendor-neutral;" \
       "remove the product name."
   done < <(git ls-files DEVELOPMENT.md 'dev-loop/*')
@@ -107,7 +107,7 @@ dc_dl_roles_laws() {
   while IFS= read -r dl_pair; do
     dl_label=${dl_pair%%	*}; dl_needle=${dl_pair#*	}
     grep -Fq -- "$dl_needle" DEVELOPMENT.md && continue
-    dc_fail "#68 dev-loop:$dl_label" \
+    dc_fail "dev-loop:$dl_label" \
       "DEVELOPMENT.md no longer states this (missing \"$dl_needle\") — restore it."
   done < <(dc_dl_pairs)
 }
@@ -117,7 +117,7 @@ dc_dev_loop() {
   dc_dl_templates
   dc_dl_vendor_neutral
   dc_dl_roles_laws
-  [ "$fail" -ne "$dl_fail_before" ] || dc_ok "#68 dev-loop" \
+  [ "$fail" -ne "$dl_fail_before" ] || dc_ok dev-loop \
     "each template keeps a <FILL> blank, vendor-neutral, 4 roles + 5 laws present in" \
     "DEVELOPMENT.md"
 }
@@ -145,7 +145,7 @@ dc_dn_line() {
   # (a) number-word directly before agent(s)
   if printf '%s' "$dn_line" | grep -qiE "\b(${dn_num})[[:space:]]+agents?\b"; then
     dn_hit=$(printf '%s' "$dn_line" | grep -oiE "\b(${dn_num})[[:space:]]+agents?\b" | head -1)
-    dc_fail de-number:a \
+    dc_fail de-number:agent-count \
       "$dn_f:$dn_lineno states a numeric agent count (\"$dn_hit\") — #85 de-numbered the roster" \
       "because it grows; name the agents by role, not by a count that goes stale."
   fi
@@ -153,7 +153,7 @@ dc_dn_line() {
   if printf '%s' "$dn_line" | grep -qF '.agent.md' \
      && printf '%s' "$dn_line" | grep -qiE "\b(${dn_num})\b" \
      && printf '%s' "$dn_line" | grep -qiE '\bfiles?\b'; then
-    dc_fail de-number:b \
+    dc_fail de-number:file-count \
       "$dn_f:$dn_lineno pairs a number with '.agent.md file(s)' — the agent-file count is not" \
       "fixed; describe the set without a count."
   fi
@@ -193,7 +193,7 @@ dc_de_number() {
 # gate liability. Binary blobs carry no prose and are dropped with them.
 oh_surface() { git ls-files | grep -vEi '\.(svg|png|jpe?g|gif|zip)$'; }
 
-# --- #121 ONE TELLING PER REGISTERED PHRASE ------------------------------------------------------
+# --- one-home — ONE TELLING PER REGISTERED PHRASE (#121) -----------------------------------------
 # The assertion is NARROW and the narrowness is the deliverable: no REGISTERED PHRASE appears in
 # more than one document. It is NOT "each fact is told once" — phrase matching cannot decide that.
 # Each fact may register several phrasings so that known restatements are caught and not only exact
@@ -217,7 +217,7 @@ oh_surface() { git ls-files | grep -vEi '\.(svg|png|jpe?g|gif|zip)$'; }
 #       detector reds on a CORRECT repository — and the obvious way to make it green again is to
 #       break the checks. So an alias that a machine matches on is rejected as a registration
 #       error, loudly and by name, before any counting happens. TWO SOURCES feed it: the workflow
-#       files, and the literal strings the #68 dev-loop detector above REQUIRES DEVELOPMENT.md to
+#       files, and the literal strings the dev-loop detector above REQUIRES DEVELOPMENT.md to
 #       carry. The second is the same exclusion arriving as a REQUIRED NEEDLE rather than as a
 #       check name — that file is obliged by a detector in this very script to state those laws,
 #       so the sentence carrying one is a contract, not a rival telling.
@@ -231,7 +231,7 @@ oh_surface() { git ls-files | grep -vEi '\.(svg|png|jpe?g|gif|zip)$'; }
 #       title need only IDENTIFY its record, and a wrong reason left in doctrine outlasts the
 #       ruling it was invented to justify. The rest of the file rides along with the section
 #       because the only way to green a census over a record is to retitle and reword it, which
-#       makes the document worse in order to serve a gate. SCOPED TO THIS DETECTOR: the #122
+#       makes the document worse in order to serve a gate. SCOPED TO THIS DETECTOR: the
 #       no-lookup detector below still reads decision records in full, and must — a retired tag
 #       inside a record is exactly the defect it hunts.
 #
@@ -240,7 +240,7 @@ oh_surface() { git ls-files | grep -vEi '\.(svg|png|jpe?g|gif|zip)$'; }
 # a human names it is the worst possible key for it. Matching is lowercase and whitespace-flattened,
 # so aliases are written lowercase. WORDS INSIDE AN ALIAS ARE JOINED WITH "~", NOT A SPACE: this
 # file is itself on the census surface, so a contiguous alias here would make the registry a second
-# telling of every fact it registers (the same self-match the C7d needle is split to avoid). The
+# telling of every fact it registers (the same self-match the dead-pointer needle avoids). The
 # loader restores the spaces and reds on a literal space, so the rule cannot be forgotten. This
 # registry is expected to GROW as drift is found — add a row, never a second census.
 #
@@ -259,9 +259,9 @@ oh_surface() { git ls-files | grep -vEi '\.(svg|png|jpe?g|gif|zip)$'; }
 #
 # WHAT THIS ROW DOES NOT REACH, said plainly so nobody reads a green census as a clean repository:
 # DEVELOPMENT.md's third working law states this rule unqualified, and NO alias here is keyed on
-# its wording. That is exclusion 3 above, arriving as a required needle — the #68 detector obliges
-# that file to carry a literal string, and the sentence carrying it is the law's statement. Key an
-# alias on it and one detector in this script demands you break another. The refusal is MECHANICAL
+# its wording. That is exclusion 3 above, arriving as a required needle — the dev-loop detector
+# obliges that file to carry a literal string, and the sentence carrying it is the law's statement.
+# Key an alias on it and one detector here demands you break another. The refusal is MECHANICAL
 # rather than remembered: those needles feed the registration check below, so the trap reds at the
 # moment somebody registers into it instead of after they have edited the document.
 # AN ALIAS LIST IS BUILT INTO A NAMED VARIABLE FIRST and the row then interpolates it. That is not
@@ -321,7 +321,7 @@ dc_oh_reject_identifier() {
     grep -Fqi -- "$oh_a" <<<"$oh_machined" || continue
     dc_fail "one-home:$oh_name" \
       "the registered phrase \"$oh_a\" is also matched literally by a machine — it appears in" \
-      ".github/workflows/, or among the strings the #68 dev-loop detector requires DEVELOPMENT.md" \
+      ".github/workflows/, or among the strings the dev-loop detector requires DEVELOPMENT.md" \
       "to carry. That makes it an IDENTIFIER, and an identifier's repetition is the contract, not" \
       "a duplication: registering it would red this detector on a CORRECT repository, and the" \
       "obvious way to green it again is to break the other check. Delete the alias from the" \
@@ -368,7 +368,8 @@ dc_one_home() {
   # needles declared above (a required needle is an identifier for this purpose).
   oh_machined=$(cat .github/workflows/*.yml 2>/dev/null || true; dc_dl_pairs)
   # EXCLUSION 4 applies HERE and only here — the decision records are dropped from THIS detector's
-  # census while oh_surface, which #122 below reads, keeps them. "${oh_f%%/*}" is the top directory.
+  # census while oh_surface, which the no-lookup detector below reads, keeps them. "${oh_f%%/*}"
+  # is the top directory.
   oh_files=()
   while IFS= read -r oh_f; do
     [ -f "$oh_f" ] && [ "${oh_f%%/*}" != decisions ] && oh_files+=("$oh_f")
@@ -382,7 +383,7 @@ dc_one_home() {
     "registered phrasings only, NEVER paraphrase; the registry grows as drift is found."
 }
 
-# --- #122 NO IDENTIFIER THAT NEEDS A LOOKUP OUTSIDE THE FILE --------------------------------------
+# --- no-lookup — NO IDENTIFIER THAT NEEDS A LOOKUP OUTSIDE THE FILE (#122) -----------------------
 # Same family, same census surface (oh_surface), same registry-as-data shape. What cannot be
 # automated is the rule's real test — that a sentence still makes sense with every reference
 # deleted. What CAN be automated is the token SHAPES, and shapes are what catch REINTRODUCTION,
@@ -469,11 +470,11 @@ dc_no_lookup() {
     "cannot judge whether a live identifier is decodable."
 }
 
-# --- B2 FROZEN SWEEP SET — the cond-1 zero-gap matrix, pinned as ONE named grep per surface -----
+# --- readme-sweep — the frozen sweep set, pinned as ONE named grep per swept surface -------------
 # Each swept user-facing surface = one assertion with its own prescriptive miss, so coverage of a
 # surface cannot silently regress (cond 3 "cannot regress"). Extend this list when a NEW surface is
 # swept; never blob it. Format: "LABEL<TAB>literal string that must appear in README".
-dc_b2_pairs() {
+dc_sweep_pairs() {
   printf '%s\n' \
     "ticket-naming	YYYYMM" \
     "ticket-state-pending	.ticket-pending" \
@@ -486,14 +487,14 @@ dc_b2_pairs() {
     "contributor-guide	CONTRIBUTING"
 }
 
-dc_b2_sweep() {
+dc_readme_sweep() {
   local pair label needle
   while IFS= read -r pair; do
     label=${pair%%	*}; needle=${pair#*	}
     grep -Fq -- "$needle" <<<"$readme_body" && continue
-    dc_fail "B2-sweep:$label" \
+    dc_fail "readme-sweep:$label" \
       "README no longer documents this surface (missing \"$needle\") — restore its telling."
-  done < <(dc_b2_pairs)
+  done < <(dc_sweep_pairs)
 }
 
 # --- grammar-drift — the branch regex's one home (branch-grammar.sh) quoted verbatim in its doc ---
@@ -513,7 +514,7 @@ dc_grammar_drift() {
   done
 }
 
-# --- #168 CI NAME CONTRACT — the demo workflow still DECLARES the shape two required checks are
+# --- ci-name-contract (#168) — the demo workflow still DECLARES the shape two required checks are
 # built from. Two of this repository's required check names are written nowhere as literal strings:
 # ONE job declares a name TEMPLATE over a two-value operating-system matrix, and the forge renders
 # one check name per matrix value. Copy the template wrongly, or drop an operating system from the
@@ -541,7 +542,7 @@ dc_grammar_drift() {
 # always REPORTS — a `paths:` filter or a job-level `if:` would break the same contract by a route
 # this detector does not watch. Both are named in the ok-line rather than left implied.
 #
-# FOR A LATER READER OF THE #121 ONE-HOME DETECTOR: the strings below are DELIBERATELY a second
+# FOR A LATER READER OF THE one-home DETECTOR: the strings below are DELIBERATELY a second
 # copy of strings living in the workflow file. That is exclusion 3 in action — a check name is an
 # IDENTIFIER, and an identifier's repetition IS the contract, not a duplicated telling.
 
@@ -584,13 +585,13 @@ dc_ci_os() {
 
 # dc_ci_assert — the two declared parts, compared SEPARATELY so a red names which half moved.
 dc_ci_assert() {
-  [ "$ci_name" = "$ci_name_expect" ] || dc_fail "#168 ci-name-contract:template" \
+  [ "$ci_name" = "$ci_name_expect" ] || dc_fail "ci-name-contract:template" \
     "the '$ci_job' job in $ci_wf declares its name as \"$ci_name\", not \"$ci_name_expect\" —" \
     "that template, rendered once per matrix value, IS the required-check contract, and a check" \
     "that reports under a new name leaves every pull request pending rather than red. Restore the" \
     "template; if the rename is intended, change branch protection's required names FIRST, then" \
     "update this line."
-  [ "$ci_os" = "$ci_os_expect" ] || dc_fail "#168 ci-name-contract:matrix" \
+  [ "$ci_os" = "$ci_os_expect" ] || dc_fail "ci-name-contract:matrix" \
     "the '$ci_job' job in $ci_wf declares the operating-system matrix as \"$ci_os\", not" \
     "\"$ci_os_expect\" — narrowing the matrix silently stops one required check reporting at all," \
     "which is worse than a red because nothing fails, the pull request simply never becomes" \
@@ -607,7 +608,7 @@ dc_ci_ok() {
     ci_one=$(printf '%s' "$ci_name_expect" | sed "s/\${{ matrix.os }}/$ci_o/")
     ci_rendered="$ci_rendered${ci_rendered:+, }$ci_one"
   done
-  dc_ok "#168 ci-name-contract" \
+  dc_ok "ci-name-contract" \
     "$ci_wf still declares the name template and both matrix operating systems; that shape" \
     "reports as: $ci_rendered. LIMIT: branch protection is the authority for WHICH names are" \
     "required and that setting is not readable from the repository, so this asserts only that the" \
@@ -625,7 +626,7 @@ dc_ci_name_contract() {
   ci_name=$(dc_ci_name)
   ci_os=$(dc_ci_os)
   if [ -z "$ci_block" ]; then
-    dc_fail "#168 ci-name-contract:job" \
+    dc_fail "ci-name-contract:job" \
       "$ci_wf declares no '$ci_job:' job under jobs: — that job is what generates the two" \
       "matrix-built required check names. Restore the job key; if it was renamed deliberately," \
       "change branch protection's required names FIRST, then re-point this detector."
@@ -664,17 +665,17 @@ dc_map_complete() {
     "every PRODUCT top-level directory appears in README's folder map"
 }
 
-# --- B3 SEPARATION — diagrams have EXITED README: zero .svg references (amendment 4-revised-a) ----
-dc_b3_separation() {
+# --- readme-no-diagrams — diagrams have EXITED README: zero .svg references (#42) ----------------
+dc_readme_no_diagrams() {
   local svg_refs
   svg_refs=$(grep -c '\.svg' "$README" || true)
   [ "$svg_refs" -eq 0 ] && return 0
-  dc_fail B3-separation \
+  dc_fail readme-no-diagrams \
     "README references a diagram ($svg_refs .svg mention(s)) — README must not embed diagrams;" \
     "keep only the pointer to General AI-Knowledge/AI Harness/."
 }
 
-# --- [docs #69 ADR] — SPEC.md + the decisions/ ADR backfill are well-formed (#69) ----------------
+# --- adr-shape — SPEC.md + the decisions/ ADR backfill are well-formed (#69) ---------------------
 # The project's decisions must stay readable: each ADR carries the four canonical headings, every
 # real ADR cites at least one clickable evidence link, the shipped template stays empty, and SPEC.md
 # keeps its glossary. Pure greps, each miss naming its exact fix — the demo owns behaviour,
@@ -687,7 +688,7 @@ dc_adr_headings() {
   local adr=$1 h
   for h in '## Context' '## Decision' '## Consequences' '## Status'; do
     grep -Fqx -- "$h" "$adr" && continue
-    dc_fail "#69 ADR" \
+    dc_fail adr-shape \
       "$adr is missing the heading '$h' — every ADR carries Context/Decision/Consequences/Status" \
       "verbatim; add it."
   done
@@ -697,10 +698,10 @@ dc_adr_headings() {
 #    link — a filled-in template is a defect (a copy that forgot to become its own ADR).
 dc_adr_template() {
   local adr=$1
-  grep -Fq -- '<FILL>' "$adr" || dc_fail "#69 ADR" \
+  grep -Fq -- '<FILL>' "$adr" || dc_fail adr-shape \
     "$adr is the template but has no <FILL> placeholder — restore the empty <FILL> sections."
   grep -qE -- "$adr_ev_re" "$adr" || return 0
-  dc_fail "#69 ADR" \
+  dc_fail adr-shape \
     "$adr is the template but carries a real evidence link (#NN or a sha) — a filled template is" \
     "a defect; keep it empty."
 }
@@ -710,7 +711,7 @@ dc_adr_template() {
 dc_adr_real() {
   local adr=$1
   grep -qE -- "$adr_ev_re" "$adr" && return 0
-  dc_fail "#69 ADR" \
+  dc_fail adr-shape \
     "$adr cites no evidence link — every backfilled ADR must reference at least one issue (#NN)" \
     "or commit sha; add one."
 }
@@ -730,7 +731,7 @@ dc_adr_real() {
 dc_adr_spec() {
   local spec_body term
   if [ ! -f SPEC.md ]; then
-    dc_fail "#69 ADR" \
+    dc_fail adr-shape \
       "SPEC.md is missing — the project spec (the guarantees + the glossary) must exist at the" \
       "repo root; restore it."
     return 0
@@ -738,7 +739,7 @@ dc_adr_spec() {
   spec_body=$(cat SPEC.md)
   for term in 'estate' 'guard' 'red/yellow' 'one-home' 'dumb inspector'; do
     grep -Fiq -- "$term" <<<"$spec_body" && continue
-    dc_fail "#69 ADR" \
+    dc_fail adr-shape \
       "SPEC.md does not name '$term' — its glossary must cover estate, guard, red/yellow," \
       "one-home and dumb inspector; add it."
   done
@@ -755,7 +756,7 @@ dc_adr() {
     esac
   done < <(git ls-files 'decisions/[0-9][0-9][0-9]-*.md')
   dc_adr_spec
-  [ "$fail" -ne 0 ] || dc_ok "#69 ADR" \
+  [ "$fail" -ne 0 ] || dc_ok adr-shape \
     "SPEC.md glossary present and every decisions/ ADR well-formed"
 }
 
@@ -803,10 +804,10 @@ dc_reader_agent() {
     "states single-door + append-only (edit permitted)"
 }
 
-# --- B4 STRUCTURE — DESIGN.md carries a dated currency-note section (cond 4 / amendment) ----------
-dc_b4_structure() {
+# --- currency-note — DESIGN.md carries a dated diagram-currency note section (#42) ---------------
+dc_currency_note() {
   grep -qiE 'Diagram currency \([0-9]{4}-[0-9]{2}-[0-9]{2}\)' "$DESIGN" && return 0
-  dc_fail B4-structure \
+  dc_fail currency-note \
     "$DESIGN is missing its dated 'Diagram currency (YYYY-MM-DD)' note section — add/restore it."
 }
 
@@ -900,36 +901,36 @@ dc_design_trigger() {
     "[diagrams-unaffected: reason] to the PR body."
 }
 
-# --- C7 DOC-INTEGRITY (#51) — mechanical "no mangled doc" guards over every tracked *.md ----------
+# --- DOC-INTEGRITY (#51) — mechanical "no mangled doc" guards over every tracked *.md ------------
 # The simplify pass rewrites prose into lists; lists are where half-closed fences and orphaned links
 # are born. These three detectors gate #51's OWN delivery PR (mechanical, revert-provable per
 # detector) instead of leaving mangling to a human eyeball. SCOPE: intra-repo only — external URLs
 # and template placeholders are skipped, so a required check never reds on the network. Runs on GNU
 # grep only (docs.yml is ubuntu; the dev seat is Cygwin), never on macOS/BSD — the demo owns that.
 
-# C7a FENCE-BALANCE — every *.md has an EVEN number of ``` markers (no code block left unclosed).
-dc_c7a_fence() {
+# fence-balance — every *.md has an EVEN number of ``` markers (no code block left unclosed).
+dc_fence_balance() {
   local f fences
   while IFS= read -r f; do
     fences=$(grep -cE '^[[:space:]]*```' "$f" || true)   # fence lines, indented ones included
     [ $(( fences % 2 )) -eq 0 ] && continue
-    dc_fail C7a-fence \
+    dc_fail fence-balance \
       "$f has $fences code-fence markers (odd) — a \`\`\` block is unclosed; balance the fences."
   done < <(git ls-files '*.md')
 }
 
-# C7c NO-CR — no *.md carries a carriage-return byte (the #40 CRLF class, extended to docs). -U
+# doc-crlf — no *.md carries a carriage-return byte (the #40 CRLF class, extended to docs). -U
 # keeps
 # grep in binary mode so a lone CR inside a CRLF line is still seen.
-dc_c7c_cr() {
+dc_doc_crlf() {
   local f
   while IFS= read -r f; do
     grep -qU $'\r' -- "$f" 2>/dev/null || continue
-    dc_fail C7c-cr "$f contains carriage-return byte(s) — normalise to LF (docs ship LF-only)."
+    dc_fail doc-crlf "$f contains carriage-return byte(s) — normalise to LF (docs ship LF-only)."
   done < <(git ls-files '*.md')
 }
 
-# C7b LINK/ANCHOR RESOLUTION — intra-repo relative links point at a real path; a #fragment matches a
+# link-target / link-anchor — an intra-repo relative link points at a real path; a #fragment matches
 # heading in its target file. ONE slugify convention (GitHub-style), pure bash — no python
 # dependency
 # added to a required gate. md_slugs() turns each ATX heading into its anchor slug.
@@ -940,11 +941,11 @@ md_slugs() {
     | sed -E 's/[^a-z0-9 _-]//g; s/ /-/g'
 }
 
-# dc_c7b_link — one link target from one markdown file: resolve or skip per scope, then check the
+# dc_link_target — one link target from one markdown file: resolve or skip per scope, then check the
 # path exists and the anchor resolves. It is a function so each per-target skip is a `return` — the
 # same control flow the inline `continue`s had, one nesting level shallower.
 # Arguments: the linking file, its directory, and the raw target text from [text](target).
-dc_c7b_link() {
+dc_link_target() {
   local f=$1 dir=$2 tgt=$3 frag="" path target_file cand
   case "$tgt" in
     *://*|mailto:*|tel:*) return 0 ;;         # external — out of scope (never red on the network)
@@ -959,7 +960,7 @@ dc_c7b_link() {
   if [ -n "$path" ]; then
     cand="$dir/$path"; [ "$dir" = "." ] && cand="$path"   # resolve relative to the linking file
     if [ ! -e "$cand" ]; then
-      dc_fail C7b-link "$f links to '$tgt' but '$cand' does not exist — fix or remove the link."
+      dc_fail link-target "$f links to '$tgt' but '$cand' does not exist — fix or remove the link."
       return 0
     fi
     target_file="$cand"
@@ -967,35 +968,35 @@ dc_c7b_link() {
   [ -n "$frag" ] || return 0                  # anchor is checkable only against a .md target
   case "$target_file" in
     *.md) [ -f "$target_file" ] && ! md_slugs "$target_file" | grep -Fxq -- "$frag" \
-            && dc_fail C7b-anchor "$f links to '$tgt' but no heading in $target_file" \
+            && dc_fail link-anchor "$f links to '$tgt' but no heading in $target_file" \
                        "slugifies to '#$frag' — fix the anchor." ;;
   esac
 }
 
-dc_c7b_links() {
+dc_link_targets() {
   local f dir tgt
   while IFS= read -r f; do
     dir=$(dirname "$f")
-    # each link target from [text](target); dc_c7b_link resolves/skips per scope
+    # each link target from [text](target); dc_link_target resolves/skips per scope
     while IFS= read -r tgt; do
-      dc_c7b_link "$f" "$dir" "$tgt"
+      dc_link_target "$f" "$dir" "$tgt"
     done < <(grep -oE '\]\([^)]+\)' "$f" | sed -E 's/^\]\(//; s/\)$//')
   done < <(git ls-files '*.md')
 }
 
-# C7d ZERO-MENTIONS (#51 collapse) — the standalone flat-pack install doc was folded into README
+# dead-pointer (#51 collapse) — the standalone flat-pack install doc was folded into README
 # Setup and DELETED (one install home now, nothing to drift). No tracked file may still name it: a
 # dead pointer to a removed file ships dead on a user estate. The needle is assembled from two
 # string
 # pieces so THIS detector's own source never contains the contiguous name it hunts for — a literal
-# here would make the detector match itself forever. Its own detector (not folded into C7b's link
+# here would make the detector match itself forever. Its own detector (not folded into the link
 # check) because it hunts a bare name in ANY tracked text, not just markdown links.
-dc_c7d_collapse() {
+dc_dead_pointer() {
   local collapse_needle collapse_hits
   collapse_needle='INSTALL''.md'
   collapse_hits=$(git grep -l -F -- "$collapse_needle" 2>/dev/null || true)
   [ -n "$collapse_hits" ] || return 0
-  dc_fail C7d-collapse \
+  dc_fail dead-pointer \
     "'$collapse_needle' was folded into README Setup and removed, but these tracked files still" \
     "name it — re-point them to README Setup / the 'Hook activation caveat' section:"
   printf '  %s\n' $collapse_hits
@@ -1004,36 +1005,39 @@ dc_c7d_collapse() {
 # UNOWNED — found while reading this file end to end for the #129 shape pass, which was scoped to
 # SHAPE ONLY, so each is recorded rather than fixed; other items are queued against this file.
 #   * THE OK-LINES ARE NOT THE DETECTOR SET. The closing line of dc_main points a reader at them
-#     for "the detector set at HEAD", but only nine detectors emit one: B2-sweep, grammar-drift,
-#     B3-separation, B4-structure, DESIGN-trigger and the four C7 detectors print nothing when they
-#     pass. A green log therefore names half the instrument while reading as if it named all of it.
-#   * TWO OK-LINES TEST THE GLOBAL FLAG RATHER THAN A SNAPSHOT OF IT. B1-inventory's and the #69
-#     ADR's are guarded by `[ "$fail" -ne 0 ]`, where the other seven compare against the value
-#     their own detector saved before starting. B1 runs first, so its version is latent; the ADR
-#     one is LIVE — any earlier detector's failure suppresses it even when every ADR is well-formed.
+#     for "the detector set at HEAD", but only nine detectors emit one: readme-sweep,
+#     grammar-drift, readme-no-diagrams, currency-note, DESIGN-trigger and the four
+#     doc-integrity detectors (fence-balance, doc-crlf, link-target/link-anchor, dead-pointer)
+#     print nothing when they pass. A green log therefore names half the instrument while
+#     reading as if it named all of it.
+#   * TWO OK-LINES TEST THE GLOBAL FLAG RATHER THAN A SNAPSHOT OF IT. readme-inventory's and
+#     adr-shape's are guarded by `[ "$fail" -ne 0 ]`, where the other seven compare against the
+#     value their own detector saved before starting. readme-inventory runs first, so its
+#     version is latent; adr-shape's is LIVE — any earlier detector's failure suppresses it
+#     even when every ADR is well-formed.
 
 # dc_main — the detectors, in the order their output has to appear. This list IS the running order;
 # nothing else in the file decides it.
 dc_main() {
-  dc_b1_inventory
+  dc_readme_inventory
   dc_dev_loop
   dc_de_number
   dc_one_home
   dc_no_lookup
-  dc_b2_sweep
+  dc_readme_sweep
   dc_grammar_drift
   dc_ci_name_contract
   dc_map_complete
-  dc_b3_separation
+  dc_readme_no_diagrams
   dc_adr
   dc_reader_agent
-  dc_b4_structure
+  dc_currency_note
   dc_design_derive
   dc_design_trigger
-  dc_c7a_fence
-  dc_c7c_cr
-  dc_c7b_links
-  dc_c7d_collapse
+  dc_fence_balance
+  dc_doc_crlf
+  dc_link_targets
+  dc_dead_pointer
   [ "$fail" -eq 0 ] || { echo "docs-check: FAILED — each line above names its fix."; exit 1; }
   echo "docs-check: all detectors pass — see the ok-lines above for the detector set at HEAD."
 }

@@ -93,7 +93,7 @@ THE NARRATION — a walked tour of the machinery moving, never a lecture.
 - NEVER BLOCKS and adds ZERO new gates: guided mode only narrates. Enforcement
   and teaching-by-red already live in L2/L4; this mode never introduces a stop
   the silent path lacks. Every narrated sentence about what just happened must
-  be G4-true — checkable against what actually happened on disk and in git.
+  be TRUE — checkable against what actually happened on disk and in git.
 - Ends by retiring: close by pointing the user at the constitution
   (`folder-structure.md`) as the durable home of the rules, and stop narrating.
   Because the trigger is derived, the NEXT init on an estate that now holds a

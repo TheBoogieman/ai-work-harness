@@ -225,9 +225,11 @@ gg_docs_ok_lines() {
   cd "$dgm_tree" || { echo "BUG [docs-gate-ok-lines]: no scratch tree to run in"; exit 1; }
   gg_dg_sabotage
   # The gate exits non-zero by design here, so capture rather than pipe: pipefail would otherwise
-  # red the suite on a run this case NEEDS to be red.
+  # red the suite on a run this case NEEDS to be red. The two inputs are set EMPTY rather than left
+  # unset: an unset DOCS_CHANGED_FILES sends the gate to `git diff` against a base ref this scratch
+  # tree does not have. They are spelled '' because a bare `VAR=` reads to a linter as a typo.
   set +e
-  dgm_out=$(DOCS_CHANGED_FILES= PR_BODY= bash .github/scripts/docs-check.sh 2>&1); dgm_rc=$?
+  dgm_out=$(DOCS_CHANGED_FILES='' PR_BODY='' bash .github/scripts/docs-check.sh 2>&1); dgm_rc=$?
   set -e
   dgm_emit=$(gg_dg_emitters .github/scripts/docs-check.sh)   # the gate that produced that output
   cd "$dgm_here" || exit 1

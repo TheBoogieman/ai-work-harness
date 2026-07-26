@@ -1385,10 +1385,69 @@ echo "  ok [crlf-tripwire] — no tracked *.sh/*.py carries a CR (detector prove
 # status prescribe the fix (its rc=1 is the point — the `|| echo` keeps the demo alive);
 # restore it; and confirm the estate reads healthy again.
 bash _harness/scripts/harness-status.sh
-mv "$HARNESS_AGENT_DEPLOY_DIR/doc-writer.agent.md" /tmp/dw.bak
+# #210 — the saved agent file goes to a PER-RUN mktemp path, never a fixed one. It used to be a
+# machine-global name under the system temp root, so two demos running at once overwrote each
+# other's save and BOTH restores then took the wrong file — the mechanical reason the "never
+# overlap demo runs" instruction had to exist. ONE variable feeds BOTH the save and the restore
+# below, so the pair cannot drift into a half-fix that randomises the save and leaves the restore
+# pointing at the old location, which would be worse than the original defect.
+DW_BAK_DIR=$(mktemp -d)
+DW_BAK="$DW_BAK_DIR/doc-writer.agent.md"
+mv "$HARNESS_AGENT_DEPLOY_DIR/doc-writer.agent.md" "$DW_BAK"
 bash _harness/scripts/harness-status.sh || echo "--- correctly failed with a fix line ---"
-mv /tmp/dw.bak "$HARNESS_AGENT_DEPLOY_DIR/doc-writer.agent.md"
+mv "$DW_BAK" "$HARNESS_AGENT_DEPLOY_DIR/doc-writer.agent.md"
+rm -rf "$DW_BAK_DIR"
+# This line is the RESTORE's own assertion: status must read healthy again, and under set -e a
+# failure here aborts the demo. The guard below proves the path is private; this proves it landed.
 bash _harness/scripts/harness-status.sh >/dev/null && echo "healthy after fix"
+
+# --- [no-fixed-temp] guard (#210): no literal system-temp path in this suite ---------------------
+# WHAT IT ASSERTS: this suite's own source carries no literal system-temp path. It scans the WHOLE
+# file, so it reaches BOTH sites of the break-and-restore stage above — the save AND the restore.
+# That reach is the whole point: a half-fix that routes the save through mktemp and leaves the
+# restore on a fixed name reds here exactly as loudly as no fix at all, where a check aimed only at
+# the save site would pass over it.
+#
+# WHAT IT DOES NOT ASSERT — said plainly so a pass is not read as more than it is: the pattern
+# below recognises the LITERAL system temp roots and NOTHING else. A fixed out-of-tree path built
+# from $HOME, $TMPDIR or ~ is the same defect class #210 exists to retire, and this guard stays
+# GREEN on it. Widening the pattern to reach those is deliberately left as separate work rather
+# than bolted on here, so what stands in its place is an honest message: the success line below
+# names only the property actually measured. A guard whose message outruns its pattern is worse
+# than no guard, because it teaches its reader to trust a check that was never made.
+#
+# SCOPE — STATED, NEVER IMPLIED: temporaries OUTSIDE the working tree. The in-tree scratch ticket
+# S="Tickets/999911Z-PROJ-99998" near the top of this file is also a hard-coded path this suite
+# creates, and it is a NAMED, REASONED EXCLUSION rather than an oversight. It CANNOT go through
+# mktemp: the product's own convention is that the machinery only sees a ticket sitting inside the
+# estate's Tickets/ directory, so moving it to a temp dir would hide it from the validator, status
+# and the pack builder — it would delete the thing being demonstrated. The pattern below is
+# anchored to the SYSTEM TEMP ROOTS, so that in-tree relative path is outside what this guard
+# measures at all. There is no undocumented carve-out buried in the regex for a later reader to
+# find, because a mechanical check with a hidden exclusion reads as evidence while proving less
+# than it claims.
+#
+# Full-line comments are skipped so this block's own description is not counted as a live use. A
+# trailing comment cannot smuggle one past: only a line whose FIRST non-blank character is "#" is
+# skipped, and a comment creates no files, so nothing enforceable is lost.
+# REVERT-PROOF: reinstate a fixed system-temp path at EITHER site above and this guard reds by name.
+echo "--- no-fixed-temp: no hard-coded system-temp path in the suite ---"
+NFT_SELF="$DEMO_ROOT/_harness/scripts/run_demo.sh"
+# The scan target must EXIST before the scan means anything. Without this line a target that
+# stopped resolving would make grep err, the `|| true` below would swallow the error, NFT_HITS
+# would come back empty and the guard would report ok having read nothing — a vacuous pass, the
+# one failure mode a green check cannot show you.
+[ -f "$NFT_SELF" ] || { echo "BUG [no-fixed-temp]: scan target not found: $NFT_SELF"; exit 1; }
+NFT_RE='(^|[^[:alnum:]_.-])/(var/)?tmp([^[:alnum:]]|$)'
+NFT_HITS=$(grep -nE "$NFT_RE" "$NFT_SELF" | grep -vE '^[0-9]+:[[:space:]]*#' || true)
+if [ -n "$NFT_HITS" ]; then
+  echo "BUG [no-fixed-temp]: hard-coded system-temp path(s) in run_demo.sh. Route every temporary"
+  echo "  outside the working tree through mktemp — BOTH the save site and the restore site:"
+  printf '%s\n' "$NFT_HITS"
+  exit 1
+fi
+echo "  ok [no-fixed-temp] — no literal system-temp path in this suite"
+# --- end [no-fixed-temp] ---------------------------------------------------------------------
 
 # --- agent-invocability: every agent is directly human-callable -----------------------
 # Asserts every _agents/*.agent.md declares `user-invocable: true`. The clerk agents

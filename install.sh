@@ -158,9 +158,28 @@ detect_board() {
 # detect_model <estate> <reference-agent> — the model pin already set on a reference agent's
 # frontmatter (greppable `model: <x>`). Cheap tier reads doc-writer, sonnet tier reads ticket-init
 # (fixed per the template's placeholder assignment). Echoes empty if the agent isn't present.
+# A value this CANNOT FIND is MISSING, not an ERROR (#200). Both "no such agent file" and "that file
+# carries no `model:` line" now echo nothing and return 0, leaving the caller to decide what a
+# missing value means. Returning non-zero was the defect: the caller assigns this inside a command
+# substitution, `set -euo pipefail` (top of file) treats that non-zero as fatal, and the installer
+# died with ZERO OUTPUT on the line ABOVE its own placeholder fallback — which therefore never ran.
 detect_model() {
-  local f="$1/_agents/$2"
-  [ -f "$f" ] && grep -m1 '^model:' "$f" | sed -E 's/^model:[[:space:]]*//'
+  local f="$1/_agents/$2" line=""
+  [ -f "$f" ] || return 0
+  # `|| true` is load-bearing under `pipefail`: an agent file present but carrying no `model:` line
+  # makes grep exit 1, and that status would otherwise become this function's fatal return exactly
+  # as an absent file's did. Extraction is unchanged — the same sed on the same matched line.
+  line="$(grep -m1 '^model:' "$f" || true)"
+  [ -n "$line" ] || return 0
+  printf '%s' "$line" | sed -E 's/^model:[[:space:]]*//'
+}
+# note_missing_pin <reference-agent> <placeholder> — say what could not be read and what was used
+# instead (#200's goal condition: the installer never goes QUIET about a value it could not
+# determine). On stderr, because that is where the interview already speaks — ask() reserves stdout
+# for the answer it hands back through a command substitution.
+note_missing_pin() {
+  echo "note: no model pin readable from _agents/$1 — offering the placeholder $2 instead." >&2
+  return 0
 }
 # read_version <root> — the harness version recorded at <root>, or the word "unknown" when no
 # VERSION file is there. It READS the stamp; it never restates the number, so VERSION stays the one
@@ -266,10 +285,18 @@ offer_board_widening() {
 # PICK-A-* placeholders (honest "not yet set"). A changed pin on a re-run is ROUTED, never applied.
 interview_models() {
   if [ "$ESTABLISHED" -eq 1 ]; then
+    # These two fallbacks are the ones #200 made unreachable: detect_model's non-zero return aborted
+    # the run one line above each of them. They are reached now, and each says so out loud.
     cheap_default="$(detect_model "$TARGET" doc-writer.agent.md)"
-    [ -n "$cheap_default" ] || cheap_default="PICK-A-CHEAP-MODEL"
+    [ -n "$cheap_default" ] || {
+      cheap_default="PICK-A-CHEAP-MODEL"
+      note_missing_pin doc-writer.agent.md "$cheap_default"
+    }
     sonnet_default="$(detect_model "$TARGET" ticket-init.agent.md)"
-    [ -n "$sonnet_default" ] || sonnet_default="PICK-A-SONNET-CLASS-MODEL"
+    [ -n "$sonnet_default" ] || {
+      sonnet_default="PICK-A-SONNET-CLASS-MODEL"
+      note_missing_pin ticket-init.agent.md "$sonnet_default"
+    }
   else
     cheap_default="PICK-A-CHEAP-MODEL"; sonnet_default="PICK-A-SONNET-CLASS-MODEL"
   fi

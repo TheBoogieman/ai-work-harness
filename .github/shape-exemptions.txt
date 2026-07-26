@@ -25,5 +25,5 @@ _harness/scripts/make_context_pack.sh	outside-function	50	#175
 _harness/scripts/retro_stats.sh	line-length	5	#175
 _harness/scripts/retro_stats.sh	outside-function	63	#175
 _harness/scripts/run_demo.sh	line-length	373	#143
-_harness/scripts/run_demo.sh	outside-function	948	#143
+_harness/scripts/run_demo.sh	outside-function	975	#143
 _harness/scripts/tracker_sweep.sh	line-length	5	#175

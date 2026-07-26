@@ -25,6 +25,7 @@ DEV	.github/ship-manifest.txt
 DEV	.github/workflows/demo.yml
 DEV	.github/workflows/docs.yml
 DEV	.github/workflows/governance.yml
+DEV	.github/workflows/sabotage.yml
 DEV	.github/workflows/shape.yml
 DEV	.github/workflows/shell-lint.yml
 DEV	.github/workflows/windows-witness.yml
@@ -60,6 +61,8 @@ PRODUCT	_agents/ticket-init.agent.md
 PRODUCT	_agents/ticket-recall.agent.md
 PRODUCT	_agents/ticket-scribe.agent.md
 PRODUCT	_agents/weekly-digest.agent.md
+DEV	_harness/demo/sabotage.sh
+DEV	_harness/demo/sabotage/source-refusal.fixtures.sh
 DEV	_harness/demo/tour.sh
 DEV	_harness/demo/cases/agent-invocability.case.sh
 DEV	_harness/demo/cases/append-entry.case.sh

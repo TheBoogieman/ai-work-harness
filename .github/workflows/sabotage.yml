@@ -1,0 +1,60 @@
+# sabotage.yml — runs the sabotage harness (#144): the instrument that proves the acceptance
+# suite's guards can actually FAIL.
+#
+# WHY THIS WORKFLOW EXISTS AT ALL. Revert-proofs have never run in continuous integration: the only
+# thing standing between a vacuous guard and the main branch was one person executing each sabotage
+# by hand and remembering the result. This job executes them, on the record, on every pull request.
+#
+# THE SELF-TEST RUNS FIRST, AND THAT ORDER IS THE POINT. `--self-test` weakens a REAL shipped guard
+# and requires the harness to report it UNPROVEN. A harness that reports every guard as strong is
+# indistinguishable from one that works, so its PROVEN verdicts are worth nothing until that
+# distinction has been demonstrated on this runner, on this commit. If the self-test fails, the
+# report below is not to be believed and the job stops before printing it.
+#
+# ONE LANE, NOT TWO. The demo already runs on Linux and macOS as the portability gate; what this
+# job measures is whether a guard can fail, which is not an OS-dependent property. A second lane
+# would double the cost for no new information.
+#
+# NOT A REQUIRED CHECK: whether this gates a merge is a branch-protection setting, which is the
+# operator's to make and is not readable from the repository. The job reports honestly either way.
+name: sabotage
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sabotage:
+    name: sabotage (guards proven able to fail)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The harness runs the WHOLE acceptance suite once per step of a proof, so it needs everything
+      # the demo needs: a hosted-tool Python (not externally-managed, so pip works directly) with
+      # nbformat, and zip/unzip for the context-pack stage.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install nbformat (the notebook helper's only dependency)
+        run: python3 -m pip install nbformat
+      - name: Verify zip + unzip are present (context-pack build + stage 6 read)
+        run: command -v zip >/dev/null && command -v unzip >/dev/null
+
+      # PROVE THE PROVER. Exits non-zero unless the harness reports a deliberately weakened REAL
+      # guard as UNPROVEN, and reports the deliberately BROAD sabotage as caught by the wrong guard.
+      - name: Prove the prover (a weakened real guard must read as UNPROVEN)
+        run: bash _harness/demo/sabotage.sh --self-test
+
+      # The report: the YELLOW coverage line (which guards have a fixture, which do not — never a
+      # blocker), then a full proof of every fixture that exists. Exits non-zero only when a guard
+      # this repository CLAIMS to prove turned out to be unprovable.
+      - name: Prove every guard that has a fixture
+        run: bash _harness/demo/sabotage.sh

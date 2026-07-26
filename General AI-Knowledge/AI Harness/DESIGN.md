@@ -1,5 +1,5 @@
 # Design notes — why the harness is shaped like this
-Last reviewed: 2026-07-19
+Last reviewed: 2026-07-26
 
 **Diagram currency (2026-07-24):** both sheets are CURRENT at REV R / REV G — the
 operator redrew them on 2026-07-24 to the full agent roster and the machinery they

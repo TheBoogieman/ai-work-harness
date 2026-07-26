@@ -901,6 +901,160 @@ dc_design_trigger() {
     "[diagrams-unaffected: reason] to the PR body."
 }
 
+# --- label-citation (#229) — every gate label a DOCUMENT cites is one this gate EMITS ------------
+# Rename a failure label and leave a document naming the old one, and the reference breaks SILENTLY.
+# That is not hypothetical. #196 renamed this gate's failure labels; the reviewer then executed the
+# rename as a SABOTAGE — a label renamed in the gate at every occurrence, its citation in a shipped
+# document left stale — and the gate PASSED, every detector green. A document naming a detector that
+# no longer exists was invisible to every check this repository had.
+# This is the SAME TECHNIQUE the DESIGN-derive detector above uses — derive the authority, then
+# check the copy against it — pointed at the gate's own labels instead of at the drawings.
+#
+# BOTH SIDES ARE DERIVED, and that is the deliverable rather than a nicety. The EMITTED side is read
+# out of this script's own dc_fail/dc_ok calls; the CITED side is found by scanning documents for
+# the shapes a citation takes. A hand-written list of either would be a THIRD copy of the labels,
+# stale on the first rename — the defect itself, not a smaller version of it. It was tried the human
+# way in the same wave: two seats derived the citation set independently, agreed, and issued the
+# agreed set as binding. It was ONE SITE OF SIX.
+lc_gate=.github/scripts/docs-check.sh          # THIS file: the authority for what the gate emits
+lc_name=$(basename "$lc_gate" .sh)             # how a document names the gate; derived, not typed
+lc_tok='[A-Za-z0-9]+(-[A-Za-z0-9]+)+'          # a label's shape: hyphen-joined alphanumeric words
+lc_hard='#69 ADR'                              # the hard validation instance (see dc_lc_validate)
+
+# dc_lc_emitted — the EMITTED set, from a gate source arriving on STDIN (so the real file and the
+# validation fixture below go through one code path). Comment lines are dropped first: this file's
+# own prose names dc_fail and dc_ok where it explains them, and a comment is not a call.
+# A label may be bare or double-quoted, and a quoted one may contain SPACES and a leading "#" — the
+# alternation matches the whole quoted run rather than stopping at the first space, and no character
+# class here excludes "#". Those are the exact two axes on which the earlier hand-rolled patterns
+# failed, so dc_lc_validate pins both rather than trusting that they still hold.
+# NORMALISATION, two steps, each for a stated reason:
+#   * a label ending in an interpolated variable ("one-home:$oh_name") names a FAMILY, not a label —
+#     truncate at the "$" and keep the stable prefix, which is the part a document can cite at all.
+#   * a label carrying a ":" ALSO registers its prefix, because documents cite by prefix as well as
+#     by full name. Without this a document citing "readme-sweep" reds against a gate that only ever
+#     prints "readme-sweep:<row>" — a false red on a correct repository.
+dc_lc_emitted() {
+  grep -vE '^[[:space:]]*#' \
+    | grep -oE 'dc_(fail|ok)[[:space:]]+("[^"]*"|[^[:space:]]+)' \
+    | sed -E 's/^dc_(fail|ok)[[:space:]]+//; s/^"//; s/"$//' \
+    | awk '{ sub(/\$.*$/, ""); sub(/:$/, ""); if ($0 == "") next
+             print; if (index($0, ":") > 0) { p = $0; sub(/:.*/, "", p); print p } }' \
+    | sort -u
+}
+
+# dc_lc_validate — THE VALIDATION BASIS, and it is a CONSTRUCTED FIXTURE rather than a live label on
+# purpose. THE INSTANCE IS "#69 ADR": the label this gate printed for its ADR-shape detector until
+# 8934f44 (#196) renamed it. It is quoted, TWO WORDS, and "#"-prefixed — the three properties on
+# which the two earlier extractions silently failed (one character class excluded the leading "#";
+# the other handled "#" but could not match past an opening quote), and which NO label live at HEAD
+# still carries. A live sentinel would therefore be a basis with an expiry date, which is the second
+# way this check has already been got wrong: a derivation was validated against a label set captured
+# BEFORE a merge that deliberately deleted it — the pattern was sound and the BASIS was stale. A
+# fixture cannot be removed by a merge, and it asserts the property that must keep holding rather
+# than a name the repository may change. A pattern whose class drops "#" returns nothing here; one
+# that cannot read past the opening quote returns "#69"; the same compare catches both.
+# The fixture line is assembled by printf from two arguments so that this source line carries no
+# literal call for dc_lc_emitted to extract when it reads this file for real.
+dc_lc_validate() {
+  local lc_got
+  lc_got=$(printf '%s "%s" \\\n' dc_fail "$lc_hard" | dc_lc_emitted)
+  [ "$lc_got" = "$lc_hard" ] && return 0
+  dc_fail label-citation:extraction \
+    "the label extraction reads the fixture \"$lc_hard\" as \"$lc_got\" — that fixture is quoted," \
+    "two words and \"#\"-prefixed because those are the three properties this pattern has lost" \
+    "silently before, and a pattern's gaps do not announce themselves. Fix the pattern; never" \
+    "weaken the fixture to match it."
+  return 1
+}
+
+# dc_lc_scope — the documents held to citing correctly, from TWO derived sources, because either one
+# alone leaves the hole this detector exists to close.
+#   (a) every tracked file that NAMES the gate. That is most citation sites, README's document
+#       catalogue among them.
+#   (b) every tracked file the GATE ITSELF names by a CONCRETE path. Source (a) cannot see
+#       decisions/018, which cites reader-agent without ever naming the gate. Scoping instead on
+#       "names a label we emit" would be CIRCULAR: rename a label and the file leaves the scope on
+#       the same commit that made its citation stale — silence at exactly the moment the red is
+#       owed. What the gate POINTS AT does not move when a label is renamed, so (b) survives the
+#       rename. A globbed reference is not a concrete path and is skipped by the character class,
+#       which is why "decisions/**" does not drag every record into scope.
+
+# dc_lc_named_by_gate — source (b) for ONE file: true when some concrete path the gate names is a
+# prefix of it. Its own function so the prefix loop is not a third nesting level inside the sweep.
+# $lc_paths is those concrete paths, built once by the caller below.
+dc_lc_named_by_gate() {
+  local lc_t
+  while IFS= read -r lc_t; do
+    case "$1" in "$lc_t"*) return 0 ;; esac
+  done <<<"$lc_paths"
+  return 1
+}
+
+dc_lc_scope() {
+  local lc_f
+  lc_paths=$(grep -ohE '[A-Za-z0-9_.][A-Za-z0-9_./-]*/[A-Za-z0-9_.][A-Za-z0-9_./-]*' "$lc_gate" \
+             | sort -u)
+  while IFS= read -r lc_f; do
+    { [ -f "$lc_f" ] && [ "$lc_f" != "$lc_gate" ]; } || continue
+    grep -Fq -- "$lc_name" "$lc_f" 2>/dev/null || dc_lc_named_by_gate "$lc_f" || continue
+    printf '%s\n' "$lc_f"
+  done < <(oh_surface)
+}
+
+# dc_lc_cited — the CITED set as "<label> <file>" rows, from the two shapes a citation actually
+# takes here. Both were READ OFF THE REAL SITES, never imagined: a detector's reach is the sum of
+# what has been found.
+#   S1  a parenthesised label on a line that names the gate — README's catalogue column, which
+#       writes `docs-check` (adr-shape) and `docs-check` (adr-shape: the glossary check). The label
+#       must OPEN the parenthesis, so "(the honest-lag record)" on those same rows stays prose.
+#   S2  a label immediately before the word "detector" — how the decision records cite it, as in
+#       "the docs-check grammar-drift detector" and "reader-agent detector checks the spine".
+# REQUIRING A HYPHEN is what keeps "the reader detector" — a concept, not a label — out of S2.
+# A label never contains a space, so a space is a safe field separator for the rows.
+dc_lc_cited() {
+  local lc_f
+  while IFS= read -r lc_f; do
+    grep -hE -- "$lc_name" "$lc_f" 2>/dev/null | grep -oE "\($lc_tok[):;,]" \
+      | sed -E 's/^\(//; s/[):;,]$//' | awk -v f="$lc_f" '{ print $0 " " f }'
+    grep -ohE -- "$lc_tok[[:space:]]+detectors?\b" "$lc_f" 2>/dev/null \
+      | sed -E 's/[[:space:]]+detectors?$//' | awk -v f="$lc_f" '{ print $0 " " f }'
+  done < <(dc_lc_scope)
+}
+
+# dc_label_citation — the comparison. Matching is case-insensitive: a citation differing from the
+# printed label only in case still resolves for the reader who follows it, and redding on that would
+# be pedantry rather than a broken reference.
+dc_label_citation() {
+  local lc_before=$fail lc_emitted lc_rows lc_row lc_label
+  dc_lc_validate || return 0
+  lc_emitted=$(dc_lc_emitted < "$lc_gate")
+  if [ -z "$lc_emitted" ]; then
+    dc_fail label-citation:emitted \
+      "no label could be read out of $lc_gate — an EMPTY emitted set would make every citation" \
+      "below wrong at once, so this reds instead of comparing against nothing."
+    return 0
+  fi
+  lc_rows=$(dc_lc_cited | sort -u)
+  while IFS= read -r lc_row; do
+    [ -n "$lc_row" ] || continue
+    lc_label=${lc_row%% *}
+    printf '%s\n' "$lc_emitted" | grep -qxFi -- "$lc_label" && continue
+    dc_fail label-citation \
+      "${lc_row#* } cites the gate label \"$lc_label\", which this gate does not emit — a renamed" \
+      "label leaves its citation resolving to nothing, and no other check in this repository sees" \
+      "that. Re-point the citation at the label the gate prints today, or delete it."
+  done <<<"$lc_rows"
+  [ "$fail" -eq "$lc_before" ] || return 0
+  dc_ok label-citation \
+    "$(printf '%s' "$lc_rows" | grep -c .) (label, document) citation(s) across the documents" \
+    "coupled to this gate, each label one the gate emits; the extraction is validated on a" \
+    "quoted, multi-word," \
+    "\"#\"-prefixed fixture (\"$lc_hard\", retired by 8934f44). LIMIT: it reads the TWO citation" \
+    "shapes found in this repository — a parenthesised label beside a mention of the gate, and a" \
+    "label before the word \"detector\" — so a citation written a third way is not seen."
+}
+
 # --- DOC-INTEGRITY (#51) — mechanical "no mangled doc" guards over every tracked *.md ------------
 # The simplify pass rewrites prose into lists; lists are where half-closed fences and orphaned links
 # are born. These three detectors gate #51's OWN delivery PR (mechanical, revert-provable per
@@ -1034,6 +1188,7 @@ dc_main() {
   dc_currency_note
   dc_design_derive
   dc_design_trigger
+  dc_label_citation
   dc_fence_balance
   dc_doc_crlf
   dc_link_targets

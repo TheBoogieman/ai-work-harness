@@ -715,8 +715,32 @@ dc_ih_commands() {
     "arming	git -C <estate> config harness.estate true"
 }
 
+# REACHABILITY — the two documents must EXIST before a single row is grepped, and this is the check
+# that says so. The two directions below fail in OPPOSITE ways when their document is gone: the rot
+# direction reds on every row (grep finds nothing in a file that is not there), but the duplication
+# direction is `grep … && dc_fail`, so a missing README makes the grep fail, the && short-circuits,
+# and NOTHING is recorded — every row then passes on the manual alone and the detector announces a
+# property it never checked. That is not hypothetical here: README is a document this programme is
+# actively moving, and a safety check that goes quiet the moment its subject moves is worse than no
+# check. So the existence of BOTH is asserted once, before the loop, naming whichever is missing;
+# the caller skips the rows, because grepping a document that is not there proves nothing.
+dc_ih_documents() {
+  local ih_doc ih_gone=0
+  for ih_doc in "$README" "$INSTALL_DOC"; do
+    [ -f "$ih_doc" ] && continue
+    ih_gone=1
+    dc_fail install-home \
+      "$ih_doc does not exist, so the install commands cannot be checked against it. This check" \
+      "reads exactly two documents — $README and $INSTALL_DOC — and a missing one would let its" \
+      "rows pass without being checked. Restore $ih_doc, or re-point this detector at the" \
+      "document that replaced it (README= / INSTALL_DOC= at the head of this script)."
+  done
+  [ "$ih_gone" -eq 0 ]
+}
+
 dc_install_home() {
   local ih_before=$fail ih_row ih_label ih_cmd
+  dc_ih_documents || return 0
   while IFS= read -r ih_row; do
     ih_label=${ih_row%%	*}; ih_cmd=${ih_row#*	}
     grep -Fq -- "$ih_cmd" "$README" && dc_fail "install-home:$ih_label" \

@@ -1012,12 +1012,14 @@ dc_lc_scope() {
 #       "the docs-check grammar-drift detector" and "reader-agent detector checks the spine".
 # REQUIRING A HYPHEN is what keeps "the reader detector" — a concept, not a label — out of S2.
 # A label never contains a space, so a space is a safe field separator for the rows.
+# $lc_tok is braced at both sites because a bracket expression follows it, and an unbraced name
+# followed by "[" reads as an array subscript to a linter rather than as the regex it is.
 dc_lc_cited() {
   local lc_f
   while IFS= read -r lc_f; do
-    grep -hE -- "$lc_name" "$lc_f" 2>/dev/null | grep -oE "\($lc_tok[):;,]" \
+    grep -hE -- "$lc_name" "$lc_f" 2>/dev/null | grep -oE "\(${lc_tok}[):;,]" \
       | sed -E 's/^\(//; s/[):;,]$//' | awk -v f="$lc_f" '{ print $0 " " f }'
-    grep -ohE -- "$lc_tok[[:space:]]+detectors?\b" "$lc_f" 2>/dev/null \
+    grep -ohE -- "${lc_tok}[[:space:]]+detectors?\b" "$lc_f" 2>/dev/null \
       | sed -E 's/[[:space:]]+detectors?$//' | awk -v f="$lc_f" '{ print $0 " " f }'
   done < <(dc_lc_scope)
 }

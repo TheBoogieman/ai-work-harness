@@ -810,11 +810,61 @@ dc_b4_structure() {
     "$DESIGN is missing its dated 'Diagram currency (YYYY-MM-DD)' note section — add/restore it."
 }
 
+# --- DEPICTED SET (#211) — the watched set is DERIVED FROM THE SHEETS, never listed here ---------
+# The currency trigger below protects one claim: that the sheets are current with the machinery they
+# draw. A change to machinery they do NOT draw cannot falsify that claim, so the watched set has to
+# be what the drawings actually name. It used to be three path prefixes — _harness/scripts/,
+# _agents/, _harness/hooks/, 26 tracked files against the 7 scripts the sheets depict — and the
+# other nineteen fired a trigger their changes could not answer. Deriving it (rather than keeping a
+# list here) means a redraw moves the watched set on the day it lands, with nothing to maintain.
+
+# dc_design_depicted — every script basename the two sheets render, one per line, sorted. The sheet
+# folder is $DESIGN's own directory, so the location stays in one home. SUBSTRING extraction is
+# deliberate: two depicted names sit INSIDE a sentence rather than alone in a text node, and a
+# whole-text-node reader silently returns five of the seven — a relaxation wearing the shape of a
+# correction. Neither sheet uses <tspan>, so splitting is not the hazard; embedding is. -h keeps the
+# filename off the matches when the glob expands to more than one sheet.
+dc_design_depicted() {
+  local sheet
+  for sheet in "${DESIGN%/*}"/*.svg; do
+    grep -ohE '[A-Za-z0-9_-]+\.(sh|py)' "$sheet" || true
+  done | sort -u
+}
+
+# dc_design_sentinels — the names that PROVE the extraction above still reads embedded text. Each is
+# drawn inside a sentence ("check_ticket_log.sh audits state left by the PAST", "*via
+# append_notebook_cell.py"), so a pattern that only reads whole text nodes loses exactly these two
+# and keeps the other five, leaving both depicted scripts unwatched while every check stays green.
+dc_design_sentinels() {
+  printf '%s\n' check_ticket_log.sh append_notebook_cell.py
+}
+
+# dc_design_derive — validate the pattern against a known-embedded name, THEN publish the count. A
+# count from an unvalidated pattern is unmeasured, not a result, so the assertion comes first. It is
+# made against NAMES THE SHEETS CARRY, never against the literal 7: seven is today's number and a
+# redraw is meant to move it, whereas "the pattern can still see an embedded name" must keep holding
+# through any redraw. Runs on every invocation, not only when machinery changed, so an extraction
+# that has quietly stopped seeing part of the sheets reds the build instead of shrinking the watched
+# set where nothing is looking.
+dc_design_derive() {
+  local depicted name derive_before=$fail
+  depicted=$(dc_design_depicted)
+  while IFS= read -r name; do
+    printf '%s\n' "$depicted" | grep -qxF "$name" && continue
+    dc_fail DESIGN-derive \
+      "the sheets depict $name but the script-name extraction no longer finds it — the pattern" \
+      "under-counts and the currency trigger's watched set has silently shrunk; fix the pattern."
+  done < <(dc_design_sentinels)
+  [ "$fail" -eq "$derive_before" ] || return 0
+  dc_ok DESIGN-derive "$(printf '%s\n' "$depicted" | grep -c .) scripts depicted by the sheets —" \
+    "the currency trigger's watched set, derived from the drawings, validated on an embedded name"
+}
+
 # --- DESIGN.md TRIGGER — depicted machinery changed without a currency-note disposition ----------
-# (addition-C): if this PR touches _harness/scripts/**, _agents/**, or _harness/hooks/** and does
-# NOT touch DESIGN.md, the note's honesty is an unanswered question -> RED, UNLESS the PR body
-# carries [diagrams-unaffected: <non-empty reason>]. The machine can't judge whether prose reflects
-# reality, but it can refuse to merge the unanswered question.
+# (addition-C): if this PR touches a script the sheets DEPICT (the derived set above) and does NOT
+# touch DESIGN.md, the note's honesty is an unanswered question -> RED, UNLESS the PR body carries
+# [diagrams-unaffected: <non-empty reason>]. The machine can't judge whether prose reflects reality,
+# but it can refuse to merge the unanswered question.
 dc_design_trigger() {
   local changed reason
   if [ "${DOCS_CHANGED_FILES+x}" = x ]; then
@@ -822,7 +872,10 @@ dc_design_trigger() {
   else
     changed=$(git diff --name-only "${DOCS_BASE_REF:-origin/main}...HEAD" 2>/dev/null || true)
   fi
-  printf '%s\n' "$changed" | grep -qE '^(_harness/scripts/|_agents/|_harness/hooks/)' || return 0
+  # Compare BASENAMES: the sheets name scripts, not paths. sed strips any directory; a changed path
+  # with no slash is left alone. An empty derived set matches nothing, which is why dc_design_derive
+  # reds separately — a silent empty set must never read as "no depicted machinery changed".
+  printf '%s\n' "$changed" | sed 's#.*/##' | grep -qxFf <(dc_design_depicted) || return 0
   printf '%s\n' "$changed" | grep -qxF "$DESIGN" && return 0
   reason=$(printf '%s' "${PR_BODY:-}" | grep -oE '\[diagrams-unaffected:[^]]*\]' | head -1 \
            | sed -E 's/^\[diagrams-unaffected:[[:space:]]*//; s/[[:space:]]*\]$//')
@@ -960,6 +1013,7 @@ dc_main() {
   dc_adr
   dc_reader_agent
   dc_b4_structure
+  dc_design_derive
   dc_design_trigger
   dc_c7a_fence
   dc_c7c_cr

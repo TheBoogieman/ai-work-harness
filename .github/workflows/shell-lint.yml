@@ -11,11 +11,14 @@
 #
 # FORMATTER HALF DELIBERATELY ABSENT: #119 also asked for an shfmt --diff check. That half is NOT
 # shipped here because shfmt cannot format this repository as a whitespace-only pass — it rewrites
-# `cmd_a; cmd_b` one-liners into separate lines, deleting 902 semicolons across the 20 tracked
-# scripts and growing run_demo.sh from 1773 to 2681 lines. No shfmt flag or EditorConfig key
-# disables that, so adopting the formatter is a code-shape decision, not a whitespace pass, and it
-# belongs to the architect rather than to this workflow. Adding the check now would ship a
-# knowingly-RED gate, which the repo's "red blocks" doctrine forbids. See the #119 pull request.
+# `cmd_a; cmd_b` one-liners into separate lines. MEASURED AT #119 AND DATED THERE, not a claim
+# about HEAD: 902 semicolons deleted across the 20 tracked scripts of that day, and run_demo.sh
+# grown from 1773 to 2681 lines. That tree no longer exists — #143 split the acceptance suite into
+# a runner plus a tour plus one file per guard family, so both the file count and run_demo.sh's
+# size have moved; re-measure before citing either number. No shfmt flag or EditorConfig key
+# disables the splitting, so adopting the formatter is a code-shape decision, not a whitespace
+# pass, and it belongs to the architect rather than to this workflow. Adding the check now would
+# ship a knowingly-RED gate, which the repo's "red blocks" doctrine forbids. See #119 and #143.
 name: shell-lint
 
 on:

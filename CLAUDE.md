@@ -246,4 +246,10 @@ the issue board is clear and the project is self-contained.
 - _agents/ — the Copilot agent contracts.
 - _harness/scripts/run_demo.sh — the 6-stage acceptance demo; the truth-teller
   for the shipped product. WHICH changes must run it is stated once, under
-  "Working on this harness" above — it is not every change.
+  "Working on this harness" above — it is not every change. It is the RUNNER of
+  a suite split three ways (#143): it owns the shared estate and the stage
+  ORDER, `_harness/demo/tour.sh` is the stage-based tour a person watches, and
+  `_harness/demo/cases/*.case.sh` is one case file per guard family — where
+  every named guard lives. A new guard goes in the case file for its family (or
+  a new one), and a NEW case file must be added to `demo_order()` in the runner;
+  the runner's `[case-completeness]` check reds by name if it is not.

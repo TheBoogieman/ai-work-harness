@@ -181,6 +181,9 @@ Work/                                        [git root · local-only · whitelis
 ├── .github/workflows/                       CI — the demo on Linux + macOS: every push to main; PRs by scope (see .github/CONTRIBUTING.md)
 │
 ├── _harness/
+│   ├── demo/                                THE ACCEPTANCE SUITE'S other two halves [dev-only · never installed]
+│   │   ├── tour.sh                          the stage-based tour a newcomer watches: six stage banners + the machinery running · asserts nothing by name
+│   │   └── cases/*.case.sh                  one case file per guard family — the regression suite · every named guard lives in exactly one of them
 │   └── scripts/                             THE MACHINERY (versioned)
 │       ├── check_ticket_log.sh              ← sessionStart hook │ sessionEnd (bonus)
 │       │       └── watermark →              ~/.harness/validated/<ticket>  [state · unversioned]
@@ -197,7 +200,7 @@ Work/                                        [git root · local-only · whitelis
 │       ├── deploy_agents.sh                 → user-level agent dir (sync source → live)
 │       ├── harness-housekeeping.sh          human-run · git gc + size report · never touches records
 │       ├── harness-drill.sh                 human-run · rehearse restore/bundle/undo · read-only toward the estate
-│       └── run_demo.sh                      the acceptance demo: proves the machinery end-to-end on this host (see Setup) · wired to no hook
+│       └── run_demo.sh                      the acceptance demo's RUNNER: owns the estate + the stage order, runs _harness/demo/ (see Setup) · wired to no hook
 │
 ├── _agents/                                 SOURCE OF TRUTH (versioned)
 │   ├── ticket-init.agent.md                 ┐

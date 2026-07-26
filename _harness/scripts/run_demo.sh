@@ -1,41 +1,72 @@
 #!/usr/bin/env bash
-# run_demo.sh — proves the harness machinery works on THIS machine in ~20s.
-# No Copilot needed. Safe: uses temp state, creates+destroys one scratch ticket.
+# run_demo.sh — THE RUNNER of the acceptance suite (#143). It owns the shared estate the suite
+# runs against, the ORDER the suite runs in, and nothing else. The suite itself is two other
+# kinds of artifact, and the split is the point:
+#   _harness/demo/tour.sh          the STAGE-BASED TOUR — a demonstration a person watches. It
+#                                  prints the six stage banners and performs the machinery a
+#                                  newcomer came to see. It asserts nothing by name.
+#   _harness/demo/cases/*.case.sh  ONE CASE FILE PER GUARD FAMILY — the regression suite a
+#                                  machine runs. Every named guard lives in exactly one of them.
+# Those two serve different readers, which is why they are different files: a reader who wants to
+# see the harness work reads the tour, and a reader who wants to know what is PROVEN reads the
+# case file for that family. Keeping both in one artifact is what produced the file this split
+# undoes.
+#
+# Proves the harness machinery works on THIS machine in ~20s. No Copilot needed. Safe: uses temp
+# state, creates+destroys one scratch ticket.
+#
+# WHAT THIS SUITE DOES NOT KNOW (#42 decoupling, cond 2): the documentation-completeness and
+# branch-grammar DOC checks that once lived inside it have MOVED to .github/scripts/docs-check.sh
+# (run by .github/workflows/docs.yml). The suite carries ZERO documentation knowledge — doc state
+# can never again red the product demo. The demo gates the PRODUCT; docs.yml gates the docs. Two
+# truths, two instruments.
+#
+# HOW A UNIT IS NAMED AND FOUND: demo_order() below prints one unit per line as "<kind>:<name>".
+# "tour:<name>" calls tour_<name> in tour.sh; "case:<name>" calls case_<name>, which is defined by
+# cases/<name>.case.sh. Hyphens in a name become underscores in the function. NO CASE FILE CARRIES
+# AN ORDINAL PREFIX: the order is data in demo_order(), not a property of a filename, so ordering
+# the suite never mints the numbered-identifier class this split exists to delete.
 set -euo pipefail
-export HARNESS_DEMO=1   # lets status treat a template-clone remote as a NOTE, not a FAIL
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR/../.."
-DEMO_ROOT=$PWD
-# Assign each temp dir on its OWN line, THEN export the names. `export VAR=$(cmd)` returns
-# export's own status — always 0 — so under `set -euo pipefail` a failing mktemp would leave the
-# variable EMPTY and the demo would run on with an unset state dir, mis-pointing every guard
-# beneath it. Split apart, the assignment's status is the script's status: a failing mktemp
-# aborts here, loudly, instead of producing a silently wrong run.
-HARNESS_STATE_DIR=$(mktemp -d)
-HARNESS_AGENT_DEPLOY_DIR=$(mktemp -d)
-PACK_OUT_DIR=$(mktemp -d)
-export HARNESS_STATE_DIR HARNESS_AGENT_DEPLOY_DIR PACK_OUT_DIR
-# #71 A2 — ONE global override for status's first-seen record, exported ONCE at the top so it covers
-# EVERY harness-status invocation in this demo and every future guard for free. Threading
-# an override per call site would be the wrong shape: a single missed site in a later wave would
-# silently write the real estate. Individual guards may still layer a guard-LOCAL state path on top
-# for determinism — the global export is the SAFETY floor under all of them.
-# Assigned then exported for the same reason as the temp dirs above: a failing mktemp must abort
-# the demo, not hand the WARN-aging guards an empty state path that quietly writes the real estate.
-HARNESS_WARN_STATE_DIR=$(mktemp -d)
-export HARNESS_WARN_STATE_DIR
-export HARNESS_WARN_STATE_FILE="$HARNESS_WARN_STATE_DIR/warn-aging.tsv"
+
+# --- setup: the shared estate every unit runs against ------------------------------------------
+# Assign each temp dir on its OWN line, THEN export the names. `export VAR=$(cmd)` returns export's
+# own status — always 0 — so under `set -euo pipefail` a failing mktemp would leave the variable
+# EMPTY and the demo would run on with an unset state dir, mis-pointing every guard beneath it.
+# Split apart, the assignment's status is the script's status: a failing mktemp aborts here,
+# loudly, instead of producing a silently wrong run.
+#
+# HARNESS_WARN_STATE_DIR is ONE global override for status's first-seen record, exported ONCE here
+# so it covers EVERY harness-status invocation in this suite and every future guard for free.
+# Threading an override per call site would be the wrong shape: a single missed site in a later
+# wave would silently write the real estate. Individual case files may still layer a case-LOCAL
+# state path on top for determinism — the global export is the SAFETY floor under all of them.
+demo_setup() {
+  export HARNESS_DEMO=1   # lets status treat a template-clone remote as a NOTE, not a FAIL
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  cd "$SCRIPT_DIR/../.."
+  DEMO_ROOT=$PWD
+  HARNESS_STATE_DIR=$(mktemp -d)
+  HARNESS_AGENT_DEPLOY_DIR=$(mktemp -d)
+  PACK_OUT_DIR=$(mktemp -d)
+  export HARNESS_STATE_DIR HARNESS_AGENT_DEPLOY_DIR PACK_OUT_DIR
+  HARNESS_WARN_STATE_DIR=$(mktemp -d)
+  export HARNESS_WARN_STATE_DIR
+  export HARNESS_WARN_STATE_FILE="$HARNESS_WARN_STATE_DIR/warn-aging.tsv"
+  DEMO_RAN=""                                  # the case names actually executed (see Part 3 below)
+  S="Tickets/999911Z-PROJ-99998"; rm -rf "$S"  # the shared scratch ticket the tour builds
+  demo_arm_cleanup
+  demo_init_repo
+}
 
 # cleanup runs on EXIT — normal, a set -e abort, or Ctrl-C. It removes the temp dirs AND any
-# Tickets/ folder THIS run created but didn't tear down. Success-path teardown is explicit below,
-# but a run that DIES mid-stage used to leave scratch tickets behind (untracked, so git stayed
-# clean) and the NEXT run then red-blocked at stage 1 on the leftovers — a misleading second
-# failure (the "leftover-scratch-folder collision"). Snapshotting the real tickets up front and
-# deleting anything not in that snapshot makes an aborted run clean up after itself, and never
+# Tickets/ folder THIS run created but didn't tear down. Success-path teardown is explicit in
+# demo_finish, but a run that DIES mid-stage used to leave scratch tickets behind (untracked, so
+# git stayed clean) and the NEXT run then red-blocked at stage 1 on the leftovers — a misleading
+# second failure (the "leftover-scratch-folder collision"). Snapshotting the real tickets up front
+# and deleting anything not in that snapshot makes an aborted run clean up after itself, and never
 # touches a pre-existing (real) ticket. DEMO_SNAPSHOT_DONE guards the window before the snapshot
 # exists, so a very early death can't delete real tickets.
-DEMO_PRE_TICKETS=""; DEMO_SNAPSHOT_DONE=0
-cleanup() {
+demo_cleanup() {
   rm -rf "$HARNESS_STATE_DIR" "$HARNESS_AGENT_DEPLOY_DIR" "$PACK_OUT_DIR" "$HARNESS_WARN_STATE_DIR"
   [ "$DEMO_SNAPSHOT_DONE" = 1 ] || return 0
   local d name
@@ -45,1892 +76,213 @@ cleanup() {
     printf '%s\n' "$DEMO_PRE_TICKETS" | grep -Fxq "$name" || rm -rf "$d"
   done
 }
-trap cleanup EXIT
-S="Tickets/999911Z-PROJ-99998"; rm -rf "$S"
-# Snapshot the real (pre-existing) tickets so cleanup removes ONLY what THIS run creates.
-DEMO_PRE_TICKETS=$(for d in "$DEMO_ROOT/Tickets"/*/; do [ -d "$d" ] && basename "$d"; done 2>/dev/null)
-DEMO_SNAPSHOT_DONE=1
 
-DID_INIT=0
-if ! git rev-parse --git-dir >/dev/null 2>&1; then
-  git init -q .; git add -A; git -c user.email=demo@local -c user.name=demo commit -qm "harness: day zero"
+# demo_arm_cleanup — install the single EXIT trap and take the pre-existing-ticket snapshot it
+# reads. THIS SUITE OWNS EXACTLY ONE TRAP SLOT: a case file that needs teardown does it with an
+# explicit rm on every exit path, never a second `trap ... EXIT`, which would replace this one.
+demo_arm_cleanup() {
+  DEMO_PRE_TICKETS=""; DEMO_SNAPSHOT_DONE=0
+  trap demo_cleanup EXIT
+  DEMO_PRE_TICKETS=$(for d in "$DEMO_ROOT/Tickets"/*/; do [ -d "$d" ] \
+    && basename "$d"; done 2>/dev/null)
+  DEMO_SNAPSHOT_DONE=1
+}
+
+# demo_init_repo — a bare directory with no .git gets one, so the suite can demonstrate the git
+# safety net. DID_INIT records whether THIS run created it, which is what gates the closing commit.
+demo_init_repo() {
+  DID_INIT=0
+  git rev-parse --git-dir >/dev/null 2>&1 && return 0
+  git init -q .; git add -A
+  git -c user.email=demo@local -c user.name=demo commit -qm "harness: day zero"
   DID_INIT=1
-fi
+}
 
-# demo_close_commit — the demo's closing auto-commit, GATED so it only fires when the demo
-# ITSELF created the repo (issue #10). In a real clone (.git already present -> DID_INIT=0) it
-# must do NOTHING, so the demo never sweeps a user's uncommitted work into a "demo: pass"
-# commit. Factored into a function so the [wip-not-absorbed] below tests THIS exact gate, not a copy
-# that could drift from it.
+# demo_close_commit — the suite's closing auto-commit, GATED so it only fires when the demo ITSELF
+# created the repo (issue #10). In a real clone (.git already present -> DID_INIT=0) it must do
+# NOTHING, so the demo never sweeps a user's uncommitted work into a "demo: pass" commit. It is a
+# function so the [wip-not-absorbed] case tests THIS exact gate, not a copy that could drift.
 demo_close_commit() {  # $1 = DID_INIT flag (1 iff the demo created the repo), $2 = repo dir
   local did_init="$1" repo="$2"
   [ "$did_init" -eq 1 ] || return 0                      # real clone -> skip; never absorb WIP
   git -C "$repo" add -A >/dev/null
-  git -C "$repo" -c user.email=demo@local -c user.name=demo commit -qm "demo: pass" >/dev/null 2>&1 || true
+  git -C "$repo" -c user.email=demo@local -c user.name=demo \
+    commit -qm "demo: pass" >/dev/null 2>&1 || true
 }
 
-# R-03 portability guard: reject in-place sed under _harness/ (BSD-incompatible; use tmp+mv instead)
-if grep -rnE 'sed +(-[A-Za-z]+ +)*-i' _harness/; then
-  echo "FAIL: in-place sed found under _harness/ — not BSD-portable. Fix: rewrite via tmp+mv (grep for deletes, sed for substitutions)."; exit 1
-fi
-
-echo "=== 1/6 validator: first pass + vacuous rerun ==="
-bash _harness/scripts/check_ticket_log.sh
-bash _harness/scripts/check_ticket_log.sh
-
-echo "=== 2/6 scratch ticket: happy path ==="
-cp -r Tickets/999912Z-PROJ-99999 "$S"
-mv "$S/999912Z-PROJ-99999.md" "$S/999911Z-PROJ-99998.md"
-printf '\n## %s - Demo work session\n- Added the new field to the staging model\n' "$(date +%Y%m%d%H%M%S)" >> "$S/999911Z-PROJ-99998.md"
-echo "- notes.md — platform quirk — read before editing" >> "$S/AI-Knowledge/_index.md"
-echo "quirk" > "$S/AI-Knowledge/notes.md"
-bash _harness/scripts/check_ticket_log.sh
-
-echo "=== 3/6 corruption must FAIL loudly (this is the point) ==="
-# R-04 index-grammar regressions. The validator names a file ONLY by an index line's first
-# token after "- "; prose, '#' comments and '<...>' placeholders are inert (grammar pinned in
-# folder-structure.md). These cases prove that in BOTH directions: honest records must PASS
-# (no false ghosts, no false orphans — the R-12 point) and real breakage must FAIL. A parser
-# that scans whole prose lines flips the PASS cases to false FAILs — see the R-04 revert-proof.
-
-# ak_reset rebuilds the scratch ticket's AI-Knowledge/ from nothing: $1 is the _index.md body
-# (embed \n via $'...' for multiple lines); each remaining arg is a real .md file to create.
-ak_reset() {
-  local body="$1"; shift
-  rm -rf "$S/AI-Knowledge"; mkdir -p "$S/AI-Knowledge"
-  printf '%s\n' "$body" > "$S/AI-Knowledge/_index.md"
-  local f; for f in "$@"; do printf 'content\n' > "$S/AI-Knowledge/$f"; done
-}
-# reg_run bumps the ticket log with a fresh session entry (so the watermark check passes and the
-# log mtime advances, forcing re-validation) then runs the validator once, capturing exit code +
-# output into REG_RC / REG_OUT. sleep 1 keeps session timestamps and mtimes strictly increasing.
-reg_run() {
-  sleep 1
-  printf '\n## %s - regression probe\n- exercising the index grammar\n' "$(date +%Y%m%d%H%M%S)" >> "$S/999911Z-PROJ-99998.md"
-  set +e; REG_OUT=$(bash _harness/scripts/check_ticket_log.sh 2>&1); REG_RC=$?; set -e
-}
-# reg_pass asserts an honest index was accepted ($1 = case label). A false FAIL here is the R-12
-# defect — an honest record RED-blocked — so we abort the demo loudly with the validator output.
-reg_pass() {
-  if [ "$REG_RC" -ne 0 ]; then echo "BUG [$1]: honest index RED-blocked (validator failed, should pass):"; printf '%s\n' "$REG_OUT"; exit 1; fi
-  echo "  ok [$1] — honest record accepted"
-}
-# reg_fail asserts real breakage was refused ($1 = label) AND that the printed reason matches $2,
-# so we prove the RIGHT failure fired (e.g. the orphan we expected), not an unrelated one.
-reg_fail() {
-  if [ "$REG_RC" -eq 0 ] || ! printf '%s\n' "$REG_OUT" | grep -q "$2"; then echo "BUG [$1]: expected a FAIL matching '$2' (rc=$REG_RC):"; printf '%s\n' "$REG_OUT"; exit 1; fi
-  echo "  ok [$1] — correctly refused: $2"
-}
-
-# 1. TRUTHFUL PROSE INERT: a filename in the DESCRIPTION is not an entry. A prose-scanning parser
-#    raises old-plan.md as a false ghost and red-blocks this honest record — the core R-12 case.
-ak_reset "- notes.md — supersedes old-plan.md" notes.md
-reg_run; reg_pass "truthful-prose"
-
-# 2. REAL ORPHAN CAUGHT: a real file with no entry line must FAIL. Then apply the printed fix
-#    (repair is a human act; reg_run gives it its own log entry) and watch the ticket go green.
-ak_reset "- covered.md — the only entry" covered.md orphan.md
-reg_run; reg_fail "real-orphan" "orphan file AI-Knowledge/orphan.md"
-echo "  --- applying the printed fix: add the missing index line, re-validate ---"
-echo "- orphan.md — now indexed" >> "$S/AI-Knowledge/_index.md"
-reg_run; reg_pass "orphan-repaired"
-
-# 3. '#' COMMENT INERT: a .md name inside a comment line is not scanned. A prose-scanning parser
-#    reads notes.md out of the comment and mints a false ghost.
-ak_reset $'# see notes.md for the mapping\n- real.md — the real entry' real.md
-reg_run; reg_pass "comment-inert"
-
-# 4. PLACEHOLDER INERT: a <...> first token is illustrative, never a real entry or ghost —
-#    guaranteed by a deliberate angle-bracket check in the validator, not by char-class luck.
-ak_reset $'- <file>.md — placeholder shown in the grammar\n- real.md — the real entry' real.md
-reg_run; reg_pass "placeholder-inert"
-
-# 5. SUBSTRING DECOY: entry "- release-extra.md" must NOT cover the different real file extra.md.
-#    First-token EQUALITY (not substring) leaves extra.md an orphan — now grammar-enforced.
-#    BOTH decoys are REAL files, so release-extra.md is covered by its own entry and does not
-#    ghost — the stage then fails for EXACTLY ONE reason (the extra.md orphan). That isolates the
-#    orphan property specifically: a future orphan-check regression can't hide behind a ghost
-#    failure here. (Cleanup: the next case's ak_reset rebuilds AI-Knowledge/, clearing both.)
-ak_reset "- release-extra.md — decoy" extra.md release-extra.md
-reg_run; reg_fail "substring-decoy" "orphan file AI-Knowledge/extra.md"
-
-# 6. UNIFICATION: one validation, one rule, both directions — good.md is correctly covered by its
-#    exact entry (orphan side) while missing.md is correctly flagged (ghost side).
-ak_reset $'- good.md — real and covered\n- missing.md — names no file' good.md
-reg_run; reg_fail "ghost-side" "ghost entry 'missing.md'"
-if printf '%s\n' "$REG_OUT" | grep -q "orphan file AI-Knowledge/good.md"; then echo "BUG [orphan-side]: good.md wrongly flagged orphan — the orphan side broke"; exit 1; fi
-echo "  ok [orphan-side] — one token rule drove BOTH orphan-coverage (good.md) and ghost-detection (missing.md)"
-
-# 7. TOMBSTONE ACCEPTED: "- old.md (promoted -> ...)" names no file but is a tombstone, not a
-#    ghost — the promotion record is legitimate and must PASS.
-ak_reset $'- old.md (promoted -> General AI-Knowledge/Foo)\n- real.md — kept' real.md
-reg_run; reg_pass "tombstone-accepted"
-
-# 8. DASHLESS PRE-FIX ENTRY: a hand-written line predating the leading-dash rule, WITHOUT the
-#    leading "- ", is not an entry under the grammar, so its file reads as an orphan and FAILs. This
-#    is CORRECT — the leading dash is now enforced. MIGRATION: operators with old dashless indexes
-#    must prepend "- " (the keeper agent now writes the dash, so only pre-existing hand-written
-#    indexes hit this). Asserting FAIL here proves the dash is load-bearing.
-ak_reset "notes.md — quirk" notes.md
-reg_run; reg_fail "dashless-pre-fix" "orphan file AI-Knowledge/notes.md"
-
-# 9. UNICODE-ARROW TOMBSTONE ACCEPTED (E-2 dual-accept): a legacy tombstone written with the
-#    unicode arrow must still be exempt from ghosting — else honest legacy records flip
-#    valid->ghost and red-block (the R-04 failure). The matcher accepts both arrows; the
-#    prescription (fix-line) teaches ASCII "->" only.
-ak_reset $'- old.md (promoted → General AI-Knowledge/Foo)\n- real.md — kept' real.md
-reg_run; reg_pass "unicode-tombstone"
-
-# 10. E-1 PRESCRIPTION IS ASCII: the ghost fix-line must teach the canonical ASCII tombstone,
-#     never the unicode arrow — else a user who follows the printed fix writes a tombstone the
-#     gate (post-Flag-2) rejects. Trigger a ghost, then assert the printed fix-line contains
-#     ASCII "promoted ->" and NOT the unicode arrow. (Assertion, not a pass/fail stage: the
-#     ghost is expected to fire; we check the fix-line's bytes.)
-ak_reset $'- ghosty.md — names no file\n- real.md — kept' real.md
-reg_run   # REG_OUT now holds the ghost FAIL and its fix-line
-if ! printf '%s\n' "$REG_OUT" | grep -q "promoted ->"; then echo "BUG [fixline-ascii]: ghost fix-line missing ASCII 'promoted ->':"; printf '%s\n' "$REG_OUT"; exit 1; fi
-if printf '%s\n' "$REG_OUT" | grep -q "promoted →"; then echo "BUG [fixline-ascii]: ghost fix-line emits the UNICODE arrow — E-1 regressed:"; printf '%s\n' "$REG_OUT"; exit 1; fi
-echo "  ok [fixline-ascii] — ghost fix-line prescribes ASCII '(promoted -> ...)', no unicode arrow"
-
-# leave the scratch ticket green for the remaining stages
-ak_reset "- notes.md — platform quirk — read before editing" notes.md
-reg_run; reg_pass "clean-exit"
-
-echo "=== 4/6 notebook helper (deterministic .ipynb writes) ==="
-python3 _harness/scripts/append_notebook_cell.py "$S/Checks/checks_master.ipynb" "check: row counts match" "SELECT COUNT(*) FROM model;"
-# R-07: exercise check-scribe's LITERAL contract form — invoke the helper DIRECTLY (bit + shebang, not python3),
-# so a stripped execute bit turns this stage RED (the python3 call above never sees the bit).
-if ! _harness/scripts/append_notebook_cell.py "$S/Checks/checks_master.ipynb" "check: direct-exec contract (R-07)" "SELECT 1;"; then
-  echo "FAIL: append_notebook_cell.py not directly executable — execute bit or shebang missing. Fix: git update-index --chmod=+x _harness/scripts/append_notebook_cell.py"; exit 1
-fi
-
-# [literate-capture] — the transport script turns comment-native delimiter blocks
-# (`-- %% [label]` for SQL, `# %% [label]` for python) into notebook cell pairs through the
-# append_notebook_cell.py plumbing, and it is re-runnable (hash-dedupe), provenance-bearing,
-# safe on malformed input, and NEVER touches the source bytes. This guard proves all five
-# properties on a two-block fixture. Cleanup is an explicit rm on EVERY exit path — the demo's
-# single `trap cleanup EXIT` already owns the trap slot, so we must NOT add a second one (#86).
-echo "--- #78: literate capture transports delimited blocks into notebook cells ---"
-LC_TMP=$(mktemp -d)
-LC_SRC="$LC_TMP/capture.sql"                 # a two-block SQL working file
-cat > "$LC_SRC" <<'LCSQL'
--- row counts must match between staging and prod
--- %% [row-parity]
-SELECT COUNT(*) FROM staging.orders;
-SELECT COUNT(*) FROM prod.orders;
-
--- no null customer ids after the backfill
--- %% [null-check]
-SELECT COUNT(*) FROM prod.orders WHERE customer_id IS NULL;
-LCSQL
-LC_SRC_SNAP=$(cksum "$LC_SRC")               # snapshot for the byte-identical assertion (#5)
-LC_NB="$LC_TMP/capture.ipynb"
-python3 -c "import nbformat,sys; nbformat.write(nbformat.v4.new_notebook(), sys.argv[1])" "$LC_NB"
-
-# 1. Two blocks in → EXACTLY four cells out, alternating markdown and code.
-python3 _harness/scripts/literate_capture.py "$LC_NB" "$LC_SRC" >/dev/null
-LC_TYPES=$(python3 -c "import nbformat,sys; nb=nbformat.read(sys.argv[1],as_version=4); print(','.join(c.cell_type for c in nb.cells))" "$LC_NB")
-[ "$LC_TYPES" = "markdown,code,markdown,code" ] \
-  || { echo "BUG [literate-capture]: two blocks did not yield exactly four alternating md/code cells (got '$LC_TYPES') — check the block parser and the append pairing"; rm -rf "$LC_TMP"; exit 1; }
-echo "  ok [literate-capture] — two blocks → four cells, alternating markdown/code"
-
-# 2. Provenance present in each markdown cell: source path, label, and hash.
-for lc_need in "capture.sql" "row-parity" "null-check" "hash:"; do
-  grep -Fq -- "$lc_need" "$LC_NB" \
-    || { echo "BUG [literate-capture]: provenance is missing '$lc_need' from the markdown cells — each md cell must record source path, label, and content hash"; rm -rf "$LC_TMP"; exit 1; }
-done
-echo "  ok [literate-capture] — provenance (source path, label, hash) present in the markdown cells"
-
-# 3. Re-run over the same input → ZERO new cells (hash-dedupe holds).
-python3 _harness/scripts/literate_capture.py "$LC_NB" "$LC_SRC" >/dev/null
-LC_NCELLS=$(python3 -c "import nbformat,sys; print(len(nbformat.read(sys.argv[1],as_version=4).cells))" "$LC_NB")
-[ "$LC_NCELLS" -eq 4 ] \
-  || { echo "BUG [literate-capture]: a re-run over identical input added cells (now $LC_NCELLS, want 4) — hash-dedupe is not holding"; rm -rf "$LC_TMP"; exit 1; }
-echo "  ok [literate-capture] — re-run over the same input added zero cells (dedupe holds)"
-
-# 4. Malformed input (content but no delimiter) → clean no-op with a prescriptive line, and the
-#    notebook is untouched (non-destructive). Capture the output; it exits 0 (a guided no-op).
-LC_BAD="$LC_TMP/bad.sql"
-printf 'SELECT 1;\n-- a plain comment, no delimiter marker\n' > "$LC_BAD"
-set +e; LC_BADOUT=$(python3 _harness/scripts/literate_capture.py "$LC_NB" "$LC_BAD" 2>&1); set -e
-printf '%s\n' "$LC_BADOUT" | grep -q "no delimiter in" \
-  || { echo "BUG [literate-capture]: malformed input did not emit the prescriptive 'no delimiter in ...' line:"; printf '%s\n' "$LC_BADOUT"; rm -rf "$LC_TMP"; exit 1; }
-LC_NCELLS2=$(python3 -c "import nbformat,sys; print(len(nbformat.read(sys.argv[1],as_version=4).cells))" "$LC_NB")
-[ "$LC_NCELLS2" -eq 4 ] \
-  || { echo "BUG [literate-capture]: malformed input was not a clean no-op — the notebook changed (now $LC_NCELLS2 cells, want 4)"; rm -rf "$LC_TMP"; exit 1; }
-echo "  ok [literate-capture] — malformed input is a clean no-op with a prescriptive line, notebook untouched"
-
-# 5. The source file is byte-identical before and after every run — this one is absolute.
-[ "$(cksum "$LC_SRC")" = "$LC_SRC_SNAP" ] \
-  || { echo "BUG [literate-capture]: the source file changed — capture must NEVER modify a source (bytes must be identical before and after)"; rm -rf "$LC_TMP"; exit 1; }
-echo "  ok [literate-capture] — source file byte-identical after capture (sources are never modified)"
-rm -rf "$LC_TMP"
-
-echo "=== 5/6 deploy + status; break an agent; watch it prescribe ==="
-bash _harness/scripts/deploy_agents.sh
-
-# --- ticket-recognition: surface (never enforce) unrecognised ticket folders ----------
-# Runs BEFORE the first harness-status call of stage 5 (the break-and-restore demonstration
-# further down) ON PURPOSE: this block is the first thing after deploy_agents, which makes no
-# status call, so a lane where a plain `harness-status` aborts under set -e (e.g. the
-# Git-Bash issue #8) still reaches and witnesses every stage here before that abort-prone
-# call. The status rc assertions here are baseline-relative (see BASELINE_RC): each fixture
-# must add no NEW failure versus the untouched estate, so a pre-existing estate failure on
-# such a lane is tested-around, not mis-attributed to a fixture here. Every folder below is
-# built from the shipped template and torn down at the end of the block.
-echo "--- ticket-recognition: unrecognised ticket folders are surfaced, never enforced ---"
-# Baseline: status's rc on the UNTOUCHED estate, captured before any fixture exists. Wrapped
-# in set +e so this call itself never aborts the demo — the whole point is to witness these
-# even on a lane where the later plain status call would die.
-# The run's OUTPUT is not part of this assertion — only its exit code is — so it goes to /dev/null
-# rather than into a variable nothing reads. The call itself must stay: it is what produces the rc.
-set +e; bash _harness/scripts/harness-status.sh >/dev/null 2>&1; BASELINE_RC=$?; set -e
-R09_SPACE="Tickets/My Random Ticket 42"        # real ticket record under a space-bearing, non-matching name
-R09_CONF="Tickets/202607A-PROJ-7"              # conforming, low ticket number
-R09_LONG="Tickets/202607AB-LONGBOARD-1000000"  # conforming, multi-letter seq + long number (pins the expansion)
-R09_BAD="Tickets/20260A-PROJ-42"               # malformed: 5-digit date — must NOT be recognised
-
-# r09_make builds a ticket-bearing, validator-ready folder from the template: copy it,
-# rename the inner .md to the folder's OWN name, and append a fresh session-log entry so
-# the watermark check passes. For non-matching names the validator ignores the folder, but
-# the rename still gives ticket_bearing() a <foldername>.md to find.
+# r09_make — the SHARED conforming-ticket fixture builder, used by four case families, which is
+# why it lives here rather than in one of them. It builds a ticket-bearing, validator-ready folder
+# from the shipped template: copy it, rename the inner .md to the folder's OWN name, and append a
+# fresh session-log entry so the watermark check passes. For non-matching names the validator
+# ignores the folder, but the rename still gives ticket_bearing() a <foldername>.md to find.
 r09_make() {
   local dir="$1" base; base=$(basename "$dir")
   rm -rf "$dir"; cp -r Tickets/999912Z-PROJ-99999 "$dir"
   mv "$dir/999912Z-PROJ-99999.md" "$dir/$base.md"
-  printf '\n## %s - r09 probe\n- exercising the ticket grammar\n' "$(date +%Y%m%d%H%M%S)" >> "$dir/$base.md"
+  printf '\n## %s - r09 probe\n- exercising the ticket grammar\n' \
+    "$(date +%Y%m%d%H%M%S)" >> "$dir/$base.md"
 }
 
-# [misnamed-warn] space-named ticket-bearing folder → harness-status WARNs it, exit stays 0.
-#          Pins Model 1: a real-but-misnamed ticket is surfaced so nobody assumes it's
-#          validated when it's silently skipped — and surfacing NEVER fails the estate.
-r09_make "$R09_SPACE"
-set +e; R09_OUT=$(bash _harness/scripts/harness-status.sh 2>&1); R09_RC=$?; set -e
-printf '%s\n' "$R09_OUT" | grep -q "WARN: Tickets/My Random Ticket 42" \
-  || { echo "BUG [misnamed-warn]: space-named ticket-bearing folder not surfaced as WARN:"; printf '%s\n' "$R09_OUT"; exit 1; }
-[ "$R09_RC" -le "$BASELINE_RC" ] || { echo "BUG [misnamed-warn]: surfacing a misnamed folder added a NEW failure (rc=$R09_RC > baseline=$BASELINE_RC)"; exit 1; }
-echo "  ok [misnamed-warn] — space-named ticket-bearing folder surfaced (WARN), no new failure vs baseline"
+# --- the order, and the two sets it has to agree with ------------------------------------------
+# demo_order — THE ONE READABLE HOME FOR STAGE ORDER. Every unit the suite runs, in the order it
+# runs. Read it top to bottom and you have read the shape of the demo. A case file is placed by
+# its line here, never by its name, which is what keeps ordinal prefixes out of the filenames.
+demo_order() {
+  printf '%s\n' \
+    case:sed-portability \
+    tour:validator \
+    tour:happy-path \
+    tour:corruption \
+    case:index-grammar \
+    tour:notebook \
+    case:notebook-direct-exec \
+    case:literate-capture \
+    tour:deploy \
+    case:ticket-recognition \
+    case:session-clock \
+    case:housekeeping \
+    case:worktree-store \
+    case:backfill-guards \
+    case:check-run \
+    case:recovery-drill \
+    case:undo-drill \
+    case:status-consolidation \
+    case:append-entry \
+    case:warn-aging \
+    case:roster-completes \
+    case:junk-ignored \
+    case:oversize-root \
+    case:retro-stats \
+    case:record-whitelisted \
+    case:governance-gates \
+    case:crlf-tripwire \
+    tour:break-restore \
+    case:no-fixed-temp \
+    case:agent-invocability \
+    case:skills-index \
+    case:ship-classification \
+    case:installer \
+    case:tracker-sweep \
+    case:estate-key \
+    case:source-refusal \
+    case:in-estate-reconfigure \
+    tour:context-pack \
+    case:one-pack-per-run \
+    case:scrub-case-agree
+}
 
-# [opt-out-silent] same folder + a tracked .not-a-ticket marker → silent (no WARN), exit 0.
-#          Pins the recorded, versioned opt-out.
-touch "$R09_SPACE/.not-a-ticket"
-set +e; R09_OUT=$(bash _harness/scripts/harness-status.sh 2>&1); R09_RC=$?; set -e
-printf '%s\n' "$R09_OUT" | grep -q "WARN: Tickets/My Random Ticket 42" \
-  && { echo "BUG [opt-out-silent]: silenced folder still WARNed:"; printf '%s\n' "$R09_OUT"; exit 1; }
-[ "$R09_RC" -le "$BASELINE_RC" ] || { echo "BUG [opt-out-silent]: silencing added a NEW failure (rc=$R09_RC > baseline=$BASELINE_RC)"; exit 1; }
-echo "  ok [opt-out-silent] — .not-a-ticket marker silences the WARN, no new failure vs baseline"
+# demo_cases_dir / demo_case_names — where case files live and what they are called. Both the
+# loader and the completeness guard read the directory through these, so "what a case file is"
+# has one definition and the two can never disagree about it.
+demo_cases_dir() { printf '%s\n' "$DEMO_ROOT/_harness/demo/cases"; }
 
-# [low-number-ok] conforming low-number ticket → validated; no naming FAIL, and no whitespace
-#          breakage from the space-named sibling created above.
-r09_make "$R09_CONF"
-set +e; R09_OUT=$(bash _harness/scripts/check_ticket_log.sh 2>&1); R09_RC=$?; set -e
-printf '%s\n' "$R09_OUT" | grep -q "OK: 202607A-PROJ-7 validated" \
-  || { echo "BUG [low-number-ok]: conforming low-number ticket not validated:"; printf '%s\n' "$R09_OUT"; exit 1; }
-[ "$R09_RC" -eq 0 ] || { echo "BUG [low-number-ok]: validator exited non-zero (rc=$R09_RC):"; printf '%s\n' "$R09_OUT"; exit 1; }
-echo "  ok [low-number-ok] — 202607A-PROJ-7 validated (low number accepted, space sibling didn't break it)"
+demo_case_names() {
+  local f
+  for f in "$(demo_cases_dir)"/*.case.sh; do
+    if [ -f "$f" ]; then basename "$f" .case.sh; fi
+  done
+}
 
-# [wide-fields-ok] multi-letter sequence + long number → validated. Pins the EXPANDED pattern
-#          (a month past Z, a board key longer than PROJ, a number wider than 5 digits).
-r09_make "$R09_LONG"
-set +e; R09_OUT=$(bash _harness/scripts/check_ticket_log.sh 2>&1); R09_RC=$?; set -e
-printf '%s\n' "$R09_OUT" | grep -q "OK: 202607AB-LONGBOARD-1000000 validated" \
-  || { echo "BUG [wide-fields-ok]: expanded-pattern ticket not validated:"; printf '%s\n' "$R09_OUT"; exit 1; }
-[ "$R09_RC" -eq 0 ] || { echo "BUG [wide-fields-ok]: validator exited non-zero (rc=$R09_RC):"; printf '%s\n' "$R09_OUT"; exit 1; }
-echo "  ok [wide-fields-ok] — 202607AB-LONGBOARD-1000000 validated (multi-letter seq + long number)"
+# demo_suite_files — every source file the suite is made of. The [no-fixed-temp] case scans this
+# list, so widening the suite by adding a case file widens that scan on the same day, with nobody
+# having to remember to extend it.
+demo_suite_files() {
+  local f
+  printf '%s\n' "$DEMO_ROOT/_harness/scripts/run_demo.sh" "$DEMO_ROOT/_harness/demo/tour.sh"
+  for f in "$(demo_cases_dir)"/*.case.sh; do
+    if [ -f "$f" ]; then printf '%s\n' "$f"; fi
+  done
+}
 
-# [malformed-ignored] malformed name (5-digit date) → NOT recognised, so NEVER validated. Proves the
-#          expansion still has a shape — it widened the fields, it didn't go formless.
-r09_make "$R09_BAD"
-set +e; R09_OUT=$(bash _harness/scripts/check_ticket_log.sh 2>&1); R09_RC=$?; set -e
-printf '%s\n' "$R09_OUT" | grep -q "20260A-PROJ-42 validated" \
-  && { echo "BUG [malformed-ignored]: malformed 5-digit-date name was validated — the grammar went formless:"; printf '%s\n' "$R09_OUT"; exit 1; }
-echo "  ok [malformed-ignored] — 20260A-PROJ-42 not recognised, correctly left unvalidated"
+# demo_load — source the tour and every case file. Sourcing (not executing) is deliberate: the
+# units share one estate, one scratch ticket and one EXIT trap, and a subprocess would see none of
+# them. The shellcheck directive says the path is computed at run time; it silences no finding
+# about the sourced code, which is linted in its own right as a tracked *.sh.
+demo_load() {
+  local f
+  # shellcheck source=/dev/null
+  . "$DEMO_ROOT/_harness/demo/tour.sh"
+  for f in "$(demo_cases_dir)"/*.case.sh; do
+    if [ -f "$f" ]; then
+      # shellcheck source=/dev/null
+      . "$f"
+    fi
+  done
+}
 
-# [space-named-pack] the pack builder handles a space-named ticket at exit 0 (zip needed). Writes to
-# its OWN throwaway pack dir (like the [pack-without-zip] below), NOT the demo's shared PACK_OUT_DIR: if this
-# pack and stage 6's both landed in the shared dir across a minute boundary (make_context_pack's STAMP
-# is minute-granular), two harness-pack-*.zip would accumulate there and stage 6's unzip glob would
-# match both and fail — the timing flake CI caught on the slower macOS runner. Own dir = timing can't matter.
-R09D_OUT=$(mktemp -d)
-set +e; PACK_OUT_DIR="$R09D_OUT" bash _harness/scripts/make_context_pack.sh --ticket "My Random Ticket 42" >/dev/null; R09_RC=$?; set -e
-rm -rf "$R09D_OUT"
-[ "$R09_RC" -eq 0 ] || { echo "BUG [space-named-pack]: context pack failed on a space-named ticket (rc=$R09_RC)"; exit 1; }
-echo "  ok [space-named-pack] — make_context_pack.sh handled a space-named ticket, exit 0"
+# demo_dispatch — run every unit in demo_order()'s order, and RECORD each case as it runs. The
+# record is what the completeness guard reads: it is the set actually EXECUTED, not the set the
+# order list claims, so a unit that is listed but never dispatched is caught too.
+demo_dispatch() {
+  local unit kind name fn
+  while IFS= read -r unit; do
+    [ -n "$unit" ] || continue
+    kind=${unit%%:*}; name=${unit#*:}
+    fn="${kind}_$(printf '%s' "$name" | tr '-' '_')"
+    "$fn"
+    # "case" is QUOTED deliberately: bare, it is the shell keyword that opens a case statement, and
+    # the code-shape scanner tokenises this line the same way — an unquoted one reads as a compound
+    # command that never reaches its esac, and every shape number for this file goes wrong.
+    if [ "$kind" = "case" ]; then DEMO_RAN="${DEMO_RAN}${name}"$'\n'; fi
+  done < <(demo_order)
+}
 
-# --- pending-ticket fourth state (graceful cancellation of custom names) — issue #25 ---
-# A ticket ticket-init couldn't name gets a deliberately non-conforming placeholder name
-# PLUS a .ticket-pending marker: a REAL ticket that must NAG until renamed, and cannot be
-# silenced. These guards pin that the pending WARN is a DISTINCT message from the
-# silenceable hand-made WARN and is non-silenceable. A broken build flips them: checking
-# .not-a-ticket before .ticket-pending reddens [pending-wins]; reusing the hand-made-WARN text reddens [handmade-warn].
-R09_PEND="Tickets/pending-20260719120000"   # non-conforming placeholder name init would coin
-R09_HAND="Tickets/handmade-notes"           # a user's own non-conforming folder (contrast case)
+# --- [case-completeness] — the guard a split suite cannot do without (#143 acceptance, part 3) --
+# A SPLIT SUITE CAN SILENTLY RUN FEWER CASES THAN IT HAS. A case file that exists but is absent
+# from demo_order() simply does not run: every remaining assertion passes, the runner reports
+# success, and the suite is quietly smaller. Nothing else in this repository would notice — the
+# baseline comparison catches it on the day of the split and never again, and the day someone adds
+# a case file and forgets the list is months later.
+#
+# So the runner asserts that the set of case files it EXECUTED equals the set that EXISTS on disk,
+# and names the difference in either direction. REVERT-PROOF: delete one line from demo_order()
+# and this reds naming that case; add a case file without listing it and this reds naming it too.
+#
+# IT PRINTS NOTHING ON SUCCESS, on purpose. The suite's success lines are the acceptance evidence
+# for this split and they had to stay byte-identical to the pre-split baseline, so a new ok-line
+# here would have been the one difference in the comparison that proves nothing was lost. A silent
+# assertion above a loud failure is an idiom this suite already uses ([one-pack-per-run] and the
+# sed-portability case are the same shape); the failure is what has to be readable, and it is.
+demo_completeness() {
+  local ran have unrun unlisted
+  ran=$(printf '%s' "$DEMO_RAN" | LC_ALL=C sort -u)
+  have=$(demo_case_names | LC_ALL=C sort -u)
+  unrun=$(comm -13 <(printf '%s\n' "$ran") <(printf '%s\n' "$have"))
+  unlisted=$(comm -23 <(printf '%s\n' "$ran") <(printf '%s\n' "$have"))
+  demo_completeness_report "$unrun" "$unlisted"
+}
 
-# [pending-warn] pending folder (non-conforming name + ticket .md + .ticket-pending) → the
-#          PENDING "rename to complete" WARN, exit 0. Pins that the fourth state exists.
-r09_make "$R09_PEND"; touch "$R09_PEND/.ticket-pending"
-set +e; R09_OUT=$(bash _harness/scripts/harness-status.sh 2>&1); R09_RC=$?; set -e
-printf '%s\n' "$R09_OUT" | grep -q "Tickets/pending-20260719120000 is a pending ticket" \
-  || { echo "BUG [pending-warn]: pending folder did not get the PENDING WARN:"; printf '%s\n' "$R09_OUT"; exit 1; }
-[ "$R09_RC" -le "$BASELINE_RC" ] || { echo "BUG [pending-warn]: pending WARN added a NEW failure (rc=$R09_RC > baseline=$BASELINE_RC)"; exit 1; }
-echo "  ok [pending-warn] — pending folder surfaced with the non-silenceable PENDING WARN, no new failure vs baseline"
-
-# [pending-wins] pending folder that ALSO carries a .not-a-ticket marker → STILL the PENDING WARN
-#          (pending is checked first). Pins the non-silenceable semantics: you cannot
-#          silence a ticket init flagged as unfinished.
-touch "$R09_PEND/.not-a-ticket"
-set +e; R09_OUT=$(bash _harness/scripts/harness-status.sh 2>&1); R09_RC=$?; set -e
-printf '%s\n' "$R09_OUT" | grep -q "Tickets/pending-20260719120000 is a pending ticket" \
-  || { echo "BUG [pending-wins]: .not-a-ticket silenced a pending ticket — precedence is wrong:"; printf '%s\n' "$R09_OUT"; exit 1; }
-[ "$R09_RC" -le "$BASELINE_RC" ] || { echo "BUG [pending-wins]: added a NEW failure (rc=$R09_RC > baseline=$BASELINE_RC)"; exit 1; }
-echo "  ok [pending-wins] — .not-a-ticket did NOT silence the pending ticket (pending wins)"
-
-# [handmade-warn] contrast: a hand-made ticket-bearing folder with NO markers → the silenceable hand-made
-#          WARN, and NOT the pending WARN. Proves the two WARNs are distinct message types.
-r09_make "$R09_HAND"
-set +e; R09_OUT=$(bash _harness/scripts/harness-status.sh 2>&1); R09_RC=$?; set -e
-printf '%s\n' "$R09_OUT" | grep -q "Tickets/handmade-notes holds a .md record but doesn't match" \
-  || { echo "BUG [handmade-warn]: hand-made folder lost its silenceable hand-made WARN:"; printf '%s\n' "$R09_OUT"; exit 1; }
-printf '%s\n' "$R09_OUT" | grep -q "Tickets/handmade-notes is a pending ticket" \
-  && { echo "BUG [handmade-warn]: hand-made folder wrongly got the PENDING WARN:"; printf '%s\n' "$R09_OUT"; exit 1; }
-echo "  ok [handmade-warn] — hand-made folder kept the silenceable hand-made WARN (distinct from pending)"
-
-# [handmade-silent] hand-made folder + .not-a-ticket → silent (unchanged behaviour). Proves the silenceable
-#          WARN's .not-a-ticket escape still works for genuinely user-owned folders.
-touch "$R09_HAND/.not-a-ticket"
-set +e; R09_OUT=$(bash _harness/scripts/harness-status.sh 2>&1); R09_RC=$?; set -e
-printf '%s\n' "$R09_OUT" | grep -q "Tickets/handmade-notes" \
-  && { echo "BUG [handmade-silent]: silenced hand-made folder still surfaced:"; printf '%s\n' "$R09_OUT"; exit 1; }
-[ "$R09_RC" -le "$BASELINE_RC" ] || { echo "BUG [handmade-silent]: added a NEW failure (rc=$R09_RC > baseline=$BASELINE_RC)"; exit 1; }
-echo "  ok [handmade-silent] — hand-made folder silenced by .not-a-ticket, no new failure vs baseline"
-
-# --- R-14: the pending COMPLETION path — the marker, not the name, is the lifecycle token -
-# The nag must follow the .ticket-pending MARKER, not the folder name. A conforming rename
-# alone must NOT complete a pending ticket (that would let a real ticket go silently misfiled
-# under a made-up name); only removing the marker — a recorded human act — completes it.
-# A name-first implementation reddens [completion-warn] (marker stranded → wrongly silent) and
-# [nag-follows-marker] (conforming-garbage rename → wrongly silent, the evasion).
-R09_KCONF="Tickets/202607K-PROJ-500"   # a pending ticket after a legitimate conforming rename (marker still inside)
-R09_MGARB="Tickets/202607M-XYZ-1"      # a pending ticket renamed to a conforming-but-arbitrary (garbage) identity
-
-# [completion-warn] pending folder whose name now CONFORMS but marker remains → the "remove the marker
-#          to finish" completion WARN, no new failure. Pins the mandatory exit path.
-r09_make "$R09_KCONF"; touch "$R09_KCONF/.ticket-pending"
-set +e; R09_OUT=$(bash _harness/scripts/harness-status.sh 2>&1); R09_RC=$?; set -e
-printf '%s\n' "$R09_OUT" | grep -q "Tickets/202607K-PROJ-500 looks complete" \
-  || { echo "BUG [completion-warn]: conforming-named pending folder did not get the completion WARN:"; printf '%s\n' "$R09_OUT"; exit 1; }
-[ "$R09_RC" -le "$BASELINE_RC" ] || { echo "BUG [completion-warn]: completion WARN added a NEW failure (rc=$R09_RC > baseline=$BASELINE_RC)"; exit 1; }
-echo "  ok [completion-warn] — conforming name + lingering marker → 'remove the marker' completion WARN"
-
-# [completion-done] that same folder after `rm .ticket-pending` → the validator validates it AND status
-#          goes silent for it. Pins that removing the marker actually COMPLETES the ticket.
-rm "$R09_KCONF/.ticket-pending"
-set +e; R09_OUT=$(bash _harness/scripts/check_ticket_log.sh 2>&1); R09_RC=$?; set -e
-printf '%s\n' "$R09_OUT" | grep -q "OK: 202607K-PROJ-500 validated" \
-  || { echo "BUG [completion-done]: completed ticket did not validate after marker removal:"; printf '%s\n' "$R09_OUT"; exit 1; }
-set +e; R09_OUT=$(bash _harness/scripts/harness-status.sh 2>&1); R09_RC=$?; set -e
-printf '%s\n' "$R09_OUT" | grep -q "Tickets/202607K-PROJ-500" \
-  && { echo "BUG [completion-done]: completed ticket still surfaced a WARN after marker removal:"; printf '%s\n' "$R09_OUT"; exit 1; }
-[ "$R09_RC" -le "$BASELINE_RC" ] || { echo "BUG [completion-done]: added a NEW failure (rc=$R09_RC > baseline=$BASELINE_RC)"; exit 1; }
-echo "  ok [completion-done] — marker removed → ticket validated and status silent (completion completes)"
-
-# [nag-follows-marker] pending folder renamed to conforming GARBAGE, marker still present → STILL nags
-#          (the completion WARN). Pins that the nag follows the MARKER, not the name — the
-#          rename-to-conforming-garbage evasion is closed.
-r09_make "$R09_MGARB"; touch "$R09_MGARB/.ticket-pending"
-set +e; R09_OUT=$(bash _harness/scripts/harness-status.sh 2>&1); R09_RC=$?; set -e
-printf '%s\n' "$R09_OUT" | grep -q "Tickets/202607M-XYZ-1 looks complete" \
-  || { echo "BUG [nag-follows-marker]: conforming-garbage rename silenced the nag — the marker no longer governs:"; printf '%s\n' "$R09_OUT"; exit 1; }
-[ "$R09_RC" -le "$BASELINE_RC" ] || { echo "BUG [nag-follows-marker]: added a NEW failure (rc=$R09_RC > baseline=$BASELINE_RC)"; exit 1; }
-echo "  ok [nag-follows-marker] — conforming-garbage rename STILL nags (nag follows the marker, not the name)"
-# --- end pending-state guards (issue #25 / R-14) --------------------------------------
-
-# Tear down the scratch folders above so the estate is clean for the demonstration below.
-rm -rf "$R09_SPACE" "$R09_CONF" "$R09_LONG" "$R09_BAD" "$R09_PEND" "$R09_HAND" "$R09_KCONF" "$R09_MGARB"
-# --- end ticket-recognition -----------------------------------------------------------
-
-# --- session-clock: the session-log header clock is LOCAL machine time ----------------
-# The validator reads a 14-digit header via epoch_from_ts14 (date -d/-j — LOCAL tz) and
-# compares it to the watermark stamp_wall (date +%s — absolute epoch). Those two frames
-# agree ONLY when the header is written in LOCAL time; a UTC header on a non-UTC machine is
-# parsed hours behind and can land below the watermark, tripping a false "no new Session Log
-# entry" FAIL that red-blocks honest work. That is the R-10 gap the now-named convention
-# closes. This guard pins BOTH directions: a local-now header is accepted, and a UTC header
-# on a simulated non-UTC machine is (correctly) refused — proving the comparison IS
-# clock-sensitive, so the convention MUST name the clock. Runs before the first abort-prone
-# harness-status call, like the block above. TZ is forced to a fixed non-UTC zone here and
-# restored afterwards so it never leaks into the rest of the demo.
-
-# r10_validate — run the validator once for the two guards below, capturing BOTH halves of its
-# answer: the MESSAGE into R10_OUT (the greps at each site read it) and the EXIT CODE into R10_RC,
-# which is asserted HERE. $1 is what the calling site requires of that code — "clean" (0: an
-# accepted header must not block) or "blocked" (non-zero: a refusal must actually red-block) — and
-# $2 is the guard label for the BUG line. The exit-code half lives in ONE place so the two sites
-# cannot drift apart on it; the message assertions stay at their sites because each names a
-# different outcome. Neither half subsumes the other — the message says WHICH failure fired, the
-# exit code says that it BLOCKED, and a validator that printed the right words while exiting the
-# wrong way is exactly what this pairing catches (#161). set +e brackets the call so an expected
-# non-zero rc cannot abort the demo before the assertions read it.
-r10_validate() {
-  set +e; R10_OUT=$(bash _harness/scripts/check_ticket_log.sh 2>&1); R10_RC=$?; set -e
-  if [ "$1" = clean ] && [ "$R10_RC" -ne 0 ]; then
-    echo "BUG [$2]: the validator exited $R10_RC on a header it must ACCEPT — honest work blocked:"
-    printf '%s\n' "$R10_OUT"; exit 1
+demo_completeness_report() {  # $1 = case files never executed, $2 = executed names with no file
+  if [ -n "$1" ]; then
+    echo "BUG [case-completeness]: case file(s) EXIST but the runner never executed them, so"
+    echo "  every assertion they hold was silently skipped. Add each to demo_order() in"
+    echo "  _harness/scripts/run_demo.sh, at the point in the run where it belongs:"
+    printf '%s\n' "$1" | sed 's/^/    /'
+    exit 1
   fi
-  if [ "$1" = blocked ] && [ "$R10_RC" -eq 0 ]; then
-    echo "BUG [$2]: the validator exited 0 on a header it must REFUSE — the refusal did not block:"
-    printf '%s\n' "$R10_OUT"; exit 1
+  if [ -n "$2" ]; then
+    echo "BUG [case-completeness]: the runner executed case name(s) with no matching case file"
+    echo "  under _harness/demo/cases/ — the file was renamed or deleted and demo_order() in"
+    echo "  _harness/scripts/run_demo.sh still names the old identity:"
+    printf '%s\n' "$2" | sed 's/^/    /'
+    exit 1
   fi
 }
-echo "--- session-clock: session-log header clock is LOCAL machine time ---"
-R10="Tickets/202607R-PROJ-10"
-R10_TZ_SAVE="${TZ-__unset__}"
-export TZ='Etc/GMT-10'   # fixed UTC+10, no DST — makes local differ from UTC by a clear 10h
-r09_make "$R10"
-# Establish the watermark: validate once so stamp_wall (date +%s) is written for this ticket.
-bash _harness/scripts/check_ticket_log.sh >/dev/null 2>&1 || true
 
-# [local-clock-ok] a LOCAL-now header (what the named convention requires) is newer than the
-#   watermark and is accepted — header and watermark share the absolute frame (a local-time header
-#   converts to the same epoch date +%s records: epoch_from_ts14(local) == date +%s). A validator that parsed the header as UTC would
-#   misread this and the OK below would vanish.
-sleep 1
-printf '\n## %s - local-clock session\n- work recorded in local machine time\n' "$(date +%Y%m%d%H%M%S)" >> "$R10/202607R-PROJ-10.md"
-# BOTH halves of the validator's answer are asserted at this site: r10_validate checks the EXIT
-# CODE — 0, because an accepted header must not block honest work — and the greps below check the
-# MESSAGE, which names the outcome. Neither subsumes the other, so a validator that printed the
-# right words while exiting the wrong way no longer passes here (#161).
-r10_validate clean local-clock-ok      # exit code asserted here; message asserted below
-printf '%s\n' "$R10_OUT" | grep -q "202607R-PROJ-10 changed but no new Session Log entry" \
-  && { echo "BUG [local-clock-ok]: a LOCAL-time header was misread as stale (false FAIL) — clock frames disagree:"; printf '%s\n' "$R10_OUT"; exit 1; }
-printf '%s\n' "$R10_OUT" | grep -q "OK: 202607R-PROJ-10 validated" \
-  || { echo "BUG [local-clock-ok]: local-time header not accepted:"; printf '%s\n' "$R10_OUT"; exit 1; }
-echo "  ok [local-clock-ok] — local-time session header accepted (header and watermark share the frame)"
-
-# [utc-clock-stale] a UTC header on this simulated non-UTC machine (exactly what a UTC-writing
-#   scribe would emit) is parsed 10h behind by the LOCAL-tz validator, lands below the
-#   watermark, and is correctly refused. This is the pre-fix bug reproduced: it proves the
-#   comparison is clock-sensitive and that leaving the clock unnamed lets a scribe red-block
-#   honest work. Naming the clock as local in the convention and the ticket-scribe agent is what stops a scribe writing this header.
-sleep 1
-printf '\n## %s - utc-clock session (wrong clock)\n- work stamped in UTC by mistake\n' "$(date -u +%Y%m%d%H%M%S)" >> "$R10/202607R-PROJ-10.md"
-# As above, both halves: r10_validate requires a NON-ZERO exit code (this refusal must actually
-# BLOCK) and the grep below requires the stale-record message (that the RIGHT refusal fired). A
-# validator that printed this refusal and exited 0 satisfies the message check on its own — that is
-# precisely the failure this pairing closes (#161). The expected non-zero rc cannot abort the demo:
-# the helper brackets the call in set +e.
-r10_validate blocked utc-clock-stale   # exit code asserted here; message asserted below
-printf '%s\n' "$R10_OUT" | grep -q "202607R-PROJ-10 changed but no new Session Log entry" \
-  || { echo "BUG [utc-clock-stale]: a UTC header on a non-UTC machine was NOT caught — the guard is blind to the clock frame:"; printf '%s\n' "$R10_OUT"; exit 1; }
-echo "  ok [utc-clock-stale] — UTC-on-non-UTC header refused as stale (clock frame matters; convention must name it)"
-
-# Restore TZ (whatever it was, including unset) and tear down this block's scratch ticket.
-if [ "$R10_TZ_SAVE" = "__unset__" ]; then unset TZ; else export TZ="$R10_TZ_SAVE"; fi
-rm -rf "$R10"
-# --- end session-clock ----------------------------------------------------------------
-
-# --- housekeeping: the human-run repo-maintenance script runs and reports (issue #16) -
-# Pins that harness-housekeeping.sh runs cleanly and reports sizes without touching records.
-# It runs against a THROWAWAY repo (not the demo's real tree) so `git gc` has zero side effect
-# on the estate — the demo's "uses temp state" promise holds. We assert only that it exits 0
-# and reports .git size; NOT a specific reclaim amount (that varies with repo state).
-echo "--- housekeeping: runs clean (human-run repo maintenance) ---"
-G3_REPO=$(mktemp -d)
-git -C "$G3_REPO" init -q
-git -C "$G3_REPO" -c user.email=demo@local -c user.name=demo commit -q --allow-empty -m "seed"
-set +e; G3_OUT=$(bash _harness/scripts/harness-housekeeping.sh "$G3_REPO" 2>&1); G3_RC=$?; set -e
-[ "$G3_RC" -eq 0 ] || { echo "BUG [housekeeping-ok]: housekeeping exited non-zero (rc=$G3_RC):"; printf '%s\n' "$G3_OUT"; exit 1; }
-printf '%s\n' "$G3_OUT" | grep -q "\.git" \
-  || { echo "BUG [housekeeping-ok]: no .git size reported:"; printf '%s\n' "$G3_OUT"; exit 1; }
-printf '%s\n' "$G3_OUT" | grep -q "REPACK: git gc" \
-  || { echo "BUG [housekeeping-ok]: housekeeping did not run the git gc repack step:"; printf '%s\n' "$G3_OUT"; exit 1; }
-rm -rf "$G3_REPO"
-echo "  ok [housekeeping-ok] — script runs, reports sizes, repacks, exit 0 (no record touched)"
-
-# [git-size-warn] / [git-size-quiet] — harness-status nudges (WARN) when .git
-# exceeds HARNESS_GIT_WARN_MB, and the nudge is YELLOW — exit stays 0, never a red FAIL. Force
-# it by setting the threshold to 0 so any non-empty .git trips it; then set it very high and
-# assert it does NOT fire — pinning both directions. Side-effect-free: status's only write (the
-# #71 first-seen record) is redirected by the global HARNESS_WARN_STATE_FILE export at the top
-# of this script to a throwaway temp path, so status on the real repo touches nothing — safe.
-set +e; G3W_OUT=$(HARNESS_GIT_WARN_MB=0 bash _harness/scripts/harness-status.sh 2>&1); G3W_RC=$?; set -e
-printf '%s\n' "$G3W_OUT" | grep -q "WARN: the record repo's .git is" \
-  || { echo "BUG [git-size-warn]: the .git-size nudge did not fire at threshold 0:"; printf '%s\n' "$G3W_OUT"; exit 1; }
-[ "$G3W_RC" -eq 0 ] || { echo "BUG [git-size-warn]: the size nudge must be yellow (exit 0), got rc=$G3W_RC:"; printf '%s\n' "$G3W_OUT"; exit 1; }
-echo "  ok [git-size-warn] — .git-size nudge fires and stays non-blocking (WARN, exit 0)"
-set +e; G3W_OUT2=$(HARNESS_GIT_WARN_MB=1000000 bash _harness/scripts/harness-status.sh 2>&1); set -e
-printf '%s\n' "$G3W_OUT2" | grep -q "WARN: the record repo's .git is" \
-  && { echo "BUG [git-size-quiet]: the size nudge fired while under threshold:"; printf '%s\n' "$G3W_OUT2"; exit 1; }
-echo "  ok [git-size-quiet] — under threshold, no nudge (fires only when it should)"
-
-# [worktree-store] Both size reporters must resolve the REAL git store from a LINKED WORKTREE,
-# where .git is a pointer FILE rather than a directory. Pre-fix, harness-status path-tested
-# `[ -d "$WORK_ROOT/.git" ]` and the whole nudge vanished without a word, so the demo could not pass
-# from any worktree — which is exactly where parallel-lane build work runs; harness-housekeeping
-# du'd the same path and reported a ~4 KiB ".git" while repacking the real store correctly, i.e. a
-# truthful action with a false report. FIXTURE: a THROWAWAY repo carrying a copy of _harness (status
-# derives its root from its own location, so the script must live inside the fixture) plus a linked
-# worktree of it. The real estate is never worktree-added, so nothing is registered in the user's
-# repo and no record is touched. NOTE: the fixture is not a full estate, so harness-status exits
-# non-zero there on unrelated checks — assert on the nudge LINE, never on the fixture's exit code.
-# Cleanup is an explicit rm (the demo's single EXIT trap belongs to cleanup(); do not add another).
-echo "--- #86: size probes resolve the store from a linked worktree ---"
-W86=$(mktemp -d)
-mkdir -p "$W86/repo"
-git -C "$W86/repo" init -q
-cp -R _harness "$W86/repo/_harness"
-git -C "$W86/repo" -c user.email=demo@local -c user.name=demo add -A
-git -C "$W86/repo" -c user.email=demo@local -c user.name=demo commit -q -m "seed"
-git -C "$W86/repo" -c user.email=demo@local -c user.name=demo worktree add -q "$W86/wt" -b w86
-W86_EXPECT=$(du -sk "$W86/repo/.git" 2>/dev/null | awk '{print $1}')
-
-set +e; W86_OUT=$(cd "$W86/wt" && HARNESS_GIT_WARN_MB=0 bash _harness/scripts/harness-status.sh 2>&1); set -e
-printf '%s\n' "$W86_OUT" | grep -q "WARN: the record repo's .git is" \
-  || { echo "BUG [worktree-store]: the .git-size nudge did not fire from a linked worktree — the probe still assumes .git is a directory:"; printf '%s\n' "$W86_OUT"; rm -rf "$W86"; exit 1; }
-printf '%s\n' "$W86_OUT" | grep -q "\.git is 0\.0 MiB" \
-  && { echo "BUG [worktree-store]: the nudge weighed the .git POINTER FILE (0.0 MiB), not the shared store:"; printf '%s\n' "$W86_OUT"; rm -rf "$W86"; exit 1; }
-echo "  ok [worktree-store] — status nudge fires from a worktree and weighs the real store"
-
-set +e; W86_OUT2=$(cd "$W86/wt" && HARNESS_GIT_WARN_MB=1000000 bash _harness/scripts/harness-status.sh 2>&1); set -e
-printf '%s\n' "$W86_OUT2" | grep -q "WARN: the record repo's .git is" \
-  && { echo "BUG [worktree-store]: the nudge fired from a worktree while under threshold:"; printf '%s\n' "$W86_OUT2"; rm -rf "$W86"; exit 1; }
-echo "  ok [worktree-store] — under threshold, no nudge from a worktree either"
-
-set +e; W86_HK=$(bash _harness/scripts/harness-housekeeping.sh "$W86/wt" 2>&1); W86_HK_RC=$?; set -e
-[ "$W86_HK_RC" -eq 0 ] || { echo "BUG [worktree-store]: housekeeping exited non-zero against a worktree (rc=$W86_HK_RC):"; printf '%s\n' "$W86_HK"; rm -rf "$W86"; exit 1; }
-W86_GOT=$(printf '%s\n' "$W86_HK" | sed -n 's/^BEFORE: \.git \([0-9-]*\) KiB.*/\1/p')
-[ "$W86_GOT" = "$W86_EXPECT" ] \
-  || { echo "BUG [worktree-store]: housekeeping reported .git as ${W86_GOT} KiB from a worktree; the real store is ${W86_EXPECT} KiB — the report is a fiction:"; printf '%s\n' "$W86_HK"; rm -rf "$W86"; exit 1; }
-W86_WT=$(printf '%s\n' "$W86_HK" | sed -n 's/^BEFORE: .* working tree \([0-9-]*\) KiB.*/\1/p')
-case "$W86_WT" in -*|"") echo "BUG [worktree-store]: housekeeping reported a negative/blank working tree (${W86_WT} KiB) — an out-of-tree store was subtracted:"; printf '%s\n' "$W86_HK"; rm -rf "$W86"; exit 1 ;; esac
-echo "  ok [worktree-store] — housekeeping weighs the real store (${W86_EXPECT} KiB) and keeps the working tree honest"
-rm -rf "$W86"
-# --- end housekeeping -----------------------------------------------------------------
-
-# --- Backfill regression guards (issue #18): retroactive guards for #1, #3, #10 -------
-# These three bugs were fixed and closed BEFORE the guard-per-bug law (#18) existed, so they
-# shipped without guards. One guard each below, all witnessable on this host (no Mac needed),
-# each provably red on the pre-fix behaviour.
-
-# [bsd-fallback] — the macOS/BSD portability contract. Static
-# lexical check: every GNU-only command in the shell machinery must sit behind a BSD fallback,
-# so nothing bare-GNU can regress in. HONEST LIMITATION: this is a commit-time lexical check,
-# NOT a BSD runtime test (that needs BSD hardware — a deferred evidence box); it catches the #1
-# regression CLASS (GNU-only commands with no fallback) without a Mac. Comments are stripped
-# first so a construct merely NAMED in prose doesn't count. Paired forms (stat -c/-f, date -d/-j)
-# must co-occur per file (a GNU call implies its BSD twin); unpaired GNU-only forms (GNU in-place
-# sed, find -printf, readlink -f, grep -P) must be absent. run_demo.sh is skipped: it necessarily
-# holds these token patterns as search literals (they would self-match), and it is itself run
-# end-to-end on this host by the demo you are reading.
-echo "--- #1/#3/#10: retroactive backfill guards (issue #18) ---"
-g1_bad=0
-# code_has / code_hasE — does the comment-stripped script text $code contain PATTERN?
-# HERE-STRING, deliberately NOT `printf '%s' "$code" | grep -q`: under `set -o pipefail`
-# grep -q's early exit on a match closes the pipe while printf is still writing, printf
-# takes SIGPIPE, and pipefail turns that into a FALSE pipeline failure on a match (#35 —
-# the exact class the #10 guard already avoids). A here-string has no pipe, so a match
-# always reads as success. code_has = BRE (grep -q); code_hasE = ERE (grep -qE).
-code_has()  { grep -q  "$1" <<< "$code"; }
-code_hasE() { grep -qE "$1" <<< "$code"; }
-for s in _harness/scripts/*.sh; do
-  [ "$(basename "$s")" = "run_demo.sh" ] && continue
-  code=$(sed 's/#.*//' "$s")     # drop comments (full + inline); only executable text is scanned
-  if code_has 'stat -c' && ! code_has 'stat -f'; then
-    echo "FAIL [bsd-fallback]: $(basename "$s") uses GNU 'stat -c' with no BSD 'stat -f' fallback."; g1_bad=1; fi
-  if code_has 'date -d' && ! code_has 'date -j'; then
-    echo "FAIL [bsd-fallback]: $(basename "$s") uses GNU 'date -d' with no BSD 'date -j' fallback."; g1_bad=1; fi
-  if code_hasE 'sed +(-[A-Za-z]+ +)*-i'; then
-    echo "FAIL [bsd-fallback]: $(basename "$s") uses GNU in-place sed (not BSD-portable; use tmp+mv)."; g1_bad=1; fi
-  if code_hasE 'find .*-printf'; then
-    echo "FAIL [bsd-fallback]: $(basename "$s") uses GNU 'find -printf' — not in BSD."; g1_bad=1; fi
-  if code_has 'readlink -f'; then
-    echo "FAIL [bsd-fallback]: $(basename "$s") uses GNU 'readlink -f' (absent in BSD readlink)."; g1_bad=1; fi
-  if code_hasE 'grep -[a-zA-Z]*P'; then
-    echo "FAIL [bsd-fallback]: $(basename "$s") uses GNU 'grep -P' PCRE — not in BSD."; g1_bad=1; fi
-done
-[ "$g1_bad" -eq 0 ] || { echo "BUG [bsd-fallback]: an unguarded GNU-only construct is present (see FAILs above)"; exit 1; }
-echo "  ok [bsd-fallback] — every GNU call has a BSD fallback"
-
-# [sigpipe-safety guard (#35)] — proves the #1 match helpers are here-string-safe: a match
-# under pipefail reads as SUCCESS, never a SIGPIPE-false-fail. DETERMINISTIC: with a LARGE
-# $code whose match token is at the very top, the old `printf | grep -q` form would reliably
-# SIGPIPE (printf can't drain ~500 KiB into a 64 KiB pipe buffer before grep exits), so this
-# goes RED the instant code_has/code_hasE are reverted to the piped form; the here-string
-# form passes. Subshell so the large $code never leaks to later stages.
-if ( code=$(printf 'SIGPIPE_PROBE_TOKEN\n'; head -c 500000 /dev/zero | tr '\000' 'x')
-     code_has 'SIGPIPE_PROBE_TOKEN' && code_hasE 'SIGPIPE_PROBE_TOKEN' ); then
-  echo "  ok [sigpipe-safety] — code_has/code_hasE return success on a large-input match under pipefail (no SIGPIPE)"
-else
-  echo "FAIL [sigpipe-safety]: a large-input match did not read as success — helpers are not here-string-safe (#35)."; exit 1
-fi
-
-# [independent-clocks] — the dual-clock watermark. The stamp
-# is two lines: line 1 = wall-clock (date +%s; recency = newest header >= last validation), line 2
-# = md mtime (freshness = did the file change since last validation). Different clocks, kept
-# separate. This pins that freshness reads line 2 (mtime), independent of line 1 (wall): a change
-# whose new mtime lands BETWEEN the stored mtime and the stored wall time is noticed only by a
-# line-2 read. A single-line stamp (one value for both) would use the wall clock for freshness and
-# MISS such a change — the exact #3 bug. (Distinct from the session-clock guards, about the header's
-# TIMEZONE; this is about the two stamp lines being separate values.) touch -t is POSIX (GNU+BSD).
-G3T="Tickets/202607S-PROJ-33"; g3md="$G3T/202607S-PROJ-33.md"
-r09_make "$G3T"
-sleep 1                                     # make the validation wall-clock strictly after the header time
-# mnemonics below: mt1 = the anchored mtime (Jan 1), mt2 = the advanced mtime (Feb 1),
-# wall1 = the wall-clock at validation ('now'). Ordering that matters: mt1 < mt2 < wall1.
-touch -t "$(date +%Y)01010000" "$g3md"      # anchor mtime to Jan 1 this year (mt1) — months before 'now' (wall1)
-bash _harness/scripts/check_ticket_log.sh >/dev/null 2>&1 || true   # stamp written: line1=wall1(now), line2=mt1(Jan1)
-# Case A — advance mtime to Feb 1 (mt1 < mt2 < wall1) with NO new header. The change is above the
-# stored mtime but below the wall clock, so only a line-2 (mtime) freshness read notices it. Two-clock
-# → re-checks and FAILs "no new Session Log entry". Single-clock (line2=line1=wall1) → mt2 < wall1 →
-# "unchanged" → silently skips (the bug).
-touch -t "$(date +%Y)02010000" "$g3md"
-set +e; G3A=$(bash _harness/scripts/check_ticket_log.sh 2>&1); set -e
-printf '%s\n' "$G3A" | grep -q "202607S-PROJ-33 changed but no new Session Log entry" \
-  || { echo "BUG [independent-clocks]: an mtime change below the wall clock was NOT noticed — freshness isn't reading the stamp's mtime line:"; printf '%s\n' "$G3A"; exit 1; }
-# Case B — complement: a genuine new header at/after the watermark AND mtime advances → both axes
-# satisfied → validates OK.
-printf '\n## %s - real new session\n- work recorded\n' "$(date +%Y%m%d%H%M%S)" >> "$g3md"
-set +e; G3B=$(bash _harness/scripts/check_ticket_log.sh 2>&1); set -e
-printf '%s\n' "$G3B" | grep -q "OK: 202607S-PROJ-33 validated" \
-  || { echo "BUG [independent-clocks]: a real new session header was not accepted:"; printf '%s\n' "$G3B"; exit 1; }
-rm -rf "$G3T"
-echo "  ok [independent-clocks] — mtime change noticed, new header accepted"
-
-# [wip-not-absorbed] — the demo's closing commit is gated behind DID_INIT so
-# it fires ONLY when the demo created the repo. In a real clone (DID_INIT=0) it must do nothing,
-# never sweeping a user's uncommitted work into a "demo: pass" commit. Exercises the ACTUAL gate
-# (demo_close_commit — the same function the demo's closing step calls) against a throwaway repo
-# that already has .git and a dirty tracked file. This is the reviewer's WIP-absorption probe made
-# a standing guard.
-G10=$(mktemp -d)
-git -C "$G10" init -q
-printf 'committed line\n' > "$G10/tracked.txt"
-git -C "$G10" add -A; git -C "$G10" -c user.email=demo@local -c user.name=demo commit -qm "seed" >/dev/null
-G10_HEAD=$(git -C "$G10" rev-parse HEAD)
-printf 'UNCOMMITTED-WIP-MARKER\n' >> "$G10/tracked.txt"   # dirty the TRACKED file — a real clone's in-progress work
-demo_close_commit 0 "$G10"                                # DID_INIT=0 → the gate must do NOTHING
-# The load-bearing #10/P-i check: the dirty WIP must NOT be absorbed into any commit. Grep the WHOLE
-# history for the WIP marker — a broken gate that commits the working tree leaves the marker in a
-# commit, and this finds it. (The old guard only checked "no demo: pass commit", which ANY
-# unconditional commit trips even with zero WIP present — that tautology was R-20; this asserts the
-# WIP-specific property, and the revert-proof now flips because the WIP is ABSORBED, not merely
-# because a commit exists.)
-# Buffer the full history first, THEN grep it via a here-string — not `git log -p | grep -q`, whose
-# early exit SIGPIPEs git and, under the demo's pipefail, fails the pipeline even ON a match, so the
-# named WIP-absorption assertion silently never fires and the corroborating check fires instead.
-g10_hist=$(git -C "$G10" log -p 2>/dev/null || true)
-if grep -q "UNCOMMITTED-WIP-MARKER" <<<"$g10_hist"; then
-  echo "BUG [wip-not-absorbed]: the dirty tracked WIP was ABSORBED into a commit (a real clone's work must never be committed under DID_INIT=0):"; git -C "$G10" log --oneline; exit 1
-fi
-# Corroborate: HEAD never moved (no new commit at all) and the working tree still reads as dirty.
-[ "$(git -C "$G10" rev-parse HEAD)" = "$G10_HEAD" ] \
-  || { echo "BUG [wip-not-absorbed]: HEAD advanced — the gate committed under DID_INIT=0"; git -C "$G10" log --oneline; exit 1; }
-[ -n "$(git -C "$G10" status --porcelain)" ] \
-  || { echo "BUG [wip-not-absorbed]: the working tree is clean — the dirty WIP was swept into a commit"; exit 1; }
-rm -rf "$G10"
-echo "  ok [wip-not-absorbed] — dirty tracked WIP stays uncommitted under DID_INIT=0"
-
-# [epoch-one-home] — epoch_from_ts14 must live ONCE (portability.sh), sourced by
-# both the validator and status so they can't drift (they were duplicated once). Assert: neither
-# script defines its own copy; both source portability.sh; and the one shared function converts a
-# known header correctly. Re-introducing a local copy in either script reddens this.
-grep -qE '^[[:space:]]*epoch_from_ts14\(\)' _harness/scripts/check_ticket_log.sh \
-  && { echo "BUG [epoch-one-home]: check_ticket_log.sh defines its own epoch_from_ts14 (drift risk — source portability.sh)"; exit 1; }
-grep -qE '^[[:space:]]*epoch_from_ts14\(\)' _harness/scripts/harness-status.sh \
-  && { echo "BUG [epoch-one-home]: harness-status.sh defines its own epoch_from_ts14 (drift risk — source portability.sh)"; exit 1; }
-{ grep -q 'source .*portability\.sh' _harness/scripts/check_ticket_log.sh && grep -q 'source .*portability\.sh' _harness/scripts/harness-status.sh; } \
-  || { echo "BUG [epoch-one-home]: validator and status must source portability.sh"; exit 1; }
-( source _harness/scripts/portability.sh
-  r21_got=$(epoch_from_ts14 "20260101120000")
-  r21_want=$(date -d "2026-01-01 12:00:00" +%s 2>/dev/null || date -j -f "%Y-%m-%d %H:%M:%S" "2026-01-01 12:00:00" +%s 2>/dev/null || echo x)
-  [ -n "$r21_got" ] && [ "$r21_got" = "$r21_want" ] \
-    || { echo "BUG [epoch-one-home]: shared epoch_from_ts14 gave '$r21_got', expected '$r21_want'"; exit 1; } )
-echo "  ok [epoch-one-home] — single shared function, both tools source it, converts correctly"
-# --- end backfill guards --------------------------------------------------------------
-
-# [run-and-record] — the run-and-record wrapper runs the user's LITERAL command and appends ONE
-# notebook cell holding four fields (command, output, exit code, timestamp), FAILS OPEN when
-# recording breaks (the command's result and rc always reach the caller), and executes nothing
-# beyond the command. This guard proves those three properties on fixture commands. Cleanup is an
-# explicit rm on EVERY exit path — the demo's single `trap cleanup EXIT` already owns the trap slot,
-# so we must NOT add a second one (#86).
-echo "--- #79: check_run runs a command and records it as one notebook cell ---"
-CR_TMP=$(mktemp -d)
-CR_NB="$CR_TMP/checks.ipynb"
-python3 -c "import nbformat,sys; nbformat.write(nbformat.v4.new_notebook(), sys.argv[1])" "$CR_NB"
-
-# 1. A fixture command → EXACTLY ONE cell recording ALL FOUR fields (command, output, exit code,
-#    timestamp). The wrapper appends a note+code pair, and exactly one of those cells must carry
-#    every field. CR_FIELDCELLS counts cells whose source contains all four field markers.
-CHECK_RUN_NOTEBOOK="$CR_NB" bash _harness/scripts/check_run.sh "echo demo79-output" >/dev/null 2>&1
-CR_FIELDCELLS=$(python3 -c "import nbformat,sys
-nb=nbformat.read(sys.argv[1],as_version=4)
-need=('command:','output:','exit code:','timestamp:')
-print(sum(1 for c in nb.cells if all(n in c.source for n in need) and 'demo79-output' in c.source))" "$CR_NB")
-[ "$CR_FIELDCELLS" = "1" ] \
-  || { echo "BUG [run-and-record]: a fixture command did not produce exactly ONE cell recording all four fields (command, output, exit code, timestamp) — got $CR_FIELDCELLS such cell(s)"; rm -rf "$CR_TMP"; exit 1; }
-echo "  ok [run-and-record] — one fixture command recorded exactly one cell with all four fields"
-
-# 2. A FAILING fixture command → recorded WITH its exit code, and the wrapper's OWN rc equals the
-#    command's rc (not the recorder's). The command exits 42; the wrapper must exit 42 and the
-#    record must carry that code.
-set +e; CHECK_RUN_NOTEBOOK="$CR_NB" bash _harness/scripts/check_run.sh "exit 42" >/dev/null 2>&1; CR_RC=$?; set -e
-[ "$CR_RC" = "42" ] \
-  || { echo "BUG [run-and-record]: a failing command's rc was not passed through — wrapper exited $CR_RC, want 42 (rc must reflect the command, never the recorder)"; rm -rf "$CR_TMP"; exit 1; }
-grep -Fq -- "exit code: \`42\`" "$CR_NB" \
-  || { echo "BUG [run-and-record]: the failing command's exit code 42 was not recorded in the notebook"; rm -rf "$CR_TMP"; exit 1; }
-echo "  ok [run-and-record] — a failing command is recorded with its code and the wrapper rc mirrors it"
-
-# 3. FAILS OPEN: point recording at an ABSENT notebook target so the append breaks. The command's
-#    output must STILL reach the caller and the wrapper's rc must STILL reflect the command — a
-#    broken notebook may never swallow a result. This is the property most worth guarding.
-CR_ABSENT="$CR_TMP/no-such-notebook.ipynb"
-set +e
-CR_FO_OUT=$(CHECK_RUN_NOTEBOOK="$CR_ABSENT" bash _harness/scripts/check_run.sh "echo failopen79; exit 9" 2>/dev/null); CR_FO_RC=$?
-set -e
-printf '%s\n' "$CR_FO_OUT" | grep -Fq "failopen79" \
-  || { echo "BUG [run-and-record]: with a broken recording target the command's output did NOT reach the caller — the wrapper did not fail open:"; printf '%s\n' "$CR_FO_OUT"; rm -rf "$CR_TMP"; exit 1; }
-[ "$CR_FO_RC" = "9" ] \
-  || { echo "BUG [run-and-record]: with a broken recording target the wrapper rc was $CR_FO_RC, want 9 — a recorder failure must not change the command's exit code"; rm -rf "$CR_TMP"; exit 1; }
-echo "  ok [run-and-record] — recording failure fails open: command output reaches the caller and rc reflects the command"
-rm -rf "$CR_TMP"
-
-# [recovery-drill] — harness-drill rehearses recovery (issue #75) and must be READ-ONLY toward
-# the estate it rehearses on. This guard builds a FIXTURE estate (a throwaway git repo carrying a
-# copy of _harness plus one valid ticket — harness-drill derives its root from its OWN location, so
-# the script must live INSIDE the fixture, exactly like the #86 guard), then proves three things:
-# (1) a restore-drill from the fixture's own .git yields a copy that passes check_ticket_log.sh;
-# (2) a bundle-drill (local git bundle -> restore) yields a copy that passes check_ticket_log.sh;
-# and (3) the fixture estate is BYTE-IDENTICAL before and after — a recovery tool that damaged the
-# record it is rehearsing to protect would be the worst possible bug in this repo, so this is a
-# byte-comparison, not an eyeball. Cleanup is an explicit rm on every exit path — the demo's single
-# `trap cleanup EXIT` already owns the trap slot, so we must NOT add a second one (#86).
-echo "--- #75: harness-drill rehearses restore/bundle recovery, estate byte-untouched ---"
-HD_FIX=$(mktemp -d)                        # the throwaway FIXTURE estate that plays the 'live estate'
-git -C "$HD_FIX" init -q
-cp -R _harness "$HD_FIX/_harness"          # harness-drill resolves its root from its own location
-mkdir -p "$HD_FIX/Tickets/202607D-PROJ-1"
-# A minimal but VALID ticket — a <name>.md with a Current State section and one session-log header —
-# so check_ticket_log.sh validates the RESTORED copy green (a vacuous pass would prove nothing).
-cat > "$HD_FIX/Tickets/202607D-PROJ-1/202607D-PROJ-1.md" <<HDMD
-# 202607D-PROJ-1
-
-## Current State
-Rehearsal fixture ticket.
-
-## $(date +%Y%m%d%H%M%S) - fixture session
-- seeded for the harness-drill restore rehearsal
-HDMD
-git -C "$HD_FIX" -c user.email=demo@local -c user.name=demo add -A
-git -C "$HD_FIX" -c user.email=demo@local -c user.name=demo commit -q -m "fixture estate"
-
-# hd_manifest — a byte-level fingerprint of the fixture's RECORDS (working-tree files, excluding the
-# .git store): every file's cksum, sorted. Comparing it before and after the drills is the
-# 'estate byte-untouched' proof. We exclude .git only because git's own READ operations may touch
-# pack mtimes; the record a user cares about is the working tree, and that must not move one byte.
-hd_manifest() { find "$HD_FIX" -type f -not -path '*/.git/*' | sort | xargs cksum; }
-HD_BEFORE=$(hd_manifest)
-
-# 1. restore-drill on the fixture -> the restored copy passes check_ticket_log.sh (exit 0). Run the
-#    fixture's OWN copy of the script so WORK_ROOT resolves to the fixture, never the live estate.
-set +e; HD_OUT=$(bash "$HD_FIX/_harness/scripts/harness-drill.sh" restore-drill 2>&1); HD_RC=$?; set -e
-[ "$HD_RC" -eq 0 ] \
-  || { echo "BUG [recovery-drill]: restore-drill on a fixture did not exit 0 — the restored copy failed to validate (rc=$HD_RC):"; printf '%s\n' "$HD_OUT"; rm -rf "$HD_FIX"; exit 1; }
-printf '%s\n' "$HD_OUT" | grep -q "restored copy validates green" \
-  || { echo "BUG [recovery-drill]: restore-drill did not report the restored copy validating green:"; printf '%s\n' "$HD_OUT"; rm -rf "$HD_FIX"; exit 1; }
-echo "  ok [recovery-drill] — restore-drill rebuilt the record from .git and it validated green"
-
-# 2. bundle-drill on the SAME fixture -> the restored-from-bundle copy passes check_ticket_log.sh.
-set +e; HD_OUT=$(bash "$HD_FIX/_harness/scripts/harness-drill.sh" bundle-drill 2>&1); HD_RC=$?; set -e
-[ "$HD_RC" -eq 0 ] \
-  || { echo "BUG [recovery-drill]: bundle-drill on a fixture did not exit 0 — the bundle-restored copy failed to validate (rc=$HD_RC):"; printf '%s\n' "$HD_OUT"; rm -rf "$HD_FIX"; exit 1; }
-printf '%s\n' "$HD_OUT" | grep -q "restored from the bundle validates green" \
-  || { echo "BUG [recovery-drill]: bundle-drill did not report the bundle-restored copy validating green:"; printf '%s\n' "$HD_OUT"; rm -rf "$HD_FIX"; exit 1; }
-echo "  ok [recovery-drill] — bundle-drill made a local bundle and the restore from it validated green"
-
-# 3. THE ESTATE IS BYTE-UNTOUCHED: the fixture's record fingerprint must be identical after both
-#    drills. This is the assertion that matters most — a rehearsal that mutates the thing it protects
-#    is a catastrophe — so it is a byte-comparison, never an eyeball.
-HD_AFTER=$(hd_manifest)
-[ "$HD_BEFORE" = "$HD_AFTER" ] \
-  || { echo "BUG [recovery-drill]: the fixture estate changed during the drills — harness-drill is NOT read-only toward the estate (records must be byte-identical before and after)"; rm -rf "$HD_FIX"; exit 1; }
-echo "  ok [recovery-drill] — the estate is byte-identical after both drills (read-only proven)"
-rm -rf "$HD_FIX"
-
-# [undo-drill] — harness-drill ships THREE modes (issue #75); the #75 guard above exercises only
-# restore-drill and bundle-drill, leaving undo-drill — the git-undo rehearsal you reach for in an
-# actual emergency — with ZERO demo coverage (issue #103). This guard runs the REAL undo-drill end to
-# end and holds it to its OWN contract in harness-drill.sh: the mode builds a one-commit throwaway
-# fixture, inflicts a tracked-file change, and proves BOTH everyday undos restore the record to its
-# committed content — an UNCOMMITTED mistake reversed by 'git restore <file>', and a COMMITTED mistake
-# reversed by 'git revert HEAD'. undo-drill reports each success as a 'PROVED:' line, but its internal
-# check is `if grep …; then say PROVED; fi` with no else and no effect on rc — so a broken undo
-# silently DROPS its PROVED line while the mode still exits 0. This guard therefore keys on BOTH PROVED
-# lines being present (not on rc alone): that is precisely what makes a neutered undo red here. The
-# mode only ever writes into its own `mktemp -d`, never the estate, so we also prove the REAL repo is
-# byte-untouched across the run (its porcelain dirty-state is identical before and after). undo-drill
-# rm's its own fixture, so this guard adds NO temp dir of its own and NO second EXIT trap (#86).
-echo "--- #103: harness-drill undo-drill rehearses the git-undo net, real repo untouched ---"
-UD_BEFORE=$(git -C "$DEMO_ROOT" status --porcelain)   # real-repo dirty-state fingerprint, pre-run
-# Run the REAL undo-drill. set +e brackets the call so a non-zero rc becomes DATA (like the #75
-# siblings) rather than aborting the demo before we can read it. 2>&1 folds git's autocrlf stderr
-# notices into the captured output; they are inert to the PROVED-line greps below.
-set +e; UD_OUT=$(bash "$DEMO_ROOT/_harness/scripts/harness-drill.sh" undo-drill 2>&1); UD_RC=$?; set -e
-[ "$UD_RC" -eq 0 ] \
-  || { echo "BUG [undo-drill]: undo-drill did not exit 0 (rc=$UD_RC):"; printf '%s\n' "$UD_OUT"; exit 1; }
-# The uncommitted-mistake undo: 'git restore <file>' must put the record back — undo-drill only prints
-# this PROVED line when the restored fixture file matches its committed content, so its absence means
-# the restore step failed to recover the record.
-printf '%s\n' "$UD_OUT" | grep -q "an uncommitted mistake is undone by 'git restore <file>'" \
-  || { echo "BUG [undo-drill]: undo-drill did not prove the uncommitted-mistake undo — 'git restore <file>' did not restore the fixture record to its committed content:"; printf '%s\n' "$UD_OUT"; exit 1; }
-# The committed-mistake undo: 'git revert HEAD' must put the record back — same contract, its PROVED
-# line prints only when the reverted fixture file matches its committed content.
-printf '%s\n' "$UD_OUT" | grep -q "a committed mistake is undone by 'git revert HEAD'" \
-  || { echo "BUG [undo-drill]: undo-drill did not prove the committed-mistake undo — 'git revert HEAD' did not restore the fixture record to its committed content:"; printf '%s\n' "$UD_OUT"; exit 1; }
-# THE REAL REPO IS UNTOUCHED: undo-drill writes only into its own mktemp fixture, so the live working
-# tree's dirty-state must be byte-identical before and after (fixture-only, like every drill).
-UD_AFTER=$(git -C "$DEMO_ROOT" status --porcelain)
-[ "$UD_BEFORE" = "$UD_AFTER" ] \
-  || { echo "BUG [undo-drill]: the REAL repo changed during undo-drill — the mode is not fixture-only (the working tree must be byte-identical before and after)"; exit 1; }
-echo "  ok [undo-drill] — undo-drill proved both the git-restore and git-revert undos on its fixture, real repo untouched"
-
-# --- status consolidation guards (hooks path, zip fallback, stale commit) ------------
-echo "--- status consolidation (awkward hooks path, zip fallback, stale-commit WARN) ---"
-
-# [awkward-hooks-path] — the hooks-parse check must work
-# when the path contains a character that would BREAK a Python source-string literal. A single
-# quote is the reliable case (a space or plain unicode does NOT break the literal, verified); it
-# reproduces the #8/R-05 "path corrupts the source string" class on ANY host — the Git-Bash MSYS
-# case is the same class. We point status at an awkward-named copy of the real hooks file via
-# HARNESS_HOOKS_FILE and assert it still parses OK. (The Git-Bash MSYS-path FORMAT half additionally
-# wants a Git-Bash witness; the cygpath branch is dormant/untested on this host.)
-G8DIR=$(mktemp -d); G8="$G8DIR/quote'inside hooks.json"
-cp _harness/hooks/hooks.example.json "$G8"
-set +e; G8_OUT=$(HARNESS_HOOKS_FILE="$G8" bash _harness/scripts/harness-status.sh 2>&1); set -e
-printf '%s\n' "$G8_OUT" | grep -q "OK: hooks config parses." \
-  || { echo "BUG [awkward-hooks-path]: valid JSON at an awkward (quote-bearing) path was NOT parsed — the argv fix regressed:"; printf '%s\n' "$G8_OUT" | grep -i hooks; exit 1; }
-printf '%s\n' "$G8_OUT" | grep -q "hooks config is invalid JSON" \
-  && { echo "BUG [awkward-hooks-path]: awkward path wrongly reported as invalid JSON (source-string mangling):"; printf '%s\n' "$G8_OUT" | grep -i hooks; exit 1; }
-rm -rf "$G8DIR"
-echo "  ok [awkward-hooks-path] — quote-bearing path parses OK"
-
-# [hooks-schema] STRUCTURAL check of the SHIPPED, witnessed hooks.example.json — it must parse
-# and carry the deployment-proven shape: top-level "version", the three camelCase events NESTED
-# UNDER a "hooks" wrapper (NOT top-level — the proven v4 config wraps them), entries keyed on
-# "bash" with NO legacy "command"/"toolFilter". This is STRUCTURE ONLY: it does NOT and must not
-# pretend to witness a hook firing — the live fire stayed an honest human-witnessed box (#44 cond
-# 3). Revert-provable: drop the "hooks" wrapper, a wrapped event key, or the "bash" key and this
-# guard reds. (A guard that passed a wrapper-less config is exactly the bug to catch.)
-if ! HS44_OUT=$(python3 - "_harness/hooks/hooks.example.json" <<'PY' 2>&1
-import json, sys
-d = json.load(open(sys.argv[1]))
-assert d.get("version") == 1, "top-level 'version' must be 1"
-hooks = d.get("hooks")
-assert isinstance(hooks, dict), "events must be nested under a 'hooks' wrapper object"
-for e in ("sessionStart", "postToolUse", "sessionEnd"):
-    assert e in hooks and isinstance(hooks[e], list) and hooks[e], f"missing or empty wrapped event: hooks.{e}"
-    for entry in hooks[e]:
-        assert "bash" in entry, f"hooks.{e}: entry missing the verified 'bash' key"
-        assert "command" not in entry, f"hooks.{e}: entry carries the legacy 'command' key"
-        assert "toolFilter" not in entry, f"hooks.{e}: entry carries the legacy 'toolFilter' key"
-PY
-); then
-  echo "BUG [hooks-schema]: the shipped hooks.example.json failed its verified-schema structural check:"
-  printf '%s\n' "$HS44_OUT"
-  exit 1
-fi
-echo "  ok [hooks-schema] — hooks.example.json parses; hooks.{sessionStart,postToolUse,sessionEnd} present; verified 'bash' shape, no legacy command/toolFilter"
-
-# [pack-without-zip] — with the zip CLI unavailable the context pack must still
-# build via the Python zipfile fallback (python3 is already required). HARNESS_PACK_NO_ZIP=1 forces
-# the fallback deterministically (cleaner than PATH surgery, and it exercises the exact fallback
-# path). Assert the pack is produced and is a readable archive.
-G14_OUT_DIR=$(mktemp -d)
-set +e; G14_OUT=$(HARNESS_PACK_NO_ZIP=1 PACK_OUT_DIR="$G14_OUT_DIR" bash _harness/scripts/make_context_pack.sh --ticket 999911Z-PROJ-99998 2>&1); G14_RC=$?; set -e
-[ "$G14_RC" -eq 0 ] || { echo "BUG [pack-without-zip]: pack failed with zip forced off (rc=$G14_RC):"; printf '%s\n' "$G14_OUT"; exit 1; }
-g14zip=$(ls "$G14_OUT_DIR"/harness-pack-*.zip 2>/dev/null | head -1 || true)   # no-match must not trip set -e/pipefail
-{ [ -n "$g14zip" ] && python3 -c 'import zipfile,sys; sys.exit(1 if zipfile.ZipFile(sys.argv[1]).testzip() else 0)' "$g14zip" 2>/dev/null; } \
-  || { echo "BUG [pack-without-zip]: no readable pack archive produced by the fallback:"; printf '%s\n' "$G14_OUT"; exit 1; }
-rm -rf "$G14_OUT_DIR"
-echo "  ok [pack-without-zip] — Python zipfile fallback produced a readable archive"
-
-# [stale-commit-warn] — status must nudge (WARN) when session activity is newer than the
-# last commit + margin (auto-commit may have silently stopped), and stay silent otherwise; either
-# way exit 0 (yellow). The check is HARNESS_DEMO-suppressed, so the guard sets HARNESS_LIVENESS_FORCE
-# to exercise the real code. Both directions are driven deterministically by the margin knob against
-# a scratch ticket dated NEXT YEAR: margin 0 → the future session outpaces the commit → WARN fires;
-# a ~30-year margin → even a next-year session is within margin → no WARN. HARNESS_DEMO stays set so
-# the remote reads as a NOTE (rc 0), isolating the nudge from the estate's exit code.
-R11T="Tickets/202607L-PROJ-11"; r11md="$R11T/202607L-PROJ-11.md"
-r09_make "$R11T"
-r11_nyr=$(( $(date +%Y) + 1 ))    # next year → a session-header epoch always beyond 'now'
-printf '\n## %s0101000000 - future-dated session\n- work newer than the last commit\n' "$r11_nyr" >> "$r11md"
-set +e; R11_OUT=$(HARNESS_LIVENESS_FORCE=1 HARNESS_COMMIT_LAG_WARN_S=0 bash _harness/scripts/harness-status.sh 2>&1); R11_RC=$?; set -e
-printf '%s\n' "$R11_OUT" | grep -q "recent session activity" \
-  || { echo "BUG [stale-commit-warn]: session activity newer than the last commit did NOT raise the stale-commit WARN:"; printf '%s\n' "$R11_OUT"; exit 1; }
-[ "$R11_RC" -eq 0 ] || { echo "BUG [stale-commit-warn]: the stale-commit nudge must be yellow (exit 0), got rc=$R11_RC"; exit 1; }
-set +e; R11_OUT2=$(HARNESS_LIVENESS_FORCE=1 HARNESS_COMMIT_LAG_WARN_S=999999999 bash _harness/scripts/harness-status.sh 2>&1); set -e
-printf '%s\n' "$R11_OUT2" | grep -q "recent session activity" \
-  && { echo "BUG [stale-commit-warn]: stale-commit WARN fired while within the lag margin (commit current):"; printf '%s\n' "$R11_OUT2"; exit 1; }
-rm -rf "$R11T"
-echo "  ok [stale-commit-warn] — fires when session activity outpaces the last commit, silent within margin"
-# --- end status consolidation guards -------------------------------------------------
-
-# --- [append-entry] one-home mechanical record appender guards --------------------
-# append_entry.sh is a DUMB creator: text+ticket+section -> a stamped, ATOMIC append under an
-# EXISTING header. Its pre-flight validates the LANDING ZONE only (file/header present+unique)
-# and DECLINES otherwise; its post-flight composes with check_ticket_log.sh (write-then-validate),
-# so a red NEVER rolls back a good write. These four guards are revert-provable BOTH directions:
-# break the write and (1)/(3) red; stop declining on a duplicate header and (2) reds byte-changed;
-# name-resolve a slash-bearing path (drop the #82 branch) and (4) reds on the doubled Tickets/ echo.
-echo "--- #80 append_entry: healthy lands+validator passes; dup-header declines byte-unchanged; red passes through ---"
-# a80_make builds a conforming, validator-ready ticket from the template plus a seed session entry
-# (so the appended-to file already has a Session Log the watermark check can read).
-a80_make() {
-  local dir="$1" base; base=$(basename "$dir")
-  rm -rf "$dir"; cp -r Tickets/999912Z-PROJ-99999 "$dir"
-  mv "$dir/999912Z-PROJ-99999.md" "$dir/$base.md"
-  printf '\n## %s - a80 seed\n- seed session\n' "$(date +%Y%m%d%H%M%S)" >> "$dir/$base.md"
+# demo_finish — tear the scratch ticket down, take the gated closing commit, and say the words CI
+# and the README both key on. Nothing may print between the last case and this banner.
+demo_finish() {
+  rm -rf "$S"
+  demo_close_commit "$DID_INIT" "."   # gated: commits only if the demo created this repo (#10)
+  echo; echo "ALL 6 DEMO STAGES PASSED — the machinery works. Next: README Setup to wire Copilot."
 }
 
-# 1) HEALTHY -> the stamped entry lands UNDER the requested header AND the post-flight validator
-#    runs and its verdict passes through (this ticket validates OK). The awk asserts the probe text
-#    appears at/after the '## Session Log' header, i.e. inside the right section.
-A80H="Tickets/202607T-PROJ-8001"; a80_make "$A80H"
-set +e; A80_OUT=$(bash _harness/scripts/append_entry.sh 202607T-PROJ-8001 "Session Log" "a80 healthy probe #80"); set -e
-awk '/^## Session Log/{f=1} f&&/a80 healthy probe #80/{ok=1} END{exit !ok}' "$A80H/202607T-PROJ-8001.md" \
-  || { echo "BUG [append-entry]: healthy append did NOT land the entry under the '## Session Log' header"; exit 1; }
-printf '%s\n' "$A80_OUT" | grep -q "OK: 202607T-PROJ-8001 validated." \
-  || { echo "BUG [append-entry]: post-flight validator did not run / verdict not passed through on the healthy ticket:"; printf '%s\n' "$A80_OUT"; exit 1; }
-rm -rf "$A80H"
-echo "  ok [append-entry] — healthy: entry lands under the right header and the validator verdict passes through"
-
-# 2) DUPLICATED HEADER -> the appender DECLINES with a NAMED fix and the file is BYTE-UNCHANGED
-#    (pre-flight refuses an ambiguous landing zone; nothing is written). cmp is a byte comparison,
-#    not an eyeball. The '.before' snapshot lives OUTSIDE AI-Knowledge/ so it cannot mint an orphan.
-A80D="Tickets/202607T-PROJ-8002"; a80_make "$A80D"
-printf '\n## Notes\nalpha\n## Notes\nbeta\n' >> "$A80D/202607T-PROJ-8002.md"   # two identical '## Notes' headers
-cp "$A80D/202607T-PROJ-8002.md" "$A80D/before.snap"                            # exact byte snapshot pre-append
-set +e; A80_OUT=$(bash _harness/scripts/append_entry.sh 202607T-PROJ-8002 "Notes" "must not land"); A80_RC=$?; set -e
-[ "$A80_RC" -ne 0 ] || { echo "BUG [append-entry]: duplicated header did NOT cause a decline (rc=0):"; printf '%s\n' "$A80_OUT"; exit 1; }
-printf '%s\n' "$A80_OUT" | grep -q "Fix:" \
-  || { echo "BUG [append-entry]: the decline did not NAME a fix:"; printf '%s\n' "$A80_OUT"; exit 1; }
-cmp -s "$A80D/202607T-PROJ-8002.md" "$A80D/before.snap" \
-  || { echo "BUG [append-entry]: a declined append still MUTATED the file (not byte-unchanged)"; exit 1; }
-rm -rf "$A80D"
-echo "  ok [append-entry] — duplicated header: declines with a named fix, file byte-unchanged"
-
-# 3) PRE-EXISTING UNRELATED RED -> the append STILL lands and the red passes through: write-then-validate,
-#    a red must not roll back a good write. The red is an orphan AI-Knowledge file (unrelated to the entry).
-A80R="Tickets/202607T-PROJ-8003"; a80_make "$A80R"
-echo "orphan body" > "$A80R/AI-Knowledge/orphan.md"   # not listed in _index.md -> validator FAILs, unrelated to the append
-set +e; A80_OUT=$(bash _harness/scripts/append_entry.sh 202607T-PROJ-8003 "Session Log" "a80 red-passthrough probe #80"); A80_RC=$?; set -e
-grep -q "a80 red-passthrough probe #80" "$A80R/202607T-PROJ-8003.md" \
-  || { echo "BUG [append-entry]: a pre-existing red ROLLED BACK the write — the entry is gone"; exit 1; }
-printf '%s\n' "$A80_OUT" | grep -q "orphan file AI-Knowledge/orphan.md not in _index.md" \
-  || { echo "BUG [append-entry]: the pre-existing unrelated red did NOT pass through the appender:"; printf '%s\n' "$A80_OUT"; exit 1; }
-[ "$A80_RC" -ne 0 ] || { echo "BUG [append-entry]: appender masked the validator's red (rc=0 despite a FAIL passing through)"; exit 1; }
-rm -rf "$A80R"
-echo "  ok [append-entry] — pre-existing red: append lands, red passes through, write not rolled back"
-
-# 4) SLASH-BEARING NON-EXISTENT PATH -> declines naming the LITERAL path, never a DOUBLED Tickets/
-#    construction (#82 truth-up). Pre-fix, a slash-bearing argument fell to Tickets/<arg>/<arg>.md
-#    name-resolution and echoed a doubled 'Tickets/.../Tickets/...' path in the decline. The decline
-#    was always correct (it declines, names a fix); this only asserts the ECHO is clean. Revert-proof:
-#    drop the `|| "$ticket" == */*` branch in append_entry.sh and (4) reds on the doubled path.
-set +e; A80_OUT=$(bash _harness/scripts/append_entry.sh "Tickets/does-not-exist-8004" "Session Log" "must not land"); A80_RC=$?; set -e
-[ "$A80_RC" -ne 0 ] || { echo "BUG [append-entry]: a non-existent slash-bearing path did NOT decline (rc=0):"; printf '%s\n' "$A80_OUT"; exit 1; }
-printf '%s\n' "$A80_OUT" | grep -q "Fix:" \
-  || { echo "BUG [append-entry]: the slash-path decline did not NAME a fix:"; printf '%s\n' "$A80_OUT"; exit 1; }
-printf '%s\n' "$A80_OUT" | grep -q "Tickets/Tickets" \
-  && { echo "BUG [append-entry]: the decline echoed a DOUBLED Tickets/ path (a slash-bearing path was name-resolved):"; printf '%s\n' "$A80_OUT"; exit 1; }
-printf '%s\n' "$A80_OUT" | grep -q "Tickets/does-not-exist-8004" \
-  || { echo "BUG [append-entry]: the decline did not name the LITERAL path the caller gave:"; printf '%s\n' "$A80_OUT"; exit 1; }
-echo "  ok [append-entry] — slash-bearing non-existent path: declines naming the literal path, no doubled Tickets/"
-# --- end #80 append_entry guards -----------------------------------------------------
-
-# --- #71 WARN aging + #72 knowledge staleness guards ----------------------------------
-# Inserted AFTER the #80 append_entry block (Batch 2 landed its guard between the historic
-# `# --- end status consolidation guards ---` anchor and here); that anchor line is still a unique
-# string but no longer marks the end-of-guards insertion point, so these land after #80's own end
-# marker. Every string is anchored with one of the warn-aging-* labels or [knowledge-staleness].
-# Every assert below is revert-provable RED against pre-fix code.
-echo "--- #71 WARN aging + #72 knowledge staleness ---"
-
-# [warn-aging-render] — a WARN whose first-seen is OLD renders with escalating threshold
-# styling; a FRESH one (first-seen = today) renders PLAIN; and the gate is unchanged (a yellow WARN
-# keeps exit 0 with aging on). Deterministic via a guard-LOCAL state file (A2 layer 2) that we SEED
-# with an old first-seen for the fixture's exact key, so the age is fixed regardless of wall-clock.
-# The fixture is an unrecognised ticket folder (a guaranteed WARN); its key is "unrecognised:<name>".
-# BUG on miss: aging did not fire / a fresh WARN was decorated / aging flipped a yellow to red.
-AG71T="$DEMO_ROOT/Tickets/aging fixture 71"; mkdir -p "$AG71T"; printf '# rec\n## Current State\nwip\n' > "$AG71T/rec.md"
-AG71_STATE=$(mktemp)
-ag71_old=$(( $(date +%s) - 200*86400 ))                                # 200 days back → past the alarm tier
-printf '%s\tunrecognised:aging fixture 71\n' "$ag71_old" > "$AG71_STATE"
-set +e; AG71_OUT=$(HARNESS_WARN_STATE_FILE="$AG71_STATE" bash _harness/scripts/harness-status.sh 2>&1); AG71_RC=$?; set -e
-# 1. old-dated WARN → age rendered with the escalating (alarm-tier) styling on the fixture's own line
-printf '%s\n' "$AG71_OUT" | grep -F "aging fixture 71" | grep -q "parked 200d" \
-  || { echo "BUG [warn-aging-render]: an aged WARN (first-seen 200d ago) rendered NO parked age — aging did not fire:"; printf '%s\n' "$AG71_OUT" | grep -iF "aging fixture 71"; exit 1; }
-printf '%s\n' "$AG71_OUT" | grep -F "aging fixture 71" | grep -q '!!!' \
-  || { echo "BUG [warn-aging-render]: a WARN past the alarm tier (200d) did not escalate to the loud marker:"; printf '%s\n' "$AG71_OUT" | grep -iF "aging fixture 71"; exit 1; }
-# 3. gate behaviour unchanged: an unrecognised-ticket WARN is YELLOW — rc stays 0 with aging on
-[ "$AG71_RC" -eq 0 ] || { echo "BUG [warn-aging-render]: aging changed the gate — a yellow WARN must keep exit 0, got rc=$AG71_RC"; exit 1; }
-# 2. FRESH WARN (empty state → first-seen = now) → PLAIN, no age decoration on the same line
-AG71_FRESH=$(mktemp); : > "$AG71_FRESH"
-set +e; AG71_OUT2=$(HARNESS_WARN_STATE_FILE="$AG71_FRESH" bash _harness/scripts/harness-status.sh 2>&1); set -e
-printf '%s\n' "$AG71_OUT2" | grep -F "aging fixture 71" | grep -qE 'parked|\[!' \
-  && { echo "BUG [warn-aging-render]: a FRESH WARN rendered age decoration — a just-seen WARN must be plain:"; printf '%s\n' "$AG71_OUT2" | grep -iF "aging fixture 71"; exit 1; }
-rm -rf "$AG71T" "$AG71_STATE" "$AG71_FRESH"
-echo "  ok [warn-aging-render] — aged WARN shows escalating styled age, fresh WARN is plain, gate stays yellow (rc 0)"
-
-# [knowledge-staleness] a note past the threshold is LISTED and NAMES the knowledge-curator; a
-# fresh note is not; an UNDATED note draws its OWN WARN. Pure date arithmetic against controlled dates
-# so it's deterministic on any CI clock. Fixtures live under a scratch AI-Knowledge subfolder we create
-# and remove. BUG on miss: old note not listed w/ curator / fresh flagged / undated silent / not yellow.
-KS72_DIR="$DEMO_ROOT/General AI-Knowledge/staleness fixture 72"; mkdir -p "$KS72_DIR"
-ks72_old=$(date -d "200 days ago" +%Y-%m-%d 2>/dev/null || date -v-200d +%Y-%m-%d)     # GNU || BSD
-ks72_fresh=$(date -d "3 days ago" +%Y-%m-%d 2>/dev/null || date -v-3d +%Y-%m-%d)
-printf '# old note\nLast reviewed: %s\n'   "$ks72_old"   > "$KS72_DIR/old.md"
-printf '# fresh note\nLast reviewed: %s\n' "$ks72_fresh" > "$KS72_DIR/fresh.md"
-printf '# undated note\n(no review stamp at all)\n'      > "$KS72_DIR/undated.md"
-set +e; KS72_OUT=$(bash _harness/scripts/harness-status.sh 2>&1); KS72_RC=$?; set -e
-printf '%s\n' "$KS72_OUT" | grep -F "staleness fixture 72/old.md" | grep -q "knowledge-curator" \
-  || { echo "BUG [knowledge-staleness]: the old note was not listed with the knowledge-curator named as the next act:"; printf '%s\n' "$KS72_OUT" | grep -iF "staleness fixture 72"; exit 1; }
-printf '%s\n' "$KS72_OUT" | grep -qF "staleness fixture 72/fresh.md" \
-  && { echo "BUG [knowledge-staleness]: a fresh note (3 days) was wrongly flagged stale:"; printf '%s\n' "$KS72_OUT" | grep -iF "staleness fixture 72"; exit 1; }
-printf '%s\n' "$KS72_OUT" | grep -F "staleness fixture 72/undated.md" | grep -q "undated" \
-  || { echo "BUG [knowledge-staleness]: an undated note did not draw its own undated WARN:"; printf '%s\n' "$KS72_OUT" | grep -iF "staleness fixture 72"; exit 1; }
-[ "$KS72_RC" -eq 0 ] || { echo "BUG [knowledge-staleness]: the staleness sweep must be yellow (exit 0), got rc=$KS72_RC"; exit 1; }
-rm -rf "$KS72_DIR"
-echo "  ok [knowledge-staleness] — old note listed w/ curator named, fresh silent, undated draws its own WARN, exit 0"
-
-# [warn-aging-porcelain] — a full status run must NOT dirty the estate (A2). The global
-# HARNESS_WARN_STATE_FILE export (top of this script) sends status's one write to a throwaway path.
-# TWO PROBES, covering the wall from different sides, because one of them used to cover neither.
-# PROBE 1 (primary, fixture): a FRESH estate, committed so its baseline is EMPTY BY CONSTRUCTION.
-#   The earlier version compared a baseline of the REAL tree snapshotted at this guard's own start,
-#   and self-masked: with the global export dropped, earlier demo stages had ALREADY written
-#   _harness/state/ into the real tree, so the pollution sat in the baseline and BASE==NOW compared
-#   equal while the tree was dirty (#71 reopen). Nothing upstream can pollute a fixture.
-# PROBE 2 (secondary, real tree, BASELINE-RELATIVE): catches a mis-pointed call in THIS region that
-#   newly dirties the real tree. It is deliberately baseline-relative, NOT absolute: a developer's
-#   own uncommitted edits are always present here and an absolute check would false-red every local
-#   run. That is why the original was written this way; the mistake was making it the ONLY probe.
-#   Its cover is CONDITIONAL — if the tree already carries _harness/state/ from an earlier run, this
-#   probe swallows it too. Probe 1 is the one that always holds.
-# status derives its root from its own location, so the scripts must live inside the fixture. A
-# scratch unrecognised ticket guarantees an active WARN: with no WARN there is no write at all, and
-# either probe would pass for the wrong reason.
-P71F=$(mktemp -d)
-mkdir -p "$P71F/estate/Tickets/porcelain check 71"
-cp -R _harness "$P71F/estate/_harness"
-printf '# rec\n## Current State\nx\n' > "$P71F/estate/Tickets/porcelain check 71/rec.md"
-git -C "$P71F/estate" init -q
-git -C "$P71F/estate" -c user.email=demo@local -c user.name=demo add -A
-git -C "$P71F/estate" -c user.email=demo@local -c user.name=demo commit -q -m "fixture"
-P71_FBASE=$(git -C "$P71F/estate" status --porcelain)
-bash "$P71F/estate/_harness/scripts/harness-status.sh" >/dev/null 2>&1 || true
-P71_FNOW=$(git -C "$P71F/estate" status --porcelain)
-[ "$P71_FBASE" = "$P71_FNOW" ] \
-  || { echo "BUG [warn-aging-porcelain]: a status run dirtied a CLEAN FIXTURE estate — the global HARNESS_WARN_STATE_FILE export is not covering every write (status must be side-effect-free on the estate). New/changed:"; diff <(printf '%s\n' "$P71_FBASE") <(printf '%s\n' "$P71_FNOW") || true; rm -rf "$P71F"; exit 1; }
-rm -rf "$P71F"
-P71_BASE=$(git -C "$DEMO_ROOT" status --porcelain)
-P71T="$DEMO_ROOT/Tickets/porcelain check 71"; mkdir -p "$P71T"; printf '# rec\n## Current State\nx\n' > "$P71T/rec.md"
-bash _harness/scripts/harness-status.sh >/dev/null 2>&1 || true
-rm -rf "$P71T"
-P71_NOW=$(git -C "$DEMO_ROOT" status --porcelain)
-[ "$P71_BASE" = "$P71_NOW" ] \
-  || { echo "BUG [warn-aging-porcelain]: a status run in this region newly changed the real tree — a call here is mis-pointed at the default in-repo state path. New/changed:"; diff <(printf '%s\n' "$P71_BASE") <(printf '%s\n' "$P71_NOW") || true; exit 1; }
-echo "  ok [warn-aging-porcelain] — a status run leaves a clean fixture estate untouched, and adds nothing to the real tree"
-
-# [warn-aging-fails-open] — a bookkeeping write to an unwritable state path must NOT change the
-# tool's answer (A3, the same law #79 shipped for its recorder). We point the state file under a
-# regular FILE (so the mkdir -p can't succeed on any OS: ENOTDIR) with an active WARN present, and
-# assert the rc is IDENTICAL to a control run on a writable path, the full report still prints, and the
-# one 'aging unavailable' note appears. Revert-proof: drop the fails-open wrapper in warn_state_sync
-# and set -euo pipefail aborts status mid-write — the rc flips and the verdict line vanishes; this reds.
-FO71T="$DEMO_ROOT/Tickets/failsopen check 71"; mkdir -p "$FO71T"; printf '# rec\n## Current State\nx\n' > "$FO71T/rec.md"
-FO71_OK=$(mktemp)                        # control: a writable guard-local state path
-# Only the control run's exit CODE is compared below (against FO71_RC), never its text, so the
-# output is discarded rather than captured into a variable nothing reads. The run itself stays.
-set +e; HARNESS_WARN_STATE_FILE="$FO71_OK" bash _harness/scripts/harness-status.sh >/dev/null 2>&1; FO71_CTRL_RC=$?; set -e
-FO71_BADPARENT=$(mktemp)                 # a regular FILE — using it as a directory parent forces ENOTDIR
-set +e; FO71_OUT=$(HARNESS_WARN_STATE_FILE="$FO71_BADPARENT/sub/warn-aging.tsv" bash _harness/scripts/harness-status.sh 2>&1); FO71_RC=$?; set -e
-rm -rf "$FO71T"; rm -f "$FO71_OK" "$FO71_BADPARENT"
-[ "$FO71_RC" -eq "$FO71_CTRL_RC" ] \
-  || { echo "BUG [warn-aging-fails-open]: an unwritable state path changed status's exit code (got rc=$FO71_RC, writable control rc=$FO71_CTRL_RC) — the write must fail open:"; printf '%s\n' "$FO71_OUT"; exit 1; }
-printf '%s\n' "$FO71_OUT" | grep -q "aging unavailable" \
-  || { echo "BUG [warn-aging-fails-open]: an unwritable state path did not emit the 'aging unavailable' fails-open note:"; printf '%s\n' "$FO71_OUT"; exit 1; }
-printf '%s\n' "$FO71_OUT" | grep -qE "estate healthy|issue\(s\) above" \
-  || { echo "BUG [warn-aging-fails-open]: the full status report did not print under an unwritable state path (verdict line missing):"; printf '%s\n' "$FO71_OUT"; exit 1; }
-echo "  ok [warn-aging-fails-open] — unwritable state path: full report prints, one note, exit code unchanged vs control"
-# --- end #71 WARN aging + #72 knowledge staleness guards ------------------------------
-
-# [roster-completes] harness-status must NOT abort on a conforming ticket with NO AI-Knowledge/ dir
-# (hand-made/legacy — the validator tolerates it). Pre-fix, the unguarded find in
-# harness-status's roster loop exits non-zero on the missing dir and (pipefail + set -e) aborts
-# that loop BEFORE this ticket's line prints — suppressing the whole estate's roster. This
-# is the FIRST conforming-ticket-without-AI-Knowledge fixture in the demo (r09_make builds its
-# conforming fixtures WITH AI-Knowledge, so the field hit a case the demo never covered).
-# NOTE: the demo runs with CWD = repo root and never defines WORK_ROOT (harness-status resolves
-# it internally); like every other fixture here the ticket path is relative to Tickets/.
-# Pre-fixture baseline: only the rc is used (compared against NOAK_RC below), so the output is
-# discarded instead of captured. The call must stay — it is what establishes the baseline rc.
-set +e; bash _harness/scripts/harness-status.sh >/dev/null 2>&1; PRE37_RC=$?; set -e
-NOAK="Tickets/202607D-PROJ-777"
-mkdir -p "$NOAK"     # deliberately NO AI-Knowledge/ subdir — the bug trigger
-cat > "$NOAK/202607D-PROJ-777.md" <<'MD'
-# 202607D-PROJ-777
-## Current State
-Legacy ticket imported by hand; no learnings captured yet.
-## Session Log
-## 20260704120000 - imported
-Hand-created for the #37 fixture.
-MD
-set +e; NOAK_OUT=$(bash _harness/scripts/harness-status.sh 2>&1); NOAK_RC=$?; set -e
-printf '%s\n' "$NOAK_OUT" | grep -q '202607D-PROJ-777.*knowledge files: 0' \
-  || { echo "BUG [roster-completes]: harness-status did not reach the AI-Knowledge-less ticket's roster line (it aborted at the unguarded find):"; printf '%s\n' "$NOAK_OUT"; exit 1; }
-[ "$NOAK_RC" -le "$PRE37_RC" ] || { echo "BUG [roster-completes]: the AI-Knowledge-less ticket added a NEW failure / abort (rc=$NOAK_RC > baseline=$PRE37_RC)"; exit 1; }
-rm -rf "$NOAK"
-echo "  ok [roster-completes] — harness-status completes on a conforming ticket with no AI-Knowledge/ (roster reached, no new failure)"
-
-# [junk-ignored] objective editor/OS junk must be ignored even inside re-included dirs so it
-# never enters the record. Pre-fix (no junk patterns in .gitignore), git add -A stages it — red.
-J="Tickets/junk-probe"; mkdir -p "$J"
-: > "$J/scratch.tmp"; : > "$J/backup~"; : > "$J/.file.swp"; : > "$J/Thumbs.db"
-JUNK_STAGED=$(git add -A --dry-run 2>/dev/null | grep -E 'junk-probe/(scratch\.tmp|backup~|\.file\.swp|Thumbs\.db)' || true)
-[ -z "$JUNK_STAGED" ] || { echo "BUG [junk-ignored]: objective junk would be staged (not ignored):"; printf '%s\n' "$JUNK_STAGED"; exit 1; }
-rm -rf "$J"
-echo "  ok [junk-ignored] — *.tmp / *~ / *.swp / Thumbs.db ignored, never staged"
-
-# [oversize-root-warn] a ticket whose TRACKED root (excluding the ignored Logs/, Dump/) grows
-# large gets a yellow WARN prescribing Dump/ — never a block. Also proves Dump/ is EXCLUDED
-# from the measure (so moving scratch there actually clears it) and the knob is honoured both
-# ways. ~2 MiB of padding lands the root over a 1 MiB threshold.
-O="Tickets/202607E-PROJ-888"; mkdir -p "$O"
-cat > "$O/202607E-PROJ-888.md" <<'MD'
-# 202607E-PROJ-888
-## Current State
-Oversize-root fixture for #38.
-## Session Log
-## 20260705120000 - fixture
-MD
-head -c 2097152 /dev/zero > "$O/big-scratch.bin"     # ~2 MiB in the TRACKED root
-# (1) oversized root -> WARN fires with the Dump/ prescription, exit 0 (yellow)
-set +e; O38=$(HARNESS_TICKET_WARN_MB=1 bash _harness/scripts/harness-status.sh 2>&1); O38_RC=$?; set -e
-printf '%s\n' "$O38" | grep -qE 'Tickets/202607E-PROJ-888 tracks .* in its root' \
-  || { echo "BUG [oversize-root-warn]: oversized ticket root did not fire the WARN:"; printf '%s\n' "$O38"; exit 1; }
-printf '%s\n' "$O38" | grep -q 'Dump/' \
-  || { echo "BUG [oversize-root-warn]: the WARN did not prescribe Dump/:"; printf '%s\n' "$O38"; exit 1; }
-[ "$O38_RC" -eq 0 ] || { echo "BUG [oversize-root-warn]: the size nudge must be yellow (exit 0), got rc=$O38_RC"; exit 1; }
-# (2) move padding into Dump/ -> WARN must NOT fire (Dump/ is excluded; the prescription works)
-mkdir -p "$O/Dump"; mv "$O/big-scratch.bin" "$O/Dump/big-scratch.bin"
-set +e; O38b=$(HARNESS_TICKET_WARN_MB=1 bash _harness/scripts/harness-status.sh 2>&1); set -e
-printf '%s\n' "$O38b" | grep -qE 'Tickets/202607E-PROJ-888 tracks .* in its root' \
-  && { echo "BUG [oversize-root-warn]: moving scratch to Dump/ did NOT clear the WARN (Dump/ not excluded):"; printf '%s\n' "$O38b"; exit 1; }
-# (3) knob honoured: a huge threshold silences it even with padding back in the root
-mv "$O/Dump/big-scratch.bin" "$O/big-scratch.bin"
-set +e; O38c=$(HARNESS_TICKET_WARN_MB=1000000 bash _harness/scripts/harness-status.sh 2>&1); set -e
-printf '%s\n' "$O38c" | grep -qE 'Tickets/202607E-PROJ-888 tracks .* in its root' \
-  && { echo "BUG [oversize-root-warn]: the size nudge fired while under the knob threshold:"; printf '%s\n' "$O38c"; exit 1; }
-rm -rf "$O"
-echo "  ok [oversize-root-warn] — fires with Dump/ prescription (yellow), clears when scratch moves to Dump/, honours the knob"
-
-# [retro-counts] — retro_stats.sh is a DUMB counter, so a fixture estate with KNOWN
-# ticket dates, checks, and promotions must yield KNOWN numbers. retro_stats derives the estate it
-# scans from HARNESS_WORK_ROOT, so we point the REAL shipped script at a throwaway fixture (no copy
-# of the script — the exact shipped code runs). Fixture: three conforming tickets (two committed in
-# 2026-03, one in 2026-05, so their last-commit months are deterministic); ticket A carries two
-# promotion tombstones; ticket C carries two checks appended via the real notebook helper (the
-# template's own setup cell is NOT a check and is subtracted out). Revert-proof: break the counting
-# in retro_stats.sh and this guard reds on the asserted numbers. Cleanup is an explicit rm on every
-# exit path — the demo's single `trap cleanup EXIT` already owns the trap slot, so we add NO second
-# one (#86).
-echo "--- #85 retrospective: retro_stats counts a fixture estate ---"
-R85=$(mktemp -d)                                   # throwaway fixture estate (its own git repo)
-git -C "$R85" init -q
-mkdir -p "$R85/Tickets"
-# r85_commit ties a folder's LAST commit to a fixed date so its bucket month is deterministic.
-r85_commit() {  # $1 = commit label, $2 = YYYY-MM-DD
-  git -C "$R85" add -A >/dev/null
-  GIT_AUTHOR_DATE="$2 12:00:00" GIT_COMMITTER_DATE="$2 12:00:00" \
-    git -C "$R85" -c user.email=demo@local -c user.name=demo commit -qm "$1" >/dev/null
+demo_main() {
+  demo_setup
+  demo_load
+  demo_dispatch
+  demo_completeness
+  demo_finish
 }
-# ticket A — March, with two promotion tombstones in its AI-Knowledge index.
-cp -r Tickets/999912Z-PROJ-99999 "$R85/Tickets/202603A-PROJ-1"
-mv "$R85/Tickets/202603A-PROJ-1/999912Z-PROJ-99999.md" "$R85/Tickets/202603A-PROJ-1/202603A-PROJ-1.md"
-printf -- '- foo.md (promoted -> General AI-Knowledge/Topic)\n- bar.md (promoted -> General AI-Knowledge/Other)\n' >> "$R85/Tickets/202603A-PROJ-1/AI-Knowledge/_index.md"
-r85_commit 202603A-PROJ-1 2026-03-10
-# ticket B — March, no extras.
-cp -r Tickets/999912Z-PROJ-99999 "$R85/Tickets/202603B-PROJ-2"
-mv "$R85/Tickets/202603B-PROJ-2/999912Z-PROJ-99999.md" "$R85/Tickets/202603B-PROJ-2/202603B-PROJ-2.md"
-r85_commit 202603B-PROJ-2 2026-03-20
-# ticket C — May, with two captured checks appended through the real notebook helper.
-cp -r Tickets/999912Z-PROJ-99999 "$R85/Tickets/202605A-PROJ-3"
-mv "$R85/Tickets/202605A-PROJ-3/999912Z-PROJ-99999.md" "$R85/Tickets/202605A-PROJ-3/202605A-PROJ-3.md"
-python3 _harness/scripts/append_notebook_cell.py "$R85/Tickets/202605A-PROJ-3/Checks/checks_master.ipynb" "check one" "SELECT 1;" >/dev/null
-python3 _harness/scripts/append_notebook_cell.py "$R85/Tickets/202605A-PROJ-3/Checks/checks_master.ipynb" "check two" "SELECT 2;" >/dev/null
-r85_commit 202605A-PROJ-3 2026-05-05
-set +e; R85_OUT=$(HARNESS_WORK_ROOT="$R85" bash _harness/scripts/retro_stats.sh); R85_RC=$?; set -e
-[ "$R85_RC" -eq 0 ] || { echo "BUG [retro-counts]: retro_stats did not exit 0 on the fixture (rc=$R85_RC):"; printf '%s\n' "$R85_OUT"; rm -rf "$R85"; exit 1; }
-for r85_need in "tickets-closed-total: 3" "  2026-03: 2" "  2026-05: 1" "checks-captured: 2" "knowledge-promoted: 2"; do
-  printf '%s\n' "$R85_OUT" | grep -qF -- "$r85_need" \
-    || { echo "BUG [retro-counts]: retro_stats miscounted the fixture — expected line '$r85_need':"; printf '%s\n' "$R85_OUT"; rm -rf "$R85"; exit 1; }
-done
-rm -rf "$R85"
-echo "  ok [retro-counts] — retro_stats counts 3 tickets (2 in Mar, 1 in May), 2 checks, 2 promotions on the fixture"
 
-# [record-whitelisted] — the whitelist re-include (`!/General Human Knowledge/`) must make a
-# file dropped under General Human Knowledge/ TRACKABLE: these are record artifacts, versioned. Probe:
-# create a file there and assert `git add -A --dry-run` WOULD stage it. This is #38's junk-ignore
-# method run in the OPPOSITE direction — #38 proves junk is NEVER staged, this proves record IS.
-# Revert-proof: remove the `!/General Human Knowledge/` line from .gitignore and the probe stops being
-# staged, reddening this guard. The probe is cleaned up with an explicit rm.
-R85_PROBE="General Human Knowledge/whitelist-probe"
-: > "$R85_PROBE"
-R85_STAGED=$(git add -A --dry-run 2>/dev/null | grep -F 'General Human Knowledge/whitelist-probe' || true)
-[ -n "$R85_STAGED" ] || { echo "BUG [record-whitelisted]: a file under General Human Knowledge/ would NOT be staged — the whitelist re-include is missing or broken."; rm -f "$R85_PROBE"; exit 1; }
-rm -f "$R85_PROBE"
-echo "  ok [record-whitelisted] — General Human Knowledge/ is inside the whitelist (a probe file would be staged)"
-
-# [governance gates] revert-proofs for the LOCALLY-decidable gate scripts under
-# .github/scripts/ (the API existence/OPEN check is CI-only and witnessed at the seat, not here).
-# Same shape as #38: these call the very scripts the workflow calls, so weakening a grammar or
-# pattern turns the matching guard RED. CWD is the repo root, so the relative paths resolve.
-
-# [branch-grammar] the NN-slug grammar ACCEPTS the conforming set AND REJECTS the
-# non-conforming set — both directions, so loosening OR tightening the regex reds this guard.
-GRAM=.github/scripts/branch-grammar.sh
-for good in 37-status-abort-fix 47-governance-pair; do
-  bash "$GRAM" "$good" >/dev/null 2>&1 || { echo "BUG [branch-grammar]: conforming '$good' was rejected"; exit 1; }
-done
-for bad in WSL-canonical Feature/Foo 47_governance mixedCase; do
-  bash "$GRAM" "$bad" 47 >/dev/null 2>&1 && { echo "BUG [branch-grammar]: non-conforming '$bad' was accepted"; exit 1; }
-done
-# Capture the miss message before grepping — the script exits non-zero by design, and
-# grepping it through a pipe would let pipefail red this even when the text matches.
-GRAM_MISS=$(bash "$GRAM" "Feature/Foo" 47 2>&1 || true)
-printf '%s\n' "$GRAM_MISS" | grep -q 'git branch -m' \
-  || { echo "BUG [branch-grammar]: miss message lacks the literal 'git branch -m' rename prescription"; exit 1; }
-echo "  ok [branch-grammar] — conforming accepted, non-conforming rejected, rename prescription emitted"
-
-# [branch-coherence] the branch's leading NN must be a MEMBER of the PR's closing-issue set.
-COH=.github/scripts/branch-coherence.sh
-printf '47 49\n' | bash "$COH" 47-governance-pair >/dev/null 2>&1 \
-  || { echo "BUG [branch-coherence]: NN present in the closing set was wrongly red"; exit 1; }
-printf '47 49\n' | bash "$COH" 99-wrong-anchor >/dev/null 2>&1 \
-  && { echo "BUG [branch-coherence]: NN absent from the closing set was wrongly accepted"; exit 1; }
-COH_MISS=$(printf '47 49\n' | bash "$COH" 99-wrong-anchor 2>&1 || true)   # capture: exits non-zero by design
-printf '%s\n' "$COH_MISS" | grep -q 'not among them' \
-  || { echo "BUG [branch-coherence]: mismatch lacks the both-remedies coherence prescription"; exit 1; }
-printf '' | bash "$COH" 47-governance-pair >/dev/null 2>&1 \
-  || { echo "BUG [branch-coherence]: an empty closing set must pass here (it is #49's red), but went red"; exit 1; }
-echo "  ok [branch-coherence] — NN in closing-set green, NN absent red (both remedies), empty set defers to #49"
-
-# [closing-ref] a CLOSING keyword is required, and the closing-set is parsed for coherence.
-REF=.github/scripts/check-issue-ref.sh
-REF_OUT=$(printf 'Title\nFixes #47 and Closes #49\n' | bash "$REF" 2>/dev/null) \
-  || { echo "BUG [closing-ref]: a valid Fixes/Closes body was rejected"; exit 1; }
-[ "$REF_OUT" = "47 49" ] \
-  || { echo "BUG [closing-ref]: closing-set mis-parsed (got '$REF_OUT', want '47 49')"; exit 1; }
-printf 'mentions #38 only\n' | bash "$REF" >/dev/null 2>&1 \
-  && { echo "BUG [closing-ref]: a bare '#38' with no closing keyword was accepted"; exit 1; }
-REF_MISS=$(printf 'no anchor here\n' | bash "$REF" 2>&1 || true)   # capture: exits non-zero by design
-printf '%s\n' "$REF_MISS" | grep -q 'no closing issue reference' \
-  || { echo "BUG [closing-ref]: the missing-anchor prescription is absent"; exit 1; }
-echo "  ok [closing-ref] — closing keyword required + set parsed; bare mention and no-ref both red"
-
-# [waiver-label] the gate-waiver label greens the checks AND emits a loud, on-record line.
-WAIV=.github/scripts/gate-waiver.sh
-set +e; WOUT=$(printf 'enhancement\ngate-waiver\n' | bash "$WAIV" "PR #0" 2>&1); WRC=$?; set -e
-[ "$WRC" -eq 0 ] \
-  || { echo "BUG [waiver-label]: the gate-waiver label did not green the check (rc=$WRC)"; exit 1; }
-printf '%s\n' "$WOUT" | grep -q 'GATE-WAIVER' \
-  || { echo "BUG [waiver-label]: the waiver fired WITHOUT the mandatory loud log line"; exit 1; }
-printf 'enhancement\n' | bash "$WAIV" "PR #0" >/dev/null 2>&1 \
-  && { echo "BUG [waiver-label]: the waiver fired with NO gate-waiver label present"; exit 1; }
-echo "  ok [waiver-label] — waiver label greens + emits the loud line; absent label does not waive"
-
-# [crlf-tripwire] No TRACKED shell/python script may carry a carriage return: a CRLF in a
-# shebang or heredoc breaks execution, and .gitattributes only helps clones that HAVE it — this
-# guard is the standing backstop that reads the working-tree bytes directly, so it catches a CR
-# no matter how the clone was configured. Detection is `tr -dc '\r'` (POSIX, GNU/BSD-portable):
-# strip everything but CR; non-empty output means the file carries one. Uses a while-read loop,
-# not mapfile, so it runs on the macOS runner's bash 3.2.
-CRLF_BAD=""
-while IFS= read -r f; do
-  [ -f "$f" ] || continue
-  [ -n "$(tr -dc '\r' < "$f")" ] && CRLF_BAD="${CRLF_BAD}${f}"$'\n'
-done < <(git ls-files '*.sh' '*.py')
-if [ -n "$CRLF_BAD" ]; then
-  echo "BUG [crlf-tripwire]: tracked script(s) carry a carriage return (CRLF will break execution):"
-  printf '%s' "$CRLF_BAD"
-  exit 1
-fi
-# Self-test proves the detector is not vacuous (the guard-per-bug requirement): feed it a
-# CR-injected throwaway fixture, which it MUST flag. If the detector ever stops catching this,
-# the tripwire is silently dead — so this reds instead. (Reverting the detector reds HERE.)
-CRLF_FIX=$(mktemp)
-printf 'echo hi\r\n' > "$CRLF_FIX"
-if [ -z "$(tr -dc '\r' < "$CRLF_FIX")" ]; then
-  echo "BUG [crlf-tripwire]: the CR detector failed to flag a CR-injected fixture — the tripwire is vacuous"
-  rm -f "$CRLF_FIX"; exit 1
-fi
-rm -f "$CRLF_FIX"
-echo "  ok [crlf-tripwire] — no tracked *.sh/*.py carries a CR (detector proven on a CR fixture)"
-
-# Break-and-restore status demonstration — deliberately runs AFTER ticket-recognition so that on
-# a lane where a plain `harness-status` aborts under set -e, those stages have already been
-# witnessed. The first call shows a healthy estate; then we remove a deployed agent and watch
-# status prescribe the fix (its rc=1 is the point — the `|| echo` keeps the demo alive);
-# restore it; and confirm the estate reads healthy again.
-bash _harness/scripts/harness-status.sh
-# #210 — the saved agent file goes to a PER-RUN mktemp path, never a fixed one. It used to be a
-# machine-global name under the system temp root, so two demos running at once overwrote each
-# other's save and BOTH restores then took the wrong file — the mechanical reason the "never
-# overlap demo runs" instruction had to exist. ONE variable feeds BOTH the save and the restore
-# below, so the pair cannot drift into a half-fix that randomises the save and leaves the restore
-# pointing at the old location, which would be worse than the original defect.
-DW_BAK_DIR=$(mktemp -d)
-DW_BAK="$DW_BAK_DIR/doc-writer.agent.md"
-mv "$HARNESS_AGENT_DEPLOY_DIR/doc-writer.agent.md" "$DW_BAK"
-bash _harness/scripts/harness-status.sh || echo "--- correctly failed with a fix line ---"
-mv "$DW_BAK" "$HARNESS_AGENT_DEPLOY_DIR/doc-writer.agent.md"
-rm -rf "$DW_BAK_DIR"
-# This line is the RESTORE's own assertion: status must read healthy again, and under set -e a
-# failure here aborts the demo. The guard below proves the path is private; this proves it landed.
-bash _harness/scripts/harness-status.sh >/dev/null && echo "healthy after fix"
-
-# --- [no-fixed-temp] guard (#210): no literal system-temp path in this suite ---------------------
-# WHAT IT ASSERTS: this suite's own source carries no literal system-temp path. It scans the WHOLE
-# file, so it reaches BOTH sites of the break-and-restore stage above — the save AND the restore.
-# That reach is the whole point: a half-fix that routes the save through mktemp and leaves the
-# restore on a fixed name reds here exactly as loudly as no fix at all, where a check aimed only at
-# the save site would pass over it.
-#
-# WHAT IT DOES NOT ASSERT — said plainly so a pass is not read as more than it is: the pattern
-# below recognises the LITERAL system temp roots and NOTHING else. A fixed out-of-tree path built
-# from $HOME, $TMPDIR or ~ is the same defect class #210 exists to retire, and this guard stays
-# GREEN on it. Widening the pattern to reach those is deliberately left as separate work rather
-# than bolted on here, so what stands in its place is an honest message: the success line below
-# names only the property actually measured. A guard whose message outruns its pattern is worse
-# than no guard, because it teaches its reader to trust a check that was never made.
-#
-# SCOPE — STATED, NEVER IMPLIED: temporaries OUTSIDE the working tree. The in-tree scratch ticket
-# S="Tickets/999911Z-PROJ-99998" near the top of this file is also a hard-coded path this suite
-# creates, and it is a NAMED, REASONED EXCLUSION rather than an oversight. It CANNOT go through
-# mktemp: the product's own convention is that the machinery only sees a ticket sitting inside the
-# estate's Tickets/ directory, so moving it to a temp dir would hide it from the validator, status
-# and the pack builder — it would delete the thing being demonstrated. The pattern below is
-# anchored to the SYSTEM TEMP ROOTS, so that in-tree relative path is outside what this guard
-# measures at all. There is no undocumented carve-out buried in the regex for a later reader to
-# find, because a mechanical check with a hidden exclusion reads as evidence while proving less
-# than it claims.
-#
-# Full-line comments are skipped so this block's own description is not counted as a live use. A
-# trailing comment cannot smuggle one past: only a line whose FIRST non-blank character is "#" is
-# skipped, and a comment creates no files, so nothing enforceable is lost.
-# REVERT-PROOF: reinstate a fixed system-temp path at EITHER site above and this guard reds by name.
-echo "--- no-fixed-temp: no hard-coded system-temp path in the suite ---"
-NFT_SELF="$DEMO_ROOT/_harness/scripts/run_demo.sh"
-# The scan target must EXIST before the scan means anything. Without this line a target that
-# stopped resolving would make grep err, the `|| true` below would swallow the error, NFT_HITS
-# would come back empty and the guard would report ok having read nothing — a vacuous pass, the
-# one failure mode a green check cannot show you.
-[ -f "$NFT_SELF" ] || { echo "BUG [no-fixed-temp]: scan target not found: $NFT_SELF"; exit 1; }
-NFT_RE='(^|[^[:alnum:]_.-])/(var/)?tmp([^[:alnum:]]|$)'
-NFT_HITS=$(grep -nE "$NFT_RE" "$NFT_SELF" | grep -vE '^[0-9]+:[[:space:]]*#' || true)
-if [ -n "$NFT_HITS" ]; then
-  echo "BUG [no-fixed-temp]: hard-coded system-temp path(s) in run_demo.sh. Route every temporary"
-  echo "  outside the working tree through mktemp — BOTH the save site and the restore site:"
-  printf '%s\n' "$NFT_HITS"
-  exit 1
-fi
-echo "  ok [no-fixed-temp] — no literal system-temp path in this suite"
-# --- end [no-fixed-temp] ---------------------------------------------------------------------
-
-# --- agent-invocability: every agent is directly human-callable -----------------------
-# Asserts every _agents/*.agent.md declares `user-invocable: true`. The clerk agents
-# (ticket-scribe, knowledge-keeper, check-scribe) still run automatically at task end, but
-# a human must also be able to invoke any of them directly. This guard FAILS on pre-flip
-# code (where those three were `user-invocable: false`), so the demo pins the flip.
-echo "--- agent-invocability: all agents are user-invocable ---"
-r08_total=0; r08_bad=0
-for a in _agents/*.agent.md; do
-  r08_total=$((r08_total+1))
-  grep -q '^user-invocable: true$' "$a" || { echo "FAIL [agents-invocable]: $a is not 'user-invocable: true' — every agent must be directly human-callable."; r08_bad=$((r08_bad+1)); }
-done
-[ "$r08_bad" -eq 0 ] || { echo "BUG [agents-invocable]: $r08_bad agent(s) not invocable"; exit 1; }
-echo "  ok [agents-invocable] — all $r08_total agents are user-invocable: true"
-# --- end agent-invocability -----------------------------------------------------------
-
-# --- [skills-index] guard: Skills tree <-> _index.md correspondence, both directions ---
-# The worker tier discovers craft modules INDEX-FIRST: it matches its task against Skills/_index.md
-# and reads only the matching SKILL.md, never crawling the tree. That only holds if the index and
-# the folders stay in exact correspondence — a folder missing from the index is a SILENT absence
-# (invisible under index-first discovery), and an index line for a deleted folder sends an agent
-# looking for nothing. So this dumb, revert-provable guard checks BOTH directions, plus the frozen
-# module shape. SKILL-TEMPLATE.md at the root is the blank template, not a skill, and is exempt by name.
-echo "--- [skills-index]: index <-> Skills/ tree correspondence + frozen module shape ---"
-SKILLS_DIR="General AI-Knowledge/Skills"
-SKILLS_INDEX="$SKILLS_DIR/_index.md"
-# The skill NAMES the index lists: every non-comment line starting "- " has the folder name as its
-# first whitespace-delimited token (line format "- <Name> — triggers: ... — tools: ...").
-indexed_skills=$(grep -E '^- ' "$SKILLS_INDEX" | sed -E 's/^- ([^ ]+).*/\1/')
-# Direction 1: every skill folder (a subdirectory of Skills/) MUST have a line in the index.
-while IFS= read -r d; do
-  [ -z "$d" ] && continue
-  name=$(basename "$d")
-  printf '%s\n' "$indexed_skills" | grep -qx "$name" \
-    || { echo "BUG [skills-index]: skill folder '$name' has no line in _index.md — invisible under index-first discovery"; exit 1; }
-done < <(find "$SKILLS_DIR" -mindepth 1 -maxdepth 1 -type d)
-# Direction 2: every indexed skill line MUST name a folder that exists.
-while IFS= read -r name; do
-  [ -z "$name" ] && continue
-  [ -d "$SKILLS_DIR/$name" ] \
-    || { echo "BUG [skills-index]: _index.md lists skill '$name' but no such folder exists — sends an agent looking for nothing"; exit 1; }
-done < <(printf '%s\n' "$indexed_skills")
-# Shape: every skill's SKILL.md (mindepth 2 skips the root SKILL-TEMPLATE.md by name) carries all
-# four frozen section headings and the required tool-availability line.
-while IFS= read -r sk; do
-  [ -z "$sk" ] && continue
-  for h in "WHEN TO USE" "CRAFT GUIDANCE" "NAMED TOOLS" "Last reviewed:"; do
-    grep -qF "$h" "$sk" \
-      || { echo "BUG [skills-index]: $sk is missing the frozen section heading '$h'"; exit 1; }
-  done
-  grep -qF "degrade gracefully to guidance-only" "$sk" \
-    || { echo "BUG [skills-index]: $sk is missing the required tool-availability line (check the tool exists, degrade gracefully to guidance-only if absent)"; exit 1; }
-done < <(find "$SKILLS_DIR" -mindepth 2 -name SKILL.md)
-echo "  ok [skills-index] — every skill folder indexed, every index line has a folder, every SKILL.md carries the four frozen sections + availability line"
-# --- end [skills-index] guard -----------------------------------------------------
-
-# NOTE (#42 decoupling, cond 2): the documentation-completeness and branch-grammar doc checks that
-# used to live here have MOVED to .github/scripts/docs-check.sh (run by .github/workflows/docs.yml).
-# The demo now carries ZERO documentation knowledge — doc state can never again red the product
-# demo. The demo gates the PRODUCT; docs.yml gates the docs. Two truths, two instruments.
-
-# --- ship/dev classification guard (#43) ----------------------------------------------
-# The ship-manifest is the ONE home for ship/dev classification. Assert every tracked file
-# is classified EXACTLY once and every manifest entry names a real tracked file (both
-# directions, #43 cond 6c) — so a new file can't be born unclassified and a manifest line
-# can't outlive its file. This is a SELF-CONTAINED block: #42 absorbs this exact logic later
-# (do not fork it into a second live copy). Manifest is TAB-delimited "CLASS<TAB>path"; the
-# here-string matches (grep <<<) avoid the pipefail SIGPIPE trap the docs-inventory note explains.
-echo "--- ship/dev classification: every tracked file is PRODUCT or DEV, exactly once ---"
-CLASS_MANIFEST=.github/ship-manifest.txt
-class_fail=0
-# The classified paths (skip # comments and any line without a TAB-separated path).
-class_paths=$(awk -F'\t' '/^#/ || NF < 2 { next } { print $2 }' "$CLASS_MANIFEST")
-# (a) no path classified more than once.
-class_dupe=$(printf '%s\n' "$class_paths" | LC_ALL=C sort | uniq -d)
-[ -z "$class_dupe" ] || { echo "BUG [ship-classification]: path(s) classified more than once in $CLASS_MANIFEST:"; printf '  %s\n' "$class_dupe"; exit 1; }
-# (b) every tracked file appears in the manifest — prescriptive on a miss (name the line to add).
-while IFS= read -r f; do
-  grep -Fqx -- "$f" <<<"$class_paths" \
-    || { echo "BUG [ship-classification]: tracked file not classified — add 'PRODUCT<TAB>$f' or 'DEV<TAB>$f' to $CLASS_MANIFEST:"; echo "    $f"; class_fail=1; }
-done < <(git ls-files)
-# (c) every manifest entry is a real tracked file (no stale line for a deleted/renamed file).
-while IFS= read -r m; do
-  [ -z "$m" ] && continue
-  git ls-files --error-unmatch -- "$m" >/dev/null 2>&1 \
-    || { echo "BUG [ship-classification]: $CLASS_MANIFEST lists a path that is not a tracked file: $m"; class_fail=1; }
-done <<<"$class_paths"
-[ "$class_fail" -eq 0 ] || exit 1
-class_total=$(printf '%s\n' "$class_paths" | grep -c .)
-echo "  ok [ship-classification] — all $class_total tracked files classified exactly once (PRODUCT/DEV), both directions"
-# --- end ship/dev classification guard ------------------------------------------------
-
-# --- installer guards (#39): the non-destructive / dumb-creator claims are the richest revert ---
-# surface, so every one gets a guard that reds if a run WOULD edit/clobber a pre-existing file or
-# leak a DEV file. install.sh is exercised for real into a throwaway estate (agent deploy is sent
-# to a throwaway dir so nothing touches $HOME). Plain-English asserts; guard-per-bug on each claim.
-echo "--- #39 installer: non-destructive, PRODUCT-only, single-schema-home, idempotent ---"
-I39_ROOT=$(mktemp -d); I39_EST="$I39_ROOT/estate"; I39_DEPLOY=$(mktemp -d)
-# (a) single schema home: install.sh must carry NO hook-schema literal (it copies from the one
-#     home, hooks.example.json, by path). A second literal here is the two-homes finding.
-grep -qE '"(sessionStart|postToolUse|sessionEnd|timeoutSec)"' install.sh \
-  && { echo "BUG [schema-one-home]: install.sh carries a hook-schema literal — the schema must live only in _harness/hooks/hooks.example.json"; exit 1; }
-echo "  ok [schema-one-home] — install.sh carries no schema literal (single home: hooks.example.json)"
-# (b) PRODUCT-only (#43 cond 2 / #39): a fresh --yes install lays down zero DEV files.
-HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh --yes "$I39_EST" >/dev/null 2>&1 \
-  || { echo "BUG [clean-install]: a clean --yes install failed"; exit 1; }
-i39_leak=0
-while IFS= read -r d; do [ -e "$I39_EST/$d" ] && { echo "  DEV leak: $d"; i39_leak=1; }; done < <(awk -F'\t' '$1=="DEV"{print $2}' .github/ship-manifest.txt)
-[ "$i39_leak" -eq 0 ] || { echo "BUG [product-only]: a DEV file reached the installed estate"; exit 1; }
-echo "  ok [product-only] — fresh estate contains zero DEV files"
-# (c) dumb creator (cond 2, ABSOLUTE): a pre-existing (corrupted) file is byte-UNCHANGED by a re-run.
-# Compare with cmp against a snapshot (portable — no sha256sum, which stock macOS lacks).
-echo "GARBAGE" > "$I39_EST/AGENTS.md"; cp "$I39_EST/AGENTS.md" "$I39_ROOT/agents.snapshot"
-HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh --yes "$I39_EST" >/dev/null 2>&1
-cmp -s "$I39_ROOT/agents.snapshot" "$I39_EST/AGENTS.md" || { echo "BUG [dumb-creator]: install EDITED a pre-existing file (AGENTS.md changed) — it must create only what is absent"; exit 1; }
-echo "  ok [dumb-creator] — pre-existing file left byte-unchanged (creates only what is absent)"
-# (d) idempotency: a re-run finds nothing absent and creates zero.
-i39_plan=$(HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh --yes "$I39_EST" 2>&1 | grep -oE 'PRODUCT files to create: [0-9]+' | head -1)
-[ "$i39_plan" = "PRODUCT files to create: 0" ] || { echo "BUG [idempotent-rerun]: a re-run wanted to create files ($i39_plan)"; exit 1; }
-echo "  ok [idempotent-rerun] — re-run creates nothing (nothing absent)"
-# (e) --dry-run touches nothing: a dry-run against a fresh path must not create it.
-i39_fresh="$I39_ROOT/dryrun-never"
-HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh --dry-run --yes "$i39_fresh" >/dev/null 2>&1
-[ ! -e "$i39_fresh" ] || { echo "BUG [dry-run]: --dry-run created the target dir — it must touch nothing"; exit 1; }
-echo "  ok [dry-run] — --dry-run plans without touching the filesystem"
-# (f) re-run-board (#39 v3, subsumes the v2 re-run-identity): on a re-run of an established estate
-#     the board key is OFFERED as the default (review loop), and Enter-through reports it. Establish
-#     a board via a real non-template ticket, re-run all-Enter, and assert BOTH the offered default
-#     (the hint, on stderr) and the reported summary value are the established board.
-i39_re="$I39_ROOT/reest"
-HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh --yes "$i39_re" >/dev/null 2>&1
-mkdir -p "$i39_re/Tickets/202607A-XRAY-1"; : > "$i39_re/Tickets/202607A-XRAY-1/202607A-XRAY-1.md"
-printf '\n\n\n' | HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh "$i39_re" >"$I39_ROOT/re.out" 2>"$I39_ROOT/re.err" || true
-i39_bhint=$(grep -oE 'ACCEPT DEFAULT: [A-Za-z0-9-]+' "$I39_ROOT/re.err" | head -1 | sed 's/.*: //')
-[ "$i39_bhint" = "XRAY" ] \
-  || { echo "BUG [board-default]: re-run did NOT offer the established board as the default (got '$i39_bhint', want XRAY)"; exit 1; }
-grep -qE 'board key += +XRAY' "$I39_ROOT/re.out" \
-  || { echo "BUG [board-default]: summary did not report the established board (XRAY):"; grep -i 'board key' "$I39_ROOT/re.out"; exit 1; }
-echo "  ok [board-default] — established board offered as the default and reported (XRAY)"
-# (h) re-run-models: an established model pin is OFFERED as the default on a re-run. Set the cheap
-#     tier's reference agent (doc-writer) to a marker, re-run, assert the cheap-model prompt (the
-#     2nd ACCEPT DEFAULT) offers it. The awk-rewrite-to-tmp+mv is BSD-portable (no in-place edit).
-i39_m="$I39_ROOT/mest"
-HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh --yes "$i39_m" >/dev/null 2>&1
-i39_dw="$i39_m/_agents/doc-writer.agent.md"
-awk '/^model:/{print "model: MZAP"; next} {print}' "$i39_dw" > "$I39_ROOT/dw.tmp" && mv "$I39_ROOT/dw.tmp" "$i39_dw"
-printf '\n\n\n' | HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh "$i39_m" 2>"$I39_ROOT/m.err" >/dev/null || true
-i39_mhint=$(grep -oE 'ACCEPT DEFAULT: [A-Za-z0-9-]+' "$I39_ROOT/m.err" | sed -n '2p' | sed 's/.*: //')
-[ "$i39_mhint" = "MZAP" ] \
-  || { echo "BUG [model-pin-offered]: re-run did NOT offer the established cheap model pin (got '$i39_mhint', want MZAP)"; exit 1; }
-echo "  ok [model-pin-offered] — established model pin offered as the default (MZAP)"
-# (i) change-routing: a re-run answer that DIFFERS from established is ROUTED, never applied. Re-run
-#     answering a different board; assert ticket-grammar.sh is BYTE-UNCHANGED and the warn names the
-#     file to edit. Revert-provable: a version that edits the file (or omits the warn) reds.
-i39_cr="$I39_ROOT/crest"
-HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh --yes "$i39_cr" >/dev/null 2>&1
-cp "$i39_cr/_harness/scripts/ticket-grammar.sh" "$I39_ROOT/tg.snap"
-i39_crout=$(printf 'NEWB\n\n\n' | HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh "$i39_cr" 2>&1 || true)
-cmp -s "$I39_ROOT/tg.snap" "$i39_cr/_harness/scripts/ticket-grammar.sh" \
-  || { echo "BUG [change-routed]: install EDITED ticket-grammar.sh on a re-run change — it must route, not apply"; exit 1; }
-printf '%s\n' "$i39_crout" | grep -qE 'WARN.*board key' \
-  || { echo "BUG [change-routed]: a changed board key did not WARN + route"; exit 1; }
-printf '%s\n' "$i39_crout" | grep -q 'ticket-grammar.sh' \
-  || { echo "BUG [change-routed]: the route did not name the file to edit (ticket-grammar.sh)"; exit 1; }
-echo "  ok [change-routed] — a changed answer WARNs + names the file, edits nothing"
-# (j) workspace-derived: the workspace-root QUESTION is gone; the summary line is derived from the
-#     real install target, always true by construction.
-i39_ws="$I39_ROOT/wsest"
-printf '\n\n\n' | HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh "$i39_ws" >"$I39_ROOT/ws.out" 2>"$I39_ROOT/ws.err" || true
-grep -qi 'Workspace root' "$I39_ROOT/ws.err" \
-  && { echo "BUG [workspace-derived]: a 'Workspace root' question is still asked — it must be removed"; exit 1; }
-i39_wsabs="$(cd "$i39_ws" && pwd)"
-i39_wsline=$(grep -oE 'workspace root += +[^ ]+' "$I39_ROOT/ws.out" | head -1 | sed -E 's/.*= +//')
-[ "$i39_wsline" = "$i39_wsabs" ] \
-  || { echo "BUG [workspace-derived]: summary workspace root ('$i39_wsline') != install target ('$i39_wsabs')"; exit 1; }
-echo "  ok [workspace-derived] — workspace root derived from the target, no question asked"
-# (g) prompt-default truthfulness (#39 v2): the "[PRESS ENTER TO ACCEPT DEFAULT: <v>]" hint must
-#     name the SAME value the script uses on empty input. Drive a fresh install with all-Enter
-#     stdin, then assert the board prompt's advertised default equals the board the summary reports.
-#     Single-sourced in ask(), so they must match; a hard-coded mismatched hint reds this.
-i39_id="$I39_ROOT/idest"
-printf '\n\n\n\n' | HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh "$i39_id" >"$I39_ROOT/id.out" 2>"$I39_ROOT/id.err" || true
-i39_hint=$(grep -oE 'ACCEPT DEFAULT: [A-Za-z0-9._/-]+' "$I39_ROOT/id.err" | head -1 | sed 's/.*: //')
-i39_used=$(grep -oE 'board key += +[A-Za-z0-9-]+' "$I39_ROOT/id.out" | head -1 | sed -E 's/.*= +//')
-[ -n "$i39_hint" ] && [ "$i39_hint" = "$i39_used" ] \
-  || { echo "BUG [prompt-default]: the board prompt advertised default '$i39_hint' but Enter used '$i39_used' — the hint is a lie"; exit 1; }
-echo "  ok [prompt-default] — the Enter-to-accept hint names the value actually used ($i39_hint)"
-# (k) missing-value-audible (#200): on an ESTABLISHED estate missing an agent file, detect_model
-#     returned non-zero; under install.sh's `set -euo pipefail` the command substitution that
-#     assigned it killed the run with ZERO output, one line ABOVE the placeholder fallback written
-#     for exactly that case — so the fallback could never execute.
-#     WHAT THIS GUARD MEASURES IS REACHABILITY, NOT THAT A MESSAGE APPEARED. Asserting a message
-#     would be the cheaper question: a line can print while the fallback below it still never runs.
-#     The load-bearing assertion is the SUMMARY'S CHEAP-PIN VALUE — PICK-A-CHEAP-MODEL can only
-#     reach that line if the fallback ASSIGNMENT itself executed. Two fixture facts stop that value
-#     arriving by any other route: ticket-grammar.sh is present (so the run takes the ESTABLISHED
-#     branch, not the fresh branch that placeholders both tiers), and the sonnet pin is set to a
-#     marker the run must DETECT — the summary carrying marker AND placeholder side by side proves
-#     the established branch ran and that only the cheap tier fell back. The stderr check at the
-#     end is a SEPARATE, WEAKER claim (the run said WHICH file it could not read); it is not what
-#     proves reachability, and it would still pass on code whose fallback never ran.
-i39_mv="$I39_ROOT/mvest"
-HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh --yes "$i39_mv" >/dev/null 2>&1
-# Marker on the sonnet tier's reference agent; awk-to-tmp+mv is BSD-portable (no in-place edit).
-i39_mvti="$i39_mv/_agents/ticket-init.agent.md"
-awk '/^model:/{print "model: MVSONNET"; next} {print}' "$i39_mvti" > "$I39_ROOT/mvti.tmp" \
-  && mv "$I39_ROOT/mvti.tmp" "$i39_mvti"
-rm -f "$i39_mv/_agents/doc-writer.agent.md"   # THE FIXTURE: one agent file absent
-[ -e "$i39_mv/_harness/scripts/ticket-grammar.sh" ] \
-  || { echo "BUG [missing-value-audible]: fixture is not an ESTABLISHED estate — the guard would"; \
-       echo "    be testing the fresh branch, which placeholders both tiers anyway"; exit 1; }
-set +e
-HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh --yes "$i39_mv" \
-  >"$I39_ROOT/mv.out" 2>"$I39_ROOT/mv.err"
-i39_mvrc=$?
-set -e
-i39_mvbytes=$(( $(wc -c <"$I39_ROOT/mv.out") + $(wc -c <"$I39_ROOT/mv.err") ))
-[ "$i39_mvrc" -eq 0 ] \
-  || { echo "BUG [missing-value-audible]: install EXITED rc=$i39_mvrc, one agent file absent,"; \
-       echo "    emitting $i39_mvbytes bytes of output — a silent exit is the defect"; exit 1; }
-# THE REACHABILITY ASSERTION: the fallback's VALUE arrived in the summary.
-grep -qE 'cheap model pin += +PICK-A-CHEAP-MODEL' "$I39_ROOT/mv.out" \
-  || { echo "BUG [missing-value-audible]: the placeholder fallback never RAN — no cheap-pin"; \
-       grep -i 'model pin' "$I39_ROOT/mv.out"; exit 1; }
-# ...and the marker beside it proves the established branch is what produced that placeholder.
-grep -qE 'sonnet model pin += +MVSONNET' "$I39_ROOT/mv.out" \
-  || { echo "BUG [missing-value-audible]: established sonnet pin not detected — the run did not"; \
-       echo "    take the established branch, so the cheap placeholder proves nothing"; exit 1; }
-# The separate, weaker claim: the run SAID which value it could not read.
-grep -q 'doc-writer.agent.md' "$I39_ROOT/mv.err" \
-  || { echo "BUG [missing-value-audible]: the run never named the unreadable agent file"; exit 1; }
-echo "  ok [missing-value-audible] — missing value: fallback REACHED (value reaches the summary)"
-rm -rf "$I39_ROOT" "$I39_DEPLOY"
-# --- end installer guards -------------------------------------------------------------
-
-# --- [tracker-sweep] guard: on-demand board-drift report, stub-based, zero-network ----------
-# tracker_sweep.sh reads each active ticket's upstream status through a PLUGGABLE fetch seam and
-# WARNs per divergence. Three properties must hold or the tool lies. The whole guard runs against
-# a THROWAWAY Tickets/ fixture (HARNESS_WORK_ROOT) driven by LOCAL stub fetchers — no real ticket,
-# no network. No credential material appears anywhere below, not even a fake-looking one.
-echo "--- [tracker-sweep]: board-drift sweep WARNs divergences, fails open, reaches nothing ---"
-G81_ROOT=$(mktemp -d)
-# Two conforming tickets in the fixture estate: one will read 'closed' upstream (the divergence),
-# one 'open' (no divergence). Presence of the folder IS the local fact ("active"); no .md needed.
-mkdir -p "$G81_ROOT/Tickets/202607A-PROJ-1" "$G81_ROOT/Tickets/202607B-PROJ-2"
-# Divergence stub: maps ticket id -> upstream status. 202607A-PROJ-1 is closed on the board while
-# still present (active) locally — the exact drift #81 exists to surface; every other id is open.
-cat > "$G81_ROOT/stub-diverge.sh" <<'G81_STUB'
-#!/usr/bin/env bash
-case "$1" in
-  202607A-PROJ-1) echo closed ;;
-  *)              echo open ;;
-esac
-G81_STUB
-# Unreachable stub: always exits non-zero, simulating a tracker that can't be reached (VPN dropped).
-cat > "$G81_ROOT/stub-down.sh" <<'G81_STUB'
-#!/usr/bin/env bash
-exit 1
-G81_STUB
-chmod +x "$G81_ROOT/stub-diverge.sh" "$G81_ROOT/stub-down.sh"
-
-# 1. DIVERGENCE — a ticket closed upstream but active locally is WARNed WITH its fix named, and the
-#    still-open ticket is NOT flagged. rc stays 0 (a WARN is yellow, it never blocks).
-set +e
-G81_DIV=$(HARNESS_WORK_ROOT="$G81_ROOT" HARNESS_TRACKER_FETCH_CMD="$G81_ROOT/stub-diverge.sh" \
-  bash _harness/scripts/tracker_sweep.sh 2>&1); G81_DIV_RC=$?
-set -e
-printf '%s\n' "$G81_DIV" | grep -qE '^WARN: 202607A-PROJ-1 .*board.*active locally' \
-  && printf '%s\n' "$G81_DIV" | grep -qi 'reconcile' \
-  || { echo "BUG [tracker-divergence]: a ticket closed upstream but active locally was not WARNed with its fix named"; echo "$G81_DIV"; exit 1; }
-printf '%s\n' "$G81_DIV" | grep -q '202607B-PROJ-2' \
-  && { echo "BUG [tracker-divergence]: an open (non-diverging) ticket was flagged — only closed-upstream/active-locally tickets divergence"; echo "$G81_DIV"; exit 1; }
-[ "$G81_DIV_RC" -eq 0 ] \
-  || { echo "BUG [tracker-divergence]: a divergence report exited non-zero ($G81_DIV_RC) — a WARN is yellow and must never red"; exit 1; }
-echo "  ok [tracker-divergence] — divergence WARNed with its fix, non-diverging ticket left alone, rc=0"
-
-# 2. FAILS OPEN — an unreachable tracker yields ONE quiet NOTE and rc=0, never a red and never a
-#    WARN. This is the load-bearing property: a dropped VPN must not train users to ignore reds.
-set +e
-G81_DOWN=$(HARNESS_WORK_ROOT="$G81_ROOT" HARNESS_TRACKER_FETCH_CMD="$G81_ROOT/stub-down.sh" \
-  bash _harness/scripts/tracker_sweep.sh 2>&1); G81_DOWN_RC=$?
-set -e
-[ "$G81_DOWN_RC" -eq 0 ] \
-  || { echo "BUG [tracker-fails-open]: an unreachable tracker did not fail open — expected rc=0, got $G81_DOWN_RC (it must never red)"; echo "$G81_DOWN"; exit 1; }
-[ "$(printf '%s\n' "$G81_DOWN" | grep -c '^NOTE:')" -eq 1 ] \
-  && ! printf '%s\n' "$G81_DOWN" | grep -q '^WARN:' \
-  || { echo "BUG [tracker-fails-open]: an unreachable tracker did not fail open — expected exactly ONE quiet NOTE and no WARN"; echo "$G81_DOWN"; exit 1; }
-echo "  ok [tracker-fails-open] — unreachable tracker fails open: one quiet NOTE, no WARN, rc=0"
-
-# 3. ZERO NETWORK — the sweep must reach the board ONLY through the injected fetch seam, never on
-#    its own. Prove the shipped script carries no network primitive, so even a misbehaving stub
-#    cannot make the demo path reach out. Revert-proof: add a curl/wget to tracker_sweep.sh -> reds.
-G81_NET=$(grep -nE 'curl|wget|netcat|/dev/tcp' _harness/scripts/tracker_sweep.sh || true)
-[ -z "$G81_NET" ] \
-  || { echo "BUG [tracker-zero-network]: tracker_sweep.sh contains a network primitive — it must reach out only through HARNESS_TRACKER_FETCH_CMD, never itself:"; echo "$G81_NET"; exit 1; }
-echo "  ok [tracker-zero-network] — zero network in the sweep: it reaches the board only through the injected fetch seam"
-rm -rf "$G81_ROOT"
-# --- end [tracker-sweep] guard --------------------------------------------------------------
-
-# --- #60 auto-commit estate-key guard: commit-bearing hooks no-op outside a genuine estate ---
-# The hook cwd is "." (the workspace root), so if a session's effective repo is a NESTED FOREIGN
-# project (e.g. under Github/), a naive auto-commit would commit into THAT repo. The fix: both
-# commit-bearing hooks refuse to commit unless .git/config holds harness.estate=true — a positive
-# identity the worktree can neither reach nor forge (install.sh writes it). This block proves
-# containment IN ISOLATION (it sets/unsets the key itself; no dependency on install.sh), across
-# EVERY commit-bearing hook PARSED from the one schema home (a future third commit-hook inherits
-# coverage), against DIRTY fixtures (a clean repo false-greens — nothing to commit either way),
-# and the non-estate set INCLUDES a REMOTED repo (the remote-protection OUTCOME stays proven even
-# though the mechanism is now the key, not remote-refusal). REVERT-PROOF: strip the guard prefix
-# from hooks.example.json -> the remoted + local-only fixtures auto-commit -> this reds, for BOTH hooks.
-echo "--- #60 estate-key guard: commit-bearing hooks commit ONLY in a genuine estate ---"
-G60_TMP=$(mktemp -d)
-# Parse the commit-bearing commands (bash contains 'git commit') from the SHIPPED schema — read the
-# real strings, never re-type them. While-read (not mapfile) for the macOS runner's bash 3.2.
-G60_CMDS=()
-while IFS= read -r g60_line; do [ -n "$g60_line" ] && G60_CMDS+=("$g60_line"); done < <(python3 -c "
-import json
-d = json.load(open('_harness/hooks/hooks.example.json'))
-for entries in d['hooks'].values():
-    for e in entries:
-        if 'git commit' in e.get('bash', ''):
-            print(e['bash'])
-")
-[ "${#G60_CMDS[@]}" -ge 2 ] || { echo "BUG [commit-hooks-parsed]: expected >=2 commit-bearing hooks parsed from hooks.example.json, got ${#G60_CMDS[@]}"; exit 1; }
-
-# One DIRTY fixture per class: a base commit, an identity so a commit CAN happen, then an
-# uncommitted edit the hook could pick up.
-g60_make_repo() {  # <dir> [remote-url] [set-estate-key]
-  local d="$1"; mkdir -p "$d"; git -C "$d" init -q
-  git -C "$d" config user.email t@t.local; git -C "$d" config user.name t
-  [ -n "${2:-}" ] && git -C "$d" remote add origin "$2"
-  [ -n "${3:-}" ] && git -C "$d" config harness.estate true
-  echo seed > "$d/f"; git -C "$d" add -A; git -C "$d" commit -q -m seed
-  echo dirty >> "$d/f"   # DIRTY: uncommitted change present
-}
-G60_REMOTED="$G60_TMP/remoted"; g60_make_repo "$G60_REMOTED" "https://example.invalid/x.git"
-G60_LOCAL="$G60_TMP/local";     g60_make_repo "$G60_LOCAL"
-G60_ESTATE="$G60_TMP/estate";   g60_make_repo "$G60_ESTATE" "" true
-G60_NONREPO="$G60_TMP/nonrepo"; mkdir -p "$G60_NONREPO"; echo x > "$G60_NONREPO/f"   # not a repo at all
-g60_commits() { git -C "$1" rev-list --count HEAD 2>/dev/null || echo 0; }
-g60_fail=0
-for g60_cmd in "${G60_CMDS[@]}"; do
-  # DIRTY every repo fixture for THIS command. Re-dirtying per command matters twice over: a clean
-  # fixture false-greens (nothing to commit either way), AND without it the first parsed hook consumes
-  # the dirty state so a second hook's miss would hide in the revert-proof — it must RED for BOTH hooks.
-  for g60_fx in "$G60_REMOTED" "$G60_LOCAL" "$G60_ESTATE"; do echo change >> "$g60_fx/f"; done
-  # non-estate repos (remoted + local-only) must NOT gain a commit
-  for g60_fx in "$G60_REMOTED" "$G60_LOCAL"; do
-    g60_b=$(g60_commits "$g60_fx")
-    ( cd "$g60_fx" && bash -c "$g60_cmd" ) >/dev/null 2>&1 || true
-    g60_a=$(g60_commits "$g60_fx")
-    [ "$g60_b" = "$g60_a" ] || { echo "BUG [estate-key-containment]: a commit-bearing hook committed in non-estate repo ($g60_fx: $g60_b->$g60_a)"; g60_fail=1; }
-  done
-  # non-repo dir: the guard's git config errors -> empty -> != true -> exit; no repo/commit created
-  ( cd "$G60_NONREPO" && bash -c "$g60_cmd" ) >/dev/null 2>&1 || true
-  [ ! -e "$G60_NONREPO/.git" ] || { echo "BUG [estate-key-containment]: a hook initialised a repo in a non-repo dir"; g60_fail=1; }
-  # estate (key=true, dirty): the happy path is unchanged -> this one commit lands
-  g60_b=$(g60_commits "$G60_ESTATE")
-  ( cd "$G60_ESTATE" && bash -c "$g60_cmd" ) >/dev/null 2>&1 || true
-  g60_a=$(g60_commits "$G60_ESTATE")
-  [ "$g60_a" -gt "$g60_b" ] || { echo "BUG [estate-key-commits]: the guard blocked a commit in a genuine estate ($g60_b->$g60_a)"; g60_fail=1; }
-done
-[ "$g60_fail" -eq 0 ] || exit 1
-echo "  ok [estate-key-containment] — ${#G60_CMDS[@]} commit-bearing hook(s): commit in estate, no-op in remoted/local-only/non-repo (dirty fixtures)"
-
-# install.sh ARMS the key UNCONDITIONALLY — including an EXISTING repo (NEED_GIT=0), the migration
-# path. REVERT-PROOF for the "unconditional, not init-nested" trap: nest the key-set inside the
-# NEED_GIT init block and this existing-repo install leaves the key unset -> reds.
-G60_EST="$G60_TMP/preexisting"; mkdir -p "$G60_EST"; git -C "$G60_EST" init -q   # a repo BEFORE install => NEED_GIT=0
-G60_DEPLOY=$(mktemp -d)
-set +e; HARNESS_AGENT_DEPLOY_DIR="$G60_DEPLOY" bash install.sh --yes "$G60_EST" >/dev/null 2>&1; set -e
-g60_key=$(git -C "$G60_EST" config --local harness.estate 2>/dev/null || true)
-[ "$g60_key" = "true" ] || { echo "BUG [estate-key-armed]: install.sh did not set harness.estate=true on a pre-existing (NEED_GIT=0) repo — the key-set must be UNCONDITIONAL, not nested in the git-init block (got '$g60_key')"; exit 1; }
-echo "  ok [estate-key-armed] — install.sh sets harness.estate=true unconditionally, incl. an existing repo (migration path)"
-rm -rf "$G60_TMP" "$G60_DEPLOY"
-# --- end #60 estate-key guard ---------------------------------------------------------------
-
-# --- #62 source-refusal prescribes: installing into the source aborts AND names a concrete fix ---
-# install.sh must refuse TARGET==SOURCE (source/estate separation is fundamental) — but the refusal
-# has to PRESCRIBE, not just name the wrong. Two assertions, both revert-provable:
-#   (a) install-into-source EXITS NON-ZERO (guards the abort — break the condition and it reds);
-#   (b) stderr offers a runnable `bash install.sh <separate-dir>/Work` fix (revert the message -> it reds).
-# Fixture: a minimal SOURCE-like dir (install.sh + the manifest it reads) git-init'd with NO REMOTE.
-# Isolation matters — a real checkout carries an origin remote, and install.sh's SEPARATE remote-refusal
-# guard would MASK a broken source-guard (both abort), so (a) could never red. With no remote here, a
-# broken source-guard falls through to the --yes --dry-run plan-and-exit-0 (touching no disk) and (a)
-# reds cleanly; with the guard intact, TARGET==SOURCE aborts first.
-echo "--- #62 source-refusal prescribes: install-into-source aborts with a concrete fix ---"
-G62_SRC=$(mktemp -d)
-cp install.sh "$G62_SRC/install.sh"
-mkdir -p "$G62_SRC/.github"; cp .github/ship-manifest.txt "$G62_SRC/.github/ship-manifest.txt"
-git -C "$G62_SRC" init -q   # a repo but with NO remote, so the remote-refusal guard can't mask (a)
-set +e; G62_ERR=$(bash "$G62_SRC/install.sh" --yes --dry-run "$G62_SRC" 2>&1 >/dev/null); G62_RC=$?; set -e
-[ "$G62_RC" -ne 0 ] || { echo "BUG [source-refusal-aborts]: install.sh with TARGET==SOURCE did not exit non-zero — the source/estate guard is broken"; exit 1; }
-# (b) match the REAL stderr against the prescriptive shape (a runnable install.sh + a Work target), not
-# a hardcoded verbatim string — the old non-prescriptive message carries no such command, so it reds.
-echo "$G62_ERR" | grep -Eq 'bash install\.sh .+Work' || { echo "BUG [source-refusal-prescribes]: the source-refusal abort does not prescribe a concrete 'bash install.sh <separate-dir>/Work' fix; stderr was: $G62_ERR"; exit 1; }
-rm -rf "$G62_SRC"
-echo "  ok [source-refusal-prescribes] — install-into-source aborts (non-zero) and names a concrete separate-dir fix"
-# --- end #62 source-refusal guard -----------------------------------------------------------
-
-# --- #64 in-estate reconfigure: an estate re-running its OWN install.sh reaches guidance, not abort --
-# install.sh ships PRODUCT into the estate and has a real reconfigure-on-re-run feature (established
-# detection + route_change). But the natural in-estate gesture (cd ~/Work && ./install.sh) has
-# TARGET==SOURCE (the estate's own copy), which used to abort at the source guard BEFORE that feature
-# ran — and a naive relax dies at the manifest wall (the manifest is DEV, doesn't ship). The fix: a
-# KEYED estate (harness.estate=true, #60) enters RECONFIGURE-ONLY mode — skip manifest/laydown/copy,
-# run the interview + validator + status + summary. This proves it COMPLETES (reaches the audit, no
-# manifest error, no abort) and stays a DUMB CREATOR (a pre-existing file byte-unchanged).
-echo "--- #64 in-estate reconfigure: keyed estate re-running its own install.sh reaches the audit ---"
-G64_ROOT=$(mktemp -d); G64_EST="$G64_ROOT/Work"; G64_DEPLOY=$(mktemp -d)
-HARNESS_AGENT_DEPLOY_DIR="$G64_DEPLOY" bash install.sh --yes "$G64_EST" >/dev/null 2>&1 \
-  || { echo "BUG [reconfigure-setup]: could not build the estate fixture"; exit 1; }
-G64_PROBE="$G64_EST/AGENTS.md"; G64_BEFORE=$(cksum "$G64_PROBE")   # dumb-creator witness (a pre-existing file)
-# Run the ESTATE'S OWN install.sh in place: TARGET defaults to $PWD == the estate == that install.sh's
-# SOURCE. Keyed -> reconfigure-only.
-set +e; G64_OUT=$(cd "$G64_EST" && HARNESS_AGENT_DEPLOY_DIR="$G64_DEPLOY" bash install.sh --yes 2>&1); set -e
-echo "$G64_OUT" | grep -q 'Reconfigure mode'     || { echo "BUG [in-estate-reconfigure]: no reconfigure banner"; exit 1; }
-echo "$G64_OUT" | grep -q -- '--- validator ---' || { echo "BUG [in-estate-reconfigure]: did not reach the validator/status audit (reconfigure did not complete)"; exit 1; }
-if echo "$G64_OUT" | grep -qi 'cannot find.*ship-manifest'; then echo "BUG [in-estate-reconfigure]: hit a manifest error — the create path was not skipped"; exit 1; fi
-if echo "$G64_OUT" | grep -qi 'source distribution itself'; then echo "BUG [in-estate-reconfigure]: aborted at the source guard — the estate-key branch is missing"; exit 1; fi
-G64_AFTER=$(cksum "$G64_PROBE")
-[ "$G64_BEFORE" = "$G64_AFTER" ] || { echo "BUG [reconfigure-creates-only]: the reconfigure re-run changed a pre-existing file ($G64_PROBE)"; exit 1; }
-echo "  ok [in-estate-reconfigure] — banner + validator/status reached, no manifest error, no abort; pre-existing file byte-unchanged"
-
-# --- #64 block preserved: keyless source-in-place and key-stripped copies STILL refuse (additive-only) --
-# Only a KEYED estate gains passage; a genuine source checkout (no key) and a key-stripped copy must
-# still block with #62's concrete-fix message — nothing previously blocked is now allowed.
-echo "--- #64 block preserved: keyless source-in-place and key-stripped copies still refuse ---"
-G64_KL=$(mktemp -d); cp install.sh "$G64_KL/install.sh"; git -C "$G64_KL" init -q   # NO key -> a source checkout
-set +e; G64_KLOUT=$(cd "$G64_KL" && bash install.sh --dry-run 2>&1 >/dev/null); G64_KLRC=$?; set -e
-[ "$G64_KLRC" -ne 0 ] || { echo "BUG [source-block-preserved]: a keyless source-in-place run did NOT abort — the key test is broken open"; exit 1; }
-echo "$G64_KLOUT" | grep -qi 'source distribution itself' || { echo "BUG [source-block-preserved]: keyless run aborted but not with #62's concrete-fix message"; exit 1; }
-git -C "$G64_EST" config --unset harness.estate 2>/dev/null || true   # strip the key from the real estate
-set +e; G64_STOUT=$(cd "$G64_EST" && bash install.sh --dry-run 2>&1 >/dev/null); G64_STRC=$?; set -e
-[ "$G64_STRC" -ne 0 ] || { echo "BUG [source-block-preserved]: a key-stripped estate copy did NOT abort"; exit 1; }
-echo "$G64_STOUT" | grep -qi 'source distribution itself' || { echo "BUG [source-block-preserved]: key-stripped run aborted but not with #62's message"; exit 1; }
-echo "  ok [source-block-preserved] — keyless source-in-place and key-stripped copies still refuse with #62's concrete-fix message"
-rm -rf "$G64_ROOT" "$G64_KL" "$G64_DEPLOY"
-# --- end #64 in-estate reconfigure guards ---------------------------------------------------
-
-echo "=== 6/6 scrubbed context pack + self-audit ==="
-bash _harness/scripts/make_context_pack.sh --ticket 999911Z-PROJ-99998
-# The shared PACK_OUT_DIR must hold EXACTLY this one pack before we glob it — every other pack-building
-# stage ([space-named-pack], [pack-without-zip]) writes to its OWN throwaway dir. Assert it, so a regression that drops
-# a second pack here fails LOUDLY right here instead of as a cryptic `unzip` exit 11 when the glob
-# matches two archives (the flake CI caught on the slower macOS runner). find (no -printf) is portable.
-n_packs=$(find "$PACK_OUT_DIR" -maxdepth 1 -name 'harness-pack-*.zip' 2>/dev/null | wc -l | tr -d ' ')
-[ "$n_packs" = "1" ] || { echo "BUG [one-pack-per-run]: expected exactly 1 pack in PACK_OUT_DIR, found $n_packs — a second pack makes the unzip glob ambiguous:"; ls -1 "$PACK_OUT_DIR"; exit 1; }
-unzip -p "$PACK_OUT_DIR"/harness-pack-*.zip MANIFEST.txt | tail -1
-
-# [scrub-case-agree] — the SCRUB rules once matched
-# case-SENSITIVELY while the self-audit matched case-INSENSITIVELY (grep -qiE), so a lowercase
-# placeholder in an ordinary prose file survived the scrub and then tripped the audit that exists to
-# catch what the scrub missed: an honest edit red-blocked the pack build. The fixture is a staged
-# ticket file carrying a scrub-table token in the case that used to escape. Own throwaway pack dir,
-# like [space-named-pack] and [pack-without-zip], so the shared PACK_OUT_DIR keeps one archive.
-# TWO assertions, because there are two ways to make the halves agree and only one is safe: exit 0
-# proves the audit no longer fires, and the scrubbed text proves the fix WIDENED the scrub instead of
-# NARROWING the audit — narrowing it also yields exit 0, while shipping the raw token in the pack.
-# The token is ASSEMBLED at runtime, never written contiguously in this file, and that is
-# load-bearing: run_demo.sh is itself staged into every pack (make_context_pack stages
-# _harness/scripts/*), so a literal token here would ride into every pack the demo builds and, on
-# pre-fix code, would red the FIRST pack build ([space-named-pack], far above) with that guard's
-# message instead of this one. Split, the fixture is the only carrier and the red lands here.
-# Keep it split if you edit this block.
-G169_TOKEN=$(printf '<your-org-%s>' domain)
-G169_TICKET="999911Z-PROJ-99169"
-G169_OUT_DIR=$(mktemp -d)
-mkdir -p "Tickets/$G169_TICKET"
-printf '# case fixture\nReach us at %s for access.\n' "$G169_TOKEN" > "Tickets/$G169_TICKET/$G169_TICKET.md"
-set +e; G169_OUT=$(PACK_OUT_DIR="$G169_OUT_DIR" bash _harness/scripts/make_context_pack.sh --ticket "$G169_TICKET" 2>&1); G169_RC=$?; set -e
-g169zip=$(ls "$G169_OUT_DIR"/harness-pack-*.zip 2>/dev/null | head -1 || true)   # no-match must not trip set -e/pipefail
-G169_TXT=""
-[ -n "$g169zip" ] && G169_TXT=$(unzip -p "$g169zip" "Tickets/$G169_TICKET/$G169_TICKET.md" 2>/dev/null || true)
-rm -rf "Tickets/$G169_TICKET" "$G169_OUT_DIR"   # fixture is scratch: gone before anything else sees it
-[ "$G169_RC" -eq 0 ] || { echo "BUG [scrub-case-agree]: a lowercase scrub-table token failed the pack build (rc=$G169_RC) — the scrub missed what the audit caught:"; printf '%s\n' "$G169_OUT"; exit 1; }
-printf '%s\n' "$G169_TXT" | grep -q '<org>' \
-  || { echo "BUG [scrub-case-agree]: the lowercase token was not replaced by its scrub-table substitute:"; printf '%s\n' "$G169_TXT"; exit 1; }
-printf '%s\n' "$G169_TXT" | grep -qiF -- "$G169_TOKEN" \
-  && { echo "BUG [scrub-case-agree]: a scrub-table token survived into the pack — the audit was narrowed instead of the scrub widened:"; printf '%s\n' "$G169_TXT"; exit 1; }
-echo "  ok [scrub-case-agree] — a lowercase token is scrubbed out, not merely tolerated"
-
-rm -rf "$S"
-demo_close_commit "$DID_INIT" "."   # gated: commits only if the demo created this repo (issue #10)
-echo; echo "ALL 6 DEMO STAGES PASSED — the machinery works. Next: README Setup to wire Copilot."
+demo_main "$@"

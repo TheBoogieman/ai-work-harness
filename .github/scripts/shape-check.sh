@@ -44,9 +44,11 @@ sc_limits() {
 # sc_owner — the item whose acceptance deletes this file's exemptions. Per FILE because the shape
 # items are per file: each one's goal condition is that its file meets EVERY limit. Anything not
 # named here belongs to the sweep item, which owns the shape debt of every remaining script.
+# #143 no longer appears here: its acceptance was that the acceptance suite meets every limit
+# without an exemption, and the suite's files (the runner, the tour and the case files) now do.
+# Anything they might owe in a later wave belongs to the sweep item, like every other script.
 sc_owner() {
   case "$1" in
-    _harness/scripts/run_demo.sh) printf '#143\n' ;;
     .github/scripts/docs-check.sh) printf '#129\n' ;;
     install.sh) printf '#128\n' ;;
     _harness/scripts/harness-status.sh) printf '#128\n' ;;
@@ -62,17 +64,20 @@ sc_owner() {
 # the count drifting silently. A TOTAL is deliberately NOT asserted: ordinary growth would red it,
 # the constant would get bumped until bumping is reflex, and a bare number explains nothing.
 # Rows: "<file><TAB><function><TAB>single|multi". "single" means the definition opens and closes on
-# one line. The nine single-line definitions are all pinned; the double-space one between "()" and
-# "{" is the fixture that a tightened pattern drops while recovering the other eight.
+# one line. Nine single-line definitions are pinned; the double-space one between "()" and "{" is
+# the fixture that a tightened pattern drops while recovering the other eight. The set is a chosen
+# BASIS, not a census of every definition in the tree — the acceptance suite alone now holds more
+# single-line definitions than are listed here, and pinning each would turn this table into the
+# bare count the paragraph above refuses to assert.
 sc_pins() {
   printf '%s\t%s\t%s\n' \
     .github/scripts/docs-check.sh            oh_surface     single \
     _harness/scripts/harness-drill.sh        say            single \
     _harness/scripts/harness-housekeeping.sh dir_kb         single \
-    _harness/scripts/run_demo.sh             code_has       single \
-    _harness/scripts/run_demo.sh             code_hasE      single \
-    _harness/scripts/run_demo.sh             hd_manifest    single \
-    _harness/scripts/run_demo.sh             g60_commits    single \
+    _harness/demo/cases/backfill-guards.case.sh  code_has   single \
+    _harness/demo/cases/backfill-guards.case.sh  code_hasE  single \
+    _harness/demo/cases/recovery-drill.case.sh   hd_manifest single \
+    _harness/demo/cases/estate-key.case.sh       g60_commits single \
     install.sh                               sedi           single \
     install.sh                               was_created    single \
     _harness/scripts/check_ticket_log.sh     file_mtime     multi \

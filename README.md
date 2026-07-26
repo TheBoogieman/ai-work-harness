@@ -6,113 +6,6 @@ script catches misses, and git undoes mistakes. Born from a 40,000-credit
 month of undisciplined frontier-model use; rebuilt so that never happens
 again — to anyone. MIT licensed.
 
-## Setup
-
-The harness installs onto a **work estate** — a local folder it turns into a
-disciplined, record-keeping workspace. Two steps: prove the machinery runs on
-your machine (the demo — no AI assistant needed), then lay down the estate and
-wire your assistant.
-
-**1 · Prove the machinery — `run_demo.sh` (~60 seconds).** Clone the repo to a
-**source** location and run the demo from that checkout — the demo needs no estate,
-so running it in place is correct:
-
-- **macOS / Linux** — your terminal's bash (stock macOS works as-is; the scripts
-  auto-detect GNU vs BSD userland):
-  ```bash
-  git clone https://github.com/TheBoogieman/ai-work-harness.git ~/ai-work-harness
-  cd ~/ai-work-harness && bash _harness/scripts/run_demo.sh
-  ```
-- **Windows** — the integrated **Git-Bash/Cygwin** terminal (plain PowerShell can
-  push git but cannot run the bash machinery). This run, by hand on real Windows
-  hardware, *is* how the Windows lane is verified — see **Assumptions**:
-  ```bash
-  git clone https://github.com/TheBoogieman/ai-work-harness.git ~/ai-work-harness
-  cd ~/ai-work-harness && bash _harness/scripts/run_demo.sh
-  ```
-
-It must end with **ALL 6 DEMO STAGES PASSED**. The demo inits the local git
-safety net, validates the template ticket, runs a scratch ticket through the
-happy path, **deliberately corrupts a record and shows the validator refusing
-with an exact fix**, round-trips the notebook helper, breaks and restores an
-agent deployment, and builds a scrubbed context pack with a manifest self-audit.
-The same demo runs in CI on Linux + macOS — in full on every push to `main`, and
-on a pull request whose changes could move its verdict — so the GNU/BSD
-portability branches are exercised for real, not via shims. Which pull requests
-skip it is stated once, in `.github/CONTRIBUTING.md`.
-
-**2 · Install onto your estate and wire your assistant (~10 minutes).**
-
-*Prerequisite you create (the harness never does):* a Python virtualenv named
-exactly **`venv_global`** with `nbformat`, registered as a Jupyter kernel and set
-as the workspace default interpreter. (`unzip` is optional — the context-pack
-helper falls back to Python's zipfile without it.)
-
-```bash
-python3.12 -m venv ~/venvs/venv_global   # 3.12 assumed; a newer python3 also works
-source ~/venvs/venv_global/bin/activate && pip install nbformat   # + your toolchain (dbt etc.)
-```
-
-`pip install` works directly inside the activated venv; installing `nbformat`
-into a **system** Python instead needs `pip install nbformat --break-system-packages`
-on PEP 668 distros. Then run the installer, giving it an estate directory
-**separate from this checkout** — `install.sh` needs a target dir distinct from the
-source, and that path is required in practice (a bare re-run from inside the
-checkout is refused, with a concrete fix):
-
-```bash
-bash install.sh ~/Work
-```
-
-`install.sh` is a non-destructive **dumb creator** — it lays down PRODUCT files
-only, scaffolds any absent ticket anatomy, initialises a whitelist-scoped
-**local-only** git repo with a day-zero commit, copies the verified hook config
-to `.github/hooks/harness.json`, deploys the agents, and runs the validator +
-status; it **never edits an existing file**, so a re-run finds nothing absent. It
-asks for your board key and model pins (Enter accepts each suggested default;
-`--dry-run` plans without touching anything, `--yes` accepts every default). The
-agents deploy to your Copilot version's discovery directory — verify that path
-for your version (override with `HARNESS_AGENT_DEPLOY_DIR`). Finally, paste
-`setup.md` into your AI assistant, working in the new estate: it is the **final
-validation gate** — it confirms the validator + status are green, spot-checks the
-scaffolded tickets, and walks you through the personalisation the installer left
-you (model pins, `LICENSE`, scrub-table seeds, Owner lines).
-
-### Re-running / reconfiguring
-
-Re-running `install.sh` serves two different intents, each with its own home:
-
-- **Reconfigure** (review or change your board key / model pins): run `install.sh`
-  from **inside the estate** (`cd ~/Work && bash install.sh`). It recognises the estate
-  by its `harness.estate` key, enters **reconfigure-only mode**, and offers your
-  established values as defaults. A changed answer is **WARNed** with the file to edit
-  and an AI-assistant handoff — the installer never edits your config for you; that
-  stays your (or your assistant's) deliberate act via `setup.md`, on the record.
-- **Complete or repair** (add or fix estate files): run `install.sh` from your
-  **source checkout**, targeting the estate (`bash install.sh ~/Work`). The estate's
-  own copy cannot create files — there is no manifest or source to copy from in-estate
-  — and the reconfigure banner points you back to the checkout for this.
-
-### Hook activation caveat
-
-The auto-commit hook is *witnessed firing* on the VS Code Copilot IDE agent
-(v1.129.1, 2026-07-20) on an **established, trusted** workspace. On a
-**freshly-created** workspace, `postToolUse` did **not** auto-fire immediately in
-testing — even after trusting the folder and reloading; the exact fresh-estate
-activation trigger is not fully characterised, so expect a first real session or
-a Copilot restart may be needed. The git safety net is the backstop — if a write
-wasn't auto-committed, commit it by hand; nothing in the record depends on the
-hook firing. (CLI and cloud Copilot surfaces are UNVERIFIED — their schema may
-differ.) The hook config design ships as `_harness/hooks/hooks.example.json`.
-
-**Arming on migration.** The auto-commit hooks commit only where the estate's
-`.git/config` carries `harness.estate=true` — a positive-identity key `install.sh`
-sets, so the hooks can never auto-commit into a nested foreign project repo (e.g.
-under `Github/`). Estates created before this version, or migrated via `git clone`
-(clone does not copy local config), arrive with auto-commit **disarmed**; run
-`git -C <estate> config harness.estate true` to arm it. A plain folder copy or move
-keeps the key and needs nothing.
-
 ## What it does, plainly
 
 You work on tickets with an AI assistant. The harness makes that work leave
@@ -124,6 +17,15 @@ top of an undocumented mess. Small
 AI agents do the clerical work (logging, capturing, compacting) so the
 expensive model — and you — only do the thinking. Nothing self-heals, nothing
 phones home, and one markdown file is the law.
+
+## Setup
+
+Installing takes two steps and about ten minutes. **Every command,
+prerequisite and caveat lives in exactly one place —
+[installing.md](installing.md)**, which also carries reconfiguration and the
+hook-activation caveat. This page repeats none of them on purpose: two install
+documents drift apart, so the install commands are registered as a
+single-telling fact and the docs gate reds if one appears on both pages.
 
 ## Assumptions
 
@@ -172,103 +74,11 @@ Anything marked *swappable* degrades gracefully if you differ.
 
 ## The folder map
 
-```
-Work/                                        [git root · local-only · whitelist]
-│
-├── .gitignore                               /* deny-all → re-include record set
-├── folder-structure.md                      THE CONSTITUTION · Part I always / Part II on demand
-├── AGENTS.md                                door-note → folder-structure.md
-├── .github/workflows/                       CI — the demo on Linux + macOS: every push to main; PRs by scope (see .github/CONTRIBUTING.md)
-│
-├── _harness/
-│   ├── demo/                                THE ACCEPTANCE SUITE'S other two halves [dev-only · never installed]
-│   │   ├── tour.sh                          the stage-based tour a newcomer watches: six stage banners + the machinery running · asserts nothing by name
-│   │   └── cases/*.case.sh                  one case file per guard family — the regression suite · every named guard lives in exactly one of them
-│   └── scripts/                             THE MACHINERY (versioned)
-│       ├── check_ticket_log.sh              ← sessionStart hook │ sessionEnd (bonus)
-│       │       └── watermark →              ~/.harness/validated/<ticket>  [state · unversioned]
-│       │       └── append_entry.sh          record appender: text+ticket+section → stamped atomic append under an existing header, then check_ticket_log verdict
-│       ├── harness-status.sh                stdout report + one primary-observation record (each WARN's first-seen, for aging #71) · roster = _agents/ · checks siblings
-│       ├── ticket-grammar.sh                recognition home: TICKET_RE + ticket predicates · validator + status both source it (edit to retarget your board)
-│       ├── portability.sh                   shared GNU/BSD shims: ts14→epoch, sourced by validator + status (one home · no drift)
-│       ├── append_notebook_cell.py          ← check-scribe · runs on venv_global [user-created prereq]
-│       ├── literate_capture.py              transport: delimited SQL/python blocks → notebook cells (hash-deduped)
-│       ├── check_run.sh                     run-and-record: runs a command, appends one notebook cell (command, output, exit code, timestamp)
-│       ├── make_context_pack.sh             → ~/Desktop/harness-pack-*.zip [disposable · outside repo]
-│       ├── tracker_sweep.sh                 human-run · on-demand board-vs-estate drift report · pluggable fetch seam · tracker-agnostic · fails open offline
-│       ├── retro_stats.sh                    dumb counter for the retrospective agent · tickets-by-month + checks + promotions · offline · exits 0 always
-│       ├── deploy_agents.sh                 → user-level agent dir (sync source → live)
-│       ├── harness-housekeeping.sh          human-run · git gc + size report · never touches records
-│       ├── harness-drill.sh                 human-run · rehearse restore/bundle/undo · read-only toward the estate
-│       └── run_demo.sh                      the acceptance demo's RUNNER: owns the estate + the stage order, runs _harness/demo/ (see Setup) · wired to no hook
-│
-├── _agents/                                 SOURCE OF TRUTH (versioned)
-│   ├── ticket-init.agent.md                 ┐
-│   ├── ticket-scribe.agent.md               │ deploy_agents.sh → user-level dir
-│   ├── ticket-recall.agent.md               │
-│   ├── check-scribe.agent.md                │   [live · derived · unversioned]
-│   ├── doc-writer.agent.md                  │   drift check (status): differ ⇒ FAIL
-│   ├── knowledge-keeper.agent.md            │   fix ⇒ re-run deploy_agents.sh
-│   ├── knowledge-curator.agent.md           │
-│   ├── weekly-digest.agent.md               │
-│   ├── harness-recall.agent.md              │
-│   └── retrospective.agent.md               ┘
-│
-├── Tickets/                                 RECORDS ONLY
-│   ├── README.md                            thin pointer (the map lives at the Work root)
-│   └── YYYYMM<seq>-<BOARD>-<num>/            one per ticket (recommended name; template: 999912Z-PROJ-99999)
-│       ├── YYYYMM<seq>-<BOARD>-<num>.md       source of truth ← ticket-scribe (log + state, atomic)
-│       ├── AI-Knowledge/                    ← knowledge-keeper (capture) │ curator (compact)
-│       │   ├── _index.md                    roster · tombstones
-│       │   └── *.md                         —promotion (approved)→ General AI-Knowledge/
-│       ├── Checks/                          audit-trail notebook (any language) · venv_global kernel
-│       ├── Logs/                            [gitignored · regenerable bulk]
-│       └── Dump/                            [gitignored · re-droppable inputs]
-│
-├── General AI-Knowledge/                    durable knowledge (versioned · cull-safe via history)
-│   └── AI Harness/                          the sheets + build/design notes · Last reviewed: dated
-│
-├── General Human Knowledge/                 human-facing OUTPUT the machinery writes (append-only · inside the whitelist)
-│   └── Retrospectives/                      ← retrospective agent · one timestamped file per run
-│
-└── [GitHub/ · Diagrams/ · Mappings/ · …]    [never enter history — whitelist excludes them]
-```
-
-**On ticket-folder names:** nothing requires a specific ticket-folder name —
-name folders however suits your workflow. The tools recognise a recommended
-default pattern but never force it. A `Tickets/` folder is in one of four states:
-
-- **(1) Conforming + recorded** — matches the pattern *and* holds a ticket
-  record → auto-validated.
-- **(2) Hand-made + recorded** — holds a record but doesn't match the pattern →
-  `harness-status` gives a heads-up (WARN) to either rename it *or* `touch
-  .not-a-ticket` to silence it. Never blocked.
-- **(3) Pending** — a real ticket `ticket-init` couldn't name, marked
-  `.ticket-pending` → a **non-silenceable** WARN. It nags until *both* of its
-  completion steps are done:
-  - Two-step completion: rename to a conforming name **and** remove the marker.
-  - The **marker, not the name, is the lifecycle token** — a conforming rename
-    alone can't leave a real ticket silently misfiled.
-  - `.ticket-pending` takes **precedence over `.not-a-ticket`**, so a real
-    ticket can't be dismissed.
-- **(4) Not a ticket** — no ticket content, *or* explicitly marked
-  `.not-a-ticket` → silent.
-
-**Outside the four states**, one edge case: a recognised name commits the folder
-to validation, so a conforming folder *missing* its `.md` record is a validator
-`FAIL` — add the record.
-
-The two markers:
-
-- `.not-a-ticket` — "not a ticket, leave it alone."
-- `.ticket-pending` — "a real ticket awaiting completion; rename **and** remove
-  the marker — non-silenceable."
-
-Nothing is ever blocked for a *naming* choice: the tools nudge with yellow,
-never wall you off. The recognition pattern lives in one editable line
-(`_harness/scripts/ticket-grammar.sh`) that both tools share — e.g. a hyphenated
-board key like `DATA-ENG` needs the board segment widened there; see
-`folder-structure.md` for the worked example.
+The annotated estate structure — every folder, what it is for, which part of the
+machinery owns it, and the four states a `Tickets/` folder can be in — lives in
+**[folder-map.md](folder-map.md)**. It has its own document because a check
+requires every shipped script's filename to appear in it, so the map grows every
+time the machinery grows; a front page cannot carry that and stay a front page.
 
 ## The layers, bottom to top
 
@@ -410,7 +220,7 @@ the acceptance demo prove the change you bring back. The system was built that w
 
 Every documentation surface in the repo, with its audience and its one home.
 **Pointers only** — a row points at where a thing lives; it never restates the
-thing (the one-home law), and the folder map above owns estate *structure* while
+thing (the one-home law), and `folder-map.md` owns estate *structure* while
 this owns document *navigation*. **Audiences:** *user* (installs and runs an
 estate) · *estate* (lives inside an installed estate) · *developer* (hacks on the
 harness itself) · *machine* (an AI assistant reads it). Each fact has exactly one
@@ -418,12 +228,14 @@ home; everything else points at it.
 
 | Document | Audience | Purpose (its one home) | Referenced by |
 |----------|----------|------------------------|---------------|
-| `README.md` | user | The front door: setup, usage, the folder map, and this catalogue. | entry point (rendered by GitHub) |
+| `README.md` | user | The front door: what the harness is, what it assumes, how it is developed, and this catalogue. | entry point (rendered by GitHub) |
 | `folder-structure.md` | estate | **The constitution — the rules.** Every harness convention; Part I always-load, Part II on demand. | `AGENTS.md`, `setup.md`, this README |
 | `AGENTS.md` | machine | The seven-rule door-note the assistant loads on every surface → points to the constitution. | the AI assistant; this README |
 | `SPEC.md` | user | The project spec: what the harness guarantees today, and the vocabulary those guarantees are written in. | `docs-check` (adr-shape: the glossary check) |
-| `setup.md` | estate | The AI-assistant final-gate prompt: confirms validator + status green, walks the post-install personalisation. | this README (Setup), `install.sh` |
-| `install.sh` | estate | The non-destructive dumb creator that lays down / reconfigures an estate. | this README (Setup), `setup.md` |
+| `folder-map.md` | estate | **The annotated estate structure** — every folder, its purpose and its owner, plus the four `Tickets/` states. | this README, `docs-check` (map-inventory) |
+| `installing.md` | user | **Installing the harness:** prerequisites, the two steps, reconfiguring, the hook-activation caveat — the one home for every install command. | this README (Setup), `docs-check` (install-home) |
+| `setup.md` | estate | The AI-assistant final-gate prompt: confirms validator + status green, walks the post-install personalisation. | `installing.md`, `install.sh` |
+| `install.sh` | estate | The non-destructive dumb creator that lays down / reconfigures an estate. | `installing.md`, `setup.md`, the folder map |
 | `LICENSE` | user | MIT licence terms. | this README, `setup.md` |
 | `CLAUDE.md` | developer | Dev instructions the AI reads when working **on** the harness (DEV — never ships to an estate). | this README (Developing), `docs-check` (grammar-drift) |
 | `DEVELOPMENT.md` | developer | The dev-loop method doc: the four roles + five working laws (DEV). | `dev-loop/`, `docs-check` (dev-loop) |

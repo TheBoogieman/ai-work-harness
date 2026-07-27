@@ -66,7 +66,9 @@ bash estate/install.sh ~/Work
 only, scaffolds any absent ticket anatomy, initialises a whitelist-scoped
 **local-only** git repo with a day-zero commit, copies the verified hook config
 to `.github/hooks/harness.json`, deploys the agents, and runs the validator +
-status; it **never edits an existing file**, so a re-run finds nothing absent. It
+status; it **never edits an existing file**, so a re-run finds nothing absent.
+(One flag changes that, and only if you type it: `--upgrade`, below. Every run
+that does not carry it behaves exactly as this paragraph describes.) It
 asks for your board key and model pins (Enter accepts each suggested default;
 `--dry-run` plans without touching anything, `--yes` accepts every default). The
 agents deploy to your Copilot version's discovery directory — verify that path
@@ -78,7 +80,7 @@ you (model pins, `LICENSE`, scrub-table seeds, Owner lines).
 
 ## Re-running / reconfiguring
 
-Re-running `install.sh` serves two different intents, each with its own home:
+Re-running `install.sh` serves three different intents, each with its own home:
 
 - **Reconfigure** (review or change your board key / model pins): run `install.sh`
   from **inside the estate** (`cd ~/Work && bash install.sh`). It recognises the estate
@@ -90,6 +92,31 @@ Re-running `install.sh` serves two different intents, each with its own home:
   **source checkout**, targeting the estate (`bash estate/install.sh ~/Work`). The estate's
   own copy cannot create files — there is no manifest or source to copy from in-estate
   — and the reconfigure banner points you back to the checkout for this.
+- **Upgrade** (bring an existing estate's machinery up to a newer source): run
+  `install.sh` from your **source checkout** with `--upgrade`, targeting the estate.
+  Look before you leap — `--dry-run` prints the whole plan and touches nothing:
+
+  ```bash
+  bash estate/install.sh --upgrade --dry-run ~/Work
+  bash estate/install.sh --upgrade ~/Work
+  ```
+
+  This is the one thing in the harness that moves a file you already have, so read
+  what it says. It **creates** what is absent, **replaces** a shipped machinery file
+  whose contents differ from the new source's, and **retires** a file this release has
+  superseded — usually one that was renamed. Replacing and retiring both mean the same
+  thing: your copy is **moved into `_retired/<timestamp>/` inside the estate**, never
+  deleted, and the run prints the exact `mv` that puts it back **at the moment it moves
+  it**. That printed line matters: `_retired/` is deliberately outside the record, so
+  nothing else anywhere will ever remind you. It carries your settings forward
+  untouched — your board grammar, your model pins and your hook configuration are all
+  left exactly as you have them — and it **never touches a record**: no ticket, no log,
+  no knowledge file. Running it twice is safe; the second run says `NOTHING TO DO`.
+  If a run is interrupted, run it again — every file it had already moved is in
+  `_retired/`, and the re-run lays down whatever is missing. Skipping versions is
+  expected and needs nothing special: one upgrade retires everything superseded across
+  the whole span. Run from **inside** the estate, `--upgrade` refuses — there is no
+  source in there to upgrade from, and it prints the command that works.
 
 ## Hook activation caveat
 

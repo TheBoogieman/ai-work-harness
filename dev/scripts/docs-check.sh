@@ -1058,11 +1058,13 @@ dc_adr() {
   # — and it is the model these two lines copy rather than replace.
   adr_set=$(git ls-files 'dev/decisions/[0-9][0-9][0-9]-*.md')
   adr_n=$(printf '%s\n' "$adr_set" | grep -c . || true)
-  dc_present adr-shape <<<"$adr_set"
   # The floor is TWO because it is a property of the question, not a number picked to pass today:
   # the case below has a template branch and a real-record branch, and a set that cannot exercise
-  # both cannot answer for either.
+  # both cannot answer for either. IT IS TESTED FIRST, AND THAT ORDER IS THE POINT: a floor of two
+  # already covers the empty set, so running the presence assertion first gave ONE cause TWO
+  # messages — the redundancy this repair had to be checked for, found by reading its own reds.
   dc_have_min adr-shape "$adr_n" 2 "decision record(s) under dev/decisions/" || return 0
+  dc_present adr-shape <<<"$adr_set"
   while IFS= read -r adr; do
     [ -f "$adr" ] || continue                 # already reported by name, above
     dc_adr_headings "$adr"

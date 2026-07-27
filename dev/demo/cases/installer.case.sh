@@ -5,11 +5,49 @@
 #
 # install.sh is exercised for real into a throwaway estate (agent deploy is sent to a throwaway dir
 # so nothing touches $HOME). Plain-English asserts; guard-per-bug on each claim. I39_ROOT, I39_EST
-# and I39_DEPLOY are file-scope: built once, read by every sub-case, removed at the end.
+# and I39_DEPLOY are file-scope: built once, read by every sub-case, removed at the end. I39_OUT is
+# file-scope too, but REWRITTEN by every in_install call: it holds the LAST install's output, so a
+# sub-case that wants it must read it straight after its own call.
 
 in_fixture() {
   echo "--- #39 installer: non-destructive, PRODUCT-only, single-schema-home, idempotent ---"
   I39_ROOT=$(mktemp -d); I39_EST="$I39_ROOT/estate"; I39_DEPLOY=$(mktemp -d)
+}
+
+# in_install — THE ONE WAY THIS CASE INVOKES THE INSTALLER when the invocation is expected to
+# SUCCEED (#262). WHAT: runs install.sh with the given arguments, keeps its combined output in
+# $I39_OUT for callers that need to read it, and — if it exits non-zero — prints which guard was
+# running, what status the installer exited with, and the tail of what it said, then reds.
+# WHY: under the runner's `set -e` a bare `bash estate/install.sh …` that fails kills the case AT
+# THAT LINE, printing ZERO BYTES. Two seats hit that silence with different sabotages and neither
+# got a message, because the case's own diagnostic for a failed install sits in a later sub-case
+# the death never reaches. Seven of this file's eight expected-to-succeed invocations had no
+# handler; one of those seven was doubly silent, dying inside a `pipefail` command substitution.
+# A sabotaged installer must red with a SENTENCE, not in silence.
+# IT MUST NOT SWALLOW THE FAILURE: it exits 1, so the run stays red — legibility, not tolerance.
+# The interactive re-runs below that end in `|| true` are NOT routed through here: those are
+# deliberately allowed to exit non-zero and their sub-case asserts on the output instead. Nor is
+# the rc-capturing call in [missing-value-audible], whose exit status IS that guard's subject.
+in_install() {   # $1 = guard name to report under; $2.. = install.sh's own arguments
+  local guard="$1"; shift
+  local rc=0
+  I39_OUT="$I39_ROOT/install.out"
+  HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash estate/install.sh "$@" >"$I39_OUT" 2>&1 || rc=$?
+  # `if` rather than `[ … ] && return`: a bare test as the last command of a function would make
+  # the function's own status the test's, which under `set -e` is a second way to die quietly.
+  if [ "$rc" -eq 0 ]; then return 0; fi
+  echo "BUG [$guard]: install.sh EXITED rc=$rc — invoked as: install.sh $*"
+  echo "    The installer failed, so the [$guard] guard never ran."
+  # Say which it was rather than printing an empty heading: a silent failure is itself the most
+  # useful thing to report, and a "last output was:" heading with nothing under it claims a tail
+  # that does not exist.
+  if [ -s "$I39_OUT" ]; then
+    echo "    Its last output was:"
+    tail -5 "$I39_OUT" | sed 's/^/      /'
+  else
+    echo "    It printed NOTHING — the installer failed silently."
+  fi
+  exit 1
 }
 
 # (a) single schema home: install.sh must carry NO hook-schema literal (it copies from the one
@@ -25,8 +63,7 @@ in_schema_one_home() {
 # (b) PRODUCT-only (#43 cond 2 / #39): a fresh --yes install lays down zero DEV files.
 in_product_only() {
   local i39_leak=0 d
-  HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash estate/install.sh --yes "$I39_EST" >/dev/null 2>&1 \
-    || { echo "BUG [clean-install]: a clean --yes install failed"; exit 1; }
+  in_install clean-install --yes "$I39_EST"
   while IFS= read -r d; do
     if [ -e "$I39_EST/$d" ]; then echo "  DEV leak: $d"; i39_leak=1; fi
   done < <(awk -F'\t' '$1=="DEV"{print $2}' dev/ship-manifest.txt)
@@ -40,7 +77,7 @@ in_product_only() {
 #     lacks).
 in_dumb_creator() {
   echo "GARBAGE" > "$I39_EST/AGENTS.md"; cp "$I39_EST/AGENTS.md" "$I39_ROOT/agents.snapshot"
-  HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash estate/install.sh --yes "$I39_EST" >/dev/null 2>&1
+  in_install dumb-creator --yes "$I39_EST"
   cmp -s "$I39_ROOT/agents.snapshot" "$I39_EST/AGENTS.md" \
     || { echo "BUG [dumb-creator]: install EDITED a pre-existing file (AGENTS.md changed) — it" \
            "must create only what is absent"; exit 1; }
@@ -50,8 +87,14 @@ in_dumb_creator() {
 # (d) idempotency: a re-run finds nothing absent and creates zero.
 in_idempotent_rerun() {
   local i39_plan
-  i39_plan=$(HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash estate/install.sh --yes "$I39_EST" 2>&1 \
-    | grep -oE 'PRODUCT files to create: [0-9]+' | head -1)
+  # This call was the DOUBLY silent one (#262): it ran inside a `$( … | grep | head )` command
+  # substitution, so under `pipefail` a failed install AND a grep that matched nothing each killed
+  # the case with no message and no output — the installer's own words went into the pipe. Routing
+  # it through in_install gives the first case a sentence; reading the kept output with `|| true`
+  # gives the second one, because an empty $i39_plan now reaches the named assertion below instead
+  # of aborting above it.
+  in_install idempotent-rerun --yes "$I39_EST"
+  i39_plan=$(grep -oE 'PRODUCT files to create: [0-9]+' "$I39_OUT" | head -1 || true)
   [ "$i39_plan" = "PRODUCT files to create: 0" ] \
     || { echo "BUG [idempotent-rerun]: a re-run wanted to create files ($i39_plan)"; exit 1; }
   echo "  ok [idempotent-rerun] — re-run creates nothing (nothing absent)"
@@ -61,8 +104,7 @@ in_idempotent_rerun() {
 in_dry_run() {
   local i39_fresh
   i39_fresh="$I39_ROOT/dryrun-never"
-  HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash estate/install.sh --dry-run --yes "$i39_fresh" \
-    >/dev/null 2>&1
+  in_install dry-run --dry-run --yes "$i39_fresh"
   [ ! -e "$i39_fresh" ] \
     || { echo "BUG [dry-run]: --dry-run created the target dir — it must touch nothing"; exit 1; }
   echo "  ok [dry-run] — --dry-run plans without touching the filesystem"
@@ -75,7 +117,7 @@ in_dry_run() {
 in_board_default() {
   local i39_re i39_bhint
   i39_re="$I39_ROOT/reest"
-  HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash estate/install.sh --yes "$i39_re" >/dev/null 2>&1
+  in_install board-default --yes "$i39_re"
   mkdir -p "$i39_re/Tickets/202607A-XRAY-1"; : > "$i39_re/Tickets/202607A-XRAY-1/202607A-XRAY-1.md"
   printf '\n\n\n' | HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash estate/install.sh "$i39_re" \
     >"$I39_ROOT/re.out" 2>"$I39_ROOT/re.err" || true
@@ -96,7 +138,7 @@ in_board_default() {
 in_model_pin_offered() {
   local i39_m i39_dw i39_mhint
   i39_m="$I39_ROOT/mest"
-  HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash estate/install.sh --yes "$i39_m" >/dev/null 2>&1
+  in_install model-pin-offered --yes "$i39_m"
   i39_dw="$i39_m/_agents/doc-writer.agent.md"
   awk '/^model:/{print "model: MZAP"; next} {print}' "$i39_dw" > "$I39_ROOT/dw.tmp" \
     && mv "$I39_ROOT/dw.tmp" "$i39_dw"
@@ -116,7 +158,7 @@ in_model_pin_offered() {
 in_change_routed() {
   local i39_cr i39_crout
   i39_cr="$I39_ROOT/crest"
-  HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash estate/install.sh --yes "$i39_cr" >/dev/null 2>&1
+  in_install change-routed --yes "$i39_cr"
   cp "$i39_cr/_harness/scripts/ticket-grammar.sh" "$I39_ROOT/tg.snap"
   i39_crout=$(printf 'NEWB\n\n\n' | HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" \
     bash estate/install.sh "$i39_cr" 2>&1 || true)
@@ -186,7 +228,7 @@ in_prompt_default() {
 in_missing_value_audible() {
   local i39_mv i39_mvti i39_mvrc i39_mvbytes
   i39_mv="$I39_ROOT/mvest"
-  HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash estate/install.sh --yes "$i39_mv" >/dev/null 2>&1
+  in_install missing-value-audible --yes "$i39_mv"
   # Marker on the sonnet tier's reference agent; awk-to-tmp+mv is BSD-portable (no in-place edit).
   i39_mvti="$i39_mv/_agents/ticket-init.agent.md"
   awk '/^model:/{print "model: MVSONNET"; next} {print}' "$i39_mvti" > "$I39_ROOT/mvti.tmp" \

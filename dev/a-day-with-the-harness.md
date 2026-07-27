@@ -88,6 +88,14 @@ Angle brackets also appear inside the harness's own messages — `<what it cover
 is a blank the harness is asking *you* to fill in. Those are literal text and are
 compared character for character like everything else.
 
+One more difference is not a span but a platform quirk, and it is named here
+rather than hidden. The status report builds its count of knowledge files with
+the `wc` command, and the `wc` that ships with macOS pads its number with spaces
+where the one on Linux does not. On a Mac that line therefore reads
+`knowledge files:` followed by a run of spaces and then the number. No single
+page can print both, so the check treats that run of spaces as one space — and
+still compares the number itself exactly.
+
 ## What the day assumes
 
 * An estate already exists at `~/Work`, created by the installer. Installing is a
@@ -269,6 +277,12 @@ brand-new estate built from scratch for the purpose. The check compares what eac
 command actually printed against what this document says it printed — character
 for character, apart from the six angle-bracket spans listed near the top, each
 of which is matched against a tight pattern rather than skipped.
+
+It waits a second between the steps, and that is worth knowing because it says
+something about the machinery: the validator decides whether a record has changed
+by comparing whole-second file timestamps, so two acts inside the same second look
+like one act to it. A person's day never does that. A check running the day back
+to back would, so it pauses to keep the spacing a real day has.
 
 The check fails if any output line differs from the line printed here, and it
 fails if a block produces more or fewer lines than this document shows. A command

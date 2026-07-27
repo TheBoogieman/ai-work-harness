@@ -1,11 +1,19 @@
 # Design notes — why the harness is shaped like this
 Last reviewed: 2026-07-26
 
-**Diagram currency (2026-07-24):** both sheets are CURRENT at REV R / REV G — the
-operator redrew them on 2026-07-24 to the full agent roster and the machinery they
-document, so the six→ten roster lag once recorded here is paid and `#83` closes with
-this integration. No lag outstanding. For current enforcement/status/naming
-behaviour, `folder-structure.md` (the constitution) remains the source of truth.
+**Diagram currency (2026-07-27):** both sheets are CURRENT on WHAT the machinery
+is and WHERE it sits IN AN ESTATE, and now LAG on where it sits in this
+repository. The operator redrew them on 2026-07-24 at REV R / REV G to the full
+agent roster, and every script they name still exists, still does the same job
+and still sits at the same estate-relative path — an installation is unchanged,
+so a reader using a sheet to understand a Work root is not misled. What the
+sheets do not show is the repository split landed by `#136`: every shipped file
+now sits under an estate tree and every development file under a development
+tree, so a sheet read as a map of THIS CHECKOUT points at the pre-split
+locations. The divergence is named rather than drawn — NO WAVE EDITS AN SVG —
+and the operator redraws on their own schedule; `#178` is where that redraw is
+tracked. For current enforcement/status/naming behaviour,
+`folder-structure.md` (the constitution) remains the source of truth.
 
 **The pattern (every layer):** file states the rule → agent does the work →
 hook catches the miss → git undoes the damage. Corollary: status observes,

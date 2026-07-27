@@ -60,6 +60,6 @@ demo guard it cannot honestly carry.
 
 Accepted. See `#76` (the cross-estate read-side design discussion) and `#108`
 (`harness-recall`, the topic reader this ADR ships beside). LINEAGE: this EXTENDS
-`decisions/013` (the estate gains a reader) from single-ticket scope to
+`dev/decisions/013` (the estate gains a reader) from single-ticket scope to
 estate-wide — the same reader concept over a wider substrate, and the mode test
 of `#74` generalised to the read side. It supersedes nothing.

@@ -12,11 +12,11 @@ silent divergence.
 
 Each fact, pattern, or rule has **exactly one editable home**, and every other
 place that needs it either sources that home or is checked against it. The
-ticket-recognition pattern lives only in `_harness/scripts/ticket-grammar.sh`
+ticket-recognition pattern lives only in `estate/_harness/scripts/ticket-grammar.sh`
 (sourced by both the validator and status). The branch regex lives only in
-`.github/scripts/branch-grammar.sh`, and a docs guard asserts every doc that
+`dev/scripts/branch-grammar.sh`, and a docs guard asserts every doc that
 quotes it matches verbatim. The classification lives only in
-`.github/ship-manifest.txt`.
+`dev/ship-manifest.txt`.
 
 ## Consequences
 

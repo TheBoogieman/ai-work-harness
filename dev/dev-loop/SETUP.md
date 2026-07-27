@@ -1,4 +1,4 @@
-# dev-loop/ — set up your own multi-role build loop
+# dev/dev-loop/ — set up your own multi-role build loop
 
 This folder is a starter kit, not a rule. It gives you empty templates for
 running the multi-role method described in ../DEVELOPMENT.md. Surface, don't

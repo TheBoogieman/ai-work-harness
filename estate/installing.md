@@ -59,7 +59,7 @@ source, and that path is required in practice (a bare re-run from inside the
 checkout is refused, with a concrete fix):
 
 ```bash
-bash install.sh ~/Work
+bash estate/install.sh ~/Work
 ```
 
 `install.sh` is a non-destructive **dumb creator** — it lays down PRODUCT files
@@ -87,7 +87,7 @@ Re-running `install.sh` serves two different intents, each with its own home:
   and an AI-assistant handoff — the installer never edits your config for you; that
   stays your (or your assistant's) deliberate act via `setup.md`, on the record.
 - **Complete or repair** (add or fix estate files): run `install.sh` from your
-  **source checkout**, targeting the estate (`bash install.sh ~/Work`). The estate's
+  **source checkout**, targeting the estate (`bash estate/install.sh ~/Work`). The estate's
   own copy cannot create files — there is no manifest or source to copy from in-estate
   — and the reconfigure banner points you back to the checkout for this.
 

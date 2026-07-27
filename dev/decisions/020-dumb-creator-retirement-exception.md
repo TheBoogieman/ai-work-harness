@@ -18,7 +18,7 @@ init, a day-zero commit, and the estate key that arms the hooks — but no file 
 estate already holds as record or as machinery is reachable by it.
 
 The law is stated in its ABSOLUTE form in more than one home — in `README.md`
-and `SPEC.md`, which both call the installer non-destructive, and again in the
+and `estate/SPEC.md`, which both call the installer non-destructive, and again in the
 installer's own header comment, where the word used is "ABSOLUTE". That is why
 an exception cannot be introduced quietly, and why it is recorded here before
 any machinery relies on it.
@@ -143,7 +143,7 @@ such a handler is ever written, that is the moment the stamp became user-owned
 — and a generated list catches the change on the next run instead of waiting
 for somebody to notice.
 
-Routing. The law is stated in its absolute form in `README.md`, in `SPEC.md`,
+Routing. The law is stated in its absolute form in `README.md`, in `estate/SPEC.md`,
 and in the installer's own header comment, and those statements are incomplete
 without this record. Anyone who meets the absolute form comes here. Amending
 those homes to point at this record belongs with the machinery that implements
@@ -156,7 +156,7 @@ Accepted; operator ruling, recorded here on its own issue `#133`. This is the
 FIRST exception the dumb-creator law has ever taken, and it is deliberately a
 STANDALONE record rather than a paragraph inside the upgrade item that needs it
 — on the same reasoning that split the earlier law amendment from its machinery
-(`decisions/019`): a constitutional law amended in conversation evaporates, and
+(`dev/decisions/019`): a constitutional law amended in conversation evaporates, and
 every seat between the ruling and the writing runs on an unrecorded amendment.
 It supersedes no record. It AMENDS the dumb-creator law itself, narrowly: move
 with a report, for machinery, never for records, never a delete.

@@ -4,7 +4,7 @@ DEV material. This is a dated review of the agent roster as it stood at commit
 `748273e`, produced for #130. It is a point-in-time reading, not a standing
 description of the roster: the roster grows, and the job of describing an agent
 at HEAD belongs to that agent's own file. Read this to learn what the review
-found; read `_agents/` to learn what an agent does today.
+found; read `../estate/_agents/` to learn what an agent does today.
 
 It changes no agent file. Any consolidation this review recommended would be a
 separate item with its own ruling — see the verdict below, which recommends none.
@@ -40,16 +40,16 @@ and neither number is the answer. Behaviour is.
 
 | Agent | Its job, in one line |
 | --- | --- |
-| [check-scribe](_agents/check-scribe.agent.md) | Appends each keepworthy check to the ticket's `checks_master.ipynb` as one why-note plus one code cell, exclusively through `append_notebook_cell.py` — holding no `edit` tool, the script is its only writing hand and the notebook JSON is never touched by hand. |
-| [doc-writer](_agents/doc-writer.agent.md) | Turns three named ticket sections — header, Current State, Changes Made — into outbound prose for a PR description or README, reading nothing else in the repo and performing no publish; the closed reading list, not the output format, is what makes it its own agent. |
-| [harness-recall](_agents/harness-recall.agent.md) | Answers "what does the estate already hold about X?" by re-grepping `Tickets/**` and `General AI-Knowledge/**` from scratch every run — never a stored index — and returning ranked citations under three fixed headings including the regions it searched and found empty. |
-| [knowledge-curator](_agents/knowledge-curator.agent.md) | Compacts a ticket's `AI-Knowledge/` in place (merge, delete, re-index), then works the one human-approved door out of the ticket: a generic promotion into `General AI-Knowledge/<Topic>/` or a drafted `SKILL.md`, neither of which it may self-approve. |
-| [knowledge-keeper](_agents/knowledge-keeper.agent.md) | At task end, applies a three-part keep-filter to what the session actually learned and writes zero to two small notes plus their `_index.md` lines into the ticket's `AI-Knowledge/` — files only, never assistant-side session or repo memory, and zero is a normal result. |
-| [retrospective](_agents/retrospective.agent.md) | Once a review cycle, reads each ticket's settled end-state to build a themed, impact-framed account of what COMPLETED in a window (12 months by default, plus a short still-in-flight section), folds `retro_stats.sh`'s offline counts into the prose, and lands it as exactly one new timestamped file it may never rewrite. |
-| [ticket-init](_agents/ticket-init.agent.md) | Births a ticket folder from a three-question interview and an adjacency scan, refusing to invent a conforming name when identity is unknown — it files a deliberately non-conforming `pending-` stub that status nags about instead — and narrates that same real init as the onboarding tour whenever the estate holds no live ticket. |
-| [ticket-recall](_agents/ticket-recall.agent.md) | At pickup, reconstructs where ONE ticket stands under four fixed headings ending in a suggested next step, reading structured sources first and `Logs/`/`Dump/` only where a structured source cites them, and routing anything worth keeping to `ticket-scribe` rather than writing it. |
-| [ticket-scribe](_agents/ticket-scribe.agent.md) | At every task end, performs the ticket record's one atomic update — a strictly-formatted local-time Session Log block, a rewritten 3-8 sentence Current State, and the Repos/Branches/PRs header if it moved — and stops rather than guessing when the session's actions are unclear. |
-| [weekly-digest](_agents/weekly-digest.agent.md) | Resurfaces a sprint-length window (14 days by default, passed in every run and never remembered) by narrating the ACTIVE tickets' movement and knowledge captured, and may run the status sweep itself so the aging-knowledge warnings replay inside the digest. |
+| [check-scribe](../estate/_agents/check-scribe.agent.md) | Appends each keepworthy check to the ticket's `checks_master.ipynb` as one why-note plus one code cell, exclusively through `append_notebook_cell.py` — holding no `edit` tool, the script is its only writing hand and the notebook JSON is never touched by hand. |
+| [doc-writer](../estate/_agents/doc-writer.agent.md) | Turns three named ticket sections — header, Current State, Changes Made — into outbound prose for a PR description or README, reading nothing else in the repo and performing no publish; the closed reading list, not the output format, is what makes it its own agent. |
+| [harness-recall](../estate/_agents/harness-recall.agent.md) | Answers "what does the estate already hold about X?" by re-grepping `Tickets/**` and `General AI-Knowledge/**` from scratch every run — never a stored index — and returning ranked citations under three fixed headings including the regions it searched and found empty. |
+| [knowledge-curator](../estate/_agents/knowledge-curator.agent.md) | Compacts a ticket's `AI-Knowledge/` in place (merge, delete, re-index), then works the one human-approved door out of the ticket: a generic promotion into `General AI-Knowledge/<Topic>/` or a drafted `SKILL.md`, neither of which it may self-approve. |
+| [knowledge-keeper](../estate/_agents/knowledge-keeper.agent.md) | At task end, applies a three-part keep-filter to what the session actually learned and writes zero to two small notes plus their `_index.md` lines into the ticket's `AI-Knowledge/` — files only, never assistant-side session or repo memory, and zero is a normal result. |
+| [retrospective](../estate/_agents/retrospective.agent.md) | Once a review cycle, reads each ticket's settled end-state to build a themed, impact-framed account of what COMPLETED in a window (12 months by default, plus a short still-in-flight section), folds `retro_stats.sh`'s offline counts into the prose, and lands it as exactly one new timestamped file it may never rewrite. |
+| [ticket-init](../estate/_agents/ticket-init.agent.md) | Births a ticket folder from a three-question interview and an adjacency scan, refusing to invent a conforming name when identity is unknown — it files a deliberately non-conforming `pending-` stub that status nags about instead — and narrates that same real init as the onboarding tour whenever the estate holds no live ticket. |
+| [ticket-recall](../estate/_agents/ticket-recall.agent.md) | At pickup, reconstructs where ONE ticket stands under four fixed headings ending in a suggested next step, reading structured sources first and `Logs/`/`Dump/` only where a structured source cites them, and routing anything worth keeping to `ticket-scribe` rather than writing it. |
+| [ticket-scribe](../estate/_agents/ticket-scribe.agent.md) | At every task end, performs the ticket record's one atomic update — a strictly-formatted local-time Session Log block, a rewritten 3-8 sentence Current State, and the Repos/Branches/PRs header if it moved — and stops rather than guessing when the session's actions are unclear. |
+| [weekly-digest](../estate/_agents/weekly-digest.agent.md) | Resurfaces a sprint-length window (14 days by default, passed in every run and never remembered) by narrating the ACTIVE tickets' movement and knowledge captured, and may run the status sweep itself so the aging-knowledge warnings replay inside the digest. |
 
 ## Overlap verdict — no pair overlaps enough to justify merging
 
@@ -70,7 +70,7 @@ properties.
 - The digest holds no `edit` tool and states that it writes nothing; the
   retrospective holds `edit` and one write door. A merged agent must hold `edit`
   on every invocation, so the frequent cheap call would gain a write capability
-  it does not need. `.github/scripts/docs-check.sh` asserts the digest's
+  it does not need. `dev/scripts/docs-check.sh` asserts the digest's
   no-`edit` property by name, so the merge would delete a live guard.
 - Their registers are deliberately opposed. The retrospective's file states it
   is the one reader whose register is not neutral; the digest is a neutral
@@ -109,7 +109,7 @@ destinations — one leaves the estate for a repo audience, the other never leav
 
 ## One defect observed, not fixed here
 
-Reading `_agents/ticket-recall.agent.md` confirms the claims-truth defect that
+Reading `../estate/_agents/ticket-recall.agent.md` confirms the claims-truth defect that
 motivated this review: its opening line declares it the estate's only reader,
 while `harness-recall` and `weekly-digest` hold the same read-only capability
 and the same narration contract. The claim is false at `748273e`.

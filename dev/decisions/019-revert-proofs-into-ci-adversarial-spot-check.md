@@ -2,7 +2,7 @@
 
 ## Context
 
-`decisions/011` made guard-per-bug mechanical: a defect the rule covers is not
+`dev/decisions/011` made guard-per-bug mechanical: a defect the rule covers is not
 fixed until a guard has been watched going RED against the pre-fix code. The
 load-bearing part of that rule was never the guard's existence — it was somebody
 having run it to failure. And that proof had nowhere mechanical to live.
@@ -75,7 +75,7 @@ everything else is checked by, the two reductions multiply rather than add.
 
 ## Consequences
 
-What is UNCHANGED: guard-per-bug itself (`decisions/011`, project rule `G5`).
+What is UNCHANGED: guard-per-bug itself (`dev/decisions/011`, project rule `G5`).
 Nothing here widens or narrows what that rule covers. Red still blocks, nothing
 self-heals, and the demo is still the truth-teller for the product. What changed
 is only WHO executes the sabotage and HOW OFTEN — the standard of proof did not
@@ -113,7 +113,7 @@ author already had in mind, and it would have passed.
 ## Status
 
 Accepted; operator ruling, recorded here on the law's own issue `#118`. This
-AMENDS the ENFORCEMENT of `decisions/011` (guard-per-bug) — how the red state is
+AMENDS the ENFORCEMENT of `dev/decisions/011` (guard-per-bug) — how the red state is
 witnessed and by whom — and supersedes NONE of its substance: the guard, and its
 provable red, remain mandatory. It is deliberately decoupled from the
 sabotage-fixture machinery it authorises, which lands under its own item (`#144`,

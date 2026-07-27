@@ -22,7 +22,7 @@ phones home, and one markdown file is the law.
 
 Installing takes two steps and about ten minutes. **Every command,
 prerequisite and caveat lives in exactly one place —
-[installing.md](installing.md)**, which also carries reconfiguration and the
+[installing.md](estate/installing.md)**, which also carries reconfiguration and the
 hook-activation caveat. This page repeats none of them on purpose: two install
 documents drift apart, so the install commands are registered as a
 single-telling fact and the docs gate reds if one appears on both pages.
@@ -76,7 +76,7 @@ Anything marked *swappable* degrades gracefully if you differ.
 
 The annotated estate structure — every folder, what it is for, which part of the
 machinery owns it, and the four states a `Tickets/` folder can be in — lives in
-**[folder-map.md](folder-map.md)**. It has its own document because a check
+**[folder-map.md](estate/folder-map.md)**. It has its own document because a check
 requires every shipped script's filename to appear in it, so the map grows every
 time the machinery grows; a front page cannot carry that and stay a front page.
 
@@ -128,7 +128,7 @@ telling lives in `folder-structure.md` (Part II) or the home named inline.
 
 - `harness-status.sh` — estate-wide health report; every FAIL line ends with its fix.
 - `tracker_sweep.sh` — board-vs-estate drift through a pluggable, tracker-agnostic
-  fetch seam that fails open offline (`decisions/015-pluggable-tracker-fetch-seam.md`).
+  fetch seam that fails open offline (`dev/decisions/015-pluggable-tracker-fetch-seam.md`).
 - `make_context_pack.sh` — scrubbed, disposable zip of the harness for external
   review; skim before it leaves the machine.
 - `harness-housekeeping.sh` — `git gc`/repack to reclaim `.git` growth, all history kept.
@@ -180,7 +180,7 @@ States — Operational Rules*.
 > **About the SOURCE repository, not your work estate.** This section is for
 > people hacking on the harness itself (branches, PRs, CI). None of it is estate
 > setup — the files it names (`CLAUDE.md`, `.github/`, `run_demo.sh`) are
-> classified DEV in `.github/ship-manifest.txt` and never ship. To *install* the
+> classified DEV in `dev/ship-manifest.txt` and never ship. To *install* the
 > harness, see **Setup** above; nothing here points a user at dev machinery.
 
 The harness is developed the way you'd use it: clone the repo and point an
@@ -192,7 +192,7 @@ dependencies, the Linux/macOS standing lanes, and WSL as an ephemeral check only
 for Windows** (or Cygwin) and **VS Code** with your agent extension, and do all
 shell work in the integrated Git-Bash/Cygwin terminal — plain PowerShell runs
 `git` but not the bash machinery. Verify the host once, end to end, with
-`bash _harness/scripts/run_demo.sh` (it must end with *ALL 6 DEMO STAGES PASSED*)
+`bash dev/scripts/run_demo.sh` (it must end with *ALL 6 DEMO STAGES PASSED*)
 — that hand-run is the whole of the Windows lane's verification, because no merge
 gate covers Windows (**Assumptions**, above, is the one home for that fact).
 **The development loop is stated once, in `CLAUDE.md`, and this section does not
@@ -229,22 +229,22 @@ home; everything else points at it.
 | Document | Audience | Purpose (its one home) | Referenced by |
 |----------|----------|------------------------|---------------|
 | `README.md` | user | The front door: what the harness is, what it assumes, how it is developed, and this catalogue. | entry point (rendered by GitHub) |
-| `folder-structure.md` | estate | **The constitution — the rules.** Every harness convention; Part I always-load, Part II on demand. | `AGENTS.md`, `setup.md`, this README |
+| `estate/folder-structure.md` | estate | **The constitution — the rules.** Every harness convention; Part I always-load, Part II on demand. | `AGENTS.md`, `setup.md`, this README |
 | `AGENTS.md` | machine | The seven-rule door-note the assistant loads on every surface → points to the constitution. | the AI assistant; this README |
-| `SPEC.md` | user | The project spec: what the harness guarantees today, and the vocabulary those guarantees are written in. | `docs-check` (adr-shape: the glossary check) |
-| `folder-map.md` | estate | **The annotated estate structure** — every folder, its purpose and its owner, plus the four `Tickets/` states. | this README, `docs-check` (map-inventory) |
-| `installing.md` | user | **Installing the harness:** prerequisites, the two steps, reconfiguring, the hook-activation caveat — the one home for every install command. | this README (Setup), `docs-check` (install-home) |
-| `setup.md` | estate | The AI-assistant final-gate prompt: confirms validator + status green, walks the post-install personalisation. | `installing.md`, `install.sh` |
-| `install.sh` | estate | The non-destructive dumb creator that lays down / reconfigures an estate. | `installing.md`, `setup.md`, the folder map |
+| `estate/SPEC.md` | user | The project spec: what the harness guarantees today, and the vocabulary those guarantees are written in. | `docs-check` (adr-shape: the glossary check) |
+| `estate/folder-map.md` | estate | **The annotated estate structure** — every folder, its purpose and its owner, plus the four `Tickets/` states. | this README, `docs-check` (map-inventory) |
+| `estate/installing.md` | user | **Installing the harness:** prerequisites, the two steps, reconfiguring, the hook-activation caveat — the one home for every install command. | this README (Setup), `docs-check` (install-home) |
+| `estate/setup.md` | estate | The AI-assistant final-gate prompt: confirms validator + status green, walks the post-install personalisation. | `installing.md`, `install.sh` |
+| `estate/install.sh` | estate | The non-destructive dumb creator that lays down / reconfigures an estate. | `installing.md`, `setup.md`, the folder map |
 | `LICENSE` | user | MIT licence terms. | this README, `setup.md` |
 | `CLAUDE.md` | developer | Dev instructions the AI reads when working **on** the harness (DEV — never ships to an estate). | this README (Developing), `docs-check` (grammar-drift) |
-| `DEVELOPMENT.md` | developer | The dev-loop method doc: the four roles + five working laws (DEV). | `dev-loop/`, `docs-check` (dev-loop) |
-| `dev-loop/` (`SETUP.md` + three `*.template.md`) | developer | Starter kit to stand up the multi-seat dev loop; the templates ship **empty**. | `DEVELOPMENT.md`, `docs-check` (dev-loop) |
-| `decisions/` (`000` template + the numbered records) | developer | Architecture Decision Records — *the why* of each design choice. | `docs-check` (adr-shape); later ADRs cross-cite |
-| `General AI-Knowledge/AI Harness/DESIGN.md` | developer / user | Design notes + the dated diagram-currency ledger (the honest-lag record). | the folder map, `docs-check` (currency-note) |
-| `General AI-Knowledge/AI Harness/` (Architecture + Session-flow sheets) | user | The two operator-maintained blueprint drawings — what the machine is, and how a day moves through it. | the folder map, `DESIGN.md` |
-| `General AI-Knowledge/Skills/` (`_index.md`, `SKILL-TEMPLATE.md`, `SQL-Writing/SKILL.md`) | user / machine | Worker-tier craft modules, discovered index-first. | `AGENTS.md` (rule 7), constitution (Skills Convention) |
-| `Tickets/README.md` | estate | Thin pointer — the map lives in `folder-map.md`. | `folder-map.md` |
+| `dev/DEVELOPMENT.md` | developer | The dev-loop method doc: the four roles + five working laws (DEV). | `dev-loop/`, `docs-check` (dev-loop) |
+| `dev/dev-loop/` (`SETUP.md` + three `*.template.md`) | developer | Starter kit to stand up the multi-seat dev loop; the templates ship **empty**. | `DEVELOPMENT.md`, `docs-check` (dev-loop) |
+| `dev/decisions/` (`000` template + the numbered records) | developer | Architecture Decision Records — *the why* of each design choice. | `docs-check` (adr-shape); later ADRs cross-cite |
+| `estate/General AI-Knowledge/AI Harness/DESIGN.md` | developer / user | Design notes + the dated diagram-currency ledger (the honest-lag record). | the folder map, `docs-check` (currency-note) |
+| `estate/General AI-Knowledge/AI Harness/` (Architecture + Session-flow sheets) | user | The two operator-maintained blueprint drawings — what the machine is, and how a day moves through it. | the folder map, `DESIGN.md` |
+| `estate/General AI-Knowledge/Skills/` (`_index.md`, `SKILL-TEMPLATE.md`, `SQL-Writing/SKILL.md`) | user / machine | Worker-tier craft modules, discovered index-first. | `AGENTS.md` (rule 7), constitution (Skills Convention) |
+| `estate/Tickets/README.md` | estate | Thin pointer — the map lives in `folder-map.md`. | `folder-map.md` |
 
 ---
 

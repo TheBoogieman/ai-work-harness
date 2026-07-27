@@ -26,12 +26,12 @@ tracker-specific lives in this repo:
   API, it has left the product.
 - **The board coupling is ONE editable line.** Which status words mean "closed"
   lives in a single, user-editable line in `tracker_sweep.sh`, mirroring the
-  `ticket-grammar.sh` precedent (`decisions/006-one-home-doctrine.md`): the board
+  `ticket-grammar.sh` precedent (`dev/decisions/006-one-home-doctrine.md`): the board
   coupling has one home, not a scatter of hard-coded strings.
 - **The sweep fails open.** An unreachable tracker — or no fetcher configured at
   all — yields ONE quiet NOTE and exit 0, never a red. Every finding is a yellow
   WARN or a NOTE, so the sweep never blocks and an offline estate stays fully
-  functional (`decisions/010-red-blocks-yellow-schedules.md`).
+  functional (`dev/decisions/010-red-blocks-yellow-schedules.md`).
 - **Credentials live in the environment or a keychain at runtime.** Any token the
   fetcher needs is read at runtime by the fetcher itself; the sweep passes the
   caller's environment through and never reads, prints, or writes a token. Nothing
@@ -60,5 +60,5 @@ plainly: pre-existing practice, newly written down.
 ## Status
 
 Accepted. Evidence: `#81`. The seam, the one-line board coupling, and the
-fails-open behaviour live in `_harness/scripts/tracker_sweep.sh`; the stub-based,
-zero-network, revert-provable guard lives in `_harness/scripts/run_demo.sh`.
+fails-open behaviour live in `estate/_harness/scripts/tracker_sweep.sh`; the stub-based,
+zero-network, revert-provable guard lives in `dev/scripts/run_demo.sh`.

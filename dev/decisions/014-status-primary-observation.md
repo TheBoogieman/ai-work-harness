@@ -66,7 +66,7 @@ WARN site route through the chokepoint.
 
 ## Lineage
 
-This refines `decisions/003-dumb-inspector.md`. The dumb-inspector ADR established
+This refines `dev/decisions/003-dumb-inspector.md`. The dumb-inspector ADR established
 that status/validation *checks facts, prescribes, and never repairs*; it did not
 distinguish the epistemic claim (no stored derived view) from the safety claim (no
 side effects). This ADR draws that line and narrows only the epistemic one. Per
@@ -78,4 +78,4 @@ stays accepted and foundational, and this ADR is read alongside it.
 
 Accepted. Evidence: `#71` (and the `#72` knowledge staleness sweep it ships
 with); the mechanism and its two attack-cycle guards (PORCELAIN, FAILS-OPEN) live
-in `_harness/scripts/run_demo.sh`.
+in `dev/scripts/run_demo.sh`.

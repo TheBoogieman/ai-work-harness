@@ -2,7 +2,7 @@
 
 ## Context
 
-The estate lives on one machine, and `decisions/001-local-only-no-remote.md`
+The estate lives on one machine, and `dev/decisions/001-local-only-no-remote.md`
 makes that load-bearing: the git repo is local-only and never gets a remote,
 because a remote is a permanent exfiltration risk. But a real design question
 stands beside that law: when a person keeps a second estate on another machine,
@@ -63,7 +63,7 @@ and their employer's rules first. Method public, judgement sovereign.
 
 ## Lineage
 
-This clarifies `decisions/001-local-only-no-remote.md`. The hand-carried bundle
+This clarifies `dev/decisions/001-local-only-no-remote.md`. The hand-carried bundle
 is the one exception to "no remote, ever", and it now sits on the record beside
 the law rather than contradicting it from a chat log. The law is unchanged; the
 exception is bounded — human-carried, interactively sealed, one-way, and refused

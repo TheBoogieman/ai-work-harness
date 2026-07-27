@@ -22,7 +22,7 @@
 # CREDENTIALS: any token the fetcher needs is read from the environment (or a keychain) at
 # RUNTIME by the fetcher itself. This script passes the caller's environment through to the
 # fetcher and never reads, prints, or writes a token — nothing here ever puts a credential on
-# disk or into recorded output. See decisions/015 (this codifies the standing practice).
+# disk or into recorded output. See dev/decisions/015 (this codifies the standing practice).
 set -uo pipefail   # NOT -e: this tool fails open, so a stray non-zero must never abort it as a red
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # WORK_ROOT is derived from the script's location by default. HARNESS_WORK_ROOT overrides it so

@@ -21,7 +21,7 @@ the estate.
 ## Consequences
 
 The two intents cannot be confused, and reconfigure never silently rewrites a
-config — the change stays a recorded human act via `setup.md`. The cost is that
+config — the change stays a recorded human act via `estate/setup.md`. The cost is that
 the operator must know which directory to run from; README documents the split
 explicitly.
 

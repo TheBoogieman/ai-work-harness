@@ -11,7 +11,7 @@ into an estate whose law forbids them.
 
 ## Decision
 
-Every tracked file is classified in **one manifest**, `.github/ship-manifest.txt`,
+Every tracked file is classified in **one manifest**, `dev/ship-manifest.txt`,
 as either `PRODUCT` or `DEV`, one line each. `install.sh` lays down PRODUCT files
 generically from this manifest; DEV files are greppable and provably cannot ship.
 The demo's classification guard enforces both directions: every tracked file

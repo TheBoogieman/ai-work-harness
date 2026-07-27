@@ -14,7 +14,7 @@ code** — demonstrated by reverting the fix and watching the guard go red. No b
 is "fixed" without one. A guard is a check that reproduces the defect it was
 written for and refuses it; guards live in the acceptance demo and in the gates
 that run beside it, the documentation-state gate
-(`.github/scripts/docs-check.sh`) among them. The demo (`run_demo.sh`) is the
+(`dev/scripts/docs-check.sh`) among them. The demo (`run_demo.sh`) is the
 truth-teller, and CI runs them end-to-end on every push to `main` and on every
 pull request whose changes can move its verdict — a documentation-only pull
 request reports green without running them, on criteria whose one home is
@@ -42,7 +42,7 @@ and deliberately NOT corrected by it, because neither was in that seat's scope.
 Recorded so a later reader does not mistake unchecked text for checked text:
 
 - The red-side proof is described here as a hand-executed revert. That
-  ENFORCEMENT was amended by `decisions/019` — the sabotage runs in CI and the
+  ENFORCEMENT was amended by `dev/decisions/019` — the sabotage runs in CI and the
   reviewer's pass became an adversarial spot-check — and this record carries no
   pointer to it, although that record names itself the routing target for
   exactly this.

@@ -6,7 +6,7 @@ human at the centre holding merge authority. It is DEV — it documents how the
 work is done, not how the shipped harness behaves (that is folder-structure.md,
 the constitution). It is historical-first: the account of how the project was
 actually built comes first; guidance for adopting the method comes second, and
-the `dev-loop/` folder beside this file holds the empty starter templates.
+the `dev/dev-loop/` folder beside this file holds the empty starter templates.
 
 ## Part I — how this project was actually built
 
@@ -93,14 +93,14 @@ contents, paths, and tooling to itself.
 ## Part II — adopting the method
 
 The method is not specific to this project. To run your own loop, use the empty
-templates in `dev-loop/` beside this file:
+templates in `dev/dev-loop/` beside this file:
 
-- Read `dev-loop/SETUP.md` first — it is soft guidance, not a rule.
-- Copy `dev-loop/role-charter.template.md` once per seat you decide to run and
+- Read `dev/dev-loop/SETUP.md` first — it is soft guidance, not a rule.
+- Copy `dev/dev-loop/role-charter.template.md` once per seat you decide to run and
   fill it in.
-- Adopt `dev-loop/working-agreement.template.md` for issue flow, merge
+- Adopt `dev/dev-loop/working-agreement.template.md` for issue flow, merge
   authority, and the evidence each hop must produce.
-- Adopt `dev-loop/message-format.template.md` for the ROLE → ROLE message
+- Adopt `dev/dev-loop/message-format.template.md` for the ROLE → ROLE message
   convention.
 
 Keep your FILLED copies out of the repository. The templates ship empty on

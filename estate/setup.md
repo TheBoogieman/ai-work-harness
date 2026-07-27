@@ -19,7 +19,7 @@ diffs before every write:
    workspace root, and the tunable knobs with their defaults). Confirm the git
    repo is whitelist-scoped and has **no remote** (estates are local-only).
 2. **Manifest audit:** confirm the estate contains **zero DEV files** — nothing
-   from the DEV class of `.github/ship-manifest.txt` in the source (`.github/`,
+   from the DEV class of `dev/ship-manifest.txt` in the source (`dev/`,
    `CLAUDE.md`, `run_demo.sh`, the manifest itself).
 3. **Green verification:** run `_harness/scripts/check_ticket_log.sh` and
    `_harness/scripts/harness-status.sh`; both must be green. Spot-check the

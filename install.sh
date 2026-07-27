@@ -154,6 +154,13 @@ detect_board() {
       return 0
     fi
   done
+  # Nothing conforming found: DETECTED_BOARD keeps the template default set above and
+  # DETECTED_BOARD_REAL stays 0, which is how the caller tells a real board from a default. The
+  # zero is now SAID rather than inherited from whichever branch the loop last took. This is a
+  # helper, not one of the steps the SHAPE note at the top of this file states the convention for,
+  # but the hazard that note names applies here unchanged: interview_board calls this bare under
+  # `set -e`, so a non-zero tail would end the run with no output, as detect_model's once did.
+  return 0
 }
 # detect_model <estate> <reference-agent> — the model pin already set on a reference agent's
 # frontmatter (greppable `model: <x>`). Cheap tier reads doc-writer, sonnet tier reads ticket-init

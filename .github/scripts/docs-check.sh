@@ -17,7 +17,7 @@
 #   DOCS_BASE_REF         base ref for the diff when DOCS_CHANGED_FILES is unset
 #                         (default origin/main)
 set -uo pipefail
-fail=0
+fail=0            # a COUNT of failures printed so far, never a boolean — see dc_fail below (#252)
 README=README.md
 DESIGN="General AI-Knowledge/AI Harness/DESIGN.md"
 # The two documents the front page handed work to in #146: the estate structure it used to carry,
@@ -28,9 +28,24 @@ INSTALL_DOC=installing.md
 # dc_fail / dc_ok — the two output shapes every detector prints, in ONE home each. A message is
 # passed as SEVERAL arguments and joined with a single space, which is what lets a long message be
 # wrapped across source lines without changing a byte of what is printed. dc_fail also records the
-# failure, so no detector has to remember to set the flag next to its own message. IFS is pinned to
+# failure, so no detector has to remember to record it next to its own message. IFS is pinned to
 # a space for the join because a caller may be inside a `while IFS= read` loop.
-dc_fail() { local tag=$1 IFS=' '; shift; printf 'FAIL [docs %s]: %s\n' "$tag" "$*"; fail=1; }
+#
+# dc_fail COUNTS, IT DOES NOT SET A FLAG (#252), and that is the whole of this file's success-line
+# honesty. Every detector decides whether to print its ok-line by comparing $fail against the value
+# it saved before it started. Under a set-once flag that comparison DEGENERATES: after the first
+# failure anywhere in the run the flag is already 1, so every later detector compares 1 against 1,
+# reads "unchanged", and prints its success line — including the detector that has just printed its
+# own FAIL two lines above. Counting makes each comparison about that detector's OWN failures
+# again, which is what the comparison was always written to mean. It repairs BOTH spellings of the
+# idiom at once — `[ "$fail" -ne "$X_before" ] || dc_ok X` and `[ "$fail" -eq "$X_before" ] ||
+# return 0` are the same statement, and both were defeated by the same degenerate compare.
+# The gate's verdict is unchanged: the exit test at the foot still reads 0 as "nothing failed".
+dc_fail() {
+  local tag=$1 IFS=' '; shift
+  printf 'FAIL [docs %s]: %s\n' "$tag" "$*"
+  fail=$((fail+1))
+}
 dc_ok() { local tag=$1 IFS=' '; shift; printf '  ok [docs %s] — %s\n' "$tag" "$*"; }
 
 # --- map-inventory — every shipped script + the two root surfaces named in the folder map --------
@@ -40,7 +55,11 @@ dc_ok() { local tag=$1 IFS=' '; shift; printf '  ok [docs %s] — %s\n' "$tag" "
 # names changed. It is also WHY the map had to leave: this check makes the map grow every time the
 # machinery grows, so whichever document holds the map cannot stay short.
 dc_map_inventory() {
-  local s base mi_body ri_total=0
+  # mi_before snapshots the failure count so this ok-line answers for THIS detector only. It used
+  # to test `$fail -ne 0`, which asks "has anything failed anywhere?" — latent here because this
+  # detector runs first, but latent is not correct, and reordering dc_main would have made it live
+  # without anyone touching this line (#252).
+  local s base mi_body ri_total=0 mi_before=$fail
   mi_body=$(cat "$MAP")
   for s in _harness/scripts/* install.sh setup.md; do
     base=$(basename "$s"); ri_total=$((ri_total+1))
@@ -48,7 +67,7 @@ dc_map_inventory() {
     dc_fail map-inventory "$base ships but is not named in the folder map ($MAP)" \
                          "— add its tree line."
   done
-  [ "$fail" -ne 0 ] || dc_ok map-inventory "$ri_total shipped surfaces named in $MAP"
+  [ "$fail" -ne "$mi_before" ] || dc_ok map-inventory "$ri_total shipped surfaces named in $MAP"
 }
 
 # --- dev-loop — DEVELOPMENT.md + dev-loop/ starter kit: three method-doc invariants (#68) --------
@@ -840,7 +859,11 @@ dc_adr_spec() {
 }
 
 dc_adr() {
-  local adr
+  # adr_before snapshots the failure count so this ok-line answers for the ADRs only. It used to
+  # test `$fail -ne 0`, and dc_main runs this detector well down the list: ANY earlier detector's
+  # failure silenced it even when every record was well-formed, so the one run where a reader most
+  # needs to know the decision records are still readable was the run that never said so (#252).
+  local adr adr_before=$fail
   adr_ev_re='#[0-9]+|\b[0-9a-f]{7,40}\b'   # what counts as a clickable evidence link in an ADR
   while IFS= read -r adr; do
     dc_adr_headings "$adr"
@@ -850,7 +873,7 @@ dc_adr() {
     esac
   done < <(git ls-files 'decisions/[0-9][0-9][0-9]-*.md')
   dc_adr_spec
-  [ "$fail" -ne 0 ] || dc_ok adr-shape \
+  [ "$fail" -ne "$adr_before" ] || dc_ok adr-shape \
     "SPEC.md glossary present and every decisions/ ADR well-formed"
 }
 
@@ -1255,18 +1278,19 @@ dc_dead_pointer() {
 }
 
 # UNOWNED — found while reading this file end to end for the #129 shape pass, which was scoped to
-# SHAPE ONLY, so each is recorded rather than fixed; other items are queued against this file.
+# SHAPE ONLY, so it is recorded rather than fixed; other items are queued against this file.
 #   * THE OK-LINES ARE NOT THE DETECTOR SET. The closing line of dc_main points a reader at them
 #     for "the detector set at HEAD", but only nine detectors emit one: doc-sweep,
 #     grammar-drift, readme-no-diagrams, currency-note, DESIGN-trigger and the four
 #     doc-integrity detectors (fence-balance, doc-crlf, link-target/link-anchor, dead-pointer)
 #     print nothing when they pass. A green log therefore names half the instrument while
 #     reading as if it named all of it.
-#   * TWO OK-LINES TEST THE GLOBAL FLAG RATHER THAN A SNAPSHOT OF IT. map-inventory's and
-#     adr-shape's are guarded by `[ "$fail" -ne 0 ]`, where the other seven compare against the
-#     value their own detector saved before starting. map-inventory runs first, so its
-#     version is latent; adr-shape's is LIVE — any earlier detector's failure suppresses it
-#     even when every ADR is well-formed.
+# The note that stood beneath it — two ok-lines testing the global flag "where the other seven
+# compare against the value their own detector saved before starting" — is DELETED rather than
+# corrected (#252). Neither half survives: no ok-line tests the shared record directly any more,
+# and the "other seven" was itself a miscount of the snapshot sites, which were ten in two
+# spellings. A discharged warning read later is a false claim in its own right, so it goes; the
+# behaviour it described is now guarded by [docs-gate-ok-lines] in the acceptance suite.
 
 # dc_main — the detectors, in the order their output has to appear. This list IS the running order;
 # nothing else in the file decides it.

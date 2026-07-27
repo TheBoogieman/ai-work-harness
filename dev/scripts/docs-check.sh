@@ -83,9 +83,11 @@ dc_have() {
 # dc_present — the SET form for a scan set built from the git index. A COUNT IN A MESSAGE IS NOT AN
 # ASSERTION: the set can shrink to a fraction of itself and the success line simply prints the
 # smaller number, which is how one ok-line here reported on three surfaces while naming the sixteen
-# it used to read. Every path arriving on stdin must be a readable file. Names are capped at three
-# because a swamped run still has to be readable; the count is the assertion, the names are the
-# lead. Returns non-zero when anything was missing, so a caller may skip as well as report.
+# it used to read. Every path arriving on stdin must be a readable file. THE COUNT IS THE
+# ASSERTION AND THE NAMES ARE ONLY A LEAD, so at most three are printed and the message says "first"
+# rather than trailing an ellipsis — an ellipsis after the only missing path claims a truncation
+# that did not happen, which is the same species of small untruth this whole item is about.
+# Returns non-zero when anything was missing, so a caller may skip as well as report.
 dc_present() {
   local pr_tag=$1 pr_f pr_gone="" pr_n=0
   while IFS= read -r pr_f; do
@@ -96,7 +98,7 @@ dc_present() {
   done
   [ "$pr_n" -eq 0 ] && return 0
   dc_fail "$pr_tag" \
-    "$pr_n path(s) in this detector's scan set are not readable files (${pr_gone# } ...) — it" \
+    "$pr_n path(s) in this detector's scan set are not readable files (first: ${pr_gone# }) — it" \
     "takes its surface from the git index and used to drop a missing member without a word, so" \
     "its verdict covered fewer files than its message names. Restore them, or record the removal."
   return 1
@@ -1414,6 +1416,8 @@ dc_fence_balance() {
   # all, which is why the assertion is added AROUND the existing read rather than in place of it.
   dc_present fence-balance < <(dc_md_files)
   while IFS= read -r f; do
+    [ -f "$f" ] || continue          # already reported BY NAME above; reading it again only adds
+                                     # a bare grep error to the log next to an honest message
     fences=$(grep -cE '^[[:space:]]*```' "$f" || true)   # fence lines, indented ones included
     [ $(( fences % 2 )) -eq 0 ] && continue
     dc_fail fence-balance \
@@ -1432,6 +1436,7 @@ dc_doc_crlf() {
   # the swallow itself stays, because it is what keeps a genuinely absent CR quiet.
   dc_present doc-crlf < <(dc_md_files)
   while IFS= read -r f; do
+    [ -f "$f" ] || continue          # already reported BY NAME above
     grep -qU $'\r' -- "$f" 2>/dev/null || continue
     dc_fail doc-crlf "$f contains carriage-return byte(s) — normalise to LF (docs ship LF-only)."
   done < <(dc_md_files)
@@ -1487,6 +1492,7 @@ dc_link_targets() {
   # exactly like a file with none — no iteration is left for either verdict to come from.
   dc_present link-target < <(dc_md_files)
   while IFS= read -r f; do
+    [ -f "$f" ] || continue          # already reported BY NAME above
     dir=$(dirname "$f")
     # each link target from [text](target); dc_link_target resolves/skips per scope
     while IFS= read -r tgt; do

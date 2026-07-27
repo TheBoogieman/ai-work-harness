@@ -24,11 +24,38 @@
 # before. Two conventions keep that move faithful:
 #   - the steps hand values to each other through GLOBAL variables (the moved code declares no
 #     `local`), because that is precisely how the old top-level sequence passed them along;
-#   - each step ends with an explicit `return 0`. A trailing non-zero status that merely CONTINUED
-#     at the top level (the tail of an `&&` list, say) becomes, once the same code is a function,
-#     that function's RETURN value — which `set -e` would treat as a reason to abort the whole run.
-#     The explicit return keeps the old meaning. A failure that aborted before still aborts, since
-#     `set -e` is just as live inside a function as it was at the top level.
+#   - EXIT STATUS IS DELIBERATE (#261) — and this is a PROPERTY, not a checklist. NO FUNCTION IN
+#     THIS FILE MAY HAND A BARE CALLER A STATUS IT DID NOT MEAN. "Bare" means a call that neither
+#     tests the status nor guards it with `||`: a plain call under `set -e`, or an assignment from
+#     a command substitution. It binds EVERY function here, not just the steps main() calls in
+#     order — this convention was once written for the steps alone, and both defects this file has
+#     actually had were HELPERS (detect_model, #200, which killed the run; detect_board, #233,
+#     whose leaked status happened to measure zero), so the rule as written covered neither.
+#     THE HAZARD is a tail whose status an UNSTATED BRANCH decided. A trailing non-zero that merely
+#     CONTINUED at the top level (the tail of an `&&`/`||` list, say) becomes, once the same code
+#     is a function, that function's RETURN value — which `set -e` treats as a reason to abort the
+#     whole run, and which a command substitution turns into a fatal assignment.
+#     THE MECHANISM, which is NOT the property: a function whose tail status would come from such
+#     a branch ends with an explicit `return 0`, which says the zero rather than inheriting it.
+#     Most functions here do. Three other shapes satisfy the property WITHOUT one and must not be
+#     swept into it — the test is "did an unstated branch decide this status", never "is the word
+#     `return` present":
+#       * EMITTERS, whose tail IS the emission — detect_model, read_version, src_of, route_change.
+#         The zero belongs to the emission itself; no branch chose it.
+#       * DELIBERATE PROPAGATORS — sedi and was_created hand the caller the inner command's status
+#         ON PURPOSE, which is the entire reason each exists.
+#       * GUARDS THAT END IN `exit` — guard_target_is_source and guard_no_remote end in `exit 1`.
+#         Those two are INSIDE this property, not an exception to it: `exit` hands no status to a
+#         caller at all, it ends the run on purpose, and every non-exit path in both returns
+#         explicitly. Stated out loud because the old wording ("each step ends with an explicit
+#         `return 0`") was literally false of them, and an unstated exception is how the gap this
+#         convention just closed got in.
+#     WHAT THIS DOES NOT BUY, said plainly so nobody reads it as a general defence: it covers a
+#     LEAKED status and nothing else. It is NO defence against a function that KILLS the run. Under
+#     `set -euo pipefail` a bare failing command inside a function aborts AT that command, before
+#     any tail statement runs, so the explicit `return 0` is never reached —
+#     `f() { grep -q x /dev/null; return 0; }` called bare ends the script at the grep. That is a
+#     different failure needing a different remedy, and this file does not claim to have one.
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -184,9 +211,9 @@ detect_board() {
   # Nothing conforming found: DETECTED_BOARD keeps the template default set above and
   # DETECTED_BOARD_REAL stays 0, which is how the caller tells a real board from a default. The
   # zero is now SAID rather than inherited from whichever branch the loop last took. This is a
-  # helper, not one of the steps the SHAPE note at the top of this file states the convention for,
-  # but the hazard that note names applies here unchanged: interview_board calls this bare under
-  # `set -e`, so a non-zero tail would end the run with no output, as detect_model's once did.
+  # helper, and the SHAPE note's convention at the top of this file now covers helpers too (#261)
+  # for exactly the hazard met here: interview_board calls this bare under `set -e`, so a non-zero
+  # tail would end the run with no output, as detect_model's once did.
   return 0
 }
 # detect_model <estate> <reference-agent> — the model pin already set on a reference agent's

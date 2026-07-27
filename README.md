@@ -244,7 +244,7 @@ home; everything else points at it.
 | `General AI-Knowledge/AI Harness/DESIGN.md` | developer / user | Design notes + the dated diagram-currency ledger (the honest-lag record). | the folder map, `docs-check` (currency-note) |
 | `General AI-Knowledge/AI Harness/` (Architecture + Session-flow sheets) | user | The two operator-maintained blueprint drawings — what the machine is, and how a day moves through it. | the folder map, `DESIGN.md` |
 | `General AI-Knowledge/Skills/` (`_index.md`, `SKILL-TEMPLATE.md`, `SQL-Writing/SKILL.md`) | user / machine | Worker-tier craft modules, discovered index-first. | `AGENTS.md` (rule 7), constitution (Skills Convention) |
-| `Tickets/README.md` | estate | Thin pointer — the map lives at the `Work/` root. | the Work-root folder map |
+| `Tickets/README.md` | estate | Thin pointer — the map lives in `folder-map.md`. | `folder-map.md` |
 
 ---
 

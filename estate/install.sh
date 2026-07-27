@@ -149,6 +149,15 @@ ask() {  # ask <prompt> <default> ; echoes the answer (default under --yes or on
   printf '%s\n  [PRESS ENTER TO ACCEPT DEFAULT: %s]: ' "$prompt" "$def" >&2
   IFS= read -r ans || true
   [ -n "$ans" ] && printf '%s' "$ans" || printf '%s' "$def"
+  # WHAT: say this function's zero out loud instead of inheriting it from the list above.
+  # WHY: the status of an `&&`/`||` list is whichever branch ran last, and here that measures zero
+  # only because BOTH branches are the same command. That is an accident of the two matching, not
+  # something ask() states. All four callers assign ask through a command substitution, so under
+  # `set -euo pipefail` any later edit that gave one branch a non-zero tail would end the whole
+  # install with no output at all — detect_model's defect (#200) for the third time in this file.
+  # The explicit return makes the list's status stop being the return value, so that edit stays a
+  # local mistake instead of a silent death. It changes nothing today: the status was already zero.
+  return 0
 }
 # Portable in-place sed: GNU sed wants `-i`, BSD/macOS sed wants `-i ''`. Detect via --version
 # (GNU prints it, BSD errors). Project rule: no GNU-only flag without a BSD fallback.

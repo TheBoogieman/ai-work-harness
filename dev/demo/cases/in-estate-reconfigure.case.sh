@@ -53,7 +53,7 @@ ir_reconfigure_completes() {
 ir_block_preserved() {
   local G64_KL G64_KLOUT G64_KLRC G64_STOUT G64_STRC
   echo "--- #64 block preserved: keyless source-in-place and key-stripped copies still refuse ---"
-  G64_KL=$(mktemp -d); cp install.sh "$G64_KL/install.sh"
+  G64_KL=$(mktemp -d); cp estate/install.sh "$G64_KL/install.sh"
   git -C "$G64_KL" init -q   # NO key -> a source checkout
   set +e
   G64_KLOUT=$(cd "$G64_KL" && bash install.sh --dry-run 2>&1 >/dev/null); G64_KLRC=$?

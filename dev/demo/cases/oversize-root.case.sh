@@ -32,7 +32,9 @@ MD
          exit 1; }
   # (2) move padding into Dump/ -> WARN must NOT fire (Dump/ is excluded; the prescription works)
   mkdir -p "$O/Dump"; mv "$O/big-scratch.bin" "$O/Dump/big-scratch.bin"
-  set +e; O38b=$(HARNESS_TICKET_WARN_MB=1 bash estate/_harness/scripts/harness-status.sh 2>&1); set -e
+  set +e
+  O38b=$(HARNESS_TICKET_WARN_MB=1 bash estate/_harness/scripts/harness-status.sh 2>&1)
+  set -e
   printf '%s\n' "$O38b" | grep -qE 'Tickets/202607E-PROJ-888 tracks .* in its root' \
     && { echo "BUG [oversize-root-warn]: moving scratch to Dump/ did NOT clear the WARN" \
            "(Dump/ not excluded):"; printf '%s\n' "$O38b"; exit 1; }

@@ -12,7 +12,9 @@ hk_runs_clean() {
   G3_REPO=$(mktemp -d)
   git -C "$G3_REPO" init -q
   git -C "$G3_REPO" -c user.email=demo@local -c user.name=demo commit -q --allow-empty -m "seed"
-  set +e; G3_OUT=$(bash estate/_harness/scripts/harness-housekeeping.sh "$G3_REPO" 2>&1); G3_RC=$?; set -e
+  set +e
+  G3_OUT=$(bash estate/_harness/scripts/harness-housekeeping.sh "$G3_REPO" 2>&1); G3_RC=$?
+  set -e
   [ "$G3_RC" -eq 0 ] \
     || { echo "BUG [housekeeping-ok]: housekeeping exited non-zero (rc=$G3_RC):"; \
          printf '%s\n' "$G3_OUT"; exit 1; }

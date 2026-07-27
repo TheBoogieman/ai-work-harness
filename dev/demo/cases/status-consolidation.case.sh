@@ -14,7 +14,9 @@ sk_awkward_hooks_path() {
   echo "--- status consolidation (awkward hooks path, zip fallback, stale-commit WARN) ---"
   G8DIR=$(mktemp -d); G8="$G8DIR/quote'inside hooks.json"
   cp estate/_harness/hooks/hooks.example.json "$G8"
-  set +e; G8_OUT=$(HARNESS_HOOKS_FILE="$G8" bash estate/_harness/scripts/harness-status.sh 2>&1); set -e
+  set +e
+  G8_OUT=$(HARNESS_HOOKS_FILE="$G8" bash estate/_harness/scripts/harness-status.sh 2>&1)
+  set -e
   printf '%s\n' "$G8_OUT" | grep -q "OK: hooks config parses." \
     || { echo "BUG [awkward-hooks-path]: valid JSON at an awkward (quote-bearing) path was NOT" \
            "parsed — the argv fix regressed:"; printf '%s\n' "$G8_OUT" | grep -i hooks; exit 1; }
@@ -67,7 +69,8 @@ sk_pack_without_zip() {
   local G14_OUT_DIR G14_OUT G14_RC g14zip
   G14_OUT_DIR=$(mktemp -d)
   set +e; G14_OUT=$(HARNESS_PACK_NO_ZIP=1 PACK_OUT_DIR="$G14_OUT_DIR" \
-    bash estate/_harness/scripts/make_context_pack.sh --ticket 999911Z-PROJ-99998 2>&1); G14_RC=$?; set -e
+    bash estate/_harness/scripts/make_context_pack.sh --ticket 999911Z-PROJ-99998 2>&1)
+  G14_RC=$?; set -e
   [ "$G14_RC" -eq 0 ] \
     || { echo "BUG [pack-without-zip]: pack failed with zip forced off (rc=$G14_RC):"; \
          printf '%s\n' "$G14_OUT"; exit 1; }

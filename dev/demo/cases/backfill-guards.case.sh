@@ -29,7 +29,8 @@ code_hasE() { grep -qE "$1" <<< "$code"; }
 # patterns as SEARCH LITERALS (they would self-match), and its sibling cases hold GNU/BSD probe
 # pairs written for a different purpose. That is the same carve-out the pre-split suite had, where
 # the one file holding those literals was skipped by name; splitting moved the literals out of
-# estate/_harness/scripts/ entirely, so the skip is gone rather than relocated and the runner itself is
+# estate/_harness/scripts/ entirely, so the skip is gone rather than relocated and the runner
+# itself is
 # now scanned like every other script in that directory. The demo files are covered instead by
 # being RUN end to end, on both CI lanes, by the demo you are reading.
 bg_bsd_fallback() {

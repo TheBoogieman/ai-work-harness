@@ -81,7 +81,9 @@ lc_malformed_noop() {
   local LC_BAD LC_BADOUT LC_NCELLS2
   LC_BAD="$LC_TMP/bad.sql"
   printf 'SELECT 1;\n-- a plain comment, no delimiter marker\n' > "$LC_BAD"
-  set +e; LC_BADOUT=$(python3 estate/_harness/scripts/literate_capture.py "$LC_NB" "$LC_BAD" 2>&1); set -e
+  set +e
+  LC_BADOUT=$(python3 estate/_harness/scripts/literate_capture.py "$LC_NB" "$LC_BAD" 2>&1)
+  set -e
   printf '%s\n' "$LC_BADOUT" | grep -q "no delimiter in" \
     || { echo "BUG [literate-capture]: malformed input did not emit the prescriptive" \
            "'no delimiter in ...' line:"; printf '%s\n' "$LC_BADOUT"; rm -rf "$LC_TMP"; exit 1; }

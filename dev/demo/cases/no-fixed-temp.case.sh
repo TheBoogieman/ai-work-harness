@@ -23,7 +23,8 @@
 # because it teaches its reader to trust a check that was never made.
 #
 # SCOPE — STATED, NEVER IMPLIED: temporaries OUTSIDE the working tree. The in-tree scratch ticket
-# S="estate/Tickets/999911Z-PROJ-99998", set by demo_setup in the runner, is also a hard-coded path this
+# S="estate/Tickets/999911Z-PROJ-99998", set by demo_setup in the runner, is also a hard-coded
+# path this
 # suite creates, and it is a NAMED, REASONED EXCLUSION rather than an oversight. It CANNOT go
 # through mktemp: the product's own convention is that the machinery only sees a ticket sitting
 # inside the estate's Tickets/ directory, so moving it to a temp dir would hide it from the

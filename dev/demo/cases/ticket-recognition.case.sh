@@ -24,16 +24,22 @@ tr_baseline() {
   R09_SPACE="estate/Tickets/My Random Ticket 42" # real ticket record under a space-bearing name
   R09_CONF="estate/Tickets/202607A-PROJ-7"              # conforming, low ticket number
   R09_LONG="estate/Tickets/202607AB-LONGBOARD-1000000"  # conforming, multi-letter seq + long number
-  R09_BAD="estate/Tickets/20260A-PROJ-42"               # malformed: 5-digit date — must NOT be recognised
-  R09_PEND="estate/Tickets/pending-20260719120000"      # non-conforming placeholder name init would coin
-  R09_HAND="estate/Tickets/handmade-notes"              # a user's own non-conforming folder (contrast)
+  # malformed: 5-digit date — must NOT be recognised
+  R09_BAD="estate/Tickets/20260A-PROJ-42"
+  # non-conforming placeholder name init would coin
+  R09_PEND="estate/Tickets/pending-20260719120000"
+  # a user's own non-conforming folder (contrast)
+  R09_HAND="estate/Tickets/handmade-notes"
   R09_KCONF="estate/Tickets/202607K-PROJ-500"           # a pending ticket after a conforming rename
-  R09_MGARB="estate/Tickets/202607M-XYZ-1"              # a pending ticket renamed to conforming garbage
+  # a pending ticket renamed to conforming garbage
+  R09_MGARB="estate/Tickets/202607M-XYZ-1"
 }
 
 # tr_status — run harness-status once, capturing BOTH halves of its answer into R09_OUT / R09_RC.
 # set +e brackets the call so an expected non-zero rc becomes data rather than an abort.
-tr_status() { set +e; R09_OUT=$(bash estate/_harness/scripts/harness-status.sh 2>&1); R09_RC=$?; set -e; }
+tr_status() {
+  set +e; R09_OUT=$(bash estate/_harness/scripts/harness-status.sh 2>&1); R09_RC=$?; set -e
+}
 
 # tr_validate — the same, for the validator.
 tr_validate() {

@@ -78,13 +78,13 @@ sc_pins() {
     dev/demo/cases/backfill-guards.case.sh  code_hasE  single \
     dev/demo/cases/recovery-drill.case.sh   hd_manifest single \
     dev/demo/cases/estate-key.case.sh       g60_commits single \
-    install.sh                               sedi           single \
-    install.sh                               was_created    single \
+    estate/install.sh                       sedi           single \
+    estate/install.sh                       was_created    single \
     estate/_harness/scripts/check_ticket_log.sh     file_mtime     multi \
     dev/scripts/docs-check.sh            md_slugs       multi \
     estate/_harness/scripts/harness-drill.sh        undo_drill     multi \
     dev/scripts/run_demo.sh             r09_make       multi \
-    install.sh                               detect_board   multi
+    estate/install.sh                       detect_board   multi
 }
 
 # sc_measure — run the scanner over every TRACKED shell script, resolved at run time by git rather

@@ -25,7 +25,9 @@ hd_fixture() {
   echo "--- #75: harness-drill rehearses restore/bundle recovery, estate byte-untouched ---"
   HD_FIX=$(mktemp -d)
   git -C "$HD_FIX" init -q
-  cp -R estate/_harness "$HD_FIX/_harness"          # harness-drill resolves its root from its own location
+  # harness-drill resolves its root from its own location, so the machinery lands at the
+  # fixture estate's OWN root while the source side carries the tree prefix
+  cp -R estate/_harness "$HD_FIX/_harness"
   mkdir -p "$HD_FIX/Tickets/202607D-PROJ-1"
   cat > "$HD_FIX/Tickets/202607D-PROJ-1/202607D-PROJ-1.md" <<HDMD
 # 202607D-PROJ-1

@@ -146,7 +146,8 @@ wa_fails_open() {
   FO71T="$DEMO_ROOT/estate/Tickets/failsopen check 71"; mkdir -p "$FO71T"
   printf '# rec\n## Current State\nx\n' > "$FO71T/rec.md"
   FO71_OK=$(mktemp)                        # control: a writable case-local state path
-  set +e; HARNESS_WARN_STATE_FILE="$FO71_OK" bash estate/_harness/scripts/harness-status.sh >/dev/null 2>&1
+  set +e
+  HARNESS_WARN_STATE_FILE="$FO71_OK" bash estate/_harness/scripts/harness-status.sh >/dev/null 2>&1
   FO71_CTRL_RC=$?; set -e
   # a regular FILE — using it as a directory parent forces ENOTDIR on any OS
   FO71_BADPARENT=$(mktemp)

@@ -32,7 +32,7 @@ sr_rewrite() {  # $1 = file to rewrite, $2 = awk program
   awk "$prog" "$target" >"$tmp" && mv "$tmp" "$target"
 }
 
-sr_install() { printf '%s\n' "$1/install.sh"; }
+sr_install() { printf '%s\n' "$1/estate/install.sh"; }
 sr_case() { printf '%s\n' "$1/dev/demo/cases/source-refusal.case.sh"; }
 
 # THE FIXTURE for [source-refusal-aborts]. Inside guard_target_is_source() only, the abort becomes a

@@ -25,6 +25,7 @@ DEV	CLAUDE.md
 PRODUCT	LICENSE
 PRODUCT	README.md
 DEV	dev/DEVELOPMENT.md
+DEV	dev/a-day-with-the-harness.md
 DEV	dev/agent-roster-review.md
 DEV	dev/decisions/000-adr-template.md
 DEV	dev/decisions/001-local-only-no-remote.md

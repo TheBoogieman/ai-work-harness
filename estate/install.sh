@@ -9,7 +9,7 @@
 # untouched.
 #
 # It is the SHIPPING BOUNDARY (#43 cond 2): it lays down PRODUCT files ONLY, read from
-# .github/ship-manifest.txt (the one classification home). A fresh estate contains ZERO dev files.
+# dev/ship-manifest.txt (the one classification home). A fresh estate contains ZERO dev files.
 #
 # Runs FROM the source distribution (this file's directory), targeting an estate dir.
 #   Usage: install.sh [--dry-run] [--yes] [TARGET_DIR]
@@ -31,8 +31,26 @@
 #     `set -e` is just as live inside a function as it was at the top level.
 set -euo pipefail
 
-SOURCE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-MANIFEST="$SOURCE/.github/ship-manifest.txt"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# THE INSTALLER NOW SHIPS FROM INSIDE THE ESTATE TREE (#136), so where this file sits is what
+# says which of two things it is running as, and the two need different roots:
+#   SOURCE DISTRIBUTION — <root>/estate/install.sh, with the development tree (and the manifest
+#                         inside it) sitting beside the estate tree. SOURCE is <root>.
+#   INSTALLED ESTATE    — <estate>/install.sh, laid down at the estate root with nothing above
+#                         it. SOURCE is the estate itself, and the create path never runs.
+# The DISCRIMINATOR is the manifest, which is the same fact guard_manifest already reads — not
+# the directory's NAME, which a user may rename the moment they clone.
+if [ -f "$HERE/../dev/ship-manifest.txt" ]; then
+  SOURCE="$(cd "$HERE/.." && pwd)"
+else
+  SOURCE="$HERE"
+fi
+ESTATE_SRC="$HERE"                              # the estate tree: what a laydown copies FROM
+MANIFEST="$SOURCE/dev/ship-manifest.txt"
+# INVOKE — how the caller ran this script, spelled relative to SOURCE, so the fix the refusal
+# below prescribes is the command that actually works from where they are standing.
+INVOKE="install.sh"
+[ "$HERE" = "$SOURCE" ] || INVOKE="${HERE#"$SOURCE"/}/install.sh"
 
 # ---- state the steps share --------------------------------------------------------------------
 DRY=0; YES=0; TARGET=""
@@ -98,7 +116,7 @@ guard_target_is_source() {
   fi
   echo "install: TARGET is the source distribution itself —" \
        "the estate must be a SEPARATE directory." >&2
-  echo "  Pass one outside this checkout, e.g.:  bash install.sh $(dirname "$SOURCE")/Work" >&2
+  echo "  Pass one outside this checkout, e.g.:  bash $INVOKE $(dirname "$SOURCE")/Work" >&2
   exit 1
 }
 
@@ -330,11 +348,25 @@ interview_models() {
 # are PRODUCT (the user-facing surface); the manifest classifies them so they are laid down too.
 plan_product() {
   product_paths="$(awk -F'\t' '$1=="PRODUCT"{print $2}' "$MANIFEST")"
-  while IFS= read -r rel; do
-    [ -n "$rel" ] || continue
+  while IFS= read -r row; do
+    [ -n "$row" ] || continue
+    # THE STRIP IS A TREE RELATIONSHIP, not a text edit: what is wanted is the row's path
+    # RELATIVE TO THE ESTATE ROOT, and in the source distribution the estate root is the estate
+    # tree. Anchored to the front (${row#estate/}) so a path that merely CONTAINS the word
+    # further down is untouched. A root-pinned PRODUCT file carries no prefix and passes through.
+    rel="${row#estate/}"
     if [ -e "$TARGET/$rel" ]; then plan_exists+=("$rel"); else plan_create+=("$rel"); fi
   done <<< "$product_paths"
   return 0
+}
+
+# src_of — where an estate-relative path is READ FROM in the source distribution. A PRODUCT file
+# lives in one of exactly two places: inside the estate tree (nearly all of them), or root-pinned
+# at the repository root because an external system requires that location (the front page, the
+# licence, the root rule file and the two git control files). The estate tree is tried first.
+src_of() {
+  [ -e "$ESTATE_SRC/$1" ] && { printf '%s' "$ESTATE_SRC/$1"; return 0; }
+  printf '%s' "$SOURCE/$1"
 }
 
 # ---- ticket scaffolding plan (absent anatomy of existing hand-made tickets) --------------------
@@ -386,7 +418,7 @@ create_products() {
   mkdir -p "$TARGET"
   for rel in ${plan_create[@]+"${plan_create[@]}"}; do
     mkdir -p "$(dirname "$TARGET/$rel")"
-    cp -p "$SOURCE/$rel" "$TARGET/$rel"
+    cp -p "$(src_of "$rel")" "$TARGET/$rel"
     CREATED+=("$rel")
   done
   return 0
@@ -459,7 +491,7 @@ create_hook_config() {
   mkdir -p "$TARGET/.github/hooks"
   # The verified #44 schema uses cwd "." (relative), so there is no workspace path to substitute;
   # we copy the shipped example verbatim. This is the ONLY schema source — install.sh carries none.
-  cp -p "$SOURCE/_harness/hooks/hooks.example.json" "$TARGET/$HOOK_REL"
+  cp -p "$(src_of "_harness/hooks/hooks.example.json")" "$TARGET/$HOOK_REL"
   CREATED+=("$HOOK_REL")
   return 0
 }
@@ -566,10 +598,11 @@ print_summary() {
 # carry it — that would be the summary claiming an upgrade the installer never performed. The note
 # stays silent in the two ordinary cases: on a fresh install the estate's stamp was just copied
 # from the source's, and in reconfigure-only mode TARGET and SOURCE are the same directory, so both
-# reads return the same number.
+# reads return the same number. The source side is read from the ESTATE TREE, which is where the
+# version stamp ships from; in an installed estate that tree and the estate root are one directory.
 print_summary_version() {
   est_version="$(read_version "$TARGET")"
-  src_version="$(read_version "$SOURCE")"
+  src_version="$(read_version "$ESTATE_SRC")"
   echo "Harness version: $est_version   (this estate's VERSION stamp)"
   [ "$est_version" = "$src_version" ] && return 0
   echo "  NOTE: the source you ran is $src_version. The installer creates only what is absent, so"

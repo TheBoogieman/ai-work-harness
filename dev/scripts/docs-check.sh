@@ -48,6 +48,89 @@ dc_fail() {
 }
 dc_ok() { local tag=$1 IFS=' '; shift; printf '  ok [docs %s] — %s\n' "$tag" "$*"; }
 
+# ================================================================================================
+# THE SUBJECT ASSERTION (#269) — EVERY DETECTOR EITHER READS WHAT IT CLAIMS TO READ, OR FAILS
+# SAYING IT COULD NOT. A detector whose subject was absent used to conclude CLEAN, by three routes
+# that all end in the same place: a grep over a path that is not there finds nothing; a loop over a
+# list that could not be built runs zero times, so there is no iteration left to fail; and an error
+# sent to /dev/null feeding an emptiness test makes "the tool broke" and "there was nothing" the
+# same value. None of the three is distinguishable from a subject that is genuinely clean, so the
+# gate printed a success line about a document nothing had opened.
+#
+# THE REMEDY WAS ALREADY IN THIS FILE, and is CITED here rather than reinvented: dc_ih_documents
+# (install-home) and dc_adr_spec (the SPEC.md half of adr-shape) each test their own subject's
+# existence before concluding anything, and fail BY NAME when it is gone. Those two survive every
+# absence probe. The helpers below are that same test in one home so any detector can make it.
+#
+# EACH DETECTOR MUST MAKE THE ASSERTION UNDER ITS OWN TAG. A red raised by a sibling that happens to
+# read the same file is that SIBLING reporting; this detector's own blindness is untouched, and
+# reordering the run list would make it live again with nothing having changed. So these helpers
+# take the caller's tag, and one absence can legitimately produce one message per reader. That
+# duplication is the deliberate price of every detector answering for itself.
+
+# dc_have — the PATH form. Returns non-zero when the subject is not a readable file, so the caller
+# can skip reads that would now prove nothing instead of drawing a verdict from an empty one.
+dc_have() {
+  local hv_tag=$1 hv_path=$2 hv_what=$3
+  { [ -f "$hv_path" ] && [ -r "$hv_path" ]; } && return 0
+  dc_fail "$hv_tag" \
+    "'$hv_path' is absent or unreadable, so $hv_what was NOT checked. This detector reads that" \
+    "path; skipping it in silence would print a success line about a file nothing opened. Restore" \
+    "it, or re-point this detector at whatever replaced it."
+  return 1
+}
+
+# dc_present — the SET form for a scan set built from the git index. A COUNT IN A MESSAGE IS NOT AN
+# ASSERTION: the set can shrink to a fraction of itself and the success line simply prints the
+# smaller number, which is how one ok-line here reported on three surfaces while naming the sixteen
+# it used to read. Every path arriving on stdin must be a readable file. THE COUNT IS THE
+# ASSERTION AND THE NAMES ARE ONLY A LEAD, so at most three are printed and the message says "first"
+# rather than trailing an ellipsis — an ellipsis after the only missing path claims a truncation
+# that did not happen, which is the same species of small untruth this whole item is about.
+# Returns non-zero when anything was missing, so a caller may skip as well as report.
+dc_present() {
+  local pr_tag=$1 pr_f pr_gone="" pr_n=0 pr_seen=0
+  while IFS= read -r pr_f; do
+    [ -n "$pr_f" ] || continue          # an EMPTY set arrives as one blank line; it is not a path
+    pr_seen=$((pr_seen+1))
+    { [ -f "$pr_f" ] && [ -r "$pr_f" ]; } && continue
+    pr_n=$((pr_n+1))
+    [ "$pr_n" -le 3 ] && pr_gone="$pr_gone $pr_f"
+  done
+  # AN EMPTY SET IS THE SAME DEFECT ONE LEVEL UP, and it was found by watching this helper's own
+  # reds: with the git index unreadable, `git ls-files` returns NOTHING rather than failing loudly,
+  # so there was no member left to be missing and this assertion passed on a set that had never
+  # been built. Every caller's surface is non-empty in any checkout of this repository, so zero is
+  # never the real answer here — it is the answer a list gives when it could not be assembled.
+  if [ "$pr_seen" -eq 0 ]; then
+    dc_fail "$pr_tag" \
+      "this detector's scan set came back EMPTY — it is built from the git index, and a list that" \
+      "could not be assembled looks exactly like a subject with nothing wrong in it. Run this in" \
+      "a checkout with a readable index; if the set is legitimately empty, this detector has no" \
+      "subject left and belongs deleted rather than green."
+    return 1
+  fi
+  [ "$pr_n" -eq 0 ] && return 0
+  dc_fail "$pr_tag" \
+    "$pr_n path(s) in this detector's scan set are not readable files (first: ${pr_gone# }) — it" \
+    "takes its surface from the git index and used to drop a missing member without a word, so" \
+    "its verdict covered fewer files than its message names. Restore them, or record the removal."
+  return 1
+}
+
+# dc_have_min — the SET form for a set the detector assembles itself, where the floor is a property
+# of the question rather than of the index: below it there is nothing left to answer with. It reds
+# naming both numbers, because "found 0" and "looked at 0" read identically in a success line.
+dc_have_min() {
+  local hm_tag=$1 hm_got=$2 hm_min=$3 hm_what=$4
+  [ "$hm_got" -ge "$hm_min" ] && return 0
+  dc_fail "$hm_tag" \
+    "this detector assembled $hm_got $hm_what where at least $hm_min is expected — its scan set" \
+    "is too small to answer with, so any verdict from it would be a statement about a set that is" \
+    "not there. Restore the missing members, or lower the floor here if the set really did shrink."
+  return 1
+}
+
 # --- map-inventory — every shipped script + the two root surfaces named in the folder map --------
 # (the #34 docs-inventory guard, MIGRATED out of run_demo.sh; it gates merges now, not the demo.)
 # RE-POINTED, NOT REWRITTEN (#146): the folder map left README for its own document, and this check
@@ -60,14 +143,29 @@ dc_map_inventory() {
   # detector runs first, but latent is not correct, and reordering dc_main would have made it live
   # without anyone touching this line (#252).
   local s base mi_body ri_total=0 mi_before=$fail
+  # THE MAP IS ASSERTED BEFORE IT IS READ (#269). `cat` on a path that is not there returns an empty
+  # body, and every row below then fails for the wrong reason — sixteen messages saying the map does
+  # not name a script, when the truth is that there is no map. One honest red replaces them.
+  dc_have map-inventory "$MAP" "the shipped surfaces the folder map has to name" || return 0
   mi_body=$(cat "$MAP")
   for s in estate/_harness/scripts/* estate/install.sh estate/setup.md; do
+    # THE SCAN SET IS ASSERTED, MEMBER BY MEMBER (#269). An unmatched glob leaves the pattern itself
+    # in $s, so deleting the shipped-scripts directory used to take this loop from sixteen surfaces
+    # to three — and the ok-line simply printed the three. The test is EXISTENCE, not readability as
+    # a file: a directory added under the shipped-scripts path is still a surface the map has to
+    # name, and redding on it with an "unreadable" message would be a false statement about it.
+    [ -e "$s" ] || { dc_fail map-inventory \
+      "'$s' is in this detector's scan set but is not there — an unmatched glob leaves the" \
+      "pattern itself in the list, so the loop shrinks in silence and the count in the success" \
+      "line measures only what survived. Restore the shipped surface, or narrow the scan set" \
+      "here if it genuinely no longer ships."; continue; }
     base=$(basename "$s"); ri_total=$((ri_total+1))
     grep -Fq -- "$base" <<<"$mi_body" && continue
     dc_fail map-inventory "$base ships but is not named in the folder map ($MAP)" \
                          "— add its tree line."
   done
-  [ "$fail" -ne "$mi_before" ] || dc_ok map-inventory "$ri_total shipped surfaces named in $MAP"
+  [ "$fail" -ne "$mi_before" ] || dc_ok map-inventory \
+    "$ri_total shipped surfaces, each one present and named in $MAP"
 }
 
 # --- dev-loop — DEVELOPMENT.md + dev/dev-loop/ starter kit: three method-doc invariants
@@ -105,13 +203,21 @@ dc_dl_pairs() {
 # <FILL> token. The check is presence-of-one, so it fires only when NONE is left (a FULLY-filled
 # template), not on a partial fill — the message and ok-line say exactly that, no stronger (#82).
 dc_dl_templates() {
-  local dl_t
+  local dl_t dl_n=0
   for dl_t in dev/dev-loop/*.template.md; do
+    # THE TEMPLATE SET IS COUNTED (#269). With the directory gone the glob does not expand, so $dl_t
+    # held the pattern itself and this loop redded once about a file named "*.template.md" — a true
+    # red with a false subject. Skipping the non-file and counting instead reds about the SET, which
+    # is what actually went missing, and covers the case the old shape could not see at all: a
+    # directory that is there and holds no templates.
+    [ -f "$dl_t" ] || continue
+    dl_n=$((dl_n+1))
     grep -Fq -- '<FILL>' "$dl_t" && continue
     dc_fail dev-loop \
       "$dl_t has no <FILL> token left — a template must keep at least one <FILL> blank as proof" \
       "it ships as a skeleton; restore a <FILL> blank."
   done
+  dc_have_min dev-loop "$dl_n" 1 "adopt-and-fill template(s) matching dev/dev-loop/*.template.md"
 }
 
 # 2. VENDOR-NEUTRAL — no AI product name appears in DEVELOPMENT.md or dev/dev-loop/**. It is
@@ -119,16 +225,29 @@ dc_dl_templates() {
 # and case-insensitive (-i) so the method-level prose stays product-free; scoped by git ls-files to
 # this lane's files only, never README.
 dc_dl_vendor_neutral() {
-  local dl_vendors dl_f dl_hit
+  local dl_vendors dl_f dl_hit dl_files
   dl_vendors='claude|copilot|chatgpt|gpt|anthropic|openai|gemini|cursor'
+  # THE SCANNED LIST IS ASSERTED TO CONTAIN THE FILE THE CLAIM NAMES (#269). This list comes from
+  # the git index, and the ok-line above says the method doc is vendor-neutral — so with that doc
+  # untracked the loop ran over the other files, found nothing, and the success line vouched for a
+  # document it had not opened. The named assertion is the point: a bare count would still pass
+  # with the one file that matters missing and four others present in its place.
+  dl_files=$(git ls-files dev/DEVELOPMENT.md 'dev/dev-loop/*')
+  printf '%s\n' "$dl_files" | grep -qxF dev/DEVELOPMENT.md || dc_fail dev-loop \
+    "dev/DEVELOPMENT.md is not in this detector's scanned list (git ls-files) — the" \
+    "vendor-neutral claim names that document, and a list without it makes the claim about" \
+    "everything except its subject. Track the file, or re-point this detector at the method doc" \
+    "that replaced it."
+  dc_present dev-loop <<<"$dl_files"
   while IFS= read -r dl_f; do
+    [ -f "$dl_f" ] || continue                # absent members are already reported by name, above
     dl_hit=$(grep -niwE -- "$dl_vendors" "$dl_f" | head -1 || true)
     [ -z "$dl_hit" ] && continue
     dc_fail dev-loop \
       "$dl_f names an AI vendor ($dl_hit) — dev/DEVELOPMENT.md and dev/dev-loop/** are" \
       "vendor-neutral;" \
       "remove the product name."
-  done < <(git ls-files dev/DEVELOPMENT.md 'dev/dev-loop/*')
+  done <<<"$dl_files"
 }
 
 # 3. ROLES AND LAWS PRESENT — DEVELOPMENT.md carries the four role words and one needle per working
@@ -194,6 +313,11 @@ dc_de_number() {
   local dn_fail_before=$fail dn_f dn_exempt dn_lineno dn_line
   dn_num='one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|[0-9]+'
   for dn_f in "$README" estate/folder-structure.md "$DESIGN"; do
+    # EACH DOCUMENT IS ASSERTED BEFORE IT IS READ (#269). `done < "$dn_f"` on a path that is not
+    # there fails the redirect and the loop body never runs, so there is no iteration left to fail —
+    # and this detector's ok-line NAMES all three documents, which made it the loudest instance of
+    # the class: a success line reciting three titles, printed by a run that had opened two.
+    dc_have de-number "$dn_f" "its numeric agent-count claims" || continue
     dn_exempt=0; dn_lineno=0
     while IFS= read -r dn_line || [ -n "$dn_line" ]; do
       dn_lineno=$((dn_lineno+1))
@@ -392,22 +516,40 @@ dc_oh_row() {
   fi
 }
 
+# dc_oh_census_files — THIS detector's census surface: oh_surface minus the decision records.
+# EXCLUSION 4 applies HERE and only here — the records are dropped from THIS detector's census while
+# oh_surface, which the no-lookup detector below reads, keeps them. The test is on the records'
+# DIRECTORY PREFIX, not on the first path segment: the records live inside the development tree
+# (#136), so a first-segment test would match "dev" — which is every development file — or nothing,
+# and either way the exclusion would stop meaning what it says.
+# IT IS A FUNCTION SO THE LIST IS BUILT ONCE AND READ TWICE (#269): the presence assertion below and
+# the census itself must be looking at the same surface, or the assertion vouches for a set the
+# census never used.
+dc_oh_census_files() {
+  local oc_f
+  while IFS= read -r oc_f; do
+    case "$oc_f" in dev/decisions/*) continue ;; esac
+    printf '%s\n' "$oc_f"
+  done < <(oh_surface)
+}
+
 dc_one_home() {
   local oh_fail_before=$fail oh_row
   # EXCLUSION 3's haystack — every string in this repository that a MACHINE matches literally, so a
   # registration can be tested against all of them at once: the workflow files, plus the dev-loop
   # needles declared above (a required needle is an identifier for this purpose).
   oh_machined=$(cat .github/workflows/*.yml 2>/dev/null || true; dc_dl_pairs)
-  # EXCLUSION 4 applies HERE and only here — the decision records are dropped from THIS detector's
-  # census while oh_surface, which the no-lookup detector below reads, keeps them. The test is
-  # on the records' DIRECTORY PREFIX, not on the first path segment: the records live inside
-  # the development tree (#136), so a first-segment test would match "dev" — which is every
-  # development file — or nothing, and either way the exclusion would stop meaning what it says.
+  # THE CENSUS SURFACE IS ASSERTED PRESENT BEFORE IT IS COUNTED OVER (#269). The `[ -f ]` test
+  # below is a FILTER, and a filter drops what it rejects without a word: a tracked file missing
+  # from the working tree simply left the census, the phrase count came back smaller, and "told in
+  # exactly ONE document" was printed over a surface with holes in it. The assertion is what makes
+  # the hole audible; the filter still runs, because the files that ARE there are still worth
+  # counting.
+  dc_present one-home < <(dc_oh_census_files)
   oh_files=()
   while IFS= read -r oh_f; do
-    case "$oh_f" in dev/decisions/*) continue ;; esac
     [ -f "$oh_f" ] && oh_files+=("$oh_f")
-  done < <(oh_surface)
+  done < <(dc_oh_census_files)
   for oh_row in "${oh_registry[@]}"; do
     dc_oh_row "$oh_row"
   done
@@ -495,6 +637,12 @@ dc_id_shape() {
 
 dc_no_lookup() {
   local id_fail_before=$fail id_row
+  # THE SWEPT SURFACE IS ASSERTED PRESENT (#269). dc_id_scan_file skips a path that is not a file —
+  # an EXPLICIT silent skip, the plainest shape of this defect — and a retired tag inside a tracked
+  # file that had left the working tree was therefore unreachable while this printed "zero
+  # occurrences". Asserted ONCE here rather than per shape: the two shapes sweep the same surface,
+  # so one message answers for both instead of doubling the same absence.
+  dc_present no-lookup < <(oh_surface)
   for id_row in "${id_shapes[@]}"; do
     dc_id_shape "$id_row"
   done
@@ -687,31 +835,53 @@ dc_ci_name_contract() {
 # is estate STRUCTURE). Revert-proof: remove a map line and this reds naming the directory.
 # RE-POINTED WITH THE MAP (#146): it reads $MAP now, and the heading pattern admits any depth of
 # "#" because the map's own document titles the section rather than sub-heading it.
+
+# dc_mc_product_dirs — the top-level dir of each PRODUCT manifest path that lives under a directory
+# (path contains a "/"). Lifted out of the loop below so the set can be COUNTED before it is walked
+# (#269) — a set that is walked straight out of a process substitution can only be measured by the
+# number of times the loop happened to run, which is exactly the number an absent registry makes
+# zero.
+# THE MAP IS THE ESTATE'S STRUCTURE, so the directories compared against it must be ESTATE-RELATIVE.
+# A manifest row is repository-relative and the shipped tree now sits under estate/ (#136), so that
+# prefix is stripped BEFORE the top directory is taken — without the strip every PRODUCT row reduces
+# to the one directory "estate", which the map correctly does not draw, and this detector would
+# demand a line that must never exist. A root-pinned PRODUCT file has no prefix and no directory,
+# and drops out on the remaining slash test as before.
+dc_mc_product_dirs() {
+  awk -F'\t' '$1=="PRODUCT" { sub(/^estate\//, "", $2)
+                if ($2 ~ /\//) { sub(/\/.*/, "", $2); print $2 } }' \
+    dev/ship-manifest.txt | sort -u
+}
+
 dc_map_complete() {
-  local mc_fail_before=$fail mc_map mc_dir
+  local mc_fail_before=$fail mc_map mc_dir mc_dirs mc_n
+  # BOTH SUBJECTS ARE ASSERTED BEFORE EITHER IS USED (#269). This detector compares a REGISTRY
+  # against a MAP, and the registry was the plainest instance of the whole class: delete
+  # dev/ship-manifest.txt and the awk that derives the directory set printed nothing, the loop ran
+  # zero times, nothing failed, and the ok-line announced that every PRODUCT top-level directory
+  # appears in the folder map — printed by a detector that had opened no registry at all.
+  dc_have map-complete "$MAP" "the folder map's tree block" || return 0
+  dc_have map-complete dev/ship-manifest.txt "the PRODUCT top-level directory set" || return 0
   # the fenced tree block under the "The folder map" heading (between its first pair of ``` fences).
   mc_map=$(awk '
     /^#+ The folder map/ {seen=1; next}
     seen && /^```/ {fence++; if(fence==2) exit; next}
     seen && fence==1 {print}
   ' "$MAP")
-  # top-level dir of each PRODUCT manifest path that lives under a directory (path contains a "/").
+  # AND THE DERIVED SET IS COUNTED, because a registry that exists but yields nothing leaves this
+  # detector exactly as blind as a registry that is gone — same zero iterations, same success line.
+  mc_dirs=$(dc_mc_product_dirs)
+  mc_n=$(printf '%s\n' "$mc_dirs" | grep -c . || true)
+  dc_have_min map-complete "$mc_n" 1 "PRODUCT top-level director(ies) in dev/ship-manifest.txt" \
+    || return 0
   while IFS= read -r mc_dir; do
     grep -Fq -- "$mc_dir/" <<<"$mc_map" && continue
     dc_fail map-complete \
       "top-level directory '$mc_dir/' ships PRODUCT files (per dev/ship-manifest.txt) but is" \
       "absent from the folder map ($MAP) — add its tree line."
-  # THE MAP IS THE ESTATE'S STRUCTURE, so the directories compared against it must be
-  # ESTATE-RELATIVE. A manifest row is repository-relative and the shipped tree now sits under
-  # estate/ (#136), so that prefix is stripped BEFORE the top directory is taken — without the
-  # strip every PRODUCT row reduces to the one directory "estate", which the map correctly does
-  # not draw, and this detector would demand a line that must never exist. A root-pinned PRODUCT
-  # file has no prefix and no directory, and drops out on the remaining slash test as before.
-  done < <(awk -F'\t' '$1=="PRODUCT" { sub(/^estate\//, "", $2)
-                        if ($2 ~ /\//) { sub(/\/.*/, "", $2); print $2 } }' \
-             dev/ship-manifest.txt | sort -u)
+  done <<<"$mc_dirs"
   [ "$fail" -ne "$mc_fail_before" ] || dc_ok map-complete \
-    "every PRODUCT top-level directory appears in the folder map ($MAP)"
+    "all $mc_n PRODUCT top-level directories appear in the folder map ($MAP)"
 }
 
 # --- install-home (#146) — THE INSTALL COMMANDS ARE TOLD ONCE ------------------------------------
@@ -879,18 +1049,33 @@ dc_adr() {
   # test `$fail -ne 0`, and dc_main runs this detector well down the list: ANY earlier detector's
   # failure silenced it even when every record was well-formed, so the one run where a reader most
   # needs to know the decision records are still readable was the run that never said so (#252).
-  local adr adr_before=$fail
+  local adr adr_before=$fail adr_set adr_n
   adr_ev_re='#[0-9]+|\b[0-9a-f]{7,40}\b'   # what counts as a clickable evidence link in an ADR
+  # THE RECORD SET IS ASSERTED, NOT ASSUMED (#269). The loop below used to walk a list straight out
+  # of a process substitution: with no records to list it ran zero times, nothing could fail, and
+  # the ok-line reported every record well-formed on the strength of having read none. The SPEC.md
+  # half of this detector never had that hole — dc_adr_spec tests its file exists and fails by name
+  # — and it is the model these two lines copy rather than replace.
+  adr_set=$(git ls-files 'dev/decisions/[0-9][0-9][0-9]-*.md')
+  adr_n=$(printf '%s\n' "$adr_set" | grep -c . || true)
+  # The floor is TWO because it is a property of the question, not a number picked to pass today:
+  # the case below has a template branch and a real-record branch, and a set that cannot exercise
+  # both cannot answer for either. IT IS TESTED FIRST, AND THAT ORDER IS THE POINT: a floor of two
+  # already covers the empty set, so running the presence assertion first gave ONE cause TWO
+  # messages — the redundancy this repair had to be checked for, found by reading its own reds.
+  dc_have_min adr-shape "$adr_n" 2 "decision record(s) under dev/decisions/" || return 0
+  dc_present adr-shape <<<"$adr_set"
   while IFS= read -r adr; do
+    [ -f "$adr" ] || continue                 # already reported by name, above
     dc_adr_headings "$adr"
     case "$(basename "$adr")" in
       000-adr-template.md) dc_adr_template "$adr" ;;
       *) dc_adr_real "$adr" ;;
     esac
-  done < <(git ls-files 'dev/decisions/[0-9][0-9][0-9]-*.md')
+  done <<<"$adr_set"
   dc_adr_spec
   [ "$fail" -ne "$adr_before" ] || dc_ok adr-shape \
-    "estate/SPEC.md glossary present and every dev/decisions/ ADR well-formed"
+    "estate/SPEC.md glossary present and all $adr_n dev/decisions/ ADRs well-formed"
 }
 
 # --- reader-agent (#82 / dev/decisions/018) — the reader spine, asserted PER-NAME not
@@ -1017,16 +1202,34 @@ dc_design_derive() {
 # [diagrams-unaffected: <non-empty reason>]. The machine can't judge whether prose reflects reality,
 # but it can refuse to merge the unanswered question.
 dc_design_trigger() {
-  local changed reason
+  local changed reason dt_rc dt_depicted dt_n
+  # BOTH SUBJECTS ARE ASSERTED UNDER THIS DETECTOR'S OWN TAG (#269), and the second one is why the
+  # note that stood here is deleted rather than kept. It said an empty derived set was covered
+  # "because dc_design_derive reds separately" — but that is a SIBLING's red, raised one detector
+  # earlier over the same absence, and it leaves this detector just as blind as before. Reorder
+  # dc_main and the blindness is live with nothing about this code having changed. A wall somebody
+  # else is holding up is not this detector answering for itself.
+  dt_depicted=$(dc_design_depicted)
+  dt_n=$(printf '%s\n' "$dt_depicted" | grep -c . || true)
+  dc_have_min DESIGN-trigger "$dt_n" 1 "script name(s) depicted by the sheets" || return 0
   if [ "${DOCS_CHANGED_FILES+x}" = x ]; then
     changed="$DOCS_CHANGED_FILES"
   else
-    changed=$(git diff --name-only "${DOCS_BASE_REF:-origin/main}...HEAD" 2>/dev/null || true)
+    # THE CHANGE LIST IS THE OTHER SUBJECT, and its failure was swallowed: `2>/dev/null || true`
+    # turned "there is no base ref to diff against" into an empty list, and an empty list matches no
+    # depicted script, so a run that could not see the change set returned the same silent pass as a
+    # run whose change set touched nothing drawn.
+    changed=$(git diff --name-only "${DOCS_BASE_REF:-origin/main}...HEAD" 2>/dev/null); dt_rc=$?
+    [ "$dt_rc" -eq 0 ] || { dc_fail DESIGN-trigger \
+      "the changed-file list could not be read (git diff against" \
+      "'${DOCS_BASE_REF:-origin/main}...HEAD' exited $dt_rc), so whether depicted machinery moved" \
+      "is unknown — an empty list reads as 'nothing drawn changed' and would pass in silence." \
+      "Fetch the base ref, set DOCS_BASE_REF, or pass DOCS_CHANGED_FILES directly."; return 0; }
   fi
   # Compare BASENAMES: the sheets name scripts, not paths. sed strips any directory; a changed path
-  # with no slash is left alone. An empty derived set matches nothing, which is why dc_design_derive
-  # reds separately — a silent empty set must never read as "no depicted machinery changed".
-  printf '%s\n' "$changed" | sed 's#.*/##' | grep -qxFf <(dc_design_depicted) || return 0
+  # with no slash is left alone.
+  printf '%s\n' "$changed" | sed 's#.*/##' \
+    | grep -qxFf <(printf '%s\n' "$dt_depicted") || return 0
   printf '%s\n' "$changed" | grep -qxF "$DESIGN" && return 0
   reason=$(printf '%s' "${PR_BODY:-}" | grep -oE '\[diagrams-unaffected:[^]]*\]' | head -1 \
            | sed -E 's/^\[diagrams-unaffected:[[:space:]]*//; s/[[:space:]]*\]$//')
@@ -1173,6 +1376,13 @@ dc_lc_cited() {
 dc_label_citation() {
   local lc_before=$fail lc_emitted lc_rows lc_row lc_label
   dc_lc_validate || return 0
+  # THE CITATION SCOPE'S SOURCE IS ASSERTED PRESENT (#269). dc_lc_scope keeps a candidate only if
+  # `[ -f ]` holds, so a tracked document missing from the working tree never entered the scope at
+  # all and its stale citation was never compared against anything — this printed a citation count
+  # and a green verdict over a document set with holes in it. The assertion is made on oh_surface,
+  # the set the scope is DERIVED FROM, because a file that never entered the scope is exactly what
+  # a check on the scope cannot see.
+  dc_present label-citation < <(oh_surface)
   lc_emitted=$(dc_lc_emitted < "$lc_gate")
   if [ -z "$lc_emitted" ]; then
     dc_fail label-citation:emitted \
@@ -1207,15 +1417,28 @@ dc_label_citation() {
 # and template placeholders are skipped, so a required check never reds on the network. Runs on GNU
 # grep only (docs.yml is ubuntu; the dev seat is Cygwin), never on macOS/BSD — the demo owns that.
 
+# dc_md_files — the markdown scan set the three doc-integrity detectors below share, in ONE home so
+# the set each asserts present is exactly the set each then reads (#269).
+dc_md_files() { git ls-files '*.md'; }
+
 # fence-balance — every *.md has an EVEN number of ``` markers (no code block left unclosed).
 dc_fence_balance() {
   local f fences
+  # THE MARKDOWN SET IS ASSERTED PRESENT (#269). `grep -c` on a path that is not there prints
+  # nothing, the `|| true` turns its error into success, and an empty count is EVEN — so a document
+  # this detector could not open was counted as balanced. That is all three failure shapes stacked
+  # in one line, and it is the detector a four-line "assert the file exists, else do nothing"
+  # repair was written for: such a repair passes an absence probe while seeing no unclosed fence at
+  # all, which is why the assertion is added AROUND the existing read rather than in place of it.
+  dc_present fence-balance < <(dc_md_files)
   while IFS= read -r f; do
+    [ -f "$f" ] || continue          # already reported BY NAME above; reading it again only adds
+                                     # a bare grep error to the log next to an honest message
     fences=$(grep -cE '^[[:space:]]*```' "$f" || true)   # fence lines, indented ones included
     [ $(( fences % 2 )) -eq 0 ] && continue
     dc_fail fence-balance \
       "$f has $fences code-fence markers (odd) — a \`\`\` block is unclosed; balance the fences."
-  done < <(git ls-files '*.md')
+  done < <(dc_md_files)
 }
 
 # doc-crlf — no *.md carries a carriage-return byte (the #40 CRLF class, extended to docs). -U
@@ -1223,10 +1446,16 @@ dc_fence_balance() {
 # grep in binary mode so a lone CR inside a CRLF line is still seen.
 dc_doc_crlf() {
   local f
+  # THE MARKDOWN SET IS ASSERTED PRESENT (#269). The read below sends grep's error to /dev/null and
+  # then treats a non-zero status as "no carriage return", so a file that could not be opened and a
+  # file that is clean produce the identical verdict. The assertion is what tells those two apart;
+  # the swallow itself stays, because it is what keeps a genuinely absent CR quiet.
+  dc_present doc-crlf < <(dc_md_files)
   while IFS= read -r f; do
+    [ -f "$f" ] || continue          # already reported BY NAME above
     grep -qU $'\r' -- "$f" 2>/dev/null || continue
     dc_fail doc-crlf "$f contains carriage-return byte(s) — normalise to LF (docs ship LF-only)."
-  done < <(git ls-files '*.md')
+  done < <(dc_md_files)
 }
 
 # link-target / link-anchor — an intra-repo relative link points at a real path; a #fragment matches
@@ -1274,13 +1503,18 @@ dc_link_target() {
 
 dc_link_targets() {
   local f dir tgt
+  # THE MARKDOWN SET IS ASSERTED PRESENT (#269). Extracting link targets from a document that is not
+  # there yields no targets, the inner loop runs zero times, and a file full of dead links reads
+  # exactly like a file with none — no iteration is left for either verdict to come from.
+  dc_present link-target < <(dc_md_files)
   while IFS= read -r f; do
+    [ -f "$f" ] || continue          # already reported BY NAME above
     dir=$(dirname "$f")
     # each link target from [text](target); dc_link_target resolves/skips per scope
     while IFS= read -r tgt; do
       dc_link_target "$f" "$dir" "$tgt"
     done < <(grep -oE '\]\([^)]+\)' "$f" | sed -E 's/^\]\(//; s/\)$//')
-  done < <(git ls-files '*.md')
+  done < <(dc_md_files)
 }
 
 # dead-pointer (#51 collapse) — the standalone flat-pack install doc was folded into README
@@ -1293,9 +1527,23 @@ dc_link_targets() {
 # here would make the detector match itself forever. Its own detector (not folded into the link
 # check) because it hunts a bare name in ANY tracked text, not just markdown links.
 dc_dead_pointer() {
-  local collapse_needle collapse_hits
+  local collapse_needle collapse_hits collapse_rc
   collapse_needle='INSTALL''.md'
-  collapse_hits=$(git grep -l -F -- "$collapse_needle" 2>/dev/null || true)
+  # THE SEARCH IS ASSERTED TO HAVE HAPPENED (#269), and this detector is the one the determination
+  # could not measure: its error went to /dev/null and fed an EMPTINESS TEST, so "no dead pointer
+  # anywhere" and "the search never ran" were the same empty string, and no probe made the search
+  # itself fail. git grep exits 0 when it matched, 1 when it looked and found nothing, and ABOVE 1
+  # when it could not look at all — so the status separates the two answers the old read could not.
+  # It is read into its own variable on the same line, before anything else can overwrite it.
+  collapse_hits=$(git grep -l -F -- "$collapse_needle" 2>/dev/null); collapse_rc=$?
+  if [ "$collapse_rc" -gt 1 ]; then
+    dc_fail dead-pointer \
+      "the tracked-text search for '$collapse_needle' could not run (git grep exited" \
+      "$collapse_rc) — this detector proves a removed file is named NOWHERE, and a search that" \
+      "did not happen returns exactly what a clean repository returns. Run this inside a working" \
+      "git checkout with a readable index."
+    return 0
+  fi
   [ -n "$collapse_hits" ] || return 0
   dc_fail dead-pointer \
     "'$collapse_needle' was folded away and removed, but these tracked files still name it —" \

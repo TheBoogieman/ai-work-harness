@@ -89,13 +89,27 @@ dc_have() {
 # that did not happen, which is the same species of small untruth this whole item is about.
 # Returns non-zero when anything was missing, so a caller may skip as well as report.
 dc_present() {
-  local pr_tag=$1 pr_f pr_gone="" pr_n=0
+  local pr_tag=$1 pr_f pr_gone="" pr_n=0 pr_seen=0
   while IFS= read -r pr_f; do
     [ -n "$pr_f" ] || continue          # an EMPTY set arrives as one blank line; it is not a path
+    pr_seen=$((pr_seen+1))
     { [ -f "$pr_f" ] && [ -r "$pr_f" ]; } && continue
     pr_n=$((pr_n+1))
     [ "$pr_n" -le 3 ] && pr_gone="$pr_gone $pr_f"
   done
+  # AN EMPTY SET IS THE SAME DEFECT ONE LEVEL UP, and it was found by watching this helper's own
+  # reds: with the git index unreadable, `git ls-files` returns NOTHING rather than failing loudly,
+  # so there was no member left to be missing and this assertion passed on a set that had never
+  # been built. Every caller's surface is non-empty in any checkout of this repository, so zero is
+  # never the real answer here — it is the answer a list gives when it could not be assembled.
+  if [ "$pr_seen" -eq 0 ]; then
+    dc_fail "$pr_tag" \
+      "this detector's scan set came back EMPTY — it is built from the git index, and a list that" \
+      "could not be assembled looks exactly like a subject with nothing wrong in it. Run this in" \
+      "a checkout with a readable index; if the set is legitimately empty, this detector has no" \
+      "subject left and belongs deleted rather than green."
+    return 1
+  fi
   [ "$pr_n" -eq 0 ] && return 0
   dc_fail "$pr_tag" \
     "$pr_n path(s) in this detector's scan set are not readable files (first: ${pr_gone# }) — it" \

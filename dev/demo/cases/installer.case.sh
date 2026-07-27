@@ -50,6 +50,43 @@ in_install() {   # $1 = guard name to report under; $2.. = install.sh's own argu
   exit 1
 }
 
+# in_product_count — how many of the manifest's PRODUCT files actually exist in an estate.
+# THE SUBJECT-EXISTS PRIMITIVE (#264). WHY it is needed: every guard below concludes something
+# about an installed estate's CONTENTS, and an empty result set carries two meanings — "nothing
+# found" and "nothing looked at". A guard that cannot tell them apart reports success about an
+# estate that was never created. Counting the PRODUCT files that DID arrive separates the two.
+# Manifest paths carry the source tree's `estate/` prefix, which install.sh strips when it lays
+# them down, so strip it here too. The total is DERIVED at run time and never hard-coded: a
+# number baked into this file would silently go stale on the next legitimate manifest edit.
+in_product_count() {   # $1 = estate dir; prints how many manifest PRODUCT files are present
+  local est="$1" p rel n=0
+  while IFS= read -r p; do
+    rel=${p#estate/}
+    if [ -e "$est/$rel" ]; then n=$((n + 1)); fi
+  done < <(awk -F'\t' '$1=="PRODUCT"{print $2}' dev/ship-manifest.txt)
+  printf '%s\n' "$n"
+}
+
+# (l) installer-ran (#264): THE ASSERTION THAT THE INSTALLER DID SOMETHING. Nothing in this case
+#     used to ask. What ended the run when the installer was neutralised was an unguarded write
+#     into a directory that was never created — an accident, not a check — and an accident is not
+#     an assertion: it depends on a later sub-case happening to touch the missing estate, so it
+#     moves or disappears whenever that sub-case is edited. This asks the question directly, on
+#     its OWN fresh estate so it depends on no other sub-case, and reds by name when the answer
+#     is no. Deliberately NOT an expected-count check: the claim is "the installer laid something
+#     down", not "the installer laid down exactly N files", which would be a claim about the
+#     manifest's size and would go stale on the next entry added to it.
+in_installer_ran() {
+  local i39_ran i39_n
+  i39_ran="$I39_ROOT/ranest"
+  in_install installer-ran --yes "$i39_ran"
+  i39_n=$(in_product_count "$i39_ran")
+  [ "$i39_n" -gt 0 ] \
+    || { echo "BUG [installer-ran]: install.sh --yes exited 0 but laid down NONE of the PRODUCT" \
+           "files the manifest names — the installer ran and did nothing"; exit 1; }
+  echo "  ok [installer-ran] — the installer created the estate ($i39_n PRODUCT files present)"
+}
+
 # (a) single schema home: install.sh must carry NO hook-schema literal (it copies from the one
 #     home, hooks.example.json, by path). A second literal here is the two-homes finding.
 in_schema_one_home() {
@@ -61,15 +98,27 @@ in_schema_one_home() {
 }
 
 # (b) PRODUCT-only (#43 cond 2 / #39): a fresh --yes install lays down zero DEV files.
+#     ITS CLAIM IS "the installer ships only PRODUCT files"; the DEV scan below tests "are there
+#     DEV files here". Those two diverge on any estate that came out EMPTY — a directory that was
+#     never created contains zero DEV files vacuously — and this guard used to print success on
+#     exactly that (#264). It now establishes its SUBJECT before concluding anything about the
+#     subject's contents: no PRODUCT file present means there is nothing to scan, and "no DEV
+#     files" would be an answer to the easier question rather than to its own.
 in_product_only() {
-  local i39_leak=0 d
+  local i39_leak=0 d i39_n
   in_install clean-install --yes "$I39_EST"
+  i39_n=$(in_product_count "$I39_EST")
+  [ "$i39_n" -gt 0 ] \
+    || { echo "BUG [product-only]: nothing to scan — the estate holds ZERO of the PRODUCT files" \
+           "the manifest names, so 'contains no DEV files' would be vacuously true"; exit 1; }
   while IFS= read -r d; do
     if [ -e "$I39_EST/$d" ]; then echo "  DEV leak: $d"; i39_leak=1; fi
   done < <(awk -F'\t' '$1=="DEV"{print $2}' dev/ship-manifest.txt)
   [ "$i39_leak" -eq 0 ] \
     || { echo "BUG [product-only]: a DEV file reached the installed estate"; exit 1; }
-  echo "  ok [product-only] — fresh estate contains zero DEV files"
+  # The success line says what was MEASURED, not the broader claim: an estate that demonstrably
+  # holds PRODUCT files, and zero DEV files among them.
+  echo "  ok [product-only] — installed estate holds $i39_n PRODUCT files and zero DEV files"
 }
 
 # (c) dumb creator (cond 2, ABSOLUTE): a pre-existing (corrupted) file is byte-UNCHANGED by a
@@ -266,6 +315,7 @@ in_missing_value_audible() {
 case_installer() {
   in_fixture
   in_schema_one_home
+  in_installer_ran
   in_product_only
   in_dumb_creator
   in_idempotent_rerun

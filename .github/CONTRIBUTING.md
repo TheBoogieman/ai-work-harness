@@ -114,11 +114,11 @@ the step "Decide whether this change can affect the demo" in
 - every file in the PR is a content **edit** — one addition, deletion or rename
   anywhere, of any file, and the demo runs; **and**
 - every one of those edited paths is a `*.md` **at the repository root**,
-  something under `decisions/`, or something under
-  `General AI-Knowledge/AI Harness/`.
+  something under `dev/decisions/`, or something under
+  `estate/General AI-Knowledge/AI Harness/`.
 
 Everything else runs the demo in full — including markdown deliberately left off
-that list (`_agents/*.agent.md`, `General AI-Knowledge/Skills/**`, `Tickets/**`),
+that list (`estate/_agents/*.agent.md`, `estate/General AI-Knowledge/Skills/**`, `estate/Tickets/**`),
 a push to `main`, a manual dispatch, and any run that cannot work out what
 changed.
 

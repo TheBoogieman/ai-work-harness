@@ -1,0 +1,147 @@
+# ship-manifest.txt — the ONE home for ship/dev classification (#43).
+# Format: one entry per line, "<CLASS><TAB><repo-relative path>". CLASS is
+# PRODUCT (ships to a user estate via install.sh) or DEV (development
+# infrastructure — never leaves this repo). TAB-delimited so paths with
+# spaces (e.g. General AI-Knowledge/) parse cleanly. Lines starting with #
+# and blank lines are ignored. Every tracked file appears in EXACTLY one
+# class; the demo classification guard enforces both directions. This file
+# is itself DEV (it never ships). Edit here when you add or move a file.
+
+PRODUCT	.gitattributes
+DEV	.github/CONTRIBUTING.md
+DEV	.github/ISSUE_TEMPLATE/change.md
+DEV	.github/ISSUE_TEMPLATE/defect.md
+DEV	.github/pull_request_template.md
+DEV	.github/workflows/demo.yml
+DEV	.github/workflows/docs.yml
+DEV	.github/workflows/governance.yml
+DEV	.github/workflows/sabotage.yml
+DEV	.github/workflows/shape.yml
+DEV	.github/workflows/shell-lint.yml
+DEV	.github/workflows/windows-witness.yml
+PRODUCT	.gitignore
+PRODUCT	AGENTS.md
+DEV	CLAUDE.md
+PRODUCT	LICENSE
+PRODUCT	README.md
+DEV	dev/DEVELOPMENT.md
+DEV	dev/agent-roster-review.md
+DEV	dev/decisions/000-adr-template.md
+DEV	dev/decisions/001-local-only-no-remote.md
+DEV	dev/decisions/002-estate-identity-lineage.md
+DEV	dev/decisions/003-dumb-inspector.md
+DEV	dev/decisions/004-hooks-as-convenience.md
+DEV	dev/decisions/005-whitelist-containment.md
+DEV	dev/decisions/006-one-home-doctrine.md
+DEV	dev/decisions/007-ship-dev-manifest-split.md
+DEV	dev/decisions/008-reconfigure-only-mode.md
+DEV	dev/decisions/009-four-state-sweep-two-step-completion.md
+DEV	dev/decisions/010-red-blocks-yellow-schedules.md
+DEV	dev/decisions/011-guard-per-bug.md
+DEV	dev/decisions/012-source-not-estate.md
+DEV	dev/decisions/013-estate-gains-a-reader.md
+DEV	dev/decisions/014-status-primary-observation.md
+DEV	dev/decisions/015-pluggable-tracker-fetch-seam.md
+DEV	dev/decisions/016-multi-machine-ferry-declined.md
+DEV	dev/decisions/017-estate-gains-an-output-surface.md
+DEV	dev/decisions/018-the-reader-spine.md
+DEV	dev/decisions/019-revert-proofs-into-ci-adversarial-spot-check.md
+DEV	dev/decisions/020-dumb-creator-retirement-exception.md
+DEV	dev/demo/cases/agent-invocability.case.sh
+DEV	dev/demo/cases/append-entry.case.sh
+DEV	dev/demo/cases/backfill-guards.case.sh
+DEV	dev/demo/cases/check-run.case.sh
+DEV	dev/demo/cases/crlf-tripwire.case.sh
+DEV	dev/demo/cases/estate-key.case.sh
+DEV	dev/demo/cases/governance-gates.case.sh
+DEV	dev/demo/cases/housekeeping.case.sh
+DEV	dev/demo/cases/in-estate-reconfigure.case.sh
+DEV	dev/demo/cases/index-grammar.case.sh
+DEV	dev/demo/cases/installer.case.sh
+DEV	dev/demo/cases/junk-ignored.case.sh
+DEV	dev/demo/cases/literate-capture.case.sh
+DEV	dev/demo/cases/no-fixed-temp.case.sh
+DEV	dev/demo/cases/notebook-direct-exec.case.sh
+DEV	dev/demo/cases/one-pack-per-run.case.sh
+DEV	dev/demo/cases/oversize-root.case.sh
+DEV	dev/demo/cases/record-whitelisted.case.sh
+DEV	dev/demo/cases/recovery-drill.case.sh
+DEV	dev/demo/cases/retro-stats.case.sh
+DEV	dev/demo/cases/roster-completes.case.sh
+DEV	dev/demo/cases/scrub-case-agree.case.sh
+DEV	dev/demo/cases/sed-portability.case.sh
+DEV	dev/demo/cases/session-clock.case.sh
+DEV	dev/demo/cases/ship-classification.case.sh
+DEV	dev/demo/cases/skills-index.case.sh
+DEV	dev/demo/cases/source-refusal.case.sh
+DEV	dev/demo/cases/status-consolidation.case.sh
+DEV	dev/demo/cases/ticket-recognition.case.sh
+DEV	dev/demo/cases/tracker-sweep.case.sh
+DEV	dev/demo/cases/undo-drill.case.sh
+DEV	dev/demo/cases/warn-aging.case.sh
+DEV	dev/demo/cases/worktree-store.case.sh
+DEV	dev/demo/sabotage.sh
+DEV	dev/demo/sabotage/source-refusal.fixtures.sh
+DEV	dev/demo/tour.sh
+DEV	dev/dev-loop/SETUP.md
+DEV	dev/dev-loop/message-format.template.md
+DEV	dev/dev-loop/role-charter.template.md
+DEV	dev/dev-loop/working-agreement.template.md
+DEV	dev/docs/history/2026-07-25-completion-goal-numbering.md
+DEV	dev/scripts/branch-coherence.sh
+DEV	dev/scripts/branch-grammar.sh
+DEV	dev/scripts/check-issue-ref.sh
+DEV	dev/scripts/docs-check.sh
+DEV	dev/scripts/gate-waiver.sh
+DEV	dev/scripts/make-scratch-estate.sh
+DEV	dev/scripts/run_demo.sh
+DEV	dev/scripts/shape-check.sh
+DEV	dev/scripts/shape-measure.awk
+DEV	dev/shape-exemptions.txt
+DEV	dev/ship-manifest.txt
+PRODUCT	estate/General AI-Knowledge/AI Harness/DESIGN.md
+PRODUCT	estate/General AI-Knowledge/AI Harness/harness-architecture.svg
+PRODUCT	estate/General AI-Knowledge/AI Harness/harness-session-flow.svg
+PRODUCT	estate/General AI-Knowledge/Skills/SKILL-TEMPLATE.md
+PRODUCT	estate/General AI-Knowledge/Skills/SQL-Writing/SKILL.md
+PRODUCT	estate/General AI-Knowledge/Skills/_index.md
+PRODUCT	estate/General Human Knowledge/Retrospectives/.gitkeep
+PRODUCT	estate/SPEC.md
+PRODUCT	estate/Tickets/999912Z-PROJ-99999/999912Z-PROJ-99999.md
+PRODUCT	estate/Tickets/999912Z-PROJ-99999/AI-Knowledge/_index.md
+PRODUCT	estate/Tickets/999912Z-PROJ-99999/Checks/checks_master.ipynb
+PRODUCT	estate/Tickets/999912Z-PROJ-99999/Checks/scratch.sql
+PRODUCT	estate/Tickets/999912Z-PROJ-99999/Dump/.gitkeep
+PRODUCT	estate/Tickets/999912Z-PROJ-99999/Logs/.gitkeep
+PRODUCT	estate/Tickets/README.md
+PRODUCT	estate/VERSION
+PRODUCT	estate/_agents/check-scribe.agent.md
+PRODUCT	estate/_agents/doc-writer.agent.md
+PRODUCT	estate/_agents/harness-recall.agent.md
+PRODUCT	estate/_agents/knowledge-curator.agent.md
+PRODUCT	estate/_agents/knowledge-keeper.agent.md
+PRODUCT	estate/_agents/retrospective.agent.md
+PRODUCT	estate/_agents/ticket-init.agent.md
+PRODUCT	estate/_agents/ticket-recall.agent.md
+PRODUCT	estate/_agents/ticket-scribe.agent.md
+PRODUCT	estate/_agents/weekly-digest.agent.md
+PRODUCT	estate/_harness/hooks/hooks.example.json
+PRODUCT	estate/_harness/scripts/append_entry.sh
+PRODUCT	estate/_harness/scripts/append_notebook_cell.py
+PRODUCT	estate/_harness/scripts/check_run.sh
+PRODUCT	estate/_harness/scripts/check_ticket_log.sh
+PRODUCT	estate/_harness/scripts/deploy_agents.sh
+PRODUCT	estate/_harness/scripts/harness-drill.sh
+PRODUCT	estate/_harness/scripts/harness-housekeeping.sh
+PRODUCT	estate/_harness/scripts/harness-status.sh
+PRODUCT	estate/_harness/scripts/literate_capture.py
+PRODUCT	estate/_harness/scripts/make_context_pack.sh
+PRODUCT	estate/_harness/scripts/portability.sh
+PRODUCT	estate/_harness/scripts/retro_stats.sh
+PRODUCT	estate/_harness/scripts/ticket-grammar.sh
+PRODUCT	estate/_harness/scripts/tracker_sweep.sh
+PRODUCT	estate/folder-map.md
+PRODUCT	estate/folder-structure.md
+PRODUCT	estate/install.sh
+PRODUCT	estate/installing.md
+PRODUCT	estate/setup.md

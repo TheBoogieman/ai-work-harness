@@ -1,35 +1,55 @@
 # WHITELIST REPO — everything is untracked unless re-included below
+#
+# THIS FILE SERVES TWO TREES, and reading it as one list is how it gets broken (#136). It governs
+# THIS repository, where every file now lives under estate/, under dev/, or in the root-pinned set;
+# and it SHIPS as an estate's own whitelist, where the laid-down tree has no estate/ prefix at all.
+# So the re-includes come in two blocks, and each block is dead in the other tree BY DESIGN:
+#   * the REPOSITORY block re-includes the two trees and the root-pinned files. In an installed
+#     estate estate/ and dev/ do not exist, so those two lines match nothing there.
+#   * the ESTATE block re-includes the estate's own top-level record set. In THIS repository those
+#     paths sit under estate/, so these lines match nothing here — they are not stale, they are the
+#     shipped contract, and deleting them would leave every installed estate ignoring its records.
+# A re-include whose subject has left BOTH roots is deleted rather than left as a false claim; the
+# development surfaces that moved into dev/ (the method doc, the decision records, the loop
+# templates, the history folder, the roster review) were exactly that, and their lines are gone.
 /*
 !/.gitignore
 !/.gitattributes
 !/LICENSE
-!/VERSION
-!/install.sh
 !/README.md
+!/AGENTS.md
+!/CLAUDE.md
+!/.github/
+
+# --- REPOSITORY block — the two trees this repository is split into (#136) ----------------------
+!/estate/
+!/dev/
+
+# --- ESTATE block — the record set an installed estate re-includes at ITS root -------------------
 !/SPEC.md
 !/setup.md
 !/folder-structure.md
 !/folder-map.md
 !/installing.md
-!/AGENTS.md
-!/CLAUDE.md
-!/DEVELOPMENT.md
-!/agent-roster-review.md
+!/install.sh
+!/VERSION
 !/_agents/
 !/_harness/
-!/docs/
-!/dev-loop/
 !/Tickets/
 !/General AI-Knowledge/
 !/General Human Knowledge/
-!/decisions/
-!/.github/
 
-# working bulk inside tickets is never a record
+# working bulk inside tickets is never a record. TWO SPELLINGS, because a pattern carrying a
+# separator is anchored to this file's own directory: the bare form is the estate's, the
+# estate/-prefixed form is this repository's, and neither reaches the other's tree.
 Tickets/*/Logs/*
 Tickets/*/Dump/*
 !Tickets/*/Logs/.gitkeep
 !Tickets/*/Dump/.gitkeep
+estate/Tickets/*/Logs/*
+estate/Tickets/*/Dump/*
+!estate/Tickets/*/Logs/.gitkeep
+!estate/Tickets/*/Dump/.gitkeep
 
 # OS noise + objective editor/tool junk — never records, safe to ignore everywhere (no data
 # extensions: the user's own files stay tracked/sovereign). .DS_Store already covered above.

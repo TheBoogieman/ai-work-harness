@@ -96,14 +96,14 @@ jobs:
           #      manifest line a real file), so an add/delete/rename can red the demo even when
           #      the file itself is pure prose.
           #  (2) An edit is skippable only if its path is one of: a *.md at the repository root,
-          #      anything under decisions/ (the ADRs), or anything under
-          #      "General AI-Knowledge/AI Harness/" (the DESIGN note and the operator's drawings).
+          #      anything under dev/decisions/ (the ADRs), or anything under
+          #      "estate/General AI-Knowledge/AI Harness/" (the DESIGN note and the operator's drawings).
           #      Nothing else — the default is to run.
-          # Deliberately NOT skippable although they are markdown: _agents/*.agent.md (the demo
-          # asserts their frontmatter and the reader spine), General AI-Knowledge/Skills/** (the
-          # #84 index<->tree guard), and Tickets/** (the demo's own fixture ticket).
+          # Deliberately NOT skippable although they are markdown: estate/_agents/*.agent.md (the demo
+          # asserts their frontmatter and the reader spine), estate/General AI-Knowledge/Skills/** (the
+          # #84 index<->tree guard), and estate/Tickets/** (the demo's own fixture ticket).
           # KNOWN RESIDUAL COUPLING, recorded rather than hidden: make_context_pack.sh stages
-          # README.md, AGENTS.md, folder-structure.md and "General AI-Knowledge/AI Harness/" into
+          # README.md, AGENTS.md, folder-structure.md and "estate/General AI-Knowledge/AI Harness/" into
           # the pack that stage 6 builds, and audits the result for scrub-table placeholder
           # tokens. An edit that introduced such a token in a case the SCRUB table does not
           # rewrite would red the demo and would be skipped here; the post-merge push-to-main run
@@ -124,7 +124,7 @@ jobs:
               *.md) continue ;;                                    # a root-level *.md is documentation
             esac
             case "$path" in
-              decisions/*|"General AI-Knowledge/AI Harness/"*) continue ;;
+              dev/decisions/*|"estate/General AI-Knowledge/AI Harness/"*) continue ;;
             esac
             echo "SCOPE: '$path' is not documentation the demo is blind to — running the demo."
             run=true
@@ -173,4 +173,4 @@ jobs:
       # checkout) never commits to the repo — it runs fully headless and exits 0 only on success.
       - name: Run acceptance demo
         if: steps.scope.outputs.run == 'true'
-        run: bash _harness/scripts/run_demo.sh
+        run: bash dev/scripts/run_demo.sh

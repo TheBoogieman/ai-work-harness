@@ -1,16 +1,16 @@
 # CLAUDE.md — instructions for an AI working on this repository
 
 > **⚠️ DEVELOPMENT-REPO INSTRUCTIONS ONLY — this file is DEV, it never ships to a
-> work estate.** It is classified DEV in `.github/ship-manifest.txt` and the
+> work estate.** It is classified DEV in `dev/ship-manifest.txt` and the
 > installer never lays it down. If you are reading this on an installed Work
 > estate, the install was WRONG: this file describes how to develop the harness
 > (branches, PRs, CI) and directly contradicts an estate's law (no remote ever).
-> Delete it from the estate and re-install with `install.sh`, which ships PRODUCT
+> Delete it from the estate and re-install with `estate/install.sh`, which ships PRODUCT
 > files only.
 
 This file is for an AI assistant (e.g. Claude Code) developing the
 ai-work-harness project itself. It is NOT the harness's user-facing rules —
-those live in folder-structure.md (the constitution). Read that too when a
+those live in estate/folder-structure.md (the constitution). Read that too when a
 change touches harness behaviour.
 
 ## What this project is
@@ -29,7 +29,7 @@ Doctrine you must never violate when changing this code:
 - Comment every code change in plain English. That rule's one home — its full
   statement, the reason it exists, and what enforces it — is PLAIN-ENGLISH
   COMMENTS under "Hard rules" below; it is not restated here.
-- Run the demo — `bash _harness/scripts/run_demo.sh` — for every BEHAVIOUR CHANGE
+- Run the demo — `bash dev/scripts/run_demo.sh` — for every BEHAVIOUR CHANGE
   TO SHIPPED MACHINERY. It must end with "ALL 6 DEMO STAGES PASSED"; it is the
   truth-teller for such a change and nothing here weakens that. (Stage 5
   deliberately breaks and restores a deployment — an internal FAIL followed by
@@ -63,7 +63,7 @@ Doctrine you must never violate when changing this code:
   PR's `Fixes #NN` set. Every PR body must carry a closing reference
   (`Fixes`/`Closes`/`Resolves #NN`) to a real, OPEN issue. Local branch names stay free;
   the gate is the law. The grammar's one editable home is
-  `.github/scripts/branch-grammar.sh` — these checks never ship to a user's estate (#43).
+  `dev/scripts/branch-grammar.sh` — these checks never ship to a user's estate (#43).
   See `.github/CONTRIBUTING.md` for the contributor-facing version.
 - Before pushing, self-check: the demo passes, the commit is scoped to one
   concern, and every claim you wrote (including in comments) is true at HEAD.
@@ -88,7 +88,7 @@ enforcement claim the repository cannot cash.
   without having been in the room, and the same standard binds the repository's
   own documents. A document that is right about most things is worse than one
   that is silent: it teaches its reader to stop checking.
-- *What enforces it.* The docs gate — `.github/scripts/docs-check.sh`, reported
+- *What enforces it.* The docs gate — `dev/scripts/docs-check.sh`, reported
   by the required check named "docs completeness + separation" — pins a NAMED
   SET of claims, and each detector reds when its claim leaves the document that
   owns it, or drifts from the code it describes. That set is a growing subset of
@@ -113,10 +113,10 @@ enforcement claim the repository cannot cash.
 - *Why it exists.* A guard that has never been run to failure is
   indistinguishable from a guard that CANNOT fail, because green is what both
   look like from the outside; only an executed red tells them apart. The
-  reasoning is recorded in `decisions/011`, and how that red is witnessed was
-  later amended — the amendment lives in `decisions/019` and is NOT restated
+  reasoning is recorded in `dev/decisions/011`, and how that red is witnessed was
+  later amended — the amendment lives in `dev/decisions/019` and is NOT restated
   here; read it before relying on a sampled review pass.
-- *What enforces it.* The acceptance demo, `_harness/scripts/run_demo.sh`, is
+- *What enforces it.* The acceptance demo, `dev/scripts/run_demo.sh`, is
   where a guard lives and where it is shown failing. CI runs it on Linux and
   macOS as two required checks, and both must be green before a merge.
 
@@ -132,7 +132,7 @@ enforcement claim the repository cannot cash.
   review. That gap is stated rather than papered over: nothing mechanical here
   can tell a generic example from a real one. What the repository does instead
   is remove the occasions — the development fixtures are generic by construction
-  (`.github/scripts/make-scratch-estate.sh` builds its scratch estate from the
+  (`dev/scripts/make-scratch-estate.sh` builds its scratch estate from the
   shipped template ticket, carrying no real board key), so an author who wants a
   realistic example already has one that costs nothing to use.
 
@@ -164,15 +164,15 @@ enforcement claim the repository cannot cash.
   somewhere to meet them. Naming them here is a dictionary, not a licence —
   this rule still governs every NEW public reference.
 - The ticket-recognition pattern lives in ONE home
-  (_harness/scripts/ticket-grammar.sh), sourced by both the validator and
+  (estate/_harness/scripts/ticket-grammar.sh), sourced by both the validator and
   status. Never duplicate it — an edit there must move both tools.
 - Diagram ownership (STANDING LAW, #42, binds every wave): the SVG diagram FILES
-  in `General AI-Knowledge/AI Harness/` are OPERATOR-owned and maintained by
+  in `estate/General AI-Knowledge/AI Harness/` are OPERATOR-owned and maintained by
   hand — NO WAVE EVER EDITS AN SVG. A wave's only diagram duty is the DESIGN.md
   currency note: when a change touches machinery the sheets depict, update that
   note to name the divergence (honest lag), and the operator redraws on their own
   schedule. README embeds NO diagrams — one pointer to the folder, no more. The
-  docs check (.github/scripts/docs-check.sh) enforces both: a machinery change
+  docs check (dev/scripts/docs-check.sh) enforces both: a machinery change
   with no DESIGN.md note (and no `[diagrams-unaffected: reason]` in the PR body)
   reds, and any `.svg` reference re-entering README reds.
 
@@ -220,13 +220,13 @@ assistant-agnostic and works with any AI coding tool. (This repo is in fact
 developed using Claude Code, not Copilot, which exercises that portability.)
 The three Copilot-specific pieces:
 
-1. **`_agents/*.agent.md`** (one file per agent) use Copilot's agent format —
+1. **`estate/_agents/*.agent.md`** (one file per agent) use Copilot's agent format —
    frontmatter like `user-invocable` and `tools`. The instruction *content* is
    portable; only the wrapper format is Copilot-specific.
-2. **`_harness/hooks/hooks.example.json`** uses Copilot's `postToolUse` hook
+2. **`estate/_harness/hooks/hooks.example.json`** uses Copilot's `postToolUse` hook
    format to fire the auto-commit on file writes. Another assistant's hook
    system would use a different config shape.
-3. **`_harness/scripts/deploy_agents.sh`** targets the Copilot agents directory
+3. **`estate/_harness/scripts/deploy_agents.sh`** targets the Copilot agents directory
    (`~/.copilot/agents`).
 
 Porting to another assistant means translating these three — mechanical work,
@@ -241,17 +241,17 @@ wanted); this note is the marker so the design intent isn't lost. Revisit once
 the issue board is clear and the project is self-contained.
 
 ## Where to look
-- folder-structure.md — the constitution (harness rules for the user's work;
+- estate/folder-structure.md — the constitution (harness rules for the user's work;
   Part I always-load, Part II on-demand).
-- _harness/scripts/ — the machinery (validator, status, context-pack, demo,
+- estate/_harness/scripts/ — the machinery (validator, status, context-pack, demo,
   deploy, notebook helper, and the ticket-grammar home).
-- _agents/ — the Copilot agent contracts.
-- _harness/scripts/run_demo.sh — the 6-stage acceptance demo; the truth-teller
+- estate/_agents/ — the Copilot agent contracts.
+- dev/scripts/run_demo.sh — the 6-stage acceptance demo; the truth-teller
   for the shipped product. WHICH changes must run it is stated once, under
   "Working on this harness" above — it is not every change. It is the RUNNER of
   a suite split three ways (#143): it owns the shared estate and the stage
-  ORDER, `_harness/demo/tour.sh` is the stage-based tour a person watches, and
-  `_harness/demo/cases/*.case.sh` is one case file per guard family — where
+  ORDER, `dev/demo/tour.sh` is the stage-based tour a person watches, and
+  `dev/demo/cases/*.case.sh` is one case file per guard family — where
   every named guard lives. A new guard goes in the case file for its family (or
   a new one), and a NEW case file must be added to `demo_order()` in the runner;
   the runner's `[case-completeness]` check reds by name if it is not.

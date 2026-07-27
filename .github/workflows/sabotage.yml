@@ -51,10 +51,10 @@ jobs:
       # PROVE THE PROVER. Exits non-zero unless the harness reports a deliberately weakened REAL
       # guard as UNPROVEN, and reports the deliberately BROAD sabotage as caught by the wrong guard.
       - name: Prove the prover (a weakened real guard must read as UNPROVEN)
-        run: bash _harness/demo/sabotage.sh --self-test
+        run: bash dev/demo/sabotage.sh --self-test
 
       # The report: the YELLOW coverage line (which guards have a fixture, which do not — never a
       # blocker), then a full proof of every fixture that exists. Exits non-zero only when a guard
       # this repository CLAIMS to prove turned out to be unprovable.
       - name: Prove every guard that has a fixture
-        run: bash _harness/demo/sabotage.sh
+        run: bash dev/demo/sabotage.sh

@@ -147,9 +147,17 @@ we_too_small() {  # $1 = what was found, $2 = the floor, $3 = what is being coun
 # we_normalise — rewrite the six machine-dependent spans in ACTUAL output into the tokens the
 # document prints for them. Each rule is as narrow as the span it stands for; anything a rule does
 # not match survives into the literal comparison untouched.
+#
+# THE SEVENTH RULE IS NOT A SPAN BUT A PLATFORM QUIRK, and it is written down rather than absorbed
+# quietly: harness-status.sh builds the knowledge-file count with `wc -l`, and BSD's wc PADS its
+# number with spaces where GNU's does not. So that one line arrives as "knowledge files:        0."
+# on macOS and "knowledge files: 0." on Linux, and no single document can print both. The rule
+# collapses the space RUN and nothing else — the count itself is still compared literally, so a
+# wrong count still reds. Witnessed on the macOS continuous-integration lane, not guessed at.
 we_normalise() {
   sed -E -e "s|$(we_esc "$WE_EST")|<ESTATE>|g" \
     -e "s|$(we_esc "$WE_PACK")|<PACK-DIR>|g" \
+    -e 's/knowledge files:[[:space:]]+/knowledge files: /g' \
     -e 's/[0-9]+ (second|minute|hour)s? ago/<HOW-LONG-AGO>/g' \
     -e 's/[0-9]+\.[0-9] MiB/<SIZE> MiB/g' \
     -e "s/$WE_TEMPLATE_TS/@TEMPLATE-STAMP@/g" \
@@ -212,12 +220,20 @@ we_count_off() {  # $1 = block number, $2 = lines the document shows, $3 = lines
   exit 1
 }
 
+# THE ONE-SECOND WAIT BETWEEN BLOCKS IS FIDELITY, NOT A WORKAROUND. The validator decides whether a
+# record moved by comparing WHOLE-SECOND file timestamps, so two acts inside the same wall-clock
+# second are one act as far as it can see. A person's day never does that — but a check running the
+# day back to back does, and on the Linux runner it did: the ticket was created and its record
+# appended to inside one second, the validator saw no change, and the document's red-blocking step
+# printed "vacuous pass" instead. Waiting a second restores the spacing a real day has. It is NOT
+# tuning until green: without it this case measures the runner's speed rather than the document.
 case_worked_example() {
   local we_b=1
   we_fixture
   we_parse
   we_floor
   while [ "$we_b" -le "$WE_BLOCKS" ]; do
+    [ "$we_b" -eq 1 ] || sleep 1
     we_block_run "$we_b"
     we_b=$((we_b + 1))
   done

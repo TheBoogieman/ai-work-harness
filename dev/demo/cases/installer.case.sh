@@ -312,6 +312,285 @@ in_missing_value_audible() {
   echo "  ok [missing-value-audible] — missing value: fallback REACHED (value reaches the summary)"
 }
 
+# ================================================================================================
+# --- #134 UPGRADE MODE — the dumb-creator law's one exception (dev/decisions/020) ----------------
+# ================================================================================================
+# SEVEN guards over ONE fixture, because the fixture is the expensive part of this family: a
+# scratch SOURCE distribution built from this tree, an estate installed from it, that estate
+# CUSTOMISED, and then the source moved on a version — a rename DECLARED in the shipped retire
+# list, plus an upstream change to a plain machinery file.
+#
+# WHY THE CUSTOMISATION IS NOT DECORATION. A fresh estate holds the shipped defaults for
+# everything, so an upgrade that silently reset somebody's board pattern, model pins and hook
+# configuration would pass perfectly against one. Widening the grammar, moving a model pin off its
+# placeholder and editing the hook config is what lets these guards fail in the way that matters.
+#
+# WHAT THEY DO NOT PROVE, stated here rather than left to be assumed: a scratch estate has no
+# months of accumulated tickets, no dirty working tree, no long history and no hand-made folders.
+# These guards prove the upgrade's LOGIC. They say nothing about a real installation.
+#
+# UP_SRC / UP_EST / UP_OUT are file-scope, built once by in_upgrade_fixture and read by every
+# guard below; they live under $I39_ROOT so the case's existing teardown removes them.
+
+# in_up_run — THE ONE WAY THESE GUARDS INVOKE THE SCRATCH INSTALLER when it is expected to
+# SUCCEED. Same reason in_install exists above: under the runner's `set -e` a bare failing install
+# kills the case AT THAT LINE and prints zero bytes, and a guard that dies silently is
+# indistinguishable from one that was never written.
+in_up_run() {   # $1 = guard name to report under; $2.. = install.sh's own arguments
+  local guard="$1" rc=0; shift
+  UP_OUT="$I39_ROOT/up.out"
+  HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash "$UP_SRC/estate/install.sh" "$@" \
+    >"$UP_OUT" 2>&1 || rc=$?
+  if [ "$rc" -eq 0 ]; then return 0; fi
+  echo "BUG [$guard]: the scratch installer EXITED rc=$rc — invoked as: install.sh $*"
+  echo "    The install failed, so the [$guard] guard never ran. Its last output was:"
+  tail -6 "$UP_OUT" | sed 's/^/      /'
+  exit 1
+}
+
+# in_upgrade_fixture — build the scratch source, install an estate from it, customise it, then
+# advance the source by one version. The source is copied from `git ls-files` rather than from a
+# hand-written path list, so a file added to this repository is in the fixture the day it lands.
+in_upgrade_fixture() {
+  local f
+  UP_SRC="$I39_ROOT/upsrc"; UP_EST="$I39_ROOT/upest"
+  while IFS= read -r f; do
+    mkdir -p "$UP_SRC/$(dirname "$f")"; cp -p "$f" "$UP_SRC/$f"
+  done < <(git ls-files)
+  in_up_run upgrade-fixture --yes "$UP_EST"
+  in_up_customise
+  in_up_advance_source
+}
+
+# in_up_customise — the three settings a user owns, moved off their shipped defaults, and a record
+# written by hand. Snapshots are taken so the assertions below are BYTE comparisons rather than
+# greps: a grep can pass on a file the upgrade rewrote around the pattern it looked for.
+# The rewrite-to-tmp+mv idiom is BSD-portable — stock macOS sed has no GNU-style in-place edit.
+in_up_customise() {
+  UP_TG="$UP_EST/_harness/scripts/ticket-grammar.sh"; UP_DW="$UP_EST/_agents/doc-writer.agent.md"
+  UP_HOOK="$UP_EST/.github/hooks/harness.json"; UP_REC="$UP_EST/General AI-Knowledge/up-note.md"
+  sed 's/\[A-Z\]\[A-Z0-9\]\*/[A-Z][A-Z0-9-]*/' "$UP_TG" > "$I39_ROOT/tg.t" \
+    && mv "$I39_ROOT/tg.t" "$UP_TG"
+  awk '/^model:/{print "model: UPCHEAP"; next} {print}' "$UP_DW" > "$I39_ROOT/dw.t" \
+    && mv "$I39_ROOT/dw.t" "$UP_DW"
+  sed 's/"timeoutSec": 60/"timeoutSec": 137/' "$UP_HOOK" > "$I39_ROOT/hk.t" \
+    && mv "$I39_ROOT/hk.t" "$UP_HOOK"
+  printf '# a hand-made note\nLast reviewed: 2026-01-01\nnobody but me put this here\n' > "$UP_REC"
+  # THE RECORD GUARD'S SUBJECT HAS TO BE ONE THE UPGRADE COULD ACTUALLY REACH. A hand-made file
+  # under a knowledge folder is not in the manifest, so no version of this installer would ever
+  # consider it and asserting it survived proves nothing. The SHIPPED TEMPLATE TICKET is the
+  # subject that bites: it IS a manifest path, so only the record test stops it being replaced —
+  # and editing it here is what makes the estate's copy differ from the source's, which is the
+  # condition under which a replacement would happen. A user annotating their example ticket is
+  # the most ordinary thing in this estate.
+  UP_TICK="$UP_EST/Tickets/999912Z-PROJ-99999/999912Z-PROJ-99999.md"
+  printf '\n## 20260101000001 - my own note on the example ticket\n- I edited this.\n' >> "$UP_TICK"
+  # THE SOUNDNESS CHECK IS TAKEN HERE, BEFORE THE UPGRADE RUNS, and that placement is the point.
+  # Asked afterwards it cannot tell "the fixture was never set up" from "the upgrade overwrote the
+  # ticket with the source's copy" — the two leave identical bytes on disk, and the second is the
+  # data loss the guard exists to catch. Asked now, only the first is possible.
+  cmp -s "$UP_TICK" "$UP_SRC/estate/Tickets/999912Z-PROJ-99999/999912Z-PROJ-99999.md" \
+    && { echo "BUG [upgrade-record-untouched]: fixture unsound — the estate's ticket already"; \
+         echo "    matches the source's, so nothing would replace it whether a record test"; \
+         echo "    exists or not, and the guard below would be asserting a coincidence"; exit 1; }
+  cp -p "$UP_TG" "$I39_ROOT/snap.tg"; cp -p "$UP_DW" "$I39_ROOT/snap.dw"
+  cp -p "$UP_HOOK" "$I39_ROOT/snap.hk"; cp -p "$UP_REC" "$I39_ROOT/snap.rec"
+  cp -p "$UP_TICK" "$I39_ROOT/snap.tick"
+  return 0
+}
+
+# in_up_advance_source — the release the estate is about to receive: a RENAME (declared in the
+# retire list, never inferred), an upstream change to a plain machinery file, and a new stamp.
+# The rename is the half that has never run anywhere — replacement is the easy half.
+in_up_advance_source() {
+  local sc="$UP_SRC/estate/_harness/scripts"
+  printf '0.2.0-upgrade-fixture\n' > "$UP_SRC/estate/VERSION"
+  cp -p "$sc/retro_stats.sh" "$sc/retro-stats.sh"; rm -f "$sc/retro_stats.sh"
+  sed 's|scripts/retro_stats\.sh|scripts/retro-stats.sh|' "$UP_SRC/dev/ship-manifest.txt" \
+    > "$I39_ROOT/mf.t" && mv "$I39_ROOT/mf.t" "$UP_SRC/dev/ship-manifest.txt"
+  printf '%s\t%s\t%s\n' 0.2.0-upgrade-fixture _harness/scripts/retro_stats.sh \
+    "renamed to _harness/scripts/retro-stats.sh" >> "$UP_SRC/estate/_harness/retire-list.tsv"
+  printf '# upgrade fixture: an upstream change to a plain machinery file.\n' \
+    >> "$sc/harness-drill.sh"
+  return 0
+}
+
+# (m) upgrade-plan: --upgrade --dry-run names every create, replace and retire BEFORE anything
+#     happens, and touches nothing. Pre-fix, --upgrade is an unknown option and the run exits 2.
+in_upgrade_plan() {
+  in_up_run upgrade-plan --upgrade --dry-run --yes "$UP_EST"
+  local v
+  for v in 'create   _harness/scripts/retro-stats.sh' \
+           'replace  _harness/scripts/harness-drill.sh' \
+           'retire   _harness/scripts/retro_stats.sh'; do
+    grep -Fq "  $v" "$UP_OUT" \
+      || { echo "BUG [upgrade-plan]: the plan never said '$v' — every create, replace and retire"; \
+           echo "    must be shown before anything happens. What it printed:"; \
+           grep -E '^  (create|replace|retire|keep)' "$UP_OUT" | sed 's/^/      /'; exit 1; }
+  done
+  [ ! -e "$UP_EST/_retired" ] && [ -e "$UP_EST/_harness/scripts/retro_stats.sh" ] \
+    || { echo "BUG [upgrade-plan]: --dry-run TOUCHED the estate — it must plan and stop"; exit 1; }
+  echo "  ok [upgrade-plan] — create/replace/retire all shown before acting; --dry-run moved" \
+    "nothing"
+}
+
+# (t) upgrade-needs-source: an estate re-running its OWN shipped installer has no source to copy
+#     new machinery from, so --upgrade there must REFUSE by name and print the command that works.
+#     The failure it prevents is quiet: a plan of zero-everything reads exactly like an estate that
+#     was already current, and the user walks away believing they upgraded.
+in_upgrade_needs_source() {
+  local out rc=0
+  out=$(cd "$UP_EST" && HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash ./install.sh --upgrade --yes \
+    2>&1) || rc=$?
+  [ "$rc" -ne 0 ] \
+    || { echo "BUG [upgrade-needs-source]: the estate's own installer accepted --upgrade and"; \
+         echo "    exited 0. It has no source to upgrade from, so it can only have done nothing"; \
+         echo "    while looking like a success. Its output:"; printf '%s\n' "$out" | tail -4; \
+         exit 1; }
+  printf '%s\n' "$out" | grep -q -- '--upgrade cannot run from inside the estate' \
+    || { echo "BUG [upgrade-needs-source]: refused, but never said why or what to run instead:"; \
+         printf '%s\n' "$out" | tail -4; exit 1; }
+  echo "  ok [upgrade-needs-source] — in-estate --upgrade refuses by name and prescribes the fix"
+}
+
+# (n) upgrade-retires: the rename half. The superseded file is MOVED to quarantine (never deleted),
+#     the replacement is laid down, and the run names the restore command at the moment it happens.
+in_upgrade_retires() {
+  in_up_run upgrade-retires --upgrade --yes "$UP_EST"
+  cp -p "$UP_OUT" "$I39_ROOT/up.first"
+  [ ! -e "$UP_EST/_harness/scripts/retro_stats.sh" ] \
+    || { echo "BUG [upgrade-retires]: the superseded file is STILL in place — an upgraded estate" \
+           "would hold both names, which is the defect retirement exists to stop"; exit 1; }
+  [ -e "$UP_EST/_harness/scripts/retro-stats.sh" ] \
+    || { echo "BUG [upgrade-retires]: the replacement was never laid down"; exit 1; }
+  find "$UP_EST/_retired" -name retro_stats.sh 2>/dev/null | grep -q . \
+    || { echo "BUG [upgrade-retires]: the superseded file is not in quarantine — it was DELETED," \
+           "and deletion is forbidden in every class (dev/decisions/020)"; exit 1; }
+  grep -A2 '^RETIRED ' "$I39_ROOT/up.first" | grep -q 'RESTORE IT WITH: *mv ' \
+    || { echo "BUG [upgrade-retires]: the retirement was not reported with the command that puts" \
+           "it back. The quarantine folder is untracked, so that report is the only signal"; \
+         exit 1; }
+  echo "  ok [upgrade-retires] — superseded file MOVED to quarantine, replacement laid down," \
+    "restore command reported"
+}
+
+# (o) upgrade-keeps-settings: the three files carrying values the USER owns come through an upgrade
+#     BYTE-IDENTICAL. The hook config is the worst one to get wrong — it governs whether the estate
+#     commits by itself — and it is the member a substitution-only derivation misses entirely.
+in_upgrade_keeps_settings() {
+  local n f s
+  for n in tg:"$UP_TG" dw:"$UP_DW" hk:"$UP_HOOK"; do
+    s="$I39_ROOT/snap.${n%%:*}"; f="${n#*:}"
+    cmp -s "$s" "$f" \
+      || { echo "BUG [upgrade-keeps-settings]: the upgrade CHANGED $f, which carries a value the"; \
+           echo "    user chose. A retirement that silently resets somebody's configuration is a"; \
+           echo "    data loss wearing a rename's clothes. Diff:"; diff "$s" "$f" | head -5; \
+           exit 1; }
+  done
+  grep -q '_harness/scripts/ticket-grammar.sh' "$I39_ROOT/up.first" \
+    && grep -q '.github/hooks/harness.json' "$I39_ROOT/up.first" \
+    || { echo "BUG [upgrade-keeps-settings]: the run never SAID which files it carried forward —" \
+           "a silently-correct upgrade is indistinguishable from a lucky one"; exit 1; }
+  echo "  ok [upgrade-keeps-settings] — board grammar, model pin and HOOK CONFIG byte-unchanged" \
+    "and named in the run"
+}
+
+# (p) upgrade-record-untouched: class 1 of dev/decisions/020. A record is never touched, under any
+#     circumstance, retirement included.
+#     ITS SUBJECT IS THE USER-EDITED SHIPPED TICKET, because that is a manifest path whose estate
+#     copy DIFFERS from the source's — the exact condition under which every other machinery path
+#     IS replaced, so only the record test spares it. That difference is asserted in the fixture
+#     builder, BEFORE the upgrade runs; see the note there for why it cannot be asked afterwards.
+#     The hand-made knowledge note is checked too, but it is the weaker claim: nothing in the
+#     manifest names it, so no version of this installer would ever have considered it.
+in_upgrade_record_untouched() {
+  cmp -s "$I39_ROOT/snap.tick" "$UP_TICK" \
+    || { echo "BUG [upgrade-record-untouched]: the upgrade REPLACED a user-edited ticket. An"; \
+         echo "    installer that can overwrite a record is not a harness component, it is a"; \
+         echo "    hazard. What it lost:"; diff "$I39_ROOT/snap.tick" "$UP_TICK" | head -5; \
+         exit 1; }
+  cmp -s "$I39_ROOT/snap.rec" "$UP_REC" \
+    || { echo "BUG [upgrade-record-untouched]: the upgrade TOUCHED a hand-made knowledge record"; \
+         exit 1; }
+  echo "  ok [upgrade-record-untouched] — a user-edited shipped ticket (differing from source)" \
+    "and a hand-made record both came through byte-unchanged"
+}
+
+# (q) upgrade-idempotent: the second run reports itself as having nothing to do, IN WORDS. Three
+#     zeros a reader has to add up is not the same claim as the run saying it is safe to re-run.
+in_upgrade_idempotent() {
+  in_up_run upgrade-idempotent --upgrade --yes "$UP_EST"
+  grep -q 'NOTHING TO DO' "$UP_OUT" \
+    || { echo "BUG [upgrade-idempotent]: a second run did not report itself as a no-op:"; \
+         grep -E '^(  (create|replace|retire)|Upgraded this run)' "$UP_OUT" | sed 's/^/      /'; \
+         exit 1; }
+  grep -qE '^(CREATED|REPLACED|RETIRED)' "$UP_OUT" \
+    && { echo "BUG [upgrade-idempotent]: a second run MOVED something — re-running must be safe"; \
+         exit 1; }
+  echo "  ok [upgrade-idempotent] — the second run says NOTHING TO DO and moves no file"
+}
+
+# (r) upgrade-restore-works: the printed restore command is EXECUTED, not read. A command that
+#     names the right paths but cannot run is the same as no report at all, and the quarantine
+#     folder is untracked, so this line is the entire reversal path a user has.
+in_upgrade_restore_works() {
+  local cmd
+  cmd=$(grep -A2 '^RETIRED ' "$I39_ROOT/up.first" | grep -m1 'RESTORE IT WITH:' \
+    | sed 's/.*RESTORE IT WITH: *//')
+  [ -n "$cmd" ] \
+    || { echo "BUG [upgrade-restore-works]: no restore command was printed to execute"; exit 1; }
+  bash -c "$cmd" \
+    || { echo "BUG [upgrade-restore-works]: the printed restore command FAILED to run: $cmd"; \
+         exit 1; }
+  [ -e "$UP_EST/_harness/scripts/retro_stats.sh" ] \
+    || { echo "BUG [upgrade-restore-works]: the restore command ran but the file did not come" \
+           "back — the report names a reversal that does not reverse anything"; exit 1; }
+  echo "  ok [upgrade-restore-works] — the printed restore command runs and puts the file back"
+}
+
+# (s) upgrade-interrupted: THE REALISTIC WAY A PERSON LOSES WORK. The first three guards all assume
+#     the upgrade FINISHES; "safe to run twice" says nothing about a run that stopped halfway,
+#     because it assumes the first one completed. The interruption is deterministic rather than a
+#     race: the source copy of a file scheduled for REPLACE is taken away, so the run dies inside
+#     the copy that follows the quarantine move — some files new, some old, one half-replaced.
+#     BOTH HALVES ARE ASSERTED: nothing was lost, and re-running from there finishes the job.
+in_upgrade_interrupted() {
+  local rel="_harness/scripts/harness-drill.sh" rc=0
+  printf '# an estate-local edit, so this file is a REPLACE candidate.\n' >> "$UP_EST/$rel"
+  mv "$UP_SRC/estate/$rel" "$I39_ROOT/held.drill"
+  set +e
+  HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash "$UP_SRC/estate/install.sh" --upgrade --yes \
+    "$UP_EST" >"$I39_ROOT/up.kill" 2>&1
+  rc=$?
+  set -e
+  [ "$rc" -ne 0 ] \
+    || { echo "BUG [upgrade-interrupted]: the fixture did not interrupt anything — the run"; \
+         echo "    completed, so nothing below is a statement about a half-finished upgrade"; \
+         exit 1; }
+  in_upgrade_interrupted_check "$rel"
+}
+
+# in_upgrade_interrupted_check — the two halves, split out so each stays inside the function-length
+# limit and so the failure messages sit next to the thing they are asserting.
+in_upgrade_interrupted_check() {
+  local rel="$1"
+  [ ! -e "$UP_EST/$rel" ] \
+    || { echo "BUG [upgrade-interrupted]: fixture unsound — the file was never mid-replace"; \
+         exit 1; }
+  find "$UP_EST/_retired" -name harness-drill.sh 2>/dev/null | grep -q . \
+    || { echo "BUG [upgrade-interrupted]: the half-replaced file is NOT in quarantine. It is gone" \
+           "from the estate and gone from the record — that is the work destroyed"; exit 1; }
+  mv "$I39_ROOT/held.drill" "$UP_SRC/estate/$rel"
+  in_up_run upgrade-interrupted --upgrade --yes "$UP_EST"
+  [ -e "$UP_EST/$rel" ] \
+    || { echo "BUG [upgrade-interrupted]: re-running after the interruption did NOT finish the" \
+           "job — the estate stays broken with no way back"; exit 1; }
+  grep -Fq "CREATED  $rel" "$I39_ROOT/up.out" \
+    || { echo "BUG [upgrade-interrupted]: the recovery run never said what it repaired"; exit 1; }
+  echo "  ok [upgrade-interrupted] — killed mid-replace: nothing lost (the file was in" \
+    "quarantine), and re-running finished the job"
+}
+
 case_installer() {
   in_fixture
   in_schema_one_home
@@ -326,5 +605,17 @@ case_installer() {
   in_workspace_derived
   in_prompt_default
   in_missing_value_audible
+  # #134 — the upgrade family. It runs LAST because it is the only group here that builds a second
+  # source distribution, and every guard above must keep proving what it proves about the plain
+  # create path without that fixture standing anywhere near it.
+  in_upgrade_fixture
+  in_upgrade_plan
+  in_upgrade_needs_source
+  in_upgrade_retires
+  in_upgrade_keeps_settings
+  in_upgrade_record_untouched
+  in_upgrade_idempotent
+  in_upgrade_restore_works
+  in_upgrade_interrupted
   rm -rf "$I39_ROOT" "$I39_DEPLOY"
 }

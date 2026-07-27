@@ -1,20 +1,34 @@
 #!/usr/bin/env bash
 # install.sh — scaffold or complete a harness Work ESTATE from this source distribution.
 #
-# It is a DUMB CREATOR (#39 cond 2, ABSOLUTE): it creates only what is ABSENT and NEVER edits,
-# appends to, or repairs any file that already exists — even a broken one. Surfacing and fixing
-# broken state is the validator's/status's/agent's job, on the record; the installer judges
-# nothing and heals nothing. A second run finds nothing absent, so it creates nothing: the plan
-# reports "PRODUCT files to create: 0" and each prerequisite already in place says so and is left
-# untouched.
+# It is a DUMB CREATOR (#39 cond 2): it creates only what is ABSENT and NEVER edits, appends to,
+# or repairs any file that already exists — even a broken one. Surfacing and fixing broken state
+# is the validator's/status's/agent's job, on the record; the installer judges nothing and heals
+# nothing. A second run finds nothing absent, so it creates nothing: the plan reports "PRODUCT
+# files to create: 0" and each prerequisite already in place says so and is left untouched.
+#
+# THAT LAW TAKES EXACTLY ONE EXCEPTION, and it is opt-in: `--upgrade` (#134). The law used to be
+# stated here as ABSOLUTE and no longer is, because the word became false the day this mode landed
+# — the reasoning, the bound and the three classes of file it is drawn over are recorded in
+# dev/decisions/020 and are NOT restated here. Two things about it belong at the top of this file,
+# because a reader meeting the word "dumb creator" has to know them straight away:
+#   * WITHOUT `--upgrade` NOTHING BELOW CHANGES. Every default run still creates only what is
+#     absent. The exception is reachable only by asking for it by name.
+#   * THE EXCEPTION IS A MOVE, NEVER A DELETE. A superseded or replaced file is moved into a
+#     quarantine folder inside the estate and REPORTED at the moment it happens with the command
+#     that puts it back; a RECORD is never touched at all. Nothing this installer touches, in
+#     either mode, ever stops existing.
 #
 # It is the SHIPPING BOUNDARY (#43 cond 2): it lays down PRODUCT files ONLY, read from
 # dev/ship-manifest.txt (the one classification home). A fresh estate contains ZERO dev files.
 #
 # Runs FROM the source distribution (this file's directory), targeting an estate dir.
-#   Usage: install.sh [--dry-run] [--yes] [TARGET_DIR]
+#   Usage: install.sh [--dry-run] [--yes] [--upgrade] [TARGET_DIR]
 #     --dry-run  print the full plan and touch nothing
 #     --yes      non-interactive: accept every suggested default
+#     --upgrade  the ONE exception above: bring an EXISTING estate's machinery up to this
+#                source's, retiring what this release supersedes. Records untouched, settings
+#                carried forward, nothing deleted. Combine with --dry-run to see the plan first.
 #     TARGET_DIR the estate root to create/complete (default: current directory — but the estate
 #                must be SEPARATE from the source checkout, so in practice pass a target dir)
 #
@@ -89,6 +103,21 @@ plan_create=(); plan_exists=()
 # here (an existing estate needs no init) for the deploy_agents gate in audit_estate.
 NEED_GIT=0
 DETECTED_BOARD="PROJ"; DETECTED_BOARD_REAL=0
+# ---- upgrade-mode state (#134). All of it is defined HERE, unconditionally, because three
+# functions that run in EVERY mode read it — audit_estate's deploy gate and the two summary
+# lines — and under `set -u` an unset array read is a fatal error rather than an empty answer.
+UPGRADE=0
+# QUARANTINE: one folder per run, UTC-stamped, at the estate root. Stamped so two upgrades never
+# share a folder and a file retired today can never be overwritten by one retired tomorrow —
+# overwriting would be a delete wearing a move's clothes. It sits at the estate root because that
+# is where the estate's own whitelist leaves it UNTRACKED, which is a decided property: the
+# report the run prints is then the only signal a retirement ever gives.
+QUAR_REL="_retired/$(date -u +%Y%m%dT%H%M%SZ)"
+QUAR_DEST=""
+# The shipped retire list — versioned DATA, read from the source, never inferred from a disk.
+RETIRE_LIST="$ESTATE_SRC/_harness/retire-list.tsv"
+up_create=(); up_replace=(); up_retire=(); up_keep=()
+up_same=0; up_record=0; UPGRADE_PARAM=""
 
 # ---- args -------------------------------------------------------------------------------------
 # parse_args — read the command line into DRY / YES / TARGET. An unknown option, or a second
@@ -98,6 +127,7 @@ parse_args() {
     case "$a" in
       --dry-run) DRY=1 ;;
       --yes)     YES=1 ;;
+      --upgrade) UPGRADE=1 ;;
       -*)        echo "install: unknown option: $a" >&2; exit 2 ;;
       *)
         [ -z "$TARGET" ] || { echo "install: only one TARGET_DIR allowed" >&2; exit 2; }
@@ -154,6 +184,22 @@ guard_no_remote() {
   git -C "$TARGET" remote | grep -q . || return 0
   echo "install: TARGET already has a git REMOTE configured; estates must be local-only." \
        "Remove it first: git -C '$TARGET' remote remove <name>" >&2
+  exit 1
+}
+
+# guard_upgrade_mode — --upgrade needs a SOURCE distribution to copy the new machinery FROM, and
+# an estate re-running its own shipped installer has none: that absence is the whole of
+# reconfigure-only mode. Refuse by name and print the command that works, rather than printing an
+# upgrade plan of zero-everything and letting somebody believe their estate was upgraded when the
+# run had nothing to upgrade it from. Runs AFTER guard_target_is_source, which is what sets
+# RECONFIGURE.
+guard_upgrade_mode() {
+  [ "$UPGRADE" -eq 1 ] || return 0
+  [ "$RECONFIGURE" -eq 1 ] || return 0
+  echo "install: --upgrade cannot run from inside the estate — there is no source here to" \
+       "upgrade from." >&2
+  echo "  Run it from your harness SOURCE checkout, targeting this estate, e.g.:" >&2
+  echo "    bash $INVOKE --upgrade $TARGET" >&2
   exit 1
 }
 
@@ -572,6 +618,327 @@ reconfigure_only() {
   return 0
 }
 
+# ================================================================================================
+# ---- UPGRADE MODE (#134) — the dumb-creator law's one exception (dev/decisions/020) -------------
+# ================================================================================================
+# THREE VERBS, and nothing else happens to an estate:
+#   CREATE   an absent shipped file is copied in, exactly as the create path does.
+#   REPLACE  a present PLAIN-MACHINERY file whose bytes differ from this source's is MOVED to
+#            quarantine and this source's copy laid down in its place. The move is what keeps the
+#            promise that nothing stops existing: a user who hand-edited a script gets their
+#            version back from quarantine with the command printed in the run.
+#   RETIRE   a path the shipped retire list names as superseded is MOVED to quarantine, with NO
+#            replacement laid down at that path — that is how a rename stops leaving an estate
+#            holding both names.
+# Anything that is neither — a record, or a file carrying the user's own settings — is KEPT and
+# said out loud. There is no fourth verb, and in particular there is no delete.
+
+# upgrade_paths — the estate-relative shipped paths, read from the manifest, which is the SAME one
+# classification home the create path reads. The `estate/` prefix is a fact about the source tree,
+# not about an installed estate, so it is stripped exactly as plan_product strips it.
+upgrade_paths() {
+  awk -F'\t' '$1=="PRODUCT"{print $2}' "$MANIFEST" | sed 's|^estate/||'
+  return 0
+}
+
+# upgrade_is_machinery <estate-relative path> — MACHINERY (classes 2 and 3, replaceable) or RECORD
+# (class 1, never touched)? STRUCTURAL, with no list of record folders to keep in step: a shipped
+# path is machinery when it is ROOT-PINNED (no directory component — the estate's own documents,
+# its installer, its version stamp, its git control files) or when it sits under one of the TWO
+# trees this installer lays the harness machinery down into. Everything else is a record.
+# THE FAIL-SAFE DIRECTION IS "LEAVE IT ALONE": an unrecognised folder reads as a record, so a
+# record folder invented after this was written is protected without anyone editing this function.
+upgrade_is_machinery() {
+  case "$1" in
+    _harness/*|_agents/*) return 0 ;;
+    */*)                  return 1 ;;
+    *)                    return 0 ;;
+  esac
+}
+
+# ---- CLASS 3 (parameterised machinery), DERIVED FROM THIS INSTALLER'S OWN STRUCTURE ------------
+# dev/decisions/020 forbids a curated list here, and gives the reason: a list kept beside the
+# installer drifts from it silently, and the drift is invisible exactly when it matters — at an
+# upgrade. So the set is GENERATED, as a union of two halves, from the PARSED function bodies of
+# this file (`declare -f`, which strips comments — so no comment and no closing-summary line can
+# inject a member):
+#   SUBSTITUTED  a body that runs this installer's one in-place substitution verb, `sedi`. The
+#                file it edits carries a value the user chose, by construction.
+#   DECLINED     a body that BOTH tests whether it created a file (`was_created`, or a NEED_*
+#                flag) AND creates that file — its other arm is the declined-edit handler. The
+#                "and creates" half is load-bearing rather than decoration: print_plan tests
+#                NEED_HOOK too and merely NAMES the path, and that is precisely the false member
+#                020 warns no path filter can catch.
+# THE CANARY 020 ASKS FOR COMES FREE. It says a version stamp should have no declined-edit
+# handler, and that writing one is the moment the stamp became user-owned. Write one and this
+# query returns VERSION on the very next run, with nobody assigned to remember.
+# WHAT IT DOES NOT DO, said plainly: the OWNERSHIP test — 020's boundary between classes 2 and 3 —
+# is a human judgement and is NOT mechanised here. This returns CANDIDATES. Today every candidate
+# is user-owned, so the candidate set and class 3 coincide; a future installer-owned candidate
+# has to be ruled on by a person, and the generated list is what puts it in front of them.
+upgrade_param_globs() {
+  local fn body
+  while read -r _ _ fn; do
+    # The generator does not read ITSELF. These three functions carry the query's own patterns as
+    # string literals, so a body quoting `sedi` would report itself as a substitution site.
+    case "$fn" in upgrade_param_*) continue ;; esac
+    body="$(declare -f "$fn")"
+    upgrade_param_substituted "$body"
+    upgrade_param_declined "$body"
+  done < <(declare -F)
+  return 0
+}
+
+# upgrade_param_substituted <function body> — half one. A `sedi` call's last argument is the file
+# it edits, spelled "$TARGET/<path>". When the substitution loops over what the run created, that
+# argument is "$TARGET/$rel" and the real subject is the CASE PATTERN guarding the loop body — so
+# a literal `$rel` is resolved to that pattern rather than reported as a path.
+upgrade_param_substituted() {
+  local t
+  printf '%s\n' "$1" | grep -q 'sedi ' || return 0
+  while IFS= read -r t; do
+    if [ "$t" = '$rel' ]; then
+      printf '%s\n' "$1" | sed -nE 's/^[[:space:]]+([^ (]+)\)$/\1/p'
+    else
+      printf '%s\n' "$t"
+    fi
+  done < <(printf '%s\n' "$1" | grep 'sedi ' | grep -oE '\$TARGET/[^"]+' | sed 's|^\$TARGET/||')
+  return 0
+}
+
+# upgrade_param_declined <function body> — half two. A body qualifies only if it BOTH carries a
+# creation test AND creates a laid-down file; the path it creates is the subject. A `$VAR` operand
+# is expanded, because the member this half exists for — the hook configuration, which 020 calls
+# the worst one to get wrong, since it governs whether the estate commits by itself — is spelled
+# "$TARGET/$HOOK_REL" and would otherwise be reported as the literal text of a variable name.
+upgrade_param_declined() {
+  local p v
+  printf '%s\n' "$1" | grep -qE 'was_created "|\[ "\$NEED_[A-Z]+"' || return 0
+  while IFS= read -r p; do
+    case "$p" in '$'*) v="${p#\$}"; p="${!v:-}" ;; esac
+    [ -n "$p" ] && printf '%s\n' "$p"
+  done < <(printf '%s\n' "$1" | grep -E '(^|[[:space:]])cp[[:space:]]|>[[:space:]]*"\$TARGET/' \
+    | grep -oE '"\$TARGET/[^"]+"' | sed -E 's|^"\$TARGET/||; s|"$||')
+  return 0
+}
+
+# upgrade_param_set — run the generator ONCE per run into UPGRADE_PARAM. Once, because the plan
+# and the execute step have to be reading the same answer: a set computed twice could differ
+# between what the user was shown and what was done to their estate.
+upgrade_param_set() {
+  UPGRADE_PARAM="$(upgrade_param_globs | LC_ALL=C sort -u | grep -v '^$' || true)"
+  return 0
+}
+
+# upgrade_is_param <estate-relative path> — is this path class 3? The stored entries are GLOBS
+# (the agent files are one pattern, not ten paths), so the test is a glob match, not equality.
+upgrade_is_param() {
+  local g
+  while IFS= read -r g; do
+    [ -n "$g" ] || continue
+    # shellcheck disable=SC2254  # the unquoted $g is the point: these entries ARE glob patterns.
+    case "$1" in $g) return 0 ;; esac
+  done <<< "$UPGRADE_PARAM"
+  return 1
+}
+
+# upgrade_retire_rows — the shipped retire list, one row per superseded path. Its format, why it
+# is data rather than inference, and why it is CUMULATIVE (which is what makes an upgrade that
+# skips versions retire everything across the whole span) are documented in the file itself; that
+# is its one home and none of it is restated here. Carriage returns are stripped so a checkout
+# made with core.autocrlf=true parses identically to one made with `input`.
+upgrade_retire_rows() {
+  [ -f "$RETIRE_LIST" ] || return 0
+  tr -d '\r' < "$RETIRE_LIST" | awk -F'\t' '/^#/ || NF < 2 { next } { print }'
+  return 0
+}
+
+# ---- the plan: classify EVERYTHING before touching ANYTHING -------------------------------------
+# plan_upgrade — decide, for every shipped path and every retired path, which of the four things
+# happens. It moves nothing: the whole point of a separate planning step is that the plan can be
+# printed in full, and --dry-run can exit, before the first file has been touched.
+plan_upgrade() {
+  up_create=(); up_replace=(); up_retire=(); up_keep=()
+  up_same=0; up_record=0
+  upgrade_param_set
+  plan_upgrade_products
+  plan_upgrade_retirements
+  return 0
+}
+
+# plan_upgrade_products — the shipped set, in the order the tests have to be applied: absent wins
+# over everything (it is a create, not a decision about an existing file); then the user's own
+# settings, which are carried forward whatever else is true of the path; then records; and only
+# then a byte comparison, so an estate already current is reported as such instead of being
+# rewritten with identical bytes it does not need.
+plan_upgrade_products() {
+  local rel
+  while IFS= read -r rel; do
+    [ -n "$rel" ] || continue
+    if [ ! -e "$TARGET/$rel" ];        then up_create+=("$rel"); continue; fi
+    if upgrade_is_param "$rel";        then up_keep+=("$rel"); continue; fi
+    if ! upgrade_is_machinery "$rel";  then up_record=$((up_record + 1)); continue; fi
+    if cmp -s "$(src_of "$rel")" "$TARGET/$rel"; then up_same=$((up_same + 1)); continue; fi
+    up_replace+=("$rel")
+  done < <(upgrade_paths)
+  # The hook configuration is LAID DOWN but is not a manifest row — it is copied from the shipped
+  # example under a different name — so the loop above never sees it. It is class 3 and it is the
+  # member 020 singles out, so it is named in the plan by itself rather than going unmentioned.
+  upgrade_is_param "$HOOK_REL" && [ -e "$TARGET/$HOOK_REL" ] && up_keep+=("$HOOK_REL")
+  return 0
+}
+
+# plan_upgrade_retirements — the retire list, filtered to what this estate ACTUALLY HOLDS. A path
+# the estate never had, or already retired on an earlier run, is simply absent and is skipped:
+# that is what makes a second run a no-op and what stops a fresh estate failing on a list of files
+# it was never old enough to own. A row naming a RECORD is REFUSED OUT LOUD rather than silently
+# dropped — class 1 is never touched, retirement included, and a retire list that has drifted into
+# naming a record is a defect the user should hear about.
+plan_upgrade_retirements() {
+  local row rel
+  while IFS= read -r row; do
+    rel="$(printf '%s' "$row" | cut -f2)"
+    [ -n "$rel" ] || continue
+    [ -e "$TARGET/$rel" ] || continue
+    if upgrade_is_machinery "$rel"; then up_retire+=("$row"); continue; fi
+    echo "REFUSED: the retire list names '$rel', which is a RECORD path. Records are never" \
+         "touched, retirement included — leaving it exactly where it is."
+  done < <(upgrade_retire_rows)
+  return 0
+}
+
+# ---- print the plan: every create, replace and retire, BEFORE anything happens -----------------
+print_upgrade_plan() {
+  echo "=== upgrade plan for estate: $TARGET ==="
+  echo "  version $(read_version "$TARGET")  ->  $(read_version "$ESTATE_SRC")" \
+       "  (this source's stamp)"
+  print_upgrade_rows
+  print_upgrade_keeps
+  echo "  untouched: $up_record record file(s); $up_same machinery file(s) already current"
+  print_upgrade_quarantine_line
+  if [ "$DRY" -eq 1 ]; then
+    echo "=== --dry-run: nothing was touched. ==="
+    exit 0
+  fi
+  return 0
+}
+
+# print_upgrade_rows — the three mutating verbs, one line each, named individually. These are the
+# lines a person reads before deciding to let the run proceed, so none of them is ever collapsed
+# into a count.
+print_upgrade_rows() {
+  local p row
+  for p in ${up_create[@]+"${up_create[@]}"}; do echo "  create   $p"; done
+  for p in ${up_replace[@]+"${up_replace[@]}"}; do
+    echo "  replace  $p   (your copy is moved to quarantine first)"
+  done
+  for row in ${up_retire[@]+"${up_retire[@]}"}; do
+    echo "  retire   $(printf '%s' "$row" | cut -f2)   (superseded at" \
+         "$(printf '%s' "$row" | cut -f1): $(printf '%s' "$row" | cut -f3))"
+  done
+  return 0
+}
+
+# upgrade_moves — how many files this run will move (replace + retire). The no-op case is the
+# whole reason it exists: a run with nothing to move must not name a quarantine folder it is
+# never going to create, and must not tell the user their files are in one.
+upgrade_moves() {
+  printf '%s' "$(( ${#up_replace[@]} + ${#up_retire[@]} ))"
+}
+
+# print_upgrade_quarantine_line — name the quarantine folder only when something is actually going
+# into it. A SECOND RUN SAYS SO IN SO MANY WORDS: "safe to run twice" is a claim the run itself
+# has to make, not something a reader should have to infer from three zeros.
+print_upgrade_quarantine_line() {
+  if [ "${#up_create[@]}" -eq 0 ] && [ "$(upgrade_moves)" -eq 0 ]; then
+    echo "  NOTHING TO DO — this estate's machinery already matches this source. Safe to re-run:"
+    echo "    no file will be created, replaced or retired, and no quarantine folder is made."
+    return 0
+  fi
+  echo "  quarantine for this run: $QUAR_REL"
+  echo "    — untracked by design, so the RESTORE lines this run prints are your only signal"
+  return 0
+}
+
+# print_upgrade_keeps — the files carrying the user's own settings, listed by name rather than
+# counted. A count would be the wrong shape here: the whole hazard this class exists to prevent is
+# somebody's hook configuration or board pattern being reset without them noticing, and "3 files
+# kept" is not something a reader can check against what they configured.
+print_upgrade_keeps() {
+  local p
+  echo "  keep     ${#up_keep[@]} file(s) carrying YOUR settings — derived, not listed by hand:"
+  for p in ${up_keep[@]+"${up_keep[@]}"}; do echo "             $p"; done
+  return 0
+}
+
+# ---- execute: the only two operations that ever remove a file from where the user left it ------
+# quarantine_move <estate-relative path> — MOVE the file into this run's quarantine folder. Sets
+# QUAR_DEST so the report below can name the exact restore command. This function and the copy
+# that follows it are deliberately adjacent with nothing printed between them: the window in which
+# a replaced path is momentarily absent is two system calls wide, and the report comes after.
+quarantine_move() {
+  QUAR_DEST="$TARGET/$QUAR_REL/$1"
+  mkdir -p "$(dirname "$QUAR_DEST")"
+  mv "$TARGET/$1" "$QUAR_DEST"
+  return 0
+}
+
+# quarantine_report <verb> <path> <why> — SAID AT THE MOMENT THE MOVE HAPPENED, not collected for
+# the summary. The quarantine folder is untracked, so this is the only signal a retirement gives:
+# a user who disagrees has to be able to reverse it from what they read here, which is why the
+# restore command is a literal command rather than a description of one.
+quarantine_report() {
+  echo "$1 $2"
+  echo "    your copy is kept at: $QUAR_REL/$2   ($3)"
+  echo "    RESTORE IT WITH:      mv \"$QUAR_DEST\" \"$TARGET/$2\""
+  return 0
+}
+
+# upgrade_execute — the mutations, in an order that is the INTERRUPTION story rather than a
+# preference. Everything that ADDS runs before anything that REMOVES, so a run killed halfway
+# leaves an estate holding BOTH names rather than neither, and re-running from there creates
+# whatever is absent and retires whatever is still there. Nothing is lost in either case, because
+# every file this loop removes from its place is sitting in the quarantine folder.
+upgrade_execute() {
+  local rel row
+  for rel in ${up_create[@]+"${up_create[@]}"}; do
+    mkdir -p "$(dirname "$TARGET/$rel")"
+    cp -p "$(src_of "$rel")" "$TARGET/$rel"
+    CREATED+=("$rel")
+    echo "CREATED  $rel"
+  done
+  for rel in ${up_replace[@]+"${up_replace[@]}"}; do
+    quarantine_move "$rel"
+    cp -p "$(src_of "$rel")" "$TARGET/$rel"
+    quarantine_report "REPLACED" "$rel" "your copy, superseded by this release's"
+  done
+  for row in ${up_retire[@]+"${up_retire[@]}"}; do
+    rel="$(printf '%s' "$row" | cut -f2)"
+    quarantine_move "$rel"
+    quarantine_report "RETIRED " "$rel" "superseded at $(printf '%s' "$row" | cut -f1)"
+  done
+  return 0
+}
+
+# ---- UPGRADE PATH: plan -> show -> execute. It deliberately does NOT scaffold ticket anatomy;
+# that is the complete-or-repair run's job and it writes inside Tickets/, which is where an
+# upgrade has no business being. Model pins still run, because an agent file this run CREATED is
+# absent-not-present and must come out carrying the estate's established pins rather than the
+# shipped placeholders. create_hook_config and init_git_record are called for their EXISTING-file
+# arms: on an established estate each says out loud that it left the thing alone.
+upgrade_path() {
+  plan_prereqs
+  plan_upgrade
+  print_upgrade_plan
+  mkdir -p "$TARGET"
+  upgrade_execute
+  apply_board_widen
+  apply_model_pins
+  create_hook_config
+  init_git_record
+  return 0
+}
+
 # ---- arm the auto-commit hooks: the estate-key that marks THIS repo as a genuine harness estate -
 # The commit-bearing hooks (postToolUse/sessionEnd) refuse to commit unless .git/config carries
 # harness.estate=true — a positive identity a nested foreign project repo cannot reach or forge
@@ -587,7 +954,10 @@ arm_estate_key() {
 
 # ---- deploy agents, then AUDIT with validator + status (agent-as-auditor flow, cond 3) ---------
 audit_estate() {
-  if [ ${#CREATED[@]} -gt 0 ] || [ "$NEED_GIT" -eq 1 ]; then
+  # The REPLACEMENT arm of the gate (#134): an upgrade that rewrote agent definitions created
+  # nothing, so the CREATED test alone would leave the deployed copies at their pre-upgrade
+  # contents while the estate reported success. Replacing a file is a reason to redeploy too.
+  if [ ${#CREATED[@]} -gt 0 ] || [ "$NEED_GIT" -eq 1 ] || [ ${#up_replace[@]} -gt 0 ]; then
     bash "$TARGET/_harness/scripts/deploy_agents.sh" \
       || echo "note: agent deploy reported an issue — see above (verify your Copilot agent dir)."
   fi
@@ -632,29 +1002,62 @@ print_summary() {
 # repair run from a NEWER source leaves an older estate's stamp exactly where it found it. When the
 # two differ, say so plainly instead of printing the source's number over an estate that does not
 # carry it — that would be the summary claiming an upgrade the installer never performed. The note
-# stays silent in the two ordinary cases: on a fresh install the estate's stamp was just copied
-# from the source's, and in reconfigure-only mode TARGET and SOURCE are the same directory, so both
-# reads return the same number. The source side is read from the ESTATE TREE, which is where the
-# version stamp ships from; in an installed estate that tree and the estate root are one directory.
+# stays silent in the ordinary cases: on a fresh install the estate's stamp was just copied from
+# the source's; in reconfigure-only mode TARGET and SOURCE are the same directory, so both reads
+# return the same number; and after an --upgrade the stamp is root-pinned plain machinery the run
+# REPLACED, so the two agree because the estate genuinely moved. The source side is read from the
+# ESTATE TREE, which is where the version stamp ships from; in an installed estate that tree and
+# the estate root are one directory.
 print_summary_version() {
   est_version="$(read_version "$TARGET")"
   src_version="$(read_version "$ESTATE_SRC")"
   echo "Harness version: $est_version   (this estate's VERSION stamp)"
   [ "$est_version" = "$src_version" ] && return 0
-  echo "  NOTE: the source you ran is $src_version. The installer creates only what is absent, so"
-  echo "        it did NOT replace this estate's stamp. Nothing here upgrades an estate."
+  # The prescription now NAMES the mode that would move the stamp (#134). This line used to end
+  # "Nothing here upgrades an estate" — true of every mode the installer had, and false from the
+  # day --upgrade landed. A summary telling a user no upgrade path exists is worse than silence,
+  # because it is the sentence that stops them looking for one.
+  echo "  NOTE: the source you ran is $src_version. A plain run creates only what is absent, so"
+  echo "        it did NOT replace this estate's stamp. To bring this estate's machinery up to"
+  echo "        this source's, re-run from the source checkout with --upgrade (--dry-run first)."
   return 0
 }
 
-# print_summary_created — the one honest count line: reconfigure-only never creates anything.
+# print_summary_created — the one honest count line: reconfigure-only never creates anything, and
+# an upgrade's count is FOUR numbers rather than one, because "created" is not the interesting
+# figure in a run whose whole risk lives in the other three (#134).
 print_summary_created() {
   if [ "$RECONFIGURE" -eq 1 ]; then
     echo "Created this run: 0 file(s) — reconfigure-only mode" \
          "(reviewed config; created and repaired nothing)."
     return 0
   fi
+  if [ "$UPGRADE" -eq 1 ]; then
+    print_summary_upgrade
+    return 0
+  fi
   echo "Created this run: ${#CREATED[@]} file(s);" \
        "${#plan_exists[@]} PRODUCT file(s) already existed (untouched)."
+  return 0
+}
+
+# print_summary_upgrade — the upgrade's own count line, plus the sentence a user needs most when
+# they read this a week later and disagree with something the run did: where their copies are.
+# The per-file RESTORE commands were printed at the moment each move happened; this says the
+# folder holding them is untracked, so nothing but those lines and this one records them.
+print_summary_upgrade() {
+  echo "Upgraded this run: ${#up_create[@]} created, ${#up_replace[@]} replaced," \
+       "${#up_retire[@]} retired, ${#up_keep[@]} left carrying your settings."
+  echo "  Untouched: $up_record record file(s); $up_same machinery file(s) already current."
+  # The quarantine sentence is CONDITIONAL for the same reason the plan's line is: on a re-run
+  # nothing moved, and telling a user their copies are in a folder that was never created is a
+  # false statement in the closing record — the one place they are most likely to trust it.
+  if [ "$(upgrade_moves)" -eq 0 ]; then
+    echo "  Nothing was moved, so no quarantine folder was created."
+    return 0
+  fi
+  echo "  NOTHING WAS DELETED. Every replaced and retired file is under $QUAR_REL, which is"
+  echo "  untracked — the RESTORE lines printed above are the only record of those moves."
   return 0
 }
 
@@ -713,15 +1116,21 @@ main() {
   parse_args "$@"
   resolve_target
   guard_target_is_source
+  guard_upgrade_mode
   guard_no_remote
   guard_manifest
   banner_reconfigure
   interview_board
   interview_models
-  if [ "$RECONFIGURE" -eq 0 ]; then
-    create_path
-  else
+  # THREE MODES, tested in this order because they are not siblings: reconfigure-only is decided
+  # by WHERE the installer is running from and overrides everything (it has no source to work
+  # from at all), --upgrade is asked for by name, and the create path is what happens otherwise.
+  if [ "$RECONFIGURE" -eq 1 ]; then
     reconfigure_only
+  elif [ "$UPGRADE" -eq 1 ]; then
+    upgrade_path
+  else
+    create_path
   fi
   arm_estate_key
   audit_estate

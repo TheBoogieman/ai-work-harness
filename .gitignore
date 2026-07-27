@@ -38,6 +38,12 @@
 !/Tickets/
 !/General AI-Knowledge/
 !/General Human Knowledge/
+# The upgrade's QUARANTINE folder, where install.sh --upgrade moves a superseded or replaced file
+# instead of deleting it (#134). Said out loud rather than left to the deny-all above, because
+# "untracked" is a DECIDED property here, not an accident: it is the reason every retirement is
+# reported to the user at the moment it happens, with the command that puts it back. A future
+# re-include that reached it would silently sweep a user's retired copies into the record.
+/_retired/
 
 # working bulk inside tickets is never a record. TWO SPELLINGS, because a pattern carrying a
 # separator is anchored to this file's own directory: the bare form is the estate's, the

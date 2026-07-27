@@ -1,0 +1,34 @@
+# retire-list.tsv — THE VERSIONED RETIRE LIST. It names every estate file a release has
+# SUPERSEDED, and it is the ONLY thing `install.sh --upgrade` will ever retire.
+#
+# WHY IT IS DATA AND NOT INFERENCE. Nothing on a file system says that one file supersedes
+# another. An upgrade that worked it out from what it found would eventually work it out wrong on
+# somebody's estate, and the file it moved would be one they wanted. So supersession is DECLARED
+# here, by the release that performed it, and the installer reads rather than reasons.
+#
+# WHY IT IS CUMULATIVE. A row is added when a release supersedes a path and is NEVER pruned.
+# Most upgrades will SKIP VERSIONS — an installed estate has no remote, so nobody is watching for
+# releases — and a list describing only the newest version's supersessions would leave every file
+# retired at an intermediate version sitting in the estate forever, for exactly the people who
+# upgrade least often. Because the list is cumulative and the installer retires every listed path
+# it actually FINDS, an upgrade across any span of versions retires everything across that span,
+# with no version arithmetic to get wrong and no "unknown" stamp to special-case.
+#
+# WHAT RETIREMENT IS. The installer MOVES the file into a quarantine folder inside the estate and
+# reports the move at the moment it happens, naming the command that puts it back. It is never a
+# delete (dev/decisions/020), and it is never applied to a record: a row naming a path outside the
+# machinery trees is REFUSED out loud and the file is left where it is.
+#
+# FORMAT — one row per superseded path, TAB-delimited, three fields:
+#   <version><TAB><estate-relative path><TAB><what replaced it, in one sentence>
+# <version> is the release that superseded the path — it is REPORTED to the user, not used as a
+# filter. Lines starting with "#" and blank lines are ignored. The path is spelled as it appears
+# in an INSTALLED estate (no `estate/` prefix): `_harness/scripts/foo.sh`, not `estate/...`.
+#
+# EXAMPLE ROW, shown commented out so it is never acted on:
+#   0.2.0	_harness/scripts/old-name.sh	renamed to _harness/scripts/new-name.sh
+#
+# THERE ARE NO DATA ROWS TODAY, and that is the honest state rather than an oversight: at 0.1.0
+# no release has yet superseded anything, so there is nothing for an upgrade to retire. The
+# machinery is proven against a fixture row by the acceptance suite's [upgrade-*] guards, not by
+# this file having content. Add the row in the same change that performs the rename.

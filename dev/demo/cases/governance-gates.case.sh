@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # governance-gates.case.sh — revert-proofs for the LOCALLY-decidable gate scripts under
-# .github/scripts/ (the API existence/OPEN check is CI-only and witnessed at the seat, not here).
-# SOURCED by the runner; see _harness/scripts/run_demo.sh.
+# dev/scripts/ (the API existence/OPEN check is CI-only and witnessed at the seat, not here).
+# SOURCED by the runner; see dev/scripts/run_demo.sh.
 #
 # Same shape as #38: these call the very scripts the workflow calls, so weakening a grammar or
 # pattern turns the matching case RED. CWD is the repo root, so the relative paths resolve.
@@ -15,7 +15,7 @@
 # set — both directions, so loosening OR tightening the regex reds this case.
 gg_branch_grammar() {
   local GRAM good bad GRAM_MISS
-  GRAM=.github/scripts/branch-grammar.sh
+  GRAM=dev/scripts/branch-grammar.sh
   for good in 37-status-abort-fix 47-governance-pair; do
     bash "$GRAM" "$good" >/dev/null 2>&1 \
       || { echo "BUG [branch-grammar]: conforming '$good' was rejected"; exit 1; }
@@ -37,7 +37,7 @@ gg_branch_grammar() {
 # [branch-coherence] the branch's leading NN must be a MEMBER of the PR's closing-issue set.
 gg_branch_coherence() {
   local COH COH_MISS
-  COH=.github/scripts/branch-coherence.sh
+  COH=dev/scripts/branch-coherence.sh
   printf '47 49\n' | bash "$COH" 47-governance-pair >/dev/null 2>&1 \
     || { echo "BUG [branch-coherence]: NN present in the closing set was wrongly red"; exit 1; }
   printf '47 49\n' | bash "$COH" 99-wrong-anchor >/dev/null 2>&1 \
@@ -58,7 +58,7 @@ gg_branch_coherence() {
 # [closing-ref] a CLOSING keyword is required, and the closing-set is parsed for coherence.
 gg_closing_ref() {
   local REF REF_OUT REF_MISS
-  REF=.github/scripts/check-issue-ref.sh
+  REF=dev/scripts/check-issue-ref.sh
   REF_OUT=$(printf 'Title\nFixes #47 and Closes #49\n' | bash "$REF" 2>/dev/null) \
     || { echo "BUG [closing-ref]: a valid Fixes/Closes body was rejected"; exit 1; }
   [ "$REF_OUT" = "47 49" ] \
@@ -75,7 +75,7 @@ gg_closing_ref() {
 # [waiver-label] the gate-waiver label greens the checks AND emits a loud, on-record line.
 gg_waiver_label() {
   local WAIV WOUT WRC
-  WAIV=.github/scripts/gate-waiver.sh
+  WAIV=dev/scripts/gate-waiver.sh
   set +e; WOUT=$(printf 'enhancement\ngate-waiver\n' | bash "$WAIV" "PR #0" 2>&1); WRC=$?; set -e
   [ "$WRC" -eq 0 ] \
     || { echo "BUG [waiver-label]: the gate-waiver label did not green the check (rc=$WRC)"; \
@@ -139,14 +139,14 @@ gg_dg_sabotage() {
   # the gate scans every tracked file, so a literal here would red the real gate on this case.
   dgs_tag=$(printf '%s%s' W 3)
   printf '#!/usr/bin/env bash\n# fixture probe, cites %s\n' "$dgs_tag" \
-    > _harness/scripts/zz-fixture-probe.sh
+    > estate/_harness/scripts/zz-fixture-probe.sh
   # Narrow the demo workflow's operating-system matrix: reds ci-name-contract. Rewriting the FIRST
   # os: line, rather than matching the values it holds today, keeps this from rotting on a reword.
   awk '/^[[:space:]]*os:/ && !d { sub(/,.*/, "]"); d=1 } { print }' \
     .github/workflows/demo.yml > .sab && mv .sab .github/workflows/demo.yml
   # Copy a registered install command into README: reds install-home, which #252 names as the one
   # victim already in shipped machinery — it is what guarantees install commands have a single home.
-  printf '\nbash install.sh ~/Work\n' >> README.md
+  printf '\nbash estate/install.sh ~/Work\n' >> README.md
   git add -A >/dev/null 2>&1
 }
 
@@ -229,9 +229,9 @@ gg_docs_ok_lines() {
   # unset: an unset DOCS_CHANGED_FILES sends the gate to `git diff` against a base ref this scratch
   # tree does not have. They are spelled '' because a bare `VAR=` reads to a linter as a typo.
   set +e
-  dgm_out=$(DOCS_CHANGED_FILES='' PR_BODY='' bash .github/scripts/docs-check.sh 2>&1); dgm_rc=$?
+  dgm_out=$(DOCS_CHANGED_FILES='' PR_BODY='' bash dev/scripts/docs-check.sh 2>&1); dgm_rc=$?
   set -e
-  dgm_emit=$(gg_dg_emitters .github/scripts/docs-check.sh)   # the gate that produced that output
+  dgm_emit=$(gg_dg_emitters dev/scripts/docs-check.sh)   # the gate that produced that output
   cd "$dgm_here" || exit 1
   rm -rf "$dgm_tree"          # every exit path below is already past the teardown
   [ "$dgm_rc" -ne 0 ] || { echo "BUG [docs-gate-ok-lines]: the sabotaged gate exited 0 — the" \

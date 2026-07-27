@@ -1,6 +1,6 @@
 # governance.yml — the merge-gate governance checks (#47 branch grammar +
 # coherence, #49 issue linkage). THIN GLUE only: it reads the PR event, moves
-# the attacker-controlled fields into env, and calls the .github/scripts/*
+# the attacker-controlled fields into env, and calls the dev/scripts/*
 # checks that hold all the logic (so the grammar/logic is single-sourced and
 # the local demo revert-proves the same code). API-level checks (does the
 # referenced issue exist / is it open) are necessarily CI-only.
@@ -52,18 +52,18 @@ jobs:
           set -uo pipefail
           # Maintainer escape hatch (#49 cond 3): a `gate-waiver` label greens BOTH
           # jobs. gate-waiver.sh emits the mandatory loud line when it fires.
-          if printf '%s' "$LABELS_JSON" | jq -r '.[]' | bash .github/scripts/gate-waiver.sh "PR #$PR_NUMBER"; then
+          if printf '%s' "$LABELS_JSON" | jq -r '.[]' | bash dev/scripts/gate-waiver.sh "PR #$PR_NUMBER"; then
             exit 0
           fi
           # Parse the PR's closing-issue set ONCE (shared with the coherence check).
           # The text-gate red for a MISSING anchor is the pr-issue-link job's to
           # raise, so ignore this call's exit code here (|| true) — we only want the
           # set, and the first NN as a concrete rename suggestion for the grammar miss.
-          CLOSING="$(printf '%s\n%s\n' "$PR_TITLE" "$PR_BODY" | bash .github/scripts/check-issue-ref.sh || true)"
+          CLOSING="$(printf '%s\n%s\n' "$PR_TITLE" "$PR_BODY" | bash dev/scripts/check-issue-ref.sh || true)"
           SUGGEST_NN="$(printf '%s' "$CLOSING" | awk '{print $1}')"
           rc=0
-          bash .github/scripts/branch-grammar.sh "$HEAD_REF" "$SUGGEST_NN" || rc=$?
-          printf '%s' "$CLOSING" | bash .github/scripts/branch-coherence.sh "$HEAD_REF" || rc=$?
+          bash dev/scripts/branch-grammar.sh "$HEAD_REF" "$SUGGEST_NN" || rc=$?
+          printf '%s' "$CLOSING" | bash dev/scripts/branch-coherence.sh "$HEAD_REF" || rc=$?
           if [ "$rc" -ne 0 ]; then
             # Fork courtesy (#47 cond 4): outside contributors are guests — the
             # grammar/coherence red is downgraded to informational for fork PRs.
@@ -88,12 +88,12 @@ jobs:
         run: |
           set -uo pipefail
           # Same maintainer escape hatch — a waiver greens this job too.
-          if printf '%s' "$LABELS_JSON" | jq -r '.[]' | bash .github/scripts/gate-waiver.sh "PR #$PR_NUMBER"; then
+          if printf '%s' "$LABELS_JSON" | jq -r '.[]' | bash dev/scripts/gate-waiver.sh "PR #$PR_NUMBER"; then
             exit 0
           fi
           # Text gate + parse (universal — NOT fork-exempt; every PR needs an anchor).
           # check-issue-ref.sh prints the closing-set on stdout, its prescription on stderr.
-          if ! CLOSING="$(printf '%s\n%s\n' "$PR_TITLE" "$PR_BODY" | bash .github/scripts/check-issue-ref.sh)"; then
+          if ! CLOSING="$(printf '%s\n%s\n' "$PR_TITLE" "$PR_BODY" | bash dev/scripts/check-issue-ref.sh)"; then
             exit 1
           fi
           # Existence/OPEN validation (#49 cond 1) — CI-only, needs the API. A number

@@ -24,18 +24,18 @@ code_hasE() { grep -qE "$1" <<< "$code"; }
 # twin); unpaired GNU-only forms (GNU in-place sed, find -printf, readlink -f, grep -P) must be
 # absent.
 #
-# SCOPE, STATED: the scan is `_harness/scripts/*.sh`. The suite's OWN sources under _harness/demo/
+# SCOPE, STATED: the scan is `estate/_harness/scripts/*.sh`. The suite's OWN sources under dev/demo/
 # are outside that glob, and deliberately so — this very file necessarily holds the six token
 # patterns as SEARCH LITERALS (they would self-match), and its sibling cases hold GNU/BSD probe
 # pairs written for a different purpose. That is the same carve-out the pre-split suite had, where
 # the one file holding those literals was skipped by name; splitting moved the literals out of
-# _harness/scripts/ entirely, so the skip is gone rather than relocated and the runner itself is
+# estate/_harness/scripts/ entirely, so the skip is gone rather than relocated and the runner itself is
 # now scanned like every other script in that directory. The demo files are covered instead by
 # being RUN end to end, on both CI lanes, by the demo you are reading.
 bg_bsd_fallback() {
   local g1_bad=0 s code
   echo "--- #1/#3/#10: retroactive backfill guards (issue #18) ---"
-  for s in _harness/scripts/*.sh; do
+  for s in estate/_harness/scripts/*.sh; do
     code=$(sed 's/#.*//' "$s")     # drop comments (full + inline); only executable text is scanned
     if code_has 'stat -c' && ! code_has 'stat -f'; then
       echo "FAIL [bsd-fallback]: $(basename "$s") uses GNU 'stat -c' with no BSD" \
@@ -103,19 +103,19 @@ bg_sigpipe_safety() {
 # satisfied → validates OK.
 bg_independent_clocks() {
   local G3T g3md G3A G3B
-  G3T="Tickets/202607S-PROJ-33"; g3md="$G3T/202607S-PROJ-33.md"
+  G3T="estate/Tickets/202607S-PROJ-33"; g3md="$G3T/202607S-PROJ-33.md"
   r09_make "$G3T"
   sleep 1   # make the validation wall-clock strictly after the header time
   touch -t "$(date +%Y)01010000" "$g3md"      # anchor mtime to Jan 1 this year (mt1)
   # the stamp is written here: line 1 = wall1 (now), line 2 = mt1 (Jan 1)
-  bash _harness/scripts/check_ticket_log.sh >/dev/null 2>&1 || true
+  bash estate/_harness/scripts/check_ticket_log.sh >/dev/null 2>&1 || true
   touch -t "$(date +%Y)02010000" "$g3md"
-  set +e; G3A=$(bash _harness/scripts/check_ticket_log.sh 2>&1); set -e
+  set +e; G3A=$(bash estate/_harness/scripts/check_ticket_log.sh 2>&1); set -e
   printf '%s\n' "$G3A" | grep -q "202607S-PROJ-33 changed but no new Session Log entry" \
     || { echo "BUG [independent-clocks]: an mtime change below the wall clock was NOT noticed —" \
            "freshness isn't reading the stamp's mtime line:"; printf '%s\n' "$G3A"; exit 1; }
   printf '\n## %s - real new session\n- work recorded\n' "$(date +%Y%m%d%H%M%S)" >> "$g3md"
-  set +e; G3B=$(bash _harness/scripts/check_ticket_log.sh 2>&1); set -e
+  set +e; G3B=$(bash estate/_harness/scripts/check_ticket_log.sh 2>&1); set -e
   printf '%s\n' "$G3B" | grep -q "OK: 202607S-PROJ-33 validated" \
     || { echo "BUG [independent-clocks]: a real new session header was not accepted:"; \
          printf '%s\n' "$G3B"; exit 1; }
@@ -170,16 +170,16 @@ bg_wip_not_absorbed() {
 # own copy; both source portability.sh; and the one shared function converts a known header
 # correctly. Re-introducing a local copy in either script reddens this.
 bg_epoch_one_home() {
-  grep -qE '^[[:space:]]*epoch_from_ts14\(\)' _harness/scripts/check_ticket_log.sh \
+  grep -qE '^[[:space:]]*epoch_from_ts14\(\)' estate/_harness/scripts/check_ticket_log.sh \
     && { echo "BUG [epoch-one-home]: check_ticket_log.sh defines its own epoch_from_ts14 (drift" \
            "risk — source portability.sh)"; exit 1; }
-  grep -qE '^[[:space:]]*epoch_from_ts14\(\)' _harness/scripts/harness-status.sh \
+  grep -qE '^[[:space:]]*epoch_from_ts14\(\)' estate/_harness/scripts/harness-status.sh \
     && { echo "BUG [epoch-one-home]: harness-status.sh defines its own epoch_from_ts14 (drift" \
            "risk — source portability.sh)"; exit 1; }
-  { grep -q 'source .*portability\.sh' _harness/scripts/check_ticket_log.sh \
-    && grep -q 'source .*portability\.sh' _harness/scripts/harness-status.sh; } \
+  { grep -q 'source .*portability\.sh' estate/_harness/scripts/check_ticket_log.sh \
+    && grep -q 'source .*portability\.sh' estate/_harness/scripts/harness-status.sh; } \
     || { echo "BUG [epoch-one-home]: validator and status must source portability.sh"; exit 1; }
-  ( source _harness/scripts/portability.sh
+  ( source estate/_harness/scripts/portability.sh
     r21_got=$(epoch_from_ts14 "20260101120000")
     r21_want=$(date -d "2026-01-01 12:00:00" +%s 2>/dev/null \
       || date -j -f "%Y-%m-%d %H:%M:%S" "2026-01-01 12:00:00" +%s 2>/dev/null || echo x)

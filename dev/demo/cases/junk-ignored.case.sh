@@ -5,7 +5,7 @@
 
 case_junk_ignored() {
   local J JUNK_STAGED
-  J="Tickets/junk-probe"; mkdir -p "$J"
+  J="estate/Tickets/junk-probe"; mkdir -p "$J"
   : > "$J/scratch.tmp"; : > "$J/backup~"; : > "$J/.file.swp"; : > "$J/Thumbs.db"
   JUNK_STAGED=$(git add -A --dry-run 2>/dev/null \
     | grep -E 'junk-probe/(scratch\.tmp|backup~|\.file\.swp|Thumbs\.db)' || true)

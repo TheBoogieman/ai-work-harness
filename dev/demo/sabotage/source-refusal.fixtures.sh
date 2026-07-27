@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # source-refusal.fixtures.sh — sabotage fixtures for the [source-refusal-*] guard family (#144).
-# SOURCED by _harness/demo/sabotage.sh; never executed on its own. Read that file's header for the
+# SOURCED by dev/demo/sabotage.sh; never executed on its own. Read that file's header for the
 # five steps a proof is made of and for the row formats below.
 #
 # WHY THIS FAMILY IS THE ONE THE HARNESS SHIPS WITH. Its two guards are a real ELDER/JUNIOR PAIR
@@ -33,7 +33,7 @@ sr_rewrite() {  # $1 = file to rewrite, $2 = awk program
 }
 
 sr_install() { printf '%s\n' "$1/install.sh"; }
-sr_case() { printf '%s\n' "$1/_harness/demo/cases/source-refusal.case.sh"; }
+sr_case() { printf '%s\n' "$1/dev/demo/cases/source-refusal.case.sh"; }
 
 # THE FIXTURE for [source-refusal-aborts]. Inside guard_target_is_source() only, the abort becomes a
 # fall-through. Scoped by the function's own braces rather than by line number, so it survives edits

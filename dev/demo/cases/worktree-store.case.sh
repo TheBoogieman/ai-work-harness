@@ -18,7 +18,7 @@ ws_fixture() {
   W86=$(mktemp -d)
   mkdir -p "$W86/repo"
   git -C "$W86/repo" init -q
-  cp -R _harness "$W86/repo/_harness"
+  cp -R estate/_harness "$W86/repo/_harness"
   git -C "$W86/repo" -c user.email=demo@local -c user.name=demo add -A
   git -C "$W86/repo" -c user.email=demo@local -c user.name=demo commit -q -m "seed"
   git -C "$W86/repo" -c user.email=demo@local -c user.name=demo worktree add -q "$W86/wt" -b w86
@@ -55,7 +55,7 @@ ws_status_nudge() {
 ws_housekeeping_report() {
   local W86_HK W86_HK_RC W86_GOT W86_WT
   set +e
-  W86_HK=$(bash _harness/scripts/harness-housekeeping.sh "$W86/wt" 2>&1); W86_HK_RC=$?
+  W86_HK=$(bash estate/_harness/scripts/harness-housekeeping.sh "$W86/wt" 2>&1); W86_HK_RC=$?
   set -e
   [ "$W86_HK_RC" -eq 0 ] \
     || { echo "BUG [worktree-store]: housekeeping exited non-zero against a worktree" \

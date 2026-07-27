@@ -16,7 +16,7 @@ ir_reconfigure_completes() {
   echo "--- #64 in-estate reconfigure: keyed estate re-running its own install.sh reaches the" \
     "audit ---"
   G64_ROOT=$(mktemp -d); G64_EST="$G64_ROOT/Work"; G64_DEPLOY=$(mktemp -d)
-  HARNESS_AGENT_DEPLOY_DIR="$G64_DEPLOY" bash install.sh --yes "$G64_EST" >/dev/null 2>&1 \
+  HARNESS_AGENT_DEPLOY_DIR="$G64_DEPLOY" bash estate/install.sh --yes "$G64_EST" >/dev/null 2>&1 \
     || { echo "BUG [reconfigure-setup]: could not build the estate fixture"; exit 1; }
   # dumb-creator witness (a pre-existing file)
   G64_PROBE="$G64_EST/AGENTS.md"; G64_BEFORE=$(cksum "$G64_PROBE")

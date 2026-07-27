@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # status-consolidation.case.sh — the awkward hooks path, the shipped hook schema, the zip fallback
-# and the stale-commit WARN. SOURCED by the runner; see _harness/scripts/run_demo.sh.
+# and the stale-commit WARN. SOURCED by the runner; see dev/scripts/run_demo.sh.
 
 # [awkward-hooks-path] — the hooks-parse check must work when the path contains a character that
 # would BREAK a Python source-string literal. A single quote is the reliable case (a space or plain
@@ -13,8 +13,8 @@ sk_awkward_hooks_path() {
   local G8DIR G8 G8_OUT
   echo "--- status consolidation (awkward hooks path, zip fallback, stale-commit WARN) ---"
   G8DIR=$(mktemp -d); G8="$G8DIR/quote'inside hooks.json"
-  cp _harness/hooks/hooks.example.json "$G8"
-  set +e; G8_OUT=$(HARNESS_HOOKS_FILE="$G8" bash _harness/scripts/harness-status.sh 2>&1); set -e
+  cp estate/_harness/hooks/hooks.example.json "$G8"
+  set +e; G8_OUT=$(HARNESS_HOOKS_FILE="$G8" bash estate/_harness/scripts/harness-status.sh 2>&1); set -e
   printf '%s\n' "$G8_OUT" | grep -q "OK: hooks config parses." \
     || { echo "BUG [awkward-hooks-path]: valid JSON at an awkward (quote-bearing) path was NOT" \
            "parsed — the argv fix regressed:"; printf '%s\n' "$G8_OUT" | grep -i hooks; exit 1; }
@@ -34,7 +34,7 @@ sk_awkward_hooks_path() {
 # (A guard that passed a wrapper-less config is exactly the bug to catch.)
 sk_hooks_schema() {
   local HS44_OUT
-  if ! HS44_OUT=$(python3 - "_harness/hooks/hooks.example.json" <<'PY' 2>&1
+  if ! HS44_OUT=$(python3 - "estate/_harness/hooks/hooks.example.json" <<'PY' 2>&1
 import json, sys
 d = json.load(open(sys.argv[1]))
 assert d.get("version") == 1, "top-level 'version' must be 1"
@@ -67,7 +67,7 @@ sk_pack_without_zip() {
   local G14_OUT_DIR G14_OUT G14_RC g14zip
   G14_OUT_DIR=$(mktemp -d)
   set +e; G14_OUT=$(HARNESS_PACK_NO_ZIP=1 PACK_OUT_DIR="$G14_OUT_DIR" \
-    bash _harness/scripts/make_context_pack.sh --ticket 999911Z-PROJ-99998 2>&1); G14_RC=$?; set -e
+    bash estate/_harness/scripts/make_context_pack.sh --ticket 999911Z-PROJ-99998 2>&1); G14_RC=$?; set -e
   [ "$G14_RC" -eq 0 ] \
     || { echo "BUG [pack-without-zip]: pack failed with zip forced off (rc=$G14_RC):"; \
          printf '%s\n' "$G14_OUT"; exit 1; }
@@ -92,13 +92,13 @@ sk_pack_without_zip() {
 # the remote reads as a NOTE (rc 0), isolating the nudge from the estate's exit code.
 sk_stale_commit_warn() {
   local R11T r11md r11_nyr R11_OUT R11_RC R11_OUT2
-  R11T="Tickets/202607L-PROJ-11"; r11md="$R11T/202607L-PROJ-11.md"
+  R11T="estate/Tickets/202607L-PROJ-11"; r11md="$R11T/202607L-PROJ-11.md"
   r09_make "$R11T"
   r11_nyr=$(( $(date +%Y) + 1 ))    # next year → a session-header epoch always beyond 'now'
   printf '\n## %s0101000000 - future-dated session\n- work newer than the last commit\n' \
     "$r11_nyr" >> "$r11md"
   set +e; R11_OUT=$(HARNESS_LIVENESS_FORCE=1 HARNESS_COMMIT_LAG_WARN_S=0 \
-    bash _harness/scripts/harness-status.sh 2>&1); R11_RC=$?; set -e
+    bash estate/_harness/scripts/harness-status.sh 2>&1); R11_RC=$?; set -e
   printf '%s\n' "$R11_OUT" | grep -q "recent session activity" \
     || { echo "BUG [stale-commit-warn]: session activity newer than the last commit did NOT raise" \
            "the stale-commit WARN:"; printf '%s\n' "$R11_OUT"; exit 1; }
@@ -106,7 +106,7 @@ sk_stale_commit_warn() {
     || { echo "BUG [stale-commit-warn]: the stale-commit nudge must be yellow (exit 0), got" \
            "rc=$R11_RC"; exit 1; }
   set +e; R11_OUT2=$(HARNESS_LIVENESS_FORCE=1 HARNESS_COMMIT_LAG_WARN_S=999999999 \
-    bash _harness/scripts/harness-status.sh 2>&1); set -e
+    bash estate/_harness/scripts/harness-status.sh 2>&1); set -e
   printf '%s\n' "$R11_OUT2" | grep -q "recent session activity" \
     && { echo "BUG [stale-commit-warn]: stale-commit WARN fired while within the lag margin" \
            "(commit current):"; printf '%s\n' "$R11_OUT2"; exit 1; }

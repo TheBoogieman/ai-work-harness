@@ -39,15 +39,15 @@
 # that report is DERIVED at run time from the suite's own source; no figure is carried in this file.
 #
 # Usage:
-#   bash _harness/demo/sabotage.sh                 # coverage report, then prove every fixture
-#   bash _harness/demo/sabotage.sh --coverage      # the yellow coverage report alone
-#   bash _harness/demo/sabotage.sh --only <guard>  # prove one guard's fixture
-#   bash _harness/demo/sabotage.sh --self-test     # PROVE THE PROVER (see sab_self_test)
+#   bash dev/demo/sabotage.sh                 # coverage report, then prove every fixture
+#   bash dev/demo/sabotage.sh --coverage      # the yellow coverage report alone
+#   bash dev/demo/sabotage.sh --only <guard>  # prove one guard's fixture
+#   bash dev/demo/sabotage.sh --self-test     # PROVE THE PROVER (see sab_self_test)
 # Exit 0 when every fixture that exists proved its guard, 1 when one did not. Coverage gaps never
 # affect it.
 #
 # HOW TO ADD A FIXTURE — the contract, in ONE place. A file
-# _harness/demo/sabotage/<family>.fixtures.sh defines:
+# dev/demo/sabotage/<family>.fixtures.sh defines:
 #   sab_fixtures_<family>()   one TAB row per fixture:
 #                             "<guard label><TAB><apply function><TAB><what it breaks>"
 #   sab_selftests_<family>()  OPTIONAL, and read only by --self-test:
@@ -63,7 +63,7 @@ set -uo pipefail
 SAB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SAB_ROOT="$(cd "$SAB_DIR/../.." && pwd)"
 SAB_FIXTURE_DIR="$SAB_DIR/sabotage"
-SAB_SUITE_REL="_harness/scripts/run_demo.sh"
+SAB_SUITE_REL="dev/scripts/run_demo.sh"
 SAB_WORK=""; SAB_SB=""; SAB_SNAP=""
 SAB_VERDICT=""; SAB_DETAIL=""; SAB_CAUGHT=""
 SAB_MODE="all"; SAB_ONLY=""; SAB_FAIL=0
@@ -78,8 +78,8 @@ sab_cleanup() { [ -n "$SAB_WORK" ] && rm -rf "$SAB_WORK"; return 0; }
 # these, so a new case file joins the census on the day it lands with nobody having to remember.
 sab_suite_files() {
   local f
-  printf '%s\n' "$SAB_ROOT/$SAB_SUITE_REL" "$SAB_ROOT/_harness/demo/tour.sh"
-  for f in "$SAB_ROOT"/_harness/demo/cases/*.case.sh; do
+  printf '%s\n' "$SAB_ROOT/$SAB_SUITE_REL" "$SAB_ROOT/dev/demo/tour.sh"
+  for f in "$SAB_ROOT"/dev/demo/cases/*.case.sh; do
     if [ -f "$f" ]; then printf '%s\n' "$f"; fi
   done
 }

@@ -20,7 +20,7 @@ cr_fixture() {
 #    every field. CR_FIELDCELLS counts cells whose source contains all four field markers.
 cr_one_cell_four_fields() {
   local CR_FIELDCELLS
-  CHECK_RUN_NOTEBOOK="$CR_NB" bash _harness/scripts/check_run.sh "echo demo79-output" \
+  CHECK_RUN_NOTEBOOK="$CR_NB" bash estate/_harness/scripts/check_run.sh "echo demo79-output" \
     >/dev/null 2>&1
   CR_FIELDCELLS=$(python3 -c "import nbformat,sys
 nb=nbformat.read(sys.argv[1],as_version=4)
@@ -40,7 +40,7 @@ print(len(hit))" "$CR_NB")
 cr_failing_command() {
   local CR_RC
   set +e
-  CHECK_RUN_NOTEBOOK="$CR_NB" bash _harness/scripts/check_run.sh "exit 42" >/dev/null 2>&1
+  CHECK_RUN_NOTEBOOK="$CR_NB" bash estate/_harness/scripts/check_run.sh "exit 42" >/dev/null 2>&1
   CR_RC=$?; set -e
   [ "$CR_RC" = "42" ] \
     || { echo "BUG [run-and-record]: a failing command's rc was not passed through — wrapper" \
@@ -60,7 +60,7 @@ cr_fails_open() {
   local CR_ABSENT CR_FO_OUT CR_FO_RC
   CR_ABSENT="$CR_TMP/no-such-notebook.ipynb"
   set +e
-  CR_FO_OUT=$(CHECK_RUN_NOTEBOOK="$CR_ABSENT" bash _harness/scripts/check_run.sh \
+  CR_FO_OUT=$(CHECK_RUN_NOTEBOOK="$CR_ABSENT" bash estate/_harness/scripts/check_run.sh \
     "echo failopen79; exit 9" 2>/dev/null); CR_FO_RC=$?
   set -e
   printf '%s\n' "$CR_FO_OUT" | grep -Fq "failopen79" \

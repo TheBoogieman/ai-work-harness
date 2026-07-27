@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ship-classification.case.sh — #43 [ship-classification]: every tracked file is PRODUCT or DEV,
-# exactly once. SOURCED by the runner; see _harness/scripts/run_demo.sh.
+# exactly once. SOURCED by the runner; see dev/scripts/run_demo.sh.
 #
 # The ship-manifest is the ONE home for ship/dev classification. Assert every tracked file is
 # classified EXACTLY once and every manifest entry names a real tracked file (both directions, #43
@@ -12,7 +12,7 @@
 case_ship_classification() {
   local CLASS_MANIFEST class_fail=0 class_paths class_dupe class_total f m
   echo "--- ship/dev classification: every tracked file is PRODUCT or DEV, exactly once ---"
-  CLASS_MANIFEST=.github/ship-manifest.txt
+  CLASS_MANIFEST=dev/ship-manifest.txt
   # The classified paths (skip # comments and any line without a TAB-separated path).
   class_paths=$(awk -F'\t' '/^#/ || NF < 2 { next } { print $2 }' "$CLASS_MANIFEST")
   # (a) no path classified more than once.

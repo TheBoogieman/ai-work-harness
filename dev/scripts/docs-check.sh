@@ -19,11 +19,11 @@
 set -uo pipefail
 fail=0            # a COUNT of failures printed so far, never a boolean — see dc_fail below (#252)
 README=README.md
-DESIGN="General AI-Knowledge/AI Harness/DESIGN.md"
+DESIGN="estate/General AI-Knowledge/AI Harness/DESIGN.md"
 # The two documents the front page handed work to in #146: the estate structure it used to carry,
 # and the install manual it used to be. Named here because four detectors below now read them.
-MAP=folder-map.md
-INSTALL_DOC=installing.md
+MAP=estate/folder-map.md
+INSTALL_DOC=estate/installing.md
 
 # dc_fail / dc_ok — the two output shapes every detector prints, in ONE home each. A message is
 # passed as SEVERAL arguments and joined with a single space, which is what lets a long message be
@@ -61,7 +61,7 @@ dc_map_inventory() {
   # without anyone touching this line (#252).
   local s base mi_body ri_total=0 mi_before=$fail
   mi_body=$(cat "$MAP")
-  for s in _harness/scripts/* install.sh setup.md; do
+  for s in estate/_harness/scripts/* estate/install.sh estate/setup.md; do
     base=$(basename "$s"); ri_total=$((ri_total+1))
     grep -Fq -- "$base" <<<"$mi_body" && continue
     dc_fail map-inventory "$base ships but is not named in the folder map ($MAP)" \
@@ -70,14 +70,16 @@ dc_map_inventory() {
   [ "$fail" -ne "$mi_before" ] || dc_ok map-inventory "$ri_total shipped surfaces named in $MAP"
 }
 
-# --- dev-loop — DEVELOPMENT.md + dev-loop/ starter kit: three method-doc invariants (#68) --------
+# --- dev-loop — DEVELOPMENT.md + dev/dev-loop/ starter kit: three method-doc invariants
+# (#68) ------------------------------------------------------------------------------------
 # This lane ships a method doc plus empty adopt-and-fill templates. Three things must hold or the
 # artifact lies. (1) Templates stay EMPTY: a filled field is instance material leaking into the
 # repo.
 # (2) The method files name NO AI vendor: the method is assistant-agnostic, so a product name breaks
 # that claim. (3) DEVELOPMENT.md actually carries the four role names and five working laws it
 # claims
-# to teach. Scoped to THIS lane's own files (DEVELOPMENT.md + dev-loop/**) so README's legitimate
+# to teach. Scoped to THIS lane's own files (dev/DEVELOPMENT.md + dev/dev-loop/**) so README's
+# legitimate
 # vendor mention elsewhere is never touched. dl_fail_before snapshots $fail so the ok-line prints
 # only when all three invariants held this run.
 
@@ -98,12 +100,13 @@ dc_dl_pairs() {
     "law5-claims-at-head	live at HEAD"
 }
 
-# 1. TEMPLATES KEEP A <FILL> BLANK — every dev-loop/*.template.md must retain AT LEAST ONE literal
+# 1. TEMPLATES KEEP A <FILL> BLANK — every dev/dev-loop/*.template.md must retain AT LEAST ONE
+# literal
 # <FILL> token. The check is presence-of-one, so it fires only when NONE is left (a FULLY-filled
 # template), not on a partial fill — the message and ok-line say exactly that, no stronger (#82).
 dc_dl_templates() {
   local dl_t
-  for dl_t in dev-loop/*.template.md; do
+  for dl_t in dev/dev-loop/*.template.md; do
     grep -Fq -- '<FILL>' "$dl_t" && continue
     dc_fail dev-loop \
       "$dl_t has no <FILL> token left — a template must keep at least one <FILL> blank as proof" \
@@ -111,7 +114,7 @@ dc_dl_templates() {
   done
 }
 
-# 2. VENDOR-NEUTRAL — no AI product name appears in DEVELOPMENT.md or dev-loop/**. It is
+# 2. VENDOR-NEUTRAL — no AI product name appears in DEVELOPMENT.md or dev/dev-loop/**. It is
 # word-anchored (-w)
 # and case-insensitive (-i) so the method-level prose stays product-free; scoped by git ls-files to
 # this lane's files only, never README.
@@ -122,9 +125,10 @@ dc_dl_vendor_neutral() {
     dl_hit=$(grep -niwE -- "$dl_vendors" "$dl_f" | head -1 || true)
     [ -z "$dl_hit" ] && continue
     dc_fail dev-loop \
-      "$dl_f names an AI vendor ($dl_hit) — DEVELOPMENT.md and dev-loop/** are vendor-neutral;" \
+      "$dl_f names an AI vendor ($dl_hit) — dev/DEVELOPMENT.md and dev/dev-loop/** are" \
+      "vendor-neutral;" \
       "remove the product name."
-  done < <(git ls-files DEVELOPMENT.md 'dev-loop/*')
+  done < <(git ls-files dev/DEVELOPMENT.md 'dev/dev-loop/*')
 }
 
 # 3. ROLES AND LAWS PRESENT — DEVELOPMENT.md carries the four role words and one needle per working
@@ -133,9 +137,9 @@ dc_dl_roles_laws() {
   local dl_pair dl_label dl_needle
   while IFS= read -r dl_pair; do
     dl_label=${dl_pair%%	*}; dl_needle=${dl_pair#*	}
-    grep -Fq -- "$dl_needle" DEVELOPMENT.md && continue
+    grep -Fq -- "$dl_needle" dev/DEVELOPMENT.md && continue
     dc_fail "dev-loop:$dl_label" \
-      "DEVELOPMENT.md no longer states this (missing \"$dl_needle\") — restore it."
+      "dev/DEVELOPMENT.md no longer states this (missing \"$dl_needle\") — restore it."
   done < <(dc_dl_pairs)
 }
 
@@ -189,7 +193,7 @@ dc_dn_line() {
 dc_de_number() {
   local dn_fail_before=$fail dn_f dn_exempt dn_lineno dn_line
   dn_num='one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|[0-9]+'
-  for dn_f in "$README" folder-structure.md "$DESIGN"; do
+  for dn_f in "$README" estate/folder-structure.md "$DESIGN"; do
     dn_exempt=0; dn_lineno=0
     while IFS= read -r dn_line || [ -n "$dn_line" ]; do
       dn_lineno=$((dn_lineno+1))
@@ -248,7 +252,7 @@ oh_surface() { git ls-files | grep -vEi '\.(svg|png|jpe?g|gif|zip)$'; }
 #       carry. The second is the same exclusion arriving as a REQUIRED NEEDLE rather than as a
 #       check name — that file is obliged by a detector in this very script to state those laws,
 #       so the sentence carrying one is a contract, not a rival telling.
-#   (4) decision records (decisions/**)    — NOT a false positive either, and NOT a matching
+#   (4) decision records (dev/decisions/**)    — NOT a false positive either, and NOT a matching
 #       accident at all: it is a RULING about what those documents ARE. A record must state what
 #       was decided. Its DECISION SECTION is the primary text of the ruling, and a record whose
 #       Decision section pointed elsewhere for its own decision would not be a record. So a record
@@ -395,11 +399,14 @@ dc_one_home() {
   # needles declared above (a required needle is an identifier for this purpose).
   oh_machined=$(cat .github/workflows/*.yml 2>/dev/null || true; dc_dl_pairs)
   # EXCLUSION 4 applies HERE and only here — the decision records are dropped from THIS detector's
-  # census while oh_surface, which the no-lookup detector below reads, keeps them. "${oh_f%%/*}"
-  # is the top directory.
+  # census while oh_surface, which the no-lookup detector below reads, keeps them. The test is
+  # on the records' DIRECTORY PREFIX, not on the first path segment: the records live inside
+  # the development tree (#136), so a first-segment test would match "dev" — which is every
+  # development file — or nothing, and either way the exclusion would stop meaning what it says.
   oh_files=()
   while IFS= read -r oh_f; do
-    [ -f "$oh_f" ] && [ "${oh_f%%/*}" != decisions ] && oh_files+=("$oh_f")
+    case "$oh_f" in dev/decisions/*) continue ;; esac
+    [ -f "$oh_f" ] && oh_files+=("$oh_f")
   done < <(oh_surface)
   for oh_row in "${oh_registry[@]}"; do
     dc_oh_row "$oh_row"
@@ -534,7 +541,7 @@ dc_doc_sweep() {
 # homes. Also documentation-state, so it lives here now (out of the demo). Revert-provable per home.
 dc_grammar_drift() {
   local gd_re gd_home
-  gd_re=$(grep -oE "BRANCH_RE='[^']+'" .github/scripts/branch-grammar.sh \
+  gd_re=$(grep -oE "BRANCH_RE='[^']+'" dev/scripts/branch-grammar.sh \
           | sed "s/^BRANCH_RE='//; s/'\$//")
   if [ -z "$gd_re" ]; then
     dc_fail grammar-drift "could not read BRANCH_RE from branch-grammar.sh"
@@ -671,7 +678,8 @@ dc_ci_name_contract() {
 }
 
 # --- map-complete (#82, operator ruling) — every top-level directory shipping PRODUCT files
-# appears in the folder map. #85 shipped General Human Knowledge/ as PRODUCT but no wave added
+# appears in the folder map. #85 shipped estate/General Human Knowledge/ as PRODUCT but no wave
+# added
 # it to the map; the rule closes that class of gap. MANIFEST-KEYED, not a hardcoded list: the
 # directory set is derived from the PRODUCT paths in ship-manifest.txt, so a newly-shipped top-level
 # dir is caught automatically. Directory names contain spaces, so match the literal path string —
@@ -691,10 +699,17 @@ dc_map_complete() {
   while IFS= read -r mc_dir; do
     grep -Fq -- "$mc_dir/" <<<"$mc_map" && continue
     dc_fail map-complete \
-      "top-level directory '$mc_dir/' ships PRODUCT files (per .github/ship-manifest.txt) but is" \
+      "top-level directory '$mc_dir/' ships PRODUCT files (per dev/ship-manifest.txt) but is" \
       "absent from the folder map ($MAP) — add its tree line."
-  done < <(awk -F'\t' '$1=="PRODUCT" && $2 ~ /\// { sub(/\/.*/,"",$2); print $2 }' \
-             .github/ship-manifest.txt | sort -u)
+  # THE MAP IS THE ESTATE'S STRUCTURE, so the directories compared against it must be
+  # ESTATE-RELATIVE. A manifest row is repository-relative and the shipped tree now sits under
+  # estate/ (#136), so that prefix is stripped BEFORE the top directory is taken — without the
+  # strip every PRODUCT row reduces to the one directory "estate", which the map correctly does
+  # not draw, and this detector would demand a line that must never exist. A root-pinned PRODUCT
+  # file has no prefix and no directory, and drops out on the remaining slash test as before.
+  done < <(awk -F'\t' '$1=="PRODUCT" { sub(/^estate\//, "", $2)
+                        if ($2 ~ /\//) { sub(/\/.*/, "", $2); print $2 } }' \
+             dev/ship-manifest.txt | sort -u)
   [ "$fail" -ne "$mc_fail_before" ] || dc_ok map-complete \
     "every PRODUCT top-level directory appears in the folder map ($MAP)"
 }
@@ -729,7 +744,7 @@ dc_ih_commands() {
     "clone	git clone https://github.com/TheBoogieman/ai-work-harness.git" \
     "venv-create	python3.12 -m venv" \
     "nbformat	pip install nbformat" \
-    "installer	bash install.sh ~/Work" \
+    "installer	bash estate/install.sh ~/Work" \
     "reconfigure	cd ~/Work && bash install.sh" \
     "arming	git -C <estate> config harness.estate true"
 }
@@ -785,10 +800,11 @@ dc_readme_no_diagrams() {
   [ "$svg_refs" -eq 0 ] && return 0
   dc_fail readme-no-diagrams \
     "README references a diagram ($svg_refs .svg mention(s)) — README must not embed diagrams;" \
-    "keep only the pointer to General AI-Knowledge/AI Harness/."
+    "keep only the pointer to estate/General AI-Knowledge/AI Harness/."
 }
 
-# --- adr-shape — SPEC.md + the decisions/ ADR backfill are well-formed (#69) ---------------------
+# --- adr-shape — estate/SPEC.md + the dev/decisions/ ADR backfill are well-formed
+# (#69) -----------------------------------------------------------------------------------
 # The project's decisions must stay readable: each ADR carries the four canonical headings, every
 # real ADR cites at least one clickable evidence link, the shipped template stays empty, and SPEC.md
 # keeps its glossary. Pure greps, each miss naming its exact fix — the demo owns behaviour,
@@ -843,17 +859,17 @@ dc_adr_real() {
 #    rather than kept as a memorial: a discharged warning read later is itself a false claim.
 dc_adr_spec() {
   local spec_body term
-  if [ ! -f SPEC.md ]; then
+  if [ ! -f estate/SPEC.md ]; then
     dc_fail adr-shape \
-      "SPEC.md is missing — the project spec (the guarantees + the glossary) must exist at the" \
-      "repo root; restore it."
+      "estate/SPEC.md is missing — the project spec (the guarantees + the glossary) must" \
+      "exist in the estate tree; restore it."
     return 0
   fi
-  spec_body=$(cat SPEC.md)
+  spec_body=$(cat estate/SPEC.md)
   for term in 'estate' 'guard' 'red/yellow' 'one-home' 'dumb inspector'; do
     grep -Fiq -- "$term" <<<"$spec_body" && continue
     dc_fail adr-shape \
-      "SPEC.md does not name '$term' — its glossary must cover estate, guard, red/yellow," \
+      "estate/SPEC.md does not name '$term' — its glossary must cover estate, guard, red/yellow," \
       "one-home and dumb inspector; add it."
   done
 }
@@ -871,23 +887,24 @@ dc_adr() {
       000-adr-template.md) dc_adr_template "$adr" ;;
       *) dc_adr_real "$adr" ;;
     esac
-  done < <(git ls-files 'decisions/[0-9][0-9][0-9]-*.md')
+  done < <(git ls-files 'dev/decisions/[0-9][0-9][0-9]-*.md')
   dc_adr_spec
   [ "$fail" -ne "$adr_before" ] || dc_ok adr-shape \
-    "SPEC.md glossary present and every decisions/ ADR well-formed"
+    "estate/SPEC.md glossary present and every dev/decisions/ ADR well-formed"
 }
 
-# --- reader-agent (#82 / decisions/018) — the reader spine, asserted PER-NAME not blanket ---------
+# --- reader-agent (#82 / dev/decisions/018) — the reader spine, asserted PER-NAME not
+# blanket --------------------------------------------------------------------------------
 # The estate's four readers narrate the record with NO validator behind them, so the fabrication
 # clause IS their whole safety story and must be present in each. The three EPHEMERAL readers write
 # nothing, so they must hold no `edit` tool. The `retrospective` reader is the single-door WRITER
-# (decisions/018): it legitimately holds `edit`, so in place of a no-edit assert it must state
+# (dev/decisions/018): it legitimately holds `edit`, so in place of a no-edit assert it must state
 # its one
 # write door AND its append-only discipline. Per-name so relaxing any one contract reds by name; a
-# fifth reader is added to the loop when it ships. Basis: decisions/018.
+# fifth reader is added to the loop when it ships. Basis: dev/decisions/018.
 dc_reader_ephemeral() {
   local ra=$1 ra_f ra_tools
-  ra_f="_agents/$ra.agent.md"
+  ra_f="estate/_agents/$ra.agent.md"
   grep -Fq -- 'FABRICATED RECORD' "$ra_f" || dc_fail "reader-agent:$ra" \
     "$ra_f dropped the fabrication clause (no 'FABRICATED RECORD') — every reader carries it" \
     "verbatim; a reader that invents is caught by nothing else. Restore it."
@@ -899,7 +916,7 @@ dc_reader_ephemeral() {
 }
 
 dc_reader_retrospective() {
-  local ra_r=_agents/retrospective.agent.md
+  local ra_r=estate/_agents/retrospective.agent.md
   grep -Fq -- 'FABRICATED RECORD' "$ra_r" || dc_fail reader-agent:retrospective \
     "$ra_r dropped the fabrication clause (no 'FABRICATED RECORD') — restore it verbatim."
   grep -Fq -- 'EXACTLY ONE DOOR' "$ra_r" || dc_fail reader-agent:retrospective \
@@ -932,7 +949,8 @@ dc_currency_note() {
 # The currency trigger below protects one claim: that the sheets are current with the machinery they
 # draw. A change to machinery they do NOT draw cannot falsify that claim, so the watched set has to
 # be what the drawings actually name. It used to be three path prefixes — _harness/scripts/,
-# _agents/, _harness/hooks/, 26 tracked files against the 7 scripts the sheets depict — and the
+# _agents/, _harness/hooks/ as they were spelled then, 26 tracked files against the 7 scripts
+# the sheets depict — and the
 # other nineteen fired a trigger their changes could not answer. Deriving it (rather than keeping a
 # list here) means a redraw moves the watched set on the day it lands, with nothing to maintain.
 
@@ -1033,7 +1051,7 @@ dc_design_trigger() {
 # stale on the first rename — the defect itself, not a smaller version of it. It was tried the human
 # way in the same wave: two seats derived the citation set independently, agreed, and issued the
 # agreed set as binding. It was ONE SITE OF SIX.
-lc_gate=.github/scripts/docs-check.sh          # THIS file: the authority for what the gate emits
+lc_gate=dev/scripts/docs-check.sh          # THIS file: the authority for what the gate emits
 lc_name=$(basename "$lc_gate" .sh)             # how a document names the gate; derived, not typed
 lc_tok='[A-Za-z0-9]+(-[A-Za-z0-9]+)+'          # a label's shape: hyphen-joined alphanumeric words
 lc_hard='#69 ADR'                              # the hard validation instance (see dc_lc_validate)
@@ -1090,12 +1108,12 @@ dc_lc_validate() {
 #   (a) every tracked file that NAMES the gate. That is most citation sites, README's document
 #       catalogue among them.
 #   (b) every tracked file the GATE ITSELF names by a CONCRETE path. Source (a) cannot see
-#       decisions/018, which cites reader-agent without ever naming the gate. Scoping instead on
+#       dev/decisions/018, which cites reader-agent without ever naming the gate. Scoping instead on
 #       "names a label we emit" would be CIRCULAR: rename a label and the file leaves the scope on
 #       the same commit that made its citation stale — silence at exactly the moment the red is
 #       owed. What the gate POINTS AT does not move when a label is renamed, so (b) survives the
 #       rename. A globbed reference is not a concrete path and is skipped by the character class,
-#       which is why "decisions/**" does not drag every record into scope.
+#       which is why "dev/decisions/**" does not drag every record into scope.
 
 # dc_lc_named_by_gate — source (b) for ONE file: true when some concrete path the gate names is a
 # prefix of it. Its own function so the prefix loop is not a third nesting level inside the sweep.
@@ -1110,8 +1128,16 @@ dc_lc_named_by_gate() {
 
 dc_lc_scope() {
   local lc_f
+  # A token ending in a separator is dropped, because it names a DIRECTORY and this source is the
+  # one that has to stay CONCRETE — "a globbed reference is not a concrete path", as the comment
+  # above already says. That used to fall out of the character class for free: the decision
+  # records sat at "decisions/", where the class finds no X/Y pair before the glob that follows.
+  # They now sit one level down (#136), so "dev/decisions/" IS such a pair, and every record would
+  # join this scope purely because a path was rewritten — a move widening a detector's reach,
+  # which is not something a move may do. Saying it as the rule rather than leaving it to depend
+  # on where a directory happens to sit is what stops it moving again.
   lc_paths=$(grep -ohE '[A-Za-z0-9_.][A-Za-z0-9_./-]*/[A-Za-z0-9_.][A-Za-z0-9_./-]*' "$lc_gate" \
-             | sort -u)
+             | grep -v '/$' | sort -u)
   while IFS= read -r lc_f; do
     { [ -f "$lc_f" ] && [ "$lc_f" != "$lc_gate" ]; } || continue
     grep -Fq -- "$lc_name" "$lc_f" 2>/dev/null || dc_lc_named_by_gate "$lc_f" || continue

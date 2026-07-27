@@ -1,4 +1,4 @@
-# shape.yml — CI-side code-shape enforcement (#120). Runs .github/scripts/shape-check.sh, which
+# shape.yml — CI-side code-shape enforcement (#120). Runs dev/scripts/shape-check.sh, which
 # measures four shapes over EVERY tracked *.sh — line length, lines of code outside any function,
 # nesting depth, and function length — and fails on any file that exceeds a limit it is not exempt
 # from. DEV infrastructure: it never ships to a user estate (#43) and no PRODUCT script depends on
@@ -56,6 +56,6 @@ jobs:
       - name: Measure every tracked shell script
         run: |
           set -euo pipefail
-          bash .github/scripts/shape-check.sh --report
+          bash dev/scripts/shape-check.sh --report
           echo "---------------------------------------------------------------"
-          bash .github/scripts/shape-check.sh
+          bash dev/scripts/shape-check.sh

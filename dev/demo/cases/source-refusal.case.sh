@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # source-refusal.case.sh — #62: installing into the source aborts AND names a concrete fix.
-# SOURCED by the runner; see _harness/scripts/run_demo.sh.
+# SOURCED by the runner; see dev/scripts/run_demo.sh.
 #
 # install.sh must refuse TARGET==SOURCE (source/estate separation is fundamental) — but the refusal
 # has to PRESCRIBE, not just name the wrong. Two assertions, both revert-provable:
@@ -17,8 +17,8 @@ case_source_refusal() {
   local G62_SRC G62_ERR G62_RC
   echo "--- #62 source-refusal prescribes: install-into-source aborts with a concrete fix ---"
   G62_SRC=$(mktemp -d)
-  cp install.sh "$G62_SRC/install.sh"
-  mkdir -p "$G62_SRC/.github"; cp .github/ship-manifest.txt "$G62_SRC/.github/ship-manifest.txt"
+  cp estate/install.sh "$G62_SRC/install.sh"
+  mkdir -p "$G62_SRC/dev"; cp dev/ship-manifest.txt "$G62_SRC/dev/ship-manifest.txt"
   # a repo but with NO remote, so the remote-refusal guard cannot mask (a)
   git -C "$G62_SRC" init -q
   set +e

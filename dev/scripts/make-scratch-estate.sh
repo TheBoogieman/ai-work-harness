@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # make-scratch-estate.sh — stand up a THROWAWAY, GENERIC harness Work-root for #44's
-# live-fire hook confirmation run. DEV INFRASTRUCTURE: lives under .github/, never ships
+# live-fire hook confirmation run. DEV INFRASTRUCTURE: lives under dev/, never ships
 # to an installed estate (#43).
 #
 # WHY: cond 0 (test-bench isolation) forbids live-fire hook testing on the canonical
@@ -22,24 +22,28 @@ if [ -e "$DEST" ]; then echo "make-scratch-estate: refusing to overwrite existin
 mkdir -p "$DEST"
 
 # Copy the machinery a live hook needs to run (scripts + agents), plus the whitelist and
-# the constitution so the estate is a faithful Work-root.
-cp -r "$REPO_ROOT/_harness" "$DEST/_harness"
-cp -r "$REPO_ROOT/_agents"  "$DEST/_agents"
+# the constitution so the estate is a faithful Work-root. EVERY SOURCE PATH IS
+# REPOSITORY-RELATIVE and every destination is ESTATE-RELATIVE: the estate tree carries the
+# estate/ prefix here and none once laid down, so the prefix is stripped on the way across.
+cp -r "$REPO_ROOT/estate/_harness" "$DEST/_harness"
+cp -r "$REPO_ROOT/estate/_agents"  "$DEST/_agents"
 cp "$REPO_ROOT/.gitignore"  "$DEST/.gitignore"
 # Carry the line-ending protection (#40): without .gitattributes a fresh git-init on Windows
 # would CRLF the copied scripts on the next checkout and break the live hooks. Pin LF here too.
 cp "$REPO_ROOT/.gitattributes" "$DEST/.gitattributes"
-[ -f "$REPO_ROOT/folder-structure.md" ] && cp "$REPO_ROOT/folder-structure.md" "$DEST/"
+# named once so the test and the copy can never point at different files
+CONSTITUTION="$REPO_ROOT/estate/folder-structure.md"
+[ -f "$CONSTITUTION" ] && cp "$CONSTITUTION" "$DEST/"
 [ -f "$REPO_ROOT/AGENTS.md" ] && cp "$REPO_ROOT/AGENTS.md" "$DEST/"
 
 # One GENERIC ticket from the shipped template — no real board keys (G6).
 mkdir -p "$DEST/Tickets"
-cp -r "$REPO_ROOT/Tickets/999912Z-PROJ-99999" "$DEST/Tickets/999912Z-PROJ-99999"
+cp -r "$REPO_ROOT/estate/Tickets/999912Z-PROJ-99999" "$DEST/Tickets/999912Z-PROJ-99999"
 
 # Drop the shipped, verified hook config where the VS Code Copilot IDE agent auto-loads it —
 # so a re-confirmation fires the exact artifact users install (its one home, no separate copy).
 mkdir -p "$DEST/.github/hooks"
-cp "$REPO_ROOT/_harness/hooks/hooks.example.json" "$DEST/.github/hooks/harness.json"
+cp "$REPO_ROOT/estate/_harness/hooks/hooks.example.json" "$DEST/.github/hooks/harness.json"
 
 # Git-init the disposable RECORD repo (local-only). A generic identity keeps anything
 # personal out of the scratch history (G6). An initial commit gives postToolUse a HEAD to

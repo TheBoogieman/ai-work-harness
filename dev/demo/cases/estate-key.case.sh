@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # estate-key.case.sh — #60: commit-bearing hooks no-op outside a genuine estate. SOURCED by the
-# runner; see _harness/scripts/run_demo.sh.
+# runner; see dev/scripts/run_demo.sh.
 #
 # The hook cwd is "." (the workspace root), so if a session's effective repo is a NESTED FOREIGN
 # project (e.g. under Github/), a naive auto-commit would commit into THAT repo. The fix: both
@@ -39,7 +39,7 @@ ek_parse_hooks() {
     [ -n "$g60_line" ] && G60_CMDS+=("$g60_line")
   done < <(python3 -c "
 import json
-d = json.load(open('_harness/hooks/hooks.example.json'))
+d = json.load(open('estate/_harness/hooks/hooks.example.json'))
 for entries in d['hooks'].values():
     for e in entries:
         if 'git commit' in e.get('bash', ''):
@@ -106,7 +106,7 @@ ek_armed_by_install() {
   git -C "$G60_EST" init -q   # a repo BEFORE install => NEED_GIT=0
   G60_DEPLOY=$(mktemp -d)
   set +e
-  HARNESS_AGENT_DEPLOY_DIR="$G60_DEPLOY" bash install.sh --yes "$G60_EST" >/dev/null 2>&1
+  HARNESS_AGENT_DEPLOY_DIR="$G60_DEPLOY" bash estate/install.sh --yes "$G60_EST" >/dev/null 2>&1
   set -e
   g60_key=$(git -C "$G60_EST" config --local harness.estate 2>/dev/null || true)
   [ "$g60_key" = "true" ] \

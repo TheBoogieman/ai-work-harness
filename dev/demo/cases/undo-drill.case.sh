@@ -24,7 +24,7 @@ case_undo_drill() {
   # siblings) rather than aborting the demo before we can read it. 2>&1 folds git's autocrlf stderr
   # notices into the captured output; they are inert to the PROVED-line greps below.
   set +e
-  UD_OUT=$(bash "$DEMO_ROOT/_harness/scripts/harness-drill.sh" undo-drill 2>&1); UD_RC=$?
+  UD_OUT=$(bash "$DEMO_ROOT/estate/_harness/scripts/harness-drill.sh" undo-drill 2>&1); UD_RC=$?
   set -e
   [ "$UD_RC" -eq 0 ] \
     || { echo "BUG [undo-drill]: undo-drill did not exit 0 (rc=$UD_RC):"; \

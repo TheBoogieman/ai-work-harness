@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # tracker-sweep.case.sh — [tracker-sweep]: the on-demand board-drift report, stub-based and
-# zero-network. SOURCED by the runner; see _harness/scripts/run_demo.sh.
+# zero-network. SOURCED by the runner; see dev/scripts/run_demo.sh.
 #
 # tracker_sweep.sh reads each active ticket's upstream status through a PLUGGABLE fetch seam and
 # WARNs per divergence. Three properties must hold or the tool lies. The whole family runs against
-# a THROWAWAY Tickets/ fixture (HARNESS_WORK_ROOT) driven by LOCAL stub fetchers — no real ticket,
+# a THROWAWAY Tickets/ fixture (HARNESS_WORK_ROOT) driven by LOCAL stub fetchers — no real
+# ticket,
 # no network. No credential material appears anywhere below, not even a fake-looking one.
 
 # ts_fixture — two conforming tickets in the fixture estate: one will read 'closed' upstream (the
@@ -38,7 +39,7 @@ ts_divergence() {
   local G81_DIV G81_DIV_RC
   set +e
   G81_DIV=$(HARNESS_WORK_ROOT="$G81_ROOT" HARNESS_TRACKER_FETCH_CMD="$G81_ROOT/stub-diverge.sh" \
-    bash _harness/scripts/tracker_sweep.sh 2>&1); G81_DIV_RC=$?
+    bash estate/_harness/scripts/tracker_sweep.sh 2>&1); G81_DIV_RC=$?
   set -e
   printf '%s\n' "$G81_DIV" | grep -qE '^WARN: 202607A-PROJ-1 .*board.*active locally' \
     && printf '%s\n' "$G81_DIV" | grep -qi 'reconcile' \
@@ -60,7 +61,7 @@ ts_fails_open() {
   local G81_DOWN G81_DOWN_RC
   set +e
   G81_DOWN=$(HARNESS_WORK_ROOT="$G81_ROOT" HARNESS_TRACKER_FETCH_CMD="$G81_ROOT/stub-down.sh" \
-    bash _harness/scripts/tracker_sweep.sh 2>&1); G81_DOWN_RC=$?
+    bash estate/_harness/scripts/tracker_sweep.sh 2>&1); G81_DOWN_RC=$?
   set -e
   [ "$G81_DOWN_RC" -eq 0 ] \
     || { echo "BUG [tracker-fails-open]: an unreachable tracker did not fail open — expected" \
@@ -77,7 +78,7 @@ ts_fails_open() {
 #    cannot make the demo path reach out. Revert-proof: add a curl/wget to tracker_sweep.sh -> reds.
 ts_zero_network() {
   local G81_NET
-  G81_NET=$(grep -nE 'curl|wget|netcat|/dev/tcp' _harness/scripts/tracker_sweep.sh || true)
+  G81_NET=$(grep -nE 'curl|wget|netcat|/dev/tcp' estate/_harness/scripts/tracker_sweep.sh || true)
   [ -z "$G81_NET" ] \
     || { echo "BUG [tracker-zero-network]: tracker_sweep.sh contains a network primitive — it" \
            "must reach out only through HARNESS_TRACKER_FETCH_CMD, never itself:"; \

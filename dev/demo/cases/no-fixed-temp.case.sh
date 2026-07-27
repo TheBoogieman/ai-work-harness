@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # no-fixed-temp.case.sh — [no-fixed-temp] (#210): no literal system-temp path anywhere in the
-# acceptance suite's own source. SOURCED by the runner; see _harness/scripts/run_demo.sh.
+# acceptance suite's own source. SOURCED by the runner; see dev/scripts/run_demo.sh.
 #
 # WHAT IT ASSERTS: every file the suite is made of — the runner, the tour, and every case file —
 # carries no literal system-temp path. The file list comes from demo_suite_files() in the runner,
@@ -23,7 +23,7 @@
 # because it teaches its reader to trust a check that was never made.
 #
 # SCOPE — STATED, NEVER IMPLIED: temporaries OUTSIDE the working tree. The in-tree scratch ticket
-# S="Tickets/999911Z-PROJ-99998", set by demo_setup in the runner, is also a hard-coded path this
+# S="estate/Tickets/999911Z-PROJ-99998", set by demo_setup in the runner, is also a hard-coded path this
 # suite creates, and it is a NAMED, REASONED EXCLUSION rather than an oversight. It CANNOT go
 # through mktemp: the product's own convention is that the machinery only sees a ticket sitting
 # inside the estate's Tickets/ directory, so moving it to a temp dir would hide it from the

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # skills-index.case.sh — [skills-index]: Skills tree <-> _index.md correspondence, both directions,
-# plus the frozen module shape. SOURCED by the runner; see _harness/scripts/run_demo.sh.
+# plus the frozen module shape. SOURCED by the runner; see dev/scripts/run_demo.sh.
 #
 # The worker tier discovers craft modules INDEX-FIRST: it matches its task against
 # Skills/_index.md and reads only the matching SKILL.md, never crawling the tree. That only holds
@@ -15,7 +15,7 @@
 # "- <Name> — triggers: ... — tools: ...").
 si_setup() {
   echo "--- [skills-index]: index <-> Skills/ tree correspondence + frozen module shape ---"
-  SKILLS_DIR="General AI-Knowledge/Skills"
+  SKILLS_DIR="estate/General AI-Knowledge/Skills"
   SKILLS_INDEX="$SKILLS_DIR/_index.md"
   indexed_skills=$(grep -E '^- ' "$SKILLS_INDEX" | sed -E 's/^- ([^ ]+).*/\1/')
 }

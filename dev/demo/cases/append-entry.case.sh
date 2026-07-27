@@ -1,19 +1,20 @@
 #!/usr/bin/env bash
 # append-entry.case.sh — #80 [append-entry]: the one-home mechanical record appender. SOURCED by
-# the runner; see _harness/scripts/run_demo.sh for the contract.
+# the runner; see dev/scripts/run_demo.sh for the contract.
 #
 # append_entry.sh is a DUMB creator: text+ticket+section -> a stamped, ATOMIC append under an
 # EXISTING header. Its pre-flight validates the LANDING ZONE only (file/header present+unique) and
 # DECLINES otherwise; its post-flight composes with check_ticket_log.sh (write-then-validate), so a
 # red NEVER rolls back a good write. These four cases are revert-provable BOTH directions: break
 # the write and (1)/(3) red; stop declining on a duplicate header and (2) reds byte-changed;
-# name-resolve a slash-bearing path (drop the #82 branch) and (4) reds on the doubled Tickets/ echo.
+# name-resolve a slash-bearing path (drop the #82 branch) and (4) reds on the doubled Tickets/
+# echo.
 
 # a80_make builds a conforming, validator-ready ticket from the template plus a seed session entry
 # (so the appended-to file already has a Session Log the watermark check can read).
 a80_make() {
   local dir="$1" base; base=$(basename "$dir")
-  rm -rf "$dir"; cp -r Tickets/999912Z-PROJ-99999 "$dir"
+  rm -rf "$dir"; cp -r estate/Tickets/999912Z-PROJ-99999 "$dir"
   mv "$dir/999912Z-PROJ-99999.md" "$dir/$base.md"
   printf '\n## %s - a80 seed\n- seed session\n' "$(date +%Y%m%d%H%M%S)" >> "$dir/$base.md"
 }
@@ -25,8 +26,8 @@ ae_healthy() {
   local A80H A80_OUT
   echo "--- #80 append_entry: healthy lands+validator passes; dup-header declines byte-unchanged;" \
     "red passes through ---"
-  A80H="Tickets/202607T-PROJ-8001"; a80_make "$A80H"
-  set +e; A80_OUT=$(bash _harness/scripts/append_entry.sh 202607T-PROJ-8001 "Session Log" \
+  A80H="estate/Tickets/202607T-PROJ-8001"; a80_make "$A80H"
+  set +e; A80_OUT=$(bash estate/_harness/scripts/append_entry.sh 202607T-PROJ-8001 "Session Log" \
     "a80 healthy probe #80"); set -e
   awk '/^## Session Log/{f=1} f&&/a80 healthy probe #80/{ok=1} END{exit !ok}' \
     "$A80H/202607T-PROJ-8001.md" \
@@ -45,11 +46,11 @@ ae_healthy() {
 #    not an eyeball. The '.before' snapshot lives OUTSIDE AI-Knowledge/ so it cannot mint an orphan.
 ae_duplicate_header() {
   local A80D A80_OUT A80_RC
-  A80D="Tickets/202607T-PROJ-8002"; a80_make "$A80D"
+  A80D="estate/Tickets/202607T-PROJ-8002"; a80_make "$A80D"
   # two identical '## Notes' headers
   printf '\n## Notes\nalpha\n## Notes\nbeta\n' >> "$A80D/202607T-PROJ-8002.md"
   cp "$A80D/202607T-PROJ-8002.md" "$A80D/before.snap"          # exact byte snapshot pre-append
-  set +e; A80_OUT=$(bash _harness/scripts/append_entry.sh 202607T-PROJ-8002 "Notes" \
+  set +e; A80_OUT=$(bash estate/_harness/scripts/append_entry.sh 202607T-PROJ-8002 "Notes" \
     "must not land"); A80_RC=$?; set -e
   [ "$A80_RC" -ne 0 ] \
     || { echo "BUG [append-entry]: duplicated header did NOT cause a decline (rc=0):"; \
@@ -69,10 +70,10 @@ ae_duplicate_header() {
 #    file (unrelated to the entry).
 ae_red_passthrough() {
   local A80R A80_OUT A80_RC
-  A80R="Tickets/202607T-PROJ-8003"; a80_make "$A80R"
+  A80R="estate/Tickets/202607T-PROJ-8003"; a80_make "$A80R"
   # not listed in _index.md -> validator FAILs, unrelated to the append
   echo "orphan body" > "$A80R/AI-Knowledge/orphan.md"
-  set +e; A80_OUT=$(bash _harness/scripts/append_entry.sh 202607T-PROJ-8003 "Session Log" \
+  set +e; A80_OUT=$(bash estate/_harness/scripts/append_entry.sh 202607T-PROJ-8003 "Session Log" \
     "a80 red-passthrough probe #80"); A80_RC=$?; set -e
   grep -q "a80 red-passthrough probe #80" "$A80R/202607T-PROJ-8003.md" \
     || { echo "BUG [append-entry]: a pre-existing red ROLLED BACK the write — the entry is gone"; \
@@ -88,15 +89,18 @@ ae_red_passthrough() {
     "rolled back"
 }
 
-# 4) SLASH-BEARING NON-EXISTENT PATH -> declines naming the LITERAL path, never a DOUBLED Tickets/
-#    construction (#82 truth-up). Pre-fix, a slash-bearing argument fell to Tickets/<arg>/<arg>.md
-#    name-resolution and echoed a doubled 'Tickets/.../Tickets/...' path in the decline. The decline
+# 4) SLASH-BEARING NON-EXISTENT PATH -> declines naming the LITERAL path, never a DOUBLED
+#    Tickets/ construction (#82 truth-up). Pre-fix, a slash-bearing argument fell to
+#    Tickets/<arg>/<arg>.md name-resolution and echoed a doubled 'Tickets/.../Tickets/...' path
+#    in the decline. THE ARGUMENT AND THE NEEDLE ARE ESTATE-RELATIVE ON PURPOSE: the argument
+#    is a ticket name a caller types and the needle is the doubling the fix removed, so neither
+#    carries the estate/ tree prefix this repository stores the estate under. The decline
 #    was always correct (it declines, names a fix); this only asserts the ECHO is clean.
 #    Revert-proof: drop the `|| "$ticket" == */*` branch in append_entry.sh and (4) reds on the
 #    doubled path.
 ae_slash_path() {
   local A80_OUT A80_RC
-  set +e; A80_OUT=$(bash _harness/scripts/append_entry.sh "Tickets/does-not-exist-8004" \
+  set +e; A80_OUT=$(bash estate/_harness/scripts/append_entry.sh "Tickets/does-not-exist-8004" \
     "Session Log" "must not land"); A80_RC=$?; set -e
   [ "$A80_RC" -ne 0 ] \
     || { echo "BUG [append-entry]: a non-existent slash-bearing path did NOT decline (rc=0):"; \

@@ -2,10 +2,10 @@
 # run_demo.sh — THE RUNNER of the acceptance suite (#143). It owns the shared estate the suite
 # runs against, the ORDER the suite runs in, and nothing else. The suite itself is two other
 # kinds of artifact, and the split is the point:
-#   _harness/demo/tour.sh          the STAGE-BASED TOUR — a demonstration a person watches. It
+#   dev/demo/tour.sh          the STAGE-BASED TOUR — a demonstration a person watches. It
 #                                  prints the six stage banners and performs the machinery a
 #                                  newcomer came to see. It asserts nothing by name.
-#   _harness/demo/cases/*.case.sh  ONE CASE FILE PER GUARD FAMILY — the regression suite a
+#   dev/demo/cases/*.case.sh  ONE CASE FILE PER GUARD FAMILY — the regression suite a
 #                                  machine runs. Every named guard lives in exactly one of them.
 # Those two serve different readers, which is why they are different files: a reader who wants to
 # see the harness work reads the tour, and a reader who wants to know what is PROVEN reads the
@@ -16,7 +16,7 @@
 # state, creates+destroys one scratch ticket.
 #
 # WHAT THIS SUITE DOES NOT KNOW (#42 decoupling, cond 2): the documentation-completeness and
-# branch-grammar DOC checks that once lived inside it have MOVED to .github/scripts/docs-check.sh
+# branch-grammar DOC checks that once lived inside it have MOVED to dev/scripts/docs-check.sh
 # (run by .github/workflows/docs.yml). The suite carries ZERO documentation knowledge — doc state
 # can never again red the product demo. The demo gates the PRODUCT; docs.yml gates the docs. Two
 # truths, two instruments.
@@ -53,13 +53,13 @@ demo_setup() {
   export HARNESS_WARN_STATE_DIR
   export HARNESS_WARN_STATE_FILE="$HARNESS_WARN_STATE_DIR/warn-aging.tsv"
   DEMO_RAN=""                                  # the case names actually executed (see Part 3 below)
-  S="Tickets/999911Z-PROJ-99998"; rm -rf "$S"  # the shared scratch ticket the tour builds
+  S="estate/Tickets/999911Z-PROJ-99998"; rm -rf "$S"  # the shared scratch ticket the tour builds
   demo_arm_cleanup
   demo_init_repo
 }
 
 # cleanup runs on EXIT — normal, a set -e abort, or Ctrl-C. It removes the temp dirs AND any
-# Tickets/ folder THIS run created but didn't tear down. Success-path teardown is explicit in
+# estate/Tickets/ folder THIS run created but didn't tear down. Success-path teardown is explicit in
 # demo_finish, but a run that DIES mid-stage used to leave scratch tickets behind (untracked, so
 # git stayed clean) and the NEXT run then red-blocked at stage 1 on the leftovers — a misleading
 # second failure (the "leftover-scratch-folder collision"). Snapshotting the real tickets up front
@@ -70,7 +70,7 @@ demo_cleanup() {
   rm -rf "$HARNESS_STATE_DIR" "$HARNESS_AGENT_DEPLOY_DIR" "$PACK_OUT_DIR" "$HARNESS_WARN_STATE_DIR"
   [ "$DEMO_SNAPSHOT_DONE" = 1 ] || return 0
   local d name
-  for d in "$DEMO_ROOT/Tickets"/*/; do
+  for d in "$DEMO_ROOT/estate/Tickets"/*/; do
     [ -d "$d" ] || continue
     name=$(basename "$d")
     printf '%s\n' "$DEMO_PRE_TICKETS" | grep -Fxq "$name" || rm -rf "$d"
@@ -83,7 +83,7 @@ demo_cleanup() {
 demo_arm_cleanup() {
   DEMO_PRE_TICKETS=""; DEMO_SNAPSHOT_DONE=0
   trap demo_cleanup EXIT
-  DEMO_PRE_TICKETS=$(for d in "$DEMO_ROOT/Tickets"/*/; do [ -d "$d" ] \
+  DEMO_PRE_TICKETS=$(for d in "$DEMO_ROOT/estate/Tickets"/*/; do [ -d "$d" ] \
     && basename "$d"; done 2>/dev/null)
   DEMO_SNAPSHOT_DONE=1
 }
@@ -117,7 +117,7 @@ demo_close_commit() {  # $1 = DID_INIT flag (1 iff the demo created the repo), $
 # ignores the folder, but the rename still gives ticket_bearing() a <foldername>.md to find.
 r09_make() {
   local dir="$1" base; base=$(basename "$dir")
-  rm -rf "$dir"; cp -r Tickets/999912Z-PROJ-99999 "$dir"
+  rm -rf "$dir"; cp -r estate/Tickets/999912Z-PROJ-99999 "$dir"
   mv "$dir/999912Z-PROJ-99999.md" "$dir/$base.md"
   printf '\n## %s - r09 probe\n- exercising the ticket grammar\n' \
     "$(date +%Y%m%d%H%M%S)" >> "$dir/$base.md"
@@ -174,7 +174,7 @@ demo_order() {
 # demo_cases_dir / demo_case_names — where case files live and what they are called. Both the
 # loader and the completeness guard read the directory through these, so "what a case file is"
 # has one definition and the two can never disagree about it.
-demo_cases_dir() { printf '%s\n' "$DEMO_ROOT/_harness/demo/cases"; }
+demo_cases_dir() { printf '%s\n' "$DEMO_ROOT/dev/demo/cases"; }
 
 demo_case_names() {
   local f
@@ -188,7 +188,7 @@ demo_case_names() {
 # having to remember to extend it.
 demo_suite_files() {
   local f
-  printf '%s\n' "$DEMO_ROOT/_harness/scripts/run_demo.sh" "$DEMO_ROOT/_harness/demo/tour.sh"
+  printf '%s\n' "$DEMO_ROOT/dev/scripts/run_demo.sh" "$DEMO_ROOT/dev/demo/tour.sh"
   for f in "$(demo_cases_dir)"/*.case.sh; do
     if [ -f "$f" ]; then printf '%s\n' "$f"; fi
   done
@@ -201,7 +201,7 @@ demo_suite_files() {
 demo_load() {
   local f
   # shellcheck source=/dev/null
-  . "$DEMO_ROOT/_harness/demo/tour.sh"
+  . "$DEMO_ROOT/dev/demo/tour.sh"
   for f in "$(demo_cases_dir)"/*.case.sh; do
     if [ -f "$f" ]; then
       # shellcheck source=/dev/null
@@ -256,14 +256,14 @@ demo_completeness_report() {  # $1 = case files never executed, $2 = executed na
   if [ -n "$1" ]; then
     echo "BUG [case-completeness]: case file(s) EXIST but the runner never executed them, so"
     echo "  every assertion they hold was silently skipped. Add each to demo_order() in"
-    echo "  _harness/scripts/run_demo.sh, at the point in the run where it belongs:"
+    echo "  dev/scripts/run_demo.sh, at the point in the run where it belongs:"
     printf '%s\n' "$1" | sed 's/^/    /'
     exit 1
   fi
   if [ -n "$2" ]; then
     echo "BUG [case-completeness]: the runner executed case name(s) with no matching case file"
-    echo "  under _harness/demo/cases/ — the file was renamed or deleted and demo_order() in"
-    echo "  _harness/scripts/run_demo.sh still names the old identity:"
+    echo "  under dev/demo/cases/ — the file was renamed or deleted and demo_order() in"
+    echo "  dev/scripts/run_demo.sh still names the old identity:"
     printf '%s\n' "$2" | sed 's/^/    /'
     exit 1
   fi

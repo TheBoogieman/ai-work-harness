@@ -1,4 +1,4 @@
-# docs.yml — CI-side documentation governance (#42). Runs .github/scripts/docs-check.sh, which
+# docs.yml — CI-side documentation governance (#42). Runs dev/scripts/docs-check.sh, which
 # gates MERGES on doc completeness (inventory + frozen sweep set), diagram separation, the branch
 # grammar's doc homes, and the DESIGN.md currency-note disposition — while the demo gates the
 # PRODUCT. Two truths, two instruments. DEV infrastructure: never ships to a user estate (#43).
@@ -40,4 +40,4 @@ jobs:
           BASE_REF: ${{ github.base_ref }}
         run: |
           git fetch --quiet origin "$BASE_REF"
-          DOCS_BASE_REF="origin/$BASE_REF" bash .github/scripts/docs-check.sh
+          DOCS_BASE_REF="origin/$BASE_REF" bash dev/scripts/docs-check.sh

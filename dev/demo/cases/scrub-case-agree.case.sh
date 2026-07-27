@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # scrub-case-agree.case.sh — [scrub-case-agree]: the pack's SCRUB rules and its self-AUDIT must
-# agree on case. SOURCED by the runner; see _harness/scripts/run_demo.sh.
+# agree on case. SOURCED by the runner; see dev/scripts/run_demo.sh.
 #
 # The SCRUB rules once matched case-SENSITIVELY while the self-audit matched case-INSENSITIVELY
 # (grep -qiE), so a lowercase placeholder in an ordinary prose file survived the scrub and then
@@ -15,10 +15,11 @@
 # the pack.
 #
 # THE TOKEN IS ASSEMBLED AT RUNTIME, never written contiguously in this file. When this case lived
-# in the single-file suite that was load-bearing: make_context_pack stages `_harness/scripts/*`, so
+# in the single-file suite that was load-bearing: make_context_pack stages the estate's own
+# `_harness/scripts/*`, so
 # the suite's own source rode into every pack it built, and a literal token here would have redded
 # the FIRST pack build ([space-named-pack], far earlier) with that case's message instead of this
-# one. After the split this file sits under _harness/demo/, which the pack builder does not stage,
+# one. After the split this file sits under dev/demo/, which the pack builder does not stage,
 # so its bytes no longer travel — the runtime assembly is now belt-and-braces rather than the thing
 # that makes the red land here. It stays: it costs one line, it keeps the FIXTURE the only carrier
 # of the token, and it is what would still hold if the staging set ever widened to all of _harness/.
@@ -29,11 +30,11 @@ case_scrub_case_agree() {
   G169_TOKEN=$(printf '<your-org-%s>' domain)
   G169_TICKET="999911Z-PROJ-99169"
   G169_OUT_DIR=$(mktemp -d)
-  mkdir -p "Tickets/$G169_TICKET"
+  mkdir -p "estate/Tickets/$G169_TICKET"
   printf '# case fixture\nReach us at %s for access.\n' "$G169_TOKEN" \
-    > "Tickets/$G169_TICKET/$G169_TICKET.md"
+    > "estate/Tickets/$G169_TICKET/$G169_TICKET.md"
   set +e
-  G169_OUT=$(PACK_OUT_DIR="$G169_OUT_DIR" bash _harness/scripts/make_context_pack.sh \
+  G169_OUT=$(PACK_OUT_DIR="$G169_OUT_DIR" bash estate/_harness/scripts/make_context_pack.sh \
     --ticket "$G169_TICKET" 2>&1); G169_RC=$?
   set -e
   # A no-match must not trip set -e / pipefail, hence the `|| true`.
@@ -42,7 +43,7 @@ case_scrub_case_agree() {
   [ -n "$g169zip" ] \
     && G169_TXT=$(unzip -p "$g169zip" "Tickets/$G169_TICKET/$G169_TICKET.md" 2>/dev/null || true)
   # fixture is scratch: gone before anything else sees it
-  rm -rf "Tickets/$G169_TICKET" "$G169_OUT_DIR"
+  rm -rf "estate/Tickets/$G169_TICKET" "$G169_OUT_DIR"
   [ "$G169_RC" -eq 0 ] \
     || { echo "BUG [scrub-case-agree]: a lowercase scrub-table token failed the pack build" \
            "(rc=$G169_RC) — the scrub missed what the audit caught:"; \

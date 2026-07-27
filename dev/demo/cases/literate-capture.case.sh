@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # literate-capture.case.sh — #78: the transport script turns comment-native delimiter blocks
 # (`-- %% [label]` for SQL, `# %% [label]` for python) into notebook cell pairs through the
-# append_notebook_cell.py plumbing. SOURCED by the runner; see _harness/scripts/run_demo.sh.
+# append_notebook_cell.py plumbing. SOURCED by the runner; see dev/scripts/run_demo.sh.
 #
 # It is re-runnable (hash-dedupe), provenance-bearing, safe on malformed input, and NEVER touches
 # the source bytes. This family proves all five properties on a two-block fixture. Cleanup is an
@@ -40,7 +40,7 @@ print(len(nb.cells))" "$LC_NB"
 # 1. Two blocks in → EXACTLY four cells out, alternating markdown and code.
 lc_four_cells() {
   local LC_TYPES
-  python3 _harness/scripts/literate_capture.py "$LC_NB" "$LC_SRC" >/dev/null
+  python3 estate/_harness/scripts/literate_capture.py "$LC_NB" "$LC_SRC" >/dev/null
   LC_TYPES=$(python3 -c "import nbformat,sys
 nb = nbformat.read(sys.argv[1], as_version=4)
 print(','.join(c.cell_type for c in nb.cells))" "$LC_NB")
@@ -67,7 +67,7 @@ lc_provenance() {
 # 3. Re-run over the same input → ZERO new cells (hash-dedupe holds).
 lc_dedupe() {
   local LC_NCELLS
-  python3 _harness/scripts/literate_capture.py "$LC_NB" "$LC_SRC" >/dev/null
+  python3 estate/_harness/scripts/literate_capture.py "$LC_NB" "$LC_SRC" >/dev/null
   LC_NCELLS=$(lc_ncells)
   [ "$LC_NCELLS" -eq 4 ] \
     || { echo "BUG [literate-capture]: a re-run over identical input added cells (now $LC_NCELLS," \
@@ -81,7 +81,7 @@ lc_malformed_noop() {
   local LC_BAD LC_BADOUT LC_NCELLS2
   LC_BAD="$LC_TMP/bad.sql"
   printf 'SELECT 1;\n-- a plain comment, no delimiter marker\n' > "$LC_BAD"
-  set +e; LC_BADOUT=$(python3 _harness/scripts/literate_capture.py "$LC_NB" "$LC_BAD" 2>&1); set -e
+  set +e; LC_BADOUT=$(python3 estate/_harness/scripts/literate_capture.py "$LC_NB" "$LC_BAD" 2>&1); set -e
   printf '%s\n' "$LC_BADOUT" | grep -q "no delimiter in" \
     || { echo "BUG [literate-capture]: malformed input did not emit the prescriptive" \
            "'no delimiter in ...' line:"; printf '%s\n' "$LC_BADOUT"; rm -rf "$LC_TMP"; exit 1; }

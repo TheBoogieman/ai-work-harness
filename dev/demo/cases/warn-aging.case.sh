@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # warn-aging.case.sh — #71 WARN aging + #72 knowledge staleness. SOURCED by the runner; see
-# _harness/scripts/run_demo.sh for the contract.
+# dev/scripts/run_demo.sh for the contract.
 #
 # Every string below is anchored with one of the warn-aging-* labels or [knowledge-staleness], and
 # every assertion is revert-provable RED against pre-fix code.
@@ -14,13 +14,13 @@
 wa_render() {
   local AG71T AG71_STATE ag71_old AG71_OUT AG71_RC AG71_FRESH AG71_OUT2
   echo "--- #71 WARN aging + #72 knowledge staleness ---"
-  AG71T="$DEMO_ROOT/Tickets/aging fixture 71"; mkdir -p "$AG71T"
+  AG71T="$DEMO_ROOT/estate/Tickets/aging fixture 71"; mkdir -p "$AG71T"
   printf '# rec\n## Current State\nwip\n' > "$AG71T/rec.md"
   AG71_STATE=$(mktemp)
   ag71_old=$(( $(date +%s) - 200*86400 ))          # 200 days back → past the alarm tier
   printf '%s\tunrecognised:aging fixture 71\n' "$ag71_old" > "$AG71_STATE"
   set +e; AG71_OUT=$(HARNESS_WARN_STATE_FILE="$AG71_STATE" \
-    bash _harness/scripts/harness-status.sh 2>&1); AG71_RC=$?; set -e
+    bash estate/_harness/scripts/harness-status.sh 2>&1); AG71_RC=$?; set -e
   # 1. old-dated WARN → age rendered with the escalating (alarm-tier) styling on its own line
   printf '%s\n' "$AG71_OUT" | grep -F "aging fixture 71" | grep -q "parked 200d" \
     || { echo "BUG [warn-aging-render]: an aged WARN (first-seen 200d ago) rendered NO parked age" \
@@ -36,7 +36,7 @@ wa_render() {
   # 2. FRESH WARN (empty state → first-seen = now) → PLAIN, no age decoration on the same line
   AG71_FRESH=$(mktemp); : > "$AG71_FRESH"
   set +e; AG71_OUT2=$(HARNESS_WARN_STATE_FILE="$AG71_FRESH" \
-    bash _harness/scripts/harness-status.sh 2>&1); set -e
+    bash estate/_harness/scripts/harness-status.sh 2>&1); set -e
   printf '%s\n' "$AG71_OUT2" | grep -F "aging fixture 71" | grep -qE 'parked|\[!' \
     && { echo "BUG [warn-aging-render]: a FRESH WARN rendered age decoration — a just-seen WARN" \
            "must be plain:"; printf '%s\n' "$AG71_OUT2" | grep -iF "aging fixture 71"; exit 1; }
@@ -52,13 +52,13 @@ wa_render() {
 # silent / not yellow.
 wa_knowledge_staleness() {
   local KS72_DIR ks72_old ks72_fresh KS72_OUT KS72_RC
-  KS72_DIR="$DEMO_ROOT/General AI-Knowledge/staleness fixture 72"; mkdir -p "$KS72_DIR"
+  KS72_DIR="$DEMO_ROOT/estate/General AI-Knowledge/staleness fixture 72"; mkdir -p "$KS72_DIR"
   ks72_old=$(date -d "200 days ago" +%Y-%m-%d 2>/dev/null || date -v-200d +%Y-%m-%d)   # GNU || BSD
   ks72_fresh=$(date -d "3 days ago" +%Y-%m-%d 2>/dev/null || date -v-3d +%Y-%m-%d)
   printf '# old note\nLast reviewed: %s\n'   "$ks72_old"   > "$KS72_DIR/old.md"
   printf '# fresh note\nLast reviewed: %s\n' "$ks72_fresh" > "$KS72_DIR/fresh.md"
   printf '# undated note\n(no review stamp at all)\n'      > "$KS72_DIR/undated.md"
-  set +e; KS72_OUT=$(bash _harness/scripts/harness-status.sh 2>&1); KS72_RC=$?; set -e
+  set +e; KS72_OUT=$(bash estate/_harness/scripts/harness-status.sh 2>&1); KS72_RC=$?; set -e
   printf '%s\n' "$KS72_OUT" | grep -F "staleness fixture 72/old.md" | grep -q "knowledge-curator" \
     || { echo "BUG [knowledge-staleness]: the old note was not listed with the knowledge-curator" \
            "named as the next act:"; \
@@ -97,15 +97,15 @@ wa_knowledge_staleness() {
 wa_porcelain_fixture() {
   local P71F P71_FBASE P71_FNOW
   P71F=$(mktemp -d)
-  mkdir -p "$P71F/estate/Tickets/porcelain check 71"
-  cp -R _harness "$P71F/estate/_harness"
-  printf '# rec\n## Current State\nx\n' > "$P71F/estate/Tickets/porcelain check 71/rec.md"
-  git -C "$P71F/estate" init -q
-  git -C "$P71F/estate" -c user.email=demo@local -c user.name=demo add -A
-  git -C "$P71F/estate" -c user.email=demo@local -c user.name=demo commit -q -m "fixture"
-  P71_FBASE=$(git -C "$P71F/estate" status --porcelain)
-  bash "$P71F/estate/_harness/scripts/harness-status.sh" >/dev/null 2>&1 || true
-  P71_FNOW=$(git -C "$P71F/estate" status --porcelain)
+  mkdir -p "$P71F/Tickets/porcelain check 71"
+  cp -R estate/_harness "$P71F/_harness"
+  printf '# rec\n## Current State\nx\n' > "$P71F/Tickets/porcelain check 71/rec.md"
+  git -C "$P71F" init -q
+  git -C "$P71F" -c user.email=demo@local -c user.name=demo add -A
+  git -C "$P71F" -c user.email=demo@local -c user.name=demo commit -q -m "fixture"
+  P71_FBASE=$(git -C "$P71F" status --porcelain)
+  bash "$P71F/_harness/scripts/harness-status.sh" >/dev/null 2>&1 || true
+  P71_FNOW=$(git -C "$P71F" status --porcelain)
   [ "$P71_FBASE" = "$P71_FNOW" ] \
     || { echo "BUG [warn-aging-porcelain]: a status run dirtied a CLEAN FIXTURE estate — the" \
            "global HARNESS_WARN_STATE_FILE export is not covering every write (status must be" \
@@ -118,9 +118,9 @@ wa_porcelain_fixture() {
 wa_porcelain_real_tree() {
   local P71_BASE P71T P71_NOW
   P71_BASE=$(git -C "$DEMO_ROOT" status --porcelain)
-  P71T="$DEMO_ROOT/Tickets/porcelain check 71"; mkdir -p "$P71T"
+  P71T="$DEMO_ROOT/estate/Tickets/porcelain check 71"; mkdir -p "$P71T"
   printf '# rec\n## Current State\nx\n' > "$P71T/rec.md"
-  bash _harness/scripts/harness-status.sh >/dev/null 2>&1 || true
+  bash estate/_harness/scripts/harness-status.sh >/dev/null 2>&1 || true
   rm -rf "$P71T"
   P71_NOW=$(git -C "$DEMO_ROOT" status --porcelain)
   [ "$P71_BASE" = "$P71_NOW" ] \
@@ -143,15 +143,15 @@ wa_porcelain_real_tree() {
 # output is discarded rather than captured into a variable nothing reads. The run itself stays.
 wa_fails_open() {
   local FO71T FO71_OK FO71_CTRL_RC FO71_BADPARENT FO71_OUT FO71_RC
-  FO71T="$DEMO_ROOT/Tickets/failsopen check 71"; mkdir -p "$FO71T"
+  FO71T="$DEMO_ROOT/estate/Tickets/failsopen check 71"; mkdir -p "$FO71T"
   printf '# rec\n## Current State\nx\n' > "$FO71T/rec.md"
   FO71_OK=$(mktemp)                        # control: a writable case-local state path
-  set +e; HARNESS_WARN_STATE_FILE="$FO71_OK" bash _harness/scripts/harness-status.sh >/dev/null 2>&1
+  set +e; HARNESS_WARN_STATE_FILE="$FO71_OK" bash estate/_harness/scripts/harness-status.sh >/dev/null 2>&1
   FO71_CTRL_RC=$?; set -e
   # a regular FILE — using it as a directory parent forces ENOTDIR on any OS
   FO71_BADPARENT=$(mktemp)
   set +e; FO71_OUT=$(HARNESS_WARN_STATE_FILE="$FO71_BADPARENT/sub/warn-aging.tsv" \
-    bash _harness/scripts/harness-status.sh 2>&1); FO71_RC=$?; set -e
+    bash estate/_harness/scripts/harness-status.sh 2>&1); FO71_RC=$?; set -e
   rm -rf "$FO71T"; rm -f "$FO71_OK" "$FO71_BADPARENT"
   [ "$FO71_RC" -eq "$FO71_CTRL_RC" ] \
     || { echo "BUG [warn-aging-fails-open]: an unwritable state path changed status's exit code" \

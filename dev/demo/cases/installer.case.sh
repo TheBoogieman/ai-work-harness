@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # installer.case.sh — #39 installer guards: the non-destructive / dumb-creator claims are the
 # richest revert surface, so every one gets a case that reds if a run WOULD edit/clobber a
-# pre-existing file or leak a DEV file. SOURCED by the runner; see _harness/scripts/run_demo.sh.
+# pre-existing file or leak a DEV file. SOURCED by the runner; see dev/scripts/run_demo.sh.
 #
 # install.sh is exercised for real into a throwaway estate (agent deploy is sent to a throwaway dir
 # so nothing touches $HOME). Plain-English asserts; guard-per-bug on each claim. I39_ROOT, I39_EST
@@ -15,9 +15,9 @@ in_fixture() {
 # (a) single schema home: install.sh must carry NO hook-schema literal (it copies from the one
 #     home, hooks.example.json, by path). A second literal here is the two-homes finding.
 in_schema_one_home() {
-  grep -qE '"(sessionStart|postToolUse|sessionEnd|timeoutSec)"' install.sh \
+  grep -qE '"(sessionStart|postToolUse|sessionEnd|timeoutSec)"' estate/install.sh \
     && { echo "BUG [schema-one-home]: install.sh carries a hook-schema literal — the schema must" \
-           "live only in _harness/hooks/hooks.example.json"; exit 1; }
+           "live only in estate/_harness/hooks/hooks.example.json"; exit 1; }
   echo "  ok [schema-one-home] — install.sh carries no schema literal (single home:" \
     "hooks.example.json)"
 }
@@ -25,11 +25,11 @@ in_schema_one_home() {
 # (b) PRODUCT-only (#43 cond 2 / #39): a fresh --yes install lays down zero DEV files.
 in_product_only() {
   local i39_leak=0 d
-  HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh --yes "$I39_EST" >/dev/null 2>&1 \
+  HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash estate/install.sh --yes "$I39_EST" >/dev/null 2>&1 \
     || { echo "BUG [clean-install]: a clean --yes install failed"; exit 1; }
   while IFS= read -r d; do
     if [ -e "$I39_EST/$d" ]; then echo "  DEV leak: $d"; i39_leak=1; fi
-  done < <(awk -F'\t' '$1=="DEV"{print $2}' .github/ship-manifest.txt)
+  done < <(awk -F'\t' '$1=="DEV"{print $2}' dev/ship-manifest.txt)
   [ "$i39_leak" -eq 0 ] \
     || { echo "BUG [product-only]: a DEV file reached the installed estate"; exit 1; }
   echo "  ok [product-only] — fresh estate contains zero DEV files"
@@ -40,7 +40,7 @@ in_product_only() {
 #     lacks).
 in_dumb_creator() {
   echo "GARBAGE" > "$I39_EST/AGENTS.md"; cp "$I39_EST/AGENTS.md" "$I39_ROOT/agents.snapshot"
-  HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh --yes "$I39_EST" >/dev/null 2>&1
+  HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash estate/install.sh --yes "$I39_EST" >/dev/null 2>&1
   cmp -s "$I39_ROOT/agents.snapshot" "$I39_EST/AGENTS.md" \
     || { echo "BUG [dumb-creator]: install EDITED a pre-existing file (AGENTS.md changed) — it" \
            "must create only what is absent"; exit 1; }
@@ -50,7 +50,7 @@ in_dumb_creator() {
 # (d) idempotency: a re-run finds nothing absent and creates zero.
 in_idempotent_rerun() {
   local i39_plan
-  i39_plan=$(HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh --yes "$I39_EST" 2>&1 \
+  i39_plan=$(HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash estate/install.sh --yes "$I39_EST" 2>&1 \
     | grep -oE 'PRODUCT files to create: [0-9]+' | head -1)
   [ "$i39_plan" = "PRODUCT files to create: 0" ] \
     || { echo "BUG [idempotent-rerun]: a re-run wanted to create files ($i39_plan)"; exit 1; }
@@ -61,7 +61,7 @@ in_idempotent_rerun() {
 in_dry_run() {
   local i39_fresh
   i39_fresh="$I39_ROOT/dryrun-never"
-  HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh --dry-run --yes "$i39_fresh" \
+  HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash estate/install.sh --dry-run --yes "$i39_fresh" \
     >/dev/null 2>&1
   [ ! -e "$i39_fresh" ] \
     || { echo "BUG [dry-run]: --dry-run created the target dir — it must touch nothing"; exit 1; }
@@ -75,9 +75,9 @@ in_dry_run() {
 in_board_default() {
   local i39_re i39_bhint
   i39_re="$I39_ROOT/reest"
-  HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh --yes "$i39_re" >/dev/null 2>&1
+  HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash estate/install.sh --yes "$i39_re" >/dev/null 2>&1
   mkdir -p "$i39_re/Tickets/202607A-XRAY-1"; : > "$i39_re/Tickets/202607A-XRAY-1/202607A-XRAY-1.md"
-  printf '\n\n\n' | HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh "$i39_re" \
+  printf '\n\n\n' | HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash estate/install.sh "$i39_re" \
     >"$I39_ROOT/re.out" 2>"$I39_ROOT/re.err" || true
   i39_bhint=$(grep -oE 'ACCEPT DEFAULT: [A-Za-z0-9-]+' "$I39_ROOT/re.err" | head -1 \
     | sed 's/.*: //')
@@ -96,11 +96,11 @@ in_board_default() {
 in_model_pin_offered() {
   local i39_m i39_dw i39_mhint
   i39_m="$I39_ROOT/mest"
-  HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh --yes "$i39_m" >/dev/null 2>&1
+  HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash estate/install.sh --yes "$i39_m" >/dev/null 2>&1
   i39_dw="$i39_m/_agents/doc-writer.agent.md"
   awk '/^model:/{print "model: MZAP"; next} {print}' "$i39_dw" > "$I39_ROOT/dw.tmp" \
     && mv "$I39_ROOT/dw.tmp" "$i39_dw"
-  printf '\n\n\n' | HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh "$i39_m" \
+  printf '\n\n\n' | HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash estate/install.sh "$i39_m" \
     2>"$I39_ROOT/m.err" >/dev/null || true
   i39_mhint=$(grep -oE 'ACCEPT DEFAULT: [A-Za-z0-9-]+' "$I39_ROOT/m.err" | sed -n '2p' \
     | sed 's/.*: //')
@@ -116,10 +116,10 @@ in_model_pin_offered() {
 in_change_routed() {
   local i39_cr i39_crout
   i39_cr="$I39_ROOT/crest"
-  HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh --yes "$i39_cr" >/dev/null 2>&1
+  HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash estate/install.sh --yes "$i39_cr" >/dev/null 2>&1
   cp "$i39_cr/_harness/scripts/ticket-grammar.sh" "$I39_ROOT/tg.snap"
   i39_crout=$(printf 'NEWB\n\n\n' | HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" \
-    bash install.sh "$i39_cr" 2>&1 || true)
+    bash estate/install.sh "$i39_cr" 2>&1 || true)
   cmp -s "$I39_ROOT/tg.snap" "$i39_cr/_harness/scripts/ticket-grammar.sh" \
     || { echo "BUG [change-routed]: install EDITED ticket-grammar.sh on a re-run change — it must" \
            "route, not apply"; exit 1; }
@@ -136,7 +136,7 @@ in_change_routed() {
 in_workspace_derived() {
   local i39_ws i39_wsabs i39_wsline
   i39_ws="$I39_ROOT/wsest"
-  printf '\n\n\n' | HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh "$i39_ws" \
+  printf '\n\n\n' | HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash estate/install.sh "$i39_ws" \
     >"$I39_ROOT/ws.out" 2>"$I39_ROOT/ws.err" || true
   grep -qi 'Workspace root' "$I39_ROOT/ws.err" \
     && { echo "BUG [workspace-derived]: a 'Workspace root' question is still asked — it must be" \
@@ -157,7 +157,7 @@ in_workspace_derived() {
 in_prompt_default() {
   local i39_id i39_hint i39_used
   i39_id="$I39_ROOT/idest"
-  printf '\n\n\n\n' | HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh "$i39_id" \
+  printf '\n\n\n\n' | HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash estate/install.sh "$i39_id" \
     >"$I39_ROOT/id.out" 2>"$I39_ROOT/id.err" || true
   i39_hint=$(grep -oE 'ACCEPT DEFAULT: [A-Za-z0-9._/-]+' "$I39_ROOT/id.err" | head -1 \
     | sed 's/.*: //')
@@ -186,7 +186,7 @@ in_prompt_default() {
 in_missing_value_audible() {
   local i39_mv i39_mvti i39_mvrc i39_mvbytes
   i39_mv="$I39_ROOT/mvest"
-  HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh --yes "$i39_mv" >/dev/null 2>&1
+  HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash estate/install.sh --yes "$i39_mv" >/dev/null 2>&1
   # Marker on the sonnet tier's reference agent; awk-to-tmp+mv is BSD-portable (no in-place edit).
   i39_mvti="$i39_mv/_agents/ticket-init.agent.md"
   awk '/^model:/{print "model: MVSONNET"; next} {print}' "$i39_mvti" > "$I39_ROOT/mvti.tmp" \
@@ -197,7 +197,7 @@ in_missing_value_audible() {
            "guard would"; \
          echo "    be testing the fresh branch, which placeholders both tiers anyway"; exit 1; }
   set +e
-  HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash install.sh --yes "$i39_mv" \
+  HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash estate/install.sh --yes "$i39_mv" \
     >"$I39_ROOT/mv.out" 2>"$I39_ROOT/mv.err"
   i39_mvrc=$?
   set -e

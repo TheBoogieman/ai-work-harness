@@ -12,7 +12,7 @@ hk_runs_clean() {
   G3_REPO=$(mktemp -d)
   git -C "$G3_REPO" init -q
   git -C "$G3_REPO" -c user.email=demo@local -c user.name=demo commit -q --allow-empty -m "seed"
-  set +e; G3_OUT=$(bash _harness/scripts/harness-housekeeping.sh "$G3_REPO" 2>&1); G3_RC=$?; set -e
+  set +e; G3_OUT=$(bash estate/_harness/scripts/harness-housekeeping.sh "$G3_REPO" 2>&1); G3_RC=$?; set -e
   [ "$G3_RC" -eq 0 ] \
     || { echo "BUG [housekeeping-ok]: housekeeping exited non-zero (rc=$G3_RC):"; \
          printf '%s\n' "$G3_OUT"; exit 1; }
@@ -33,7 +33,7 @@ hk_runs_clean() {
 # throwaway temp path, so status on the real repo touches nothing — safe.
 hk_git_size_nudge() {
   local G3W_OUT G3W_RC G3W_OUT2
-  set +e; G3W_OUT=$(HARNESS_GIT_WARN_MB=0 bash _harness/scripts/harness-status.sh 2>&1); \
+  set +e; G3W_OUT=$(HARNESS_GIT_WARN_MB=0 bash estate/_harness/scripts/harness-status.sh 2>&1); \
     G3W_RC=$?; set -e
   printf '%s\n' "$G3W_OUT" | grep -q "WARN: the record repo's .git is" \
     || { echo "BUG [git-size-warn]: the .git-size nudge did not fire at threshold 0:"; \
@@ -43,7 +43,7 @@ hk_git_size_nudge() {
          printf '%s\n' "$G3W_OUT"; exit 1; }
   echo "  ok [git-size-warn] — .git-size nudge fires and stays non-blocking (WARN, exit 0)"
   set +e
-  G3W_OUT2=$(HARNESS_GIT_WARN_MB=1000000 bash _harness/scripts/harness-status.sh 2>&1)
+  G3W_OUT2=$(HARNESS_GIT_WARN_MB=1000000 bash estate/_harness/scripts/harness-status.sh 2>&1)
   set -e
   printf '%s\n' "$G3W_OUT2" | grep -q "WARN: the record repo's .git is" \
     && { echo "BUG [git-size-quiet]: the size nudge fired while under threshold:"; \

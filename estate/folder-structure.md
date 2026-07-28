@@ -49,10 +49,13 @@ Ticket folders live **outside** the VS Code multi-repo workspace (`GitHub/<your>
 ## Ticket Naming Convention
 
 Nothing requires a specific ticket-folder name. Name folders however suits
-your workflow. The tools recognise a **recommended default pattern** out of
-the box but never force it — naming is nudged, never enforced. By name and
-markers, a `Tickets/` folder falls into one of four states (with one validation
-edge case noted after the list):
+your workflow — knowing that the names matching the recognised pattern are the
+ones the validator checks, so a folder named anything else holds a record the
+validator never looks at (state 2 below is how you find out). The tools
+recognise a **recommended default pattern** out of the box but never force it
+— naming is nudged, never enforced. By name and markers, a `Tickets/` folder
+falls into one of four states (with one validation edge case noted after the
+list):
 
 1. **Matches the pattern + holds a ticket record → auto-validated.** A real,
    enforced ticket: the entry-gate validator checks its log and Current State
@@ -230,6 +233,11 @@ Every ticket markdown file must include the **Repos**, **Branches**, and **Pull 
 the validator interprets this header in the machine's local timezone, so a
 header written in a different zone can be misread as stale and wrongly
 red-block the next session.
+
+**The newest entry goes at the BOTTOM** — the validator reads the last entry in
+file order, not the highest timestamp, so a new block written at the top leaves
+an older one last and red-blocks with *"changed but no new Session Log entry
+since last validation"* on the session where you have just written one.
 
 **Example:**
 ```markdown
@@ -414,9 +422,10 @@ status *derives* stays unstored: a derived view is regenerated, never kept, so i
 can't drift. But the filesystem does not remember *when* a condition began, and
 status is the only observer present at onset — that first-seen record is an
 observation the tool must make, not a view it can recompute, so it is stored (once,
-inside the estate whitelist — the aging record is itself part of the record). See
-`decisions/014`. Running status still cannot corrupt an estate: the write is atomic,
-fails open, and mutates only when the WARN set changes. Want a snapshot of the
+inside the estate whitelist — the aging record is itself part of the record). What
+narrows is what status *stores*, never what it is *safe* to run: running status
+still cannot corrupt an estate, because the write is atomic, fails open, and
+mutates only when the WARN set changes. Want a snapshot of the
 report? Redirect it yourself, deliberately.
 It reports, with `OK` / `WARN` / `FAIL` prefixes:
 
@@ -510,6 +519,6 @@ AI-Knowledge.
 
 The harness is coupled to GitHub Copilot at only three thin, isolated points —
 the `_agents/*.agent.md` format, the `hooks.example.json` hook shape, and
-`deploy_agents.sh`'s deploy target; everything else is assistant-agnostic. See
-**Porting to another AI assistant (the vendor seam)** in `CLAUDE.md` for the
-full seam map and the planned (not-yet-built) `ADAPTERS/` layer.
+`deploy_agents.sh`'s deploy target; everything else is assistant-agnostic.
+Porting means translating those three — mechanical work, not redesign. There is
+no adapter layer to select: the three points are edited in place.

@@ -422,9 +422,10 @@ status *derives* stays unstored: a derived view is regenerated, never kept, so i
 can't drift. But the filesystem does not remember *when* a condition began, and
 status is the only observer present at onset — that first-seen record is an
 observation the tool must make, not a view it can recompute, so it is stored (once,
-inside the estate whitelist — the aging record is itself part of the record). See
-`decisions/014`. Running status still cannot corrupt an estate: the write is atomic,
-fails open, and mutates only when the WARN set changes. Want a snapshot of the
+inside the estate whitelist — the aging record is itself part of the record). What
+narrows is what status *stores*, never what it is *safe* to run: running status
+still cannot corrupt an estate, because the write is atomic, fails open, and
+mutates only when the WARN set changes. Want a snapshot of the
 report? Redirect it yourself, deliberately.
 It reports, with `OK` / `WARN` / `FAIL` prefixes:
 

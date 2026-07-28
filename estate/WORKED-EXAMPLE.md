@@ -99,8 +99,8 @@ still compares the number itself exactly.
 ## What the day assumes
 
 * An estate already exists at `~/Work`, created by the installer. Installing is a
-  separate job with its own manual, `estate/INSTALL-INSTRUCTIONS.md`; this
-  document starts the morning after.
+  separate job with its own manual, `INSTALL-INSTRUCTIONS.md`, which sits beside
+  this page at the top of your estate; this document starts the morning after.
 * Every command is run from the top of the estate (`cd ~/Work`).
 * Git knows who you are — the usual `user.name` and `user.email` settings.
 
@@ -324,5 +324,8 @@ in silence. This prose reports when it has rotted, and the report is the
 instruction to fix it: bring the block back into line with what the machinery now
 prints, or change the machinery back.
 
-The check lives in `dev/demo/cases/worked-example.case.sh` and runs as part of
-the project's acceptance suite, `dev/scripts/run_demo.sh`.
+The check is not in your estate and you are not expected to run it. It lives in
+the harness's own source repository, at `dev/demo/cases/worked-example.case.sh`,
+and runs as part of that project's acceptance suite, `dev/scripts/run_demo.sh`.
+The page you are reading is a copy the installer laid down, checked before it was
+shipped to you.

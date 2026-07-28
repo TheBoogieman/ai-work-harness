@@ -3,8 +3,15 @@
 # read. SOURCED by the runner; see dev/scripts/run_demo.sh.
 #
 # WHAT IT DOES: builds a brand-new estate with install.sh, reads every fenced console block out of
-# dev/a-day-with-the-harness.md, runs each block's commands inside that estate IN DOCUMENT ORDER,
-# and compares what they printed against what the document says they printed.
+# estate/WORKED-EXAMPLE.md, runs each block's commands inside that estate IN DOCUMENT ORDER, and
+# compares what they printed against what the document says they printed.
+#
+# THE DOCUMENT IS A PRODUCT FILE NOW (#153) and this case still reads it from the SOURCE tree, which
+# is the right side of the seam and worth saying because both sides exist. Classification is derived
+# from the tree, so the document moved under estate/ to start shipping; that put a COPY of it at the
+# root of every installed estate, including the throwaway one built below. Reading the source copy
+# is what makes this a check on what the repository is about to ship rather than on what one install
+# happened to lay down.
 #
 # WHY THE COMPARISON IS ON OUTPUT AND NOT ON EXIT CODES. A check that only asserts the commands
 # RAN proves the document's commands exist; it proves nothing about a single claim the document
@@ -40,7 +47,7 @@
 
 # WE_DOC — the document under test. WE_TEMPLATE_TS — the session-log stamp the shipped template
 # ticket carries; the normalisation note above says why it is named here.
-WE_DOC=dev/a-day-with-the-harness.md
+WE_DOC=estate/WORKED-EXAMPLE.md
 WE_TEMPLATE_TS=20260101000000
 
 # we_esc — make a literal string safe to paste into an ERE. The two temp paths below go into sed

@@ -59,6 +59,12 @@
 !/CONSTITUTION.md
 !/folder-map.md
 !/INSTALL-INSTRUCTIONS.md
+# The worked example — the day-in-the-life document a newcomer reads (#153). It became a PRODUCT
+# file by MOVING under estate/, because classification is derived from the tree (derive_product_paths
+# in install.sh) and there is no manifest row to add any more. This line is the other half of that
+# move and the half with no symptom: without it the document lands at every estate's root, on disk
+# and OUTSIDE the record, while the estate goes on reporting healthy.
+!/WORKED-EXAMPLE.md
 !/install.sh
 !/VERSION
 !/_agents/

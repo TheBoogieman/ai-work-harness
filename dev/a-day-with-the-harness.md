@@ -191,8 +191,9 @@ Green. The index now describes every file beside it.
 ## 5. Commit the record
 
 The estate is a git repository, so every version of the record is kept. When you
-work through an assistant, a hook commits after each write and you never type
-this. By hand it is two commands, and they print nothing when they succeed.
+work through an assistant, a hook — a short command your assistant is configured
+to run by itself every time it writes a file — commits for you, and you never
+type this. By hand it is two commands, and they print nothing when they succeed.
 
 ```console
 $ git add -A
@@ -267,6 +268,21 @@ with the day's entry appended under the template's, and a commit history in
 which the day is one line. `Checks/`, `Dump/` and `Logs/` came from the template:
 `Checks/` holds a notebook and scratch queries, and the other two are for bulk
 that git deliberately ignores.
+
+## The same day, when you are actually using it
+
+You will not type most of what is above; it was typed out here so that you could
+see it. The day you will actually have is a conversation: you say you are picking
+up PROJ-4021, and `ticket-init` pulls the issue, asks you three questions and
+creates the folder from section 2; you work; and when the task ends
+`ticket-scribe` writes the session-log entry and rewrites Current State in one
+step, while `knowledge-keeper` writes the note and its index line in one step —
+which is why the red block in section 3 is rarer than this page makes it look.
+The hook commits behind all of it. What is left for you is what only a person can
+do: decide the work is worth a ticket, say in your own words what you learned,
+and read the reds. The commands above are not the interface. They are what the
+interface leaves behind — ordinary files you can open, and a record you can check
+without asking the assistant anything.
 
 ---
 

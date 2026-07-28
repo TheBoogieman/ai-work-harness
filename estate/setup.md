@@ -26,7 +26,8 @@ diffs before every write:
    scaffolded tickets — each has a valid `AI-Knowledge/_index.md` and the
    git-ignored `Logs/` + `Dump/`.
 4. **Finish the personalisation the installer left to me** (it never edits a
-   pre-existing file): any model pin still `PICK-A-*` → enumerate the models
+   pre-existing file — only `--upgrade` does, and only if you type it; see
+   `installing.md`): any model pin still `PICK-A-*` → enumerate the models
    actually enabled in my Copilot org and pin real **scalar** IDs into each
    `_agents/*.agent.md` (cheap tier for scribes/keeper/doc-writer, Sonnet-class
    for init/curator), then re-run `_harness/scripts/deploy_agents.sh`;

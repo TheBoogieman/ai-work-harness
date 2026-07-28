@@ -88,7 +88,7 @@ check_current_state() {
 }
 
 # ---- AI-Knowledge index grammar: ONE rule feeds orphan-coverage AND ghost-detection (R-04).
-# Pinned in folder-structure.md (AI Memory Convention). A line names a file ONLY via its
+# Pinned in CONSTITUTION.md (AI Memory Convention). A line names a file ONLY via its
 # first token after "- "; the prose that follows is never scanned. Scanning prose is what
 # minted false ghosts — a truthful entry like "- notes.md — supersedes old-plan.md" would
 # raise old-plan.md as a ghost and RED-BLOCK an honest record (R-12). '#' comment lines and

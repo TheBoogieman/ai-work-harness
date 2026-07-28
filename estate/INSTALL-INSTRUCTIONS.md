@@ -73,7 +73,7 @@ asks for your board key and model pins (Enter accepts each suggested default;
 `--dry-run` plans without touching anything, `--yes` accepts every default). The
 agents deploy to your Copilot version's discovery directory — verify that path
 for your version (override with `HARNESS_AGENT_DEPLOY_DIR`). Finally, paste
-`setup.md` into your AI assistant, working in the new estate: it is the **final
+`AI-SETUP-PROMPT.md` into your AI assistant, working in the new estate: it is the **final
 validation gate** — it confirms the validator + status are green, spot-checks the
 scaffolded tickets, and walks you through the personalisation the installer left
 you (model pins, `LICENSE`, scrub-table seeds, Owner lines).
@@ -87,7 +87,7 @@ Re-running `install.sh` serves three different intents, each with its own home:
   by its `harness.estate` key, enters **reconfigure-only mode**, and offers your
   established values as defaults. A changed answer is **WARNed** with the file to edit
   and an AI-assistant handoff — the installer never edits your config for you; that
-  stays your (or your assistant's) deliberate act via `setup.md`, on the record.
+  stays your (or your assistant's) deliberate act via `AI-SETUP-PROMPT.md`, on the record.
 - **Complete or repair** (add or fix estate files): run `install.sh` from your
   **source checkout**, targeting the estate (`bash estate/install.sh ~/Work`). The estate's
   own copy cannot create files — there is no source tree inside an estate to copy from —

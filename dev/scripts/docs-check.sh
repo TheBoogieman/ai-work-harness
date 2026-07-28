@@ -18,7 +18,7 @@
 set -uo pipefail
 fail=0            # a COUNT of failures printed so far, never a boolean — see dc_fail below (#252)
 # The document that owns the install steps. The dead-pointer detector sends a stale pointer here.
-INSTALL_DOC=estate/installing.md
+INSTALL_DOC=estate/INSTALL-INSTRUCTIONS.md
 
 # dc_fail — the one output shape a detector prints when it finds something, in ONE home. A message
 # is passed as SEVERAL arguments and joined with a single space, which is what lets a long message

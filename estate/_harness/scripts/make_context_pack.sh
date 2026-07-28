@@ -44,7 +44,7 @@ stage_one() { # $1 = path relative to WORK_ROOT
 }
 
 # Harness state per the backbone's Context Pack Convention
-stage_one folder-structure.md
+stage_one CONSTITUTION.md
 stage_one AGENTS.md
 stage_one README.md
 for f in "$WORK_ROOT"/_agents/*.agent.md;        do stage_one "_agents/$(basename "$f")"; done

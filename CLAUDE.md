@@ -10,7 +10,7 @@
 
 This file is for an AI assistant (e.g. Claude Code) developing the
 ai-work-harness project itself. It is NOT the harness's user-facing rules —
-those live in estate/folder-structure.md (the constitution). Read that too when a
+those live in estate/CONSTITUTION.md (the constitution). Read that too when a
 change touches harness behaviour.
 
 ## What this project is
@@ -244,7 +244,7 @@ wanted); this note is the marker so the design intent isn't lost. Revisit once
 the issue board is clear and the project is self-contained.
 
 ## Where to look
-- estate/folder-structure.md — the constitution (harness rules for the user's work;
+- estate/CONSTITUTION.md — the constitution (harness rules for the user's work;
   Part I always-load, Part II on-demand).
 - estate/_harness/scripts/ — the machinery (validator, status, context-pack, demo,
   deploy, notebook helper, and the ticket-grammar home).

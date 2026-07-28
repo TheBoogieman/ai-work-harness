@@ -27,10 +27,10 @@
 
 # --- ESTATE block — the record set an installed estate re-includes at ITS root -------------------
 !/SPEC.md
-!/setup.md
-!/folder-structure.md
+!/AI-SETUP-PROMPT.md
+!/CONSTITUTION.md
 !/folder-map.md
-!/installing.md
+!/INSTALL-INSTRUCTIONS.md
 !/install.sh
 !/VERSION
 !/_agents/

@@ -17,7 +17,7 @@ already covered — extend instead) and WAIT for approval; (4) on approval,
 rewrite content generically into `General AI-Knowledge/<Topic>/<Topic>.md`
 with a `Last reviewed: YYYY-MM-DD` line, and leave a one-line tombstone in
 `_index.md` in the canonical format pinned in the *AI Memory Convention*
-(folder-structure.md): `- <file>.md (promoted -> General AI-Knowledge/<Topic>)`.
+(CONSTITUTION.md): `- <file>.md (promoted -> General AI-Knowledge/<Topic>)`.
 Minting a skill is the SAME promotion door. From accumulated ticket knowledge
 OR from a direct user request, you may DRAFT a worker-tier craft module into the
 Skills tree (`General AI-Knowledge/Skills/<Skill-Name>/SKILL.md`) following the

@@ -5,7 +5,7 @@ model: PICK-A-SONNET-CLASS-MODEL
 user-invocable: true
 tools: [read, edit]
 ---
-Read the workspace backbone `folder-structure.md`: PART I, then PART II →
+Read the workspace backbone `CONSTITUTION.md`: PART I, then PART II →
 *Ticket Initialisation Procedure*. Execute it exactly: pull the issue (if
 the tracker is unreachable, fill the ticket with TODO markers from the
 interview instead of failing); compute the ID; copy the template
@@ -95,6 +95,6 @@ THE NARRATION — a walked tour of the machinery moving, never a lecture.
   the silent path lacks. Every narrated sentence about what just happened must
   be TRUE — checkable against what actually happened on disk and in git.
 - Ends by retiring: close by pointing the user at the constitution
-  (`folder-structure.md`) as the durable home of the rules, and stop narrating.
+  (`CONSTITUTION.md`) as the durable home of the rules, and stop narrating.
   Because the trigger is derived, the NEXT init on an estate that now holds a
   live ticket is silent on its own — you store nothing to make that happen.

@@ -1,4 +1,4 @@
-# setup.md — final-gate prompt for your AI assistant (paste after `install.sh`)
+# AI-SETUP-PROMPT.md — final-gate prompt for your AI assistant (paste after `install.sh`)
 
 Paste everything below into your AI assistant of choice, working **in the newly
 installed estate**. `install.sh` has already laid down the PRODUCT files,
@@ -11,7 +11,7 @@ nothing the installer already built.
 
 ---
 
-You are in my freshly-installed harness estate; `folder-structure.md` at the
+You are in my freshly-installed harness estate; `CONSTITUTION.md` at the
 root is the backbone — read **PART I** first. `install.sh` has run. Showing me
 diffs before every write:
 
@@ -27,16 +27,16 @@ diffs before every write:
    git-ignored `Logs/` + `Dump/`.
 4. **Finish the personalisation the installer left to me** (it never edits a
    pre-existing file — only `--upgrade` does, and only if you type it; see
-   `installing.md`): any model pin still `PICK-A-*` → enumerate the models
+   `INSTALL-INSTRUCTIONS.md`): any model pin still `PICK-A-*` → enumerate the models
    actually enabled in my Copilot org and pin real **scalar** IDs into each
    `_agents/*.agent.md` (cheap tier for scribes/keeper/doc-writer, Sonnet-class
    for init/curator), then re-run `_harness/scripts/deploy_agents.sh`;
    the `LICENSE` name; the `make_context_pack.sh` scrub-table seeds (my
    identifier classes — employee ID, org domains, cloud account IDs); the
-   `folder-structure.md` Owner and key-repos lines.
+   `CONSTITUTION.md` Owner and key-repos lines.
 5. **Live hook-fire check:** with the config at `.github/hooks/harness.json`,
    confirm `postToolUse` produces an auto-commit in a real session. Per the
-   hook-activation caveat in `installing.md`, a freshly-created workspace may
+   hook-activation caveat in `INSTALL-INSTRUCTIONS.md`, a freshly-created workspace may
    not fire until a first real session or a Copilot restart — the git safety
    net is the backstop, so if a write isn't auto-committed, commit it by hand.
 6. **Format is load-bearing:** if I later try to CHANGE an already-established

@@ -12,18 +12,46 @@
 # A re-include whose subject has left BOTH roots is deleted rather than left as a false claim; the
 # development surfaces that moved into dev/ (the method doc, the decision records, the loop
 # templates, the history folder, the roster review) were exactly that, and their lines are gone.
+# A re-include whose subject exists in only ONE tree lives in THAT tree's block, and a DEVELOPMENT
+# surface gets no line at all (#153) — an estate's whitelist admits an estate's records, nothing
+# else. The five root-pinned lines below are the exception that proves it: they are the exact five
+# files install.sh ships from outside the estate tree (README.md, AGENTS.md, LICENSE, .gitignore,
+# .gitattributes — see derive_product_paths), so each one is a record in BOTH trees.
 /*
 !/.gitignore
 !/.gitattributes
 !/LICENSE
 !/README.md
 !/AGENTS.md
-!/CLAUDE.md
+
+# `/CLAUDE.md` IS DELIBERATELY ABSENT (#153), and its absence is easier to misread as an omission
+# than as a decision. It is this repository's own development rule file; the installer never lays
+# it down, so a re-include for it was a development surface sitting in every installed estate's
+# whitelist, ready to sweep a stray copy from a botched install into a user's record. THIS
+# REPOSITORY IS UNHARMED: an ignore rule does not untrack, and CLAUDE.md was tracked long before
+# the line went, so it stays in the record and its edits still commit normally. Only re-ADDING it
+# after a delete would need `git add -f`. A NEW development file belongs under dev/, which is
+# re-included whole below and costs nothing.
+
+# THE PLATFORM DIRECTORY IS NARROWED, NOT RE-INCLUDED WHOLE (#153). `.github/` exists in both trees
+# and holds entirely different things in each: this repository's CI and issue forms, and an
+# installed estate's GENERATED hook configuration. A blanket `!/.github/` therefore admitted the
+# first set into every estate's whitelist. REMOVING the line was the tempting wrong answer — the
+# hook config lives beneath it, and an estate that stops tracking its own hook settings drifts with
+# nothing to say so. So the directory is opened and then closed again on the next line, and each
+# tree re-admits its OWN half below: this repository's in the REPOSITORY block, the estate's in the
+# ESTATE block. Both halves are named, because a path is all git has to tell the two trees apart.
 !/.github/
+/.github/*
 
 # --- REPOSITORY block — the two trees this repository is split into (#136) ----------------------
 !/estate/
 !/dev/
+# This repository's half of the platform directory: the acceptance-demo workflow, the issue forms,
+# the PR template. An installed estate has none of these, so these lines match nothing there.
+!/.github/workflows/
+!/.github/ISSUE_TEMPLATE/
+!/.github/pull_request_template.md
 
 # --- ESTATE block — the record set an installed estate re-includes at ITS root -------------------
 !/SPEC.md
@@ -38,6 +66,18 @@
 !/Tickets/
 !/General AI-Knowledge/
 !/General Human Knowledge/
+# ^ the estate's root DOCUMENTS and folders end here: a newly shipped estate-root file adds its
+# line directly above this comment, and needs nothing else. What follows is the same block's
+# platform half, which is a different kind of subject and is kept apart on purpose.
+
+# The estate's half of the platform directory: the hook configuration install.sh WRITES at install
+# time by copying _harness/hooks/hooks.example.json to .github/hooks/harness.json. It is the one
+# thing under .github/ that belongs to an estate, and it is in neither the shipped tree nor any
+# manifest — it does not exist until an install creates it, which is why the installer, not a file
+# list, is the authority on this line. If it falls out of the record the estate's auto-commit
+# settings drift silently. The DIRECTORY is named rather than the single file, so a second
+# generated hook config is inside the record the day it is written.
+!/.github/hooks/
 # The upgrade's QUARANTINE folder, where install.sh --upgrade moves a superseded or replaced file
 # instead of deleting it (#134). Said out loud rather than left to the deny-all above, because
 # "untracked" is a DECIDED property here, not an accident: it is the reason every retirement is

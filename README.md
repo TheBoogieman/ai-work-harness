@@ -49,9 +49,13 @@ Anything marked *swappable* degrades gracefully if you differ.
 - **git** installed; the harness creates a **local-only** repo at the
   workspace root (it must never get a remote — this public repo is the
   sanitised exception that proves the rule).
-- **Python 3.12** and a venv named exactly **`venv_global`** (with
-  `nbformat`), created by you, set as the workspace default interpreter.
-  The harness depends on it and never creates it.
+- **A Python environment whose interpreter can `import nbformat`** — that is
+  the whole requirement. The notebook helper runs under whatever `python3` is
+  on the path, and nothing in the machinery reads, requires or validates the
+  environment's name. Create it yourself (the harness never creates one) and
+  set it as the workspace default interpreter so notebooks pick up its kernel.
+  The documentation's examples use Python 3.12 in a venv called `venv_global`
+  — a convention worth keeping, not a requirement.
 - **An issue tracker** — Jira assumed, any works (*swappable*). Replace the
   `PROJ` board key with yours; `ticket-init` degrades to template-with-TODOs
   when the tracker is unreachable.

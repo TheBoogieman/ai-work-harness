@@ -41,10 +41,16 @@ required check on a merge into `main`.
 
 **2 · Install onto your estate and wire your assistant (~10 minutes).**
 
-*Prerequisite you create (the harness never does):* a Python virtualenv named
-exactly **`venv_global`** with `nbformat`, registered as a Jupyter kernel and set
-as the workspace default interpreter. (`unzip` is optional — the context-pack
-helper falls back to Python's zipfile without it.)
+*Prerequisite you create (the harness never does):* **a Python environment whose
+interpreter can `import nbformat`**, registered as a Jupyter kernel and set as
+the workspace default interpreter. That is the whole requirement — the notebook
+helper runs under whatever `python3` is on the path, and nothing in the harness
+reads, requires or validates the environment's name. (`unzip` is optional — the
+context-pack helper falls back to Python's zipfile without it.)
+
+**`venv_global` below is the documented default, not a fixed name** — every
+document here uses it so that "the workspace default interpreter" means one
+thing across tickets and assistants. Substitute your own and nothing notices.
 
 ```bash
 python3.12 -m venv ~/venvs/venv_global   # 3.12 assumed; a newer python3 also works

@@ -49,10 +49,13 @@ Ticket folders live **outside** the VS Code multi-repo workspace (`GitHub/<your>
 ## Ticket Naming Convention
 
 Nothing requires a specific ticket-folder name. Name folders however suits
-your workflow. The tools recognise a **recommended default pattern** out of
-the box but never force it — naming is nudged, never enforced. By name and
-markers, a `Tickets/` folder falls into one of four states (with one validation
-edge case noted after the list):
+your workflow — knowing that the names matching the recognised pattern are the
+ones the validator checks, so a folder named anything else holds a record the
+validator never looks at (state 2 below is how you find out). The tools
+recognise a **recommended default pattern** out of the box but never force it
+— naming is nudged, never enforced. By name and markers, a `Tickets/` folder
+falls into one of four states (with one validation edge case noted after the
+list):
 
 1. **Matches the pattern + holds a ticket record → auto-validated.** A real,
    enforced ticket: the entry-gate validator checks its log and Current State
@@ -230,6 +233,11 @@ Every ticket markdown file must include the **Repos**, **Branches**, and **Pull 
 the validator interprets this header in the machine's local timezone, so a
 header written in a different zone can be misread as stale and wrongly
 red-block the next session.
+
+**The newest entry goes at the BOTTOM** — the validator reads the last entry in
+file order, not the highest timestamp, so a new block written at the top leaves
+an older one last and red-blocks with *"changed but no new Session Log entry
+since last validation"* on the session where you have just written one.
 
 **Example:**
 ```markdown

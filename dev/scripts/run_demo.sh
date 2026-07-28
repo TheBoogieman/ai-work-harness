@@ -12,15 +12,24 @@
 # case file for that family. Keeping both in one artifact is what produced the file this split
 # undoes.
 #
-# Proves the harness machinery works on THIS machine in ~20s. No Copilot needed. Safe: uses temp
-# state, creates+destroys one scratch ticket.
+# Proves the harness machinery works on THIS machine. No Copilot needed. Safe: uses temp state,
+# creates+destroys one scratch ticket.
+#
+# NO RUNTIME IS STATED HERE, ON PURPOSE (#201). This line used to promise ~20s. Four figures have
+# now been measured for the same suite on different hosts — 20, 32, 53 and 388 seconds — and none
+# of them was right anywhere but where it was taken; a fifth measurement would produce a fifth
+# figure and a fifth wrong comment. What a reader actually needs is the SHAPE, and the shape is
+# stable: the first run on a machine is the slowest, and after that the time scales with the
+# number of assertions the suite carries — which grows most batches. So that is what the front
+# page and the install document say, and neither they nor this header quote a number.
 #
 # WHAT THIS SUITE DOES NOT KNOW (#42 decoupling, cond 2): the documentation checks that once
 # lived inside it MOVED OUT to dev/scripts/docs-check.sh, and the suite carries ZERO
 # documentation knowledge — doc state can never red the product demo. That separation is
-# unchanged; what changed in #281 is the other side of it. docs-check.sh is now a HAND-RUN
-# tool with four detectors and no workflow behind it, and THIS suite is the only required
-# check on a merge. If the demo is green, nothing else is standing behind it.
+# unchanged; what changed in #281 is the other side of it. docs-check.sh became a standalone
+# tool with four detectors, run as a STEP on the Linux leg of .github/workflows/demo.yml — the
+# repository's only workflow, and the one THIS suite is the rest of. Between them they are the
+# whole merge gate: if both are green, nothing else is standing behind them.
 #
 # HOW A UNIT IS NAMED AND FOUND: demo_order() below prints one unit per line as "<kind>:<name>".
 # "tour:<name>" calls tour_<name> in tour.sh; "case:<name>" calls case_<name>, which is defined by

@@ -3,17 +3,18 @@
 **This page is the one home for every install command, prerequisite and
 caveat.** The front page (`README.md`) links here and repeats none of them: two
 install documents drift apart, which is the exact failure an earlier
-consolidation was made to end. So the commands below are registered, and the
-docs gate reds if a registered command appears on both pages.
+consolidation was made to end. The command registry that once enforced that
+mechanically was removed with the rest of the doctrine detectors (#281), so the
+separation is now kept by review — if you add a command here, it stays here.
 
 The harness installs onto a **work estate** — a local folder it turns into a
 disciplined, record-keeping workspace. Two steps: prove the machinery runs on
 your machine (the demo — no AI assistant needed), then lay down the estate and
 wire your assistant.
 
-**1 · Prove the machinery — `run_demo.sh` (~60 seconds).** Clone the repo to a
-**source** location and run the demo from that checkout — the demo needs no estate,
-so running it in place is correct:
+**1 · Prove the machinery — `run_demo.sh`.** Clone the repo to a **source**
+location and run the demo from that checkout — the demo needs no estate, so
+running it in place is correct:
 
 - **macOS / Linux** — your terminal's bash (stock macOS works as-is; the scripts
   auto-detect GNU vs BSD userland):
@@ -28,6 +29,12 @@ so running it in place is correct:
   git clone https://github.com/TheBoogieman/ai-work-harness.git ~/ai-work-harness
   cd ~/ai-work-harness && bash dev/scripts/run_demo.sh
   ```
+
+**How long it takes is not a number this page will quote.** The first run on a
+machine is the slowest; after that the time scales with the number of assertions
+the suite carries, and it gains assertions most batches. Four figures have been
+measured on four hosts and none held on the others — so wait for the last line
+rather than for a clock.
 
 It must end with **ALL 6 DEMO STAGES PASSED**. The demo inits the local git
 safety net, validates the template ticket, runs a scratch ticket through the

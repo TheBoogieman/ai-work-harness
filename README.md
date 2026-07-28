@@ -20,8 +20,10 @@ phones home, and one markdown file is the law.
 
 ## Setup
 
-Installing takes two steps and about ten minutes. **Every command,
-prerequisite and caveat lives in exactly one place —
+Installing takes two steps: prove the machinery on your own machine, then lay
+the estate down and wire your assistant.
+
+**Every command, prerequisite and caveat lives in exactly one place —
 [INSTALL-INSTRUCTIONS.md](estate/INSTALL-INSTRUCTIONS.md)**, which also carries
 reconfiguration and the hook-activation caveat. This page repeats none of them
 on purpose: two install documents drift apart, so every install command is told

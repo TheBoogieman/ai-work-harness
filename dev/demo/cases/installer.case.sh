@@ -168,7 +168,16 @@ in_product_only() {
 #      WATCHED FAILING: with `--no-index` in place, putting the three pre-#140 whitelist lines back
 #      into an installed estate reds this guard by name on all three renamed documents.
 in_estate_root_tracked() {
-  local i39_p i39_rel i39_seen=0 i39_ignored=0
+  local i39_p i39_rel i39_seen=0 i39_ignored=0 i39_rc
+  # THE TOOL IS ASSERTED ABLE TO ANSWER (#269). check-ignore exits 0 when the path IS ignored, 1
+  # when it looked and it is not, and 128 when it could not look at all — and this guard reads
+  # "not zero" as the clean answer, so an estate with no git repo in it would report every file
+  # fine while nothing had been examined. The repo is established before the loop, and a 128 from
+  # inside the loop is caught separately below rather than being counted as clean.
+  git -C "$I39_EST" rev-parse --git-dir >/dev/null 2>&1 \
+    || { echo "BUG [estate-root-tracked]: $I39_EST is not a git repository, so nothing can be" \
+           "asked about what its whitelist ignores — and 'nothing is ignored' is what this guard" \
+           "would print. The installer is supposed to create the record repo; it did not."; exit 1; }
   # THE SUBJECT COMES FIRST. An estate that was never created has no root-pinned file to be
   # ignored, so "nothing was ignored" would be the same answer as a clean whitelist.
   while IFS= read -r i39_p; do
@@ -176,9 +185,14 @@ in_estate_root_tracked() {
     case "$i39_rel" in */*) continue ;; esac      # root-pinned only: no directory component
     [ -e "$I39_EST/$i39_rel" ] || continue
     i39_seen=$((i39_seen + 1))
-    if git -C "$I39_EST" check-ignore -q --no-index -- "$i39_rel"; then
+    i39_rc=0; git -C "$I39_EST" check-ignore -q --no-index -- "$i39_rel" || i39_rc=$?
+    if [ "$i39_rc" -eq 0 ]; then
       echo "  IGNORED at the estate root: $i39_rel"
       i39_ignored=$((i39_ignored + 1))
+    elif [ "$i39_rc" -gt 1 ]; then
+      echo "BUG [estate-root-tracked]: git check-ignore exited $i39_rc on '$i39_rel' — it could" \
+        "not look, which is not the same answer as 'this file is inside the record'."
+      exit 1
     fi
   done < <(in_shipped_paths)
   [ "$i39_seen" -gt 0 ] \

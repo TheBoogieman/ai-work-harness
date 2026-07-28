@@ -26,7 +26,8 @@ diffs before every write:
    scaffolded tickets — each has a valid `AI-Knowledge/_index.md` and the
    git-ignored `Logs/` + `Dump/`.
 4. **Finish the personalisation the installer left to me** (it never edits a
-   pre-existing file): any model pin still `PICK-A-*` → enumerate the models
+   pre-existing file — only `--upgrade` does, and only if you type it; see
+   `installing.md`): any model pin still `PICK-A-*` → enumerate the models
    actually enabled in my Copilot org and pin real **scalar** IDs into each
    `_agents/*.agent.md` (cheap tier for scribes/keeper/doc-writer, Sonnet-class
    for init/curator), then re-run `_harness/scripts/deploy_agents.sh`;
@@ -34,10 +35,10 @@ diffs before every write:
    identifier classes — employee ID, org domains, cloud account IDs); the
    `folder-structure.md` Owner and key-repos lines.
 5. **Live hook-fire check:** with the config at `.github/hooks/harness.json`,
-   confirm `postToolUse` produces an auto-commit in a real session. Per
-   README's 'Hook activation caveat' section, a freshly-created workspace may not fire
-   until a first real session or a Copilot restart — the git safety net is the
-   backstop, so if a write isn't auto-committed, commit it by hand.
+   confirm `postToolUse` produces an auto-commit in a real session. Per the
+   hook-activation caveat in `installing.md`, a freshly-created workspace may
+   not fire until a first real session or a Copilot restart — the git safety
+   net is the backstop, so if a write isn't auto-committed, commit it by hand.
 6. **Format is load-bearing:** if I later try to CHANGE an already-established
    ticket-folder format, warn me it will break the harness and show exactly
    what would have to change — never rename or edit my tickets for me.

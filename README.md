@@ -218,33 +218,21 @@ the acceptance demo prove the change you bring back. The system was built that w
 
 ## Document catalogue
 
-Every documentation surface in the repo, with its audience and its one home.
-**Pointers only** — a row points at where a thing lives; it never restates the
-thing (the one-home law), and `folder-map.md` owns estate *structure* while
-this owns document *navigation*. **Audiences:** *user* (installs and runs an
-estate) · *estate* (lives inside an installed estate) · *developer* (hacks on the
-harness itself) · *machine* (an AI assistant reads it). Each fact has exactly one
-home; everything else points at it.
+The documentation surfaces this page does not already point at, each with its
+one home. **Pointers only** — a row points at where a thing lives; it never
+restates the thing (the one-home law). A document reached from **Setup**, **The
+folder map** or **Developing this harness** above is not repeated here, and
+`folder-map.md` owns estate *structure* while this owns document *navigation*.
 
-| Document | Audience | Purpose (its one home) | Referenced by |
-|----------|----------|------------------------|---------------|
-| `README.md` | user | The front door: what the harness is, what it assumes, how it is developed, and this catalogue. | entry point (rendered by GitHub) |
-| `estate/folder-structure.md` | estate | **The constitution — the rules.** Every harness convention; Part I always-load, Part II on demand. | `AGENTS.md`, `setup.md`, this README |
-| `AGENTS.md` | machine | The seven-rule door-note the assistant loads on every surface → points to the constitution. | the AI assistant; this README |
-| `estate/SPEC.md` | user | The project spec: what the harness guarantees today, and the vocabulary those guarantees are written in. | `docs-check` (adr-shape: the glossary check) |
-| `estate/folder-map.md` | estate | **The annotated estate structure** — every folder, its purpose and its owner, plus the four `Tickets/` states. | this README, `docs-check` (map-inventory) |
-| `estate/installing.md` | user | **Installing the harness:** prerequisites, the two steps, reconfiguring, the hook-activation caveat — the one home for every install command. | this README (Setup), `docs-check` (install-home) |
-| `estate/setup.md` | estate | The AI-assistant final-gate prompt: confirms validator + status green, walks the post-install personalisation. | `installing.md`, `install.sh` |
-| `estate/install.sh` | estate | The non-destructive dumb creator that lays down / reconfigures an estate. | `installing.md`, `setup.md`, the folder map |
-| `LICENSE` | user | MIT licence terms. | this README, `setup.md` |
-| `CLAUDE.md` | developer | Dev instructions the AI reads when working **on** the harness (DEV — never ships to an estate). | this README (Developing), `docs-check` (grammar-drift) |
-| `dev/DEVELOPMENT.md` | developer | The dev-loop method doc: the four roles + five working laws (DEV). | `dev-loop/`, `docs-check` (dev-loop) |
-| `dev/dev-loop/` (`SETUP.md` + three `*.template.md`) | developer | Starter kit to stand up the multi-seat dev loop; the templates ship **empty**. | `DEVELOPMENT.md`, `docs-check` (dev-loop) |
-| `dev/decisions/` (`000` template + the numbered records) | developer | Architecture Decision Records — *the why* of each design choice. | `docs-check` (adr-shape); later ADRs cross-cite |
-| `estate/General AI-Knowledge/AI Harness/DESIGN.md` | developer / user | Design notes + the dated diagram-currency ledger (the honest-lag record). | the folder map, `docs-check` (currency-note) |
-| `estate/General AI-Knowledge/AI Harness/` (Architecture + Session-flow sheets) | user | The two operator-maintained blueprint drawings — what the machine is, and how a day moves through it. | the folder map, `DESIGN.md` |
-| `estate/General AI-Knowledge/Skills/` (`_index.md`, `SKILL-TEMPLATE.md`, `SQL-Writing/SKILL.md`) | user / machine | Worker-tier craft modules, discovered index-first. | `AGENTS.md` (rule 7), constitution (Skills Convention) |
-| `estate/Tickets/README.md` | estate | Thin pointer — the map lives in `folder-map.md`. | `folder-map.md` |
+| Document | Purpose (its one home) | Referenced by |
+|----------|------------------------|---------------|
+| `estate/SPEC.md` | The project spec: what the harness guarantees today, and the vocabulary those guarantees are written in. | `docs-check` (adr-shape: the glossary check) |
+| `estate/General AI-Knowledge/Skills/` (`_index.md`, `SKILL-TEMPLATE.md`, `SQL-Writing/SKILL.md`) | Worker-tier craft modules, discovered index-first. | `AGENTS.md` (rule 7), constitution (Skills Convention) |
+| `estate/General AI-Knowledge/AI Harness/DESIGN.md` | Design notes + the dated diagram-currency ledger (the honest-lag record). | `docs-check` (currency-note) |
+| `estate/General AI-Knowledge/AI Harness/` (Architecture + Session-flow sheets) | The two operator-maintained blueprint drawings — what the machine is, and how a day moves through it. | the folder map, `DESIGN.md` |
+| `dev/DEVELOPMENT.md` | The dev-loop method doc: the four roles + five working laws. | `dev-loop/`, `docs-check` (dev-loop) |
+| `dev/dev-loop/` (`SETUP.md` + three `*.template.md`) | Starter kit to stand up the multi-seat dev loop; the templates ship **empty**. | `DEVELOPMENT.md`, `docs-check` (dev-loop) |
+| `dev/decisions/` (`000` template + the numbered records) | Architecture Decision Records — *the why* of each design choice. | `docs-check` (adr-shape); later ADRs cross-cite |
 
 ---
 

@@ -162,6 +162,7 @@ demo_order() {
     case:skills-index \
     case:ship-classification \
     case:installer \
+    case:worked-example \
     case:tracker-sweep \
     case:estate-key \
     case:source-refusal \

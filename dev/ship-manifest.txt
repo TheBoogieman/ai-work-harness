@@ -25,6 +25,7 @@ DEV	CLAUDE.md
 PRODUCT	LICENSE
 PRODUCT	README.md
 DEV	dev/DEVELOPMENT.md
+DEV	dev/a-day-with-the-harness.md
 DEV	dev/agent-roster-review.md
 DEV	dev/decisions/000-adr-template.md
 DEV	dev/decisions/001-local-only-no-remote.md
@@ -79,6 +80,7 @@ DEV	dev/demo/cases/ticket-recognition.case.sh
 DEV	dev/demo/cases/tracker-sweep.case.sh
 DEV	dev/demo/cases/undo-drill.case.sh
 DEV	dev/demo/cases/warn-aging.case.sh
+DEV	dev/demo/cases/worked-example.case.sh
 DEV	dev/demo/cases/worktree-store.case.sh
 DEV	dev/demo/sabotage.sh
 DEV	dev/demo/sabotage/source-refusal.fixtures.sh

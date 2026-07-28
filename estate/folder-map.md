@@ -24,6 +24,7 @@ Work/                                        [git root · local-only · whitelis
 │   ├── demo/                                THE ACCEPTANCE SUITE'S other two halves [dev-only · never installed]
 │   │   ├── tour.sh                          the stage-based tour a newcomer watches: six stage banners + the machinery running · asserts nothing by name
 │   │   └── cases/*.case.sh                  one case file per guard family — the regression suite · every named guard lives in exactly one of them
+│   ├── retire-list.tsv                      shipped DATA (not code): which paths a release SUPERSEDED · the ONLY thing --upgrade retires · cumulative · never inferred
 │   └── scripts/                             THE MACHINERY (versioned)
 │       ├── check_ticket_log.sh              ← sessionStart hook │ sessionEnd (bonus)
 │       │       └── watermark →              ~/.harness/validated/<ticket>  [state · unversioned]
@@ -70,6 +71,9 @@ Work/                                        [git root · local-only · whitelis
 │
 ├── General Human Knowledge/                 human-facing OUTPUT the machinery writes (append-only · inside the whitelist)
 │   └── Retrospectives/                      ← retrospective agent · one timestamped file per run
+│
+├── _retired/<timestamp>/                    QUARANTINE — appears only after install.sh --upgrade [gitignored · deliberately outside the record]
+│   └── <original path>                      your copy of a replaced or superseded file, moved never deleted · the run printed the mv that restores it
 │
 └── [GitHub/ · Diagrams/ · Mappings/ · …]    [never enter history — whitelist excludes them]
 ```

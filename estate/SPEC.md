@@ -55,7 +55,17 @@ why. The founding goals, unchanged since:
 - **A non-destructive installer.** `install.sh` is a dumb creator: it lays down
   PRODUCT files only, scaffolds absent ticket anatomy, and never edits an
   existing file. A re-run from inside the estate enters reconfigure-only mode; a
-  complete-or-repair run comes from the source checkout.
+  complete-or-repair run comes from the source checkout. That law takes exactly
+  one exception, and it is the next bullet.
+- **An upgrade that moves and never deletes.** `install.sh --upgrade` brings an
+  existing estate's machinery up to the source's, and you have to ask for it by
+  name — without the flag nothing above changes. It shows every create, replace
+  and retire before it does anything; it moves a replaced or superseded file
+  into a quarantine folder inside the estate rather than deleting it, and
+  reports each move as it happens with the command that puts it back; it carries
+  the files holding your own settings forward untouched; and it never touches a
+  record. Running it twice is safe and says so. What it may and may not reach is
+  recorded in `dev/decisions/020`.
 - **One home per fact.** Each rule, pattern, or convention lives in exactly one
   file; everything else points at it. The ticket-recognition pattern, the branch
   grammar, and the ship/dev classification each have a single editable home.

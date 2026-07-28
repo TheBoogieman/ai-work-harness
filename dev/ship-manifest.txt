@@ -128,6 +128,7 @@ PRODUCT	estate/_agents/ticket-recall.agent.md
 PRODUCT	estate/_agents/ticket-scribe.agent.md
 PRODUCT	estate/_agents/weekly-digest.agent.md
 PRODUCT	estate/_harness/hooks/hooks.example.json
+PRODUCT	estate/_harness/retire-list.tsv
 PRODUCT	estate/_harness/scripts/append_entry.sh
 PRODUCT	estate/_harness/scripts/append_notebook_cell.py
 PRODUCT	estate/_harness/scripts/check_run.sh

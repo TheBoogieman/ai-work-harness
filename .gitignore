@@ -77,8 +77,8 @@
 !/General AI-Knowledge/
 !/General Human Knowledge/
 # ^ the estate's root DOCUMENTS and folders end here: a newly shipped estate-root file adds its
-# line directly above this comment, and needs nothing else. What follows is the same block's
-# platform half, which is a different kind of subject and is kept apart on purpose.
+# line directly above this comment, and needs nothing else IN THIS FILE. What follows is the same
+# block's platform half, which is a different kind of subject and is kept apart on purpose.
 
 # The estate's half of the platform directory: the hook configuration install.sh WRITES at install
 # time by copying _harness/hooks/hooks.example.json to .github/hooks/harness.json. It is the one

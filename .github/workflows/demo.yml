@@ -74,7 +74,11 @@ jobs:
       # check name still reports. Skipping the JOB would leave a required check pending forever,
       # which is the trap this file's header describes.
       #
-      # Measured at ~13s on a runner, against minutes locally. It belongs here, not on a seat.
+      # It is CHEAP — far cheaper than the demo body it sits beside — which is why it belongs here
+      # rather than on a seat somebody has to remember to use. NO RUNTIME FIGURE IS GIVEN, and the
+      # omission is deliberate: this line used to carry one measured when the suite ran twenty-one
+      # detectors and it now runs four, so a replacement number would go stale the next time the
+      # set moves. What stays true is the comparison, not any second count.
       - name: Documentation check (four detectors, #281)
         if: matrix.os == 'ubuntu-latest'
         run: bash dev/scripts/docs-check.sh

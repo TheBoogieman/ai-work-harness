@@ -237,7 +237,7 @@ the machine.
 
 ## 8. What is on disk at the end of the day
 
-Four things, and you can read all of them without any tool.
+Five things, and you can read all of them without any tool.
 
 ```console
 $ ls -1 Tickets/202607A-PROJ-4021
@@ -250,6 +250,10 @@ $ cat Tickets/202607A-PROJ-4021/AI-Knowledge/_index.md
 # _index.md — one line per file: `- <file>.md — <what it covers> — <when to read it>`
 # Tombstones for promoted files: `- <file>.md (promoted -> General AI-Knowledge/<Topic>)`
 - staging-model-quirk.md — null effective dates are dropped — read before editing the model
+$ grep -A2 '^## Current State' Tickets/202607A-PROJ-4021/202607A-PROJ-4021.md
+## Current State
+Template initialised; not started. Next step: run ticket-init against a real
+issue. Gotchas: none yet.
 $ sed -n '/^## Session Log/,$p' Tickets/202607A-PROJ-4021/202607A-PROJ-4021.md
 ## Session Log
 
@@ -263,11 +267,18 @@ PROJ-4021: traced the missing rows; captured the quirk
 day-zero: harness estate scaffolded by install.sh
 ```
 
-The ticket folder, the index describing the knowledge beside it, the session log
-with the day's entry appended under the template's, and a commit history in
-which the day is one line. `Checks/`, `Dump/` and `Logs/` came from the template:
-`Checks/` holds a notebook and scratch queries, and the other two are for bulk
-that git deliberately ignores.
+The ticket folder; the index describing the knowledge beside it; Current State,
+which is the paragraph anyone picking this ticket up reads first and the one the
+validator insists every record has; the session log with the day's entry appended
+under the template's; and a commit history in which the day is one line.
+`Checks/`, `Dump/` and `Logs/` came from the template: `Checks/` holds a notebook
+and scratch queries, and the other two are for bulk that git deliberately ignores.
+
+Current State above still carries the template's words, and that is the one place
+this transcript falls short of a real day. Rewriting it is the other half of the
+job section 3 handed to `ticket-scribe`, and this page left it out because it is
+prose about your work rather than machinery. In a real session it would now say
+what you found and what comes next.
 
 ## The same day, when you are actually using it
 

@@ -2,7 +2,7 @@
 
 The annotated structure of a work estate: every folder, what it is for, and
 which part of the machinery owns it. This is the estate's **structure** — the
-**rules** are `folder-structure.md` (the constitution), and the front page is
+**rules** are `CONSTITUTION.md` (the constitution), and the front page is
 `README.md`.
 
 The map lives in its own document because it has to grow every time the
@@ -13,10 +13,10 @@ that carried the map would grow with the machinery and stop being a front page.
 Work/                                        [git root · local-only · whitelist]
 │
 ├── .gitignore                               /* deny-all → re-include record set
-├── folder-structure.md                      THE CONSTITUTION · Part I always / Part II on demand
-├── AGENTS.md                                door-note → folder-structure.md
-├── install.sh                               the dumb creator that laid this estate down · manual: installing.md
-├── setup.md                                 the AI-assistant final gate, pasted in after the install
+├── CONSTITUTION.md                          THE CONSTITUTION · Part I always / Part II on demand
+├── AGENTS.md                                door-note → CONSTITUTION.md
+├── install.sh                               the dumb creator that laid this estate down · manual: INSTALL-INSTRUCTIONS.md
+├── AI-SETUP-PROMPT.md                       the AI-assistant final gate, pasted in after the install
 ├── .github/workflows/                       CI — the acceptance demo on Linux + macOS, and nothing else: every push to main; PRs by scope
 │
 ├── _harness/
@@ -108,4 +108,4 @@ Nothing is ever blocked for a *naming* choice: the tools nudge with yellow,
 never wall you off. The recognition pattern lives in one editable line
 (`_harness/scripts/ticket-grammar.sh`) that both tools share — e.g. a hyphenated
 board key like `DATA-ENG` needs the board segment widened there; see
-`folder-structure.md` for the worked example.
+`CONSTITUTION.md` for the worked example.

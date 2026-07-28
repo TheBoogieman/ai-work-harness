@@ -22,9 +22,10 @@ phones home, and one markdown file is the law.
 
 Installing takes two steps and about ten minutes. **Every command,
 prerequisite and caveat lives in exactly one place —
-[installing.md](estate/installing.md)**, which also carries reconfiguration and the
-hook-activation caveat. This page repeats none of them on purpose: two install
-documents drift apart, so every install command is told once, there.
+[INSTALL-INSTRUCTIONS.md](estate/INSTALL-INSTRUCTIONS.md)**, which also carries
+reconfiguration and the hook-activation caveat. This page repeats none of them
+on purpose: two install documents drift apart, so every install command is told
+once, there.
 
 ## Assumptions
 
@@ -91,7 +92,7 @@ cannot carry that and stay a front page.
   session START (the entry gate — it audits what the previous session left
   behind; sessionEnd is a best-effort bonus), checks facts only: log appended? Current State exists? Index
   matches files? Fails loudly, judges nothing.
-- **L3 — Filesystem** — single source of truth. `folder-structure.md` holds
+- **L3 — Filesystem** — single source of truth. `CONSTITUTION.md` holds
   every rule; each ticket folder holds its own log, state, and knowledge;
   `General AI-Knowledge/` holds the durable stuff; `AGENTS.md` is the
   seven-rule contract Copilot loads on every surface.
@@ -121,7 +122,7 @@ cannot carry that and stay a front page.
 ## The maintenance port (offline, on demand)
 
 Five human-run tools; each has a one-line purpose in the folder map, and its full
-telling lives in `folder-structure.md` (Part II) or the home named inline.
+telling lives in `CONSTITUTION.md` (Part II) or the home named inline.
 
 - `harness-status.sh` — estate-wide health report; every FAIL line ends with its fix.
 - `tracker_sweep.sh` — board-vs-estate drift through a pluggable, tracker-agnostic

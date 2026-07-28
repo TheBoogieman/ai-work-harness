@@ -4,7 +4,7 @@ This is a **descriptive** specification: it states what the installed product
 does **now**, not what it aspires to. If a line here is not true at HEAD, it is
 a defect — fix the product or fix the line. README is the tour and Setup guide;
 this file is the contract and the reader's key. The rules the product enforces
-live in `folder-structure.md` (the constitution); the reasoning behind each
+live in `CONSTITUTION.md` (the constitution); the reasoning behind each
 design choice lives in the code and prose that implement it. This file sits between
 them: the guarantees, plus a glossary so a newcomer can read the vocabulary the
 product uses about itself. The rules that govern DEVELOPMENT of the harness are

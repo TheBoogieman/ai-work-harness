@@ -99,8 +99,8 @@ still compares the number itself exactly.
 ## What the day assumes
 
 * An estate already exists at `~/Work`, created by the installer. Installing is a
-  separate job with its own manual, `estate/installing.md`; this document starts
-  the morning after.
+  separate job with its own manual, `estate/INSTALL-INSTRUCTIONS.md`; this
+  document starts the morning after.
 * Every command is run from the top of the estate (`cd ~/Work`).
 * Git knows who you are — the usual `user.name` and `user.email` settings.
 

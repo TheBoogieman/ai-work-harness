@@ -1,8 +1,17 @@
 # Design notes — why the harness is shaped like this
 Last reviewed: 2026-07-26
 
-**Diagram currency (2026-07-28):** both sheets LAG in two ways, and the second is
-newer and sharper than the first.
+**Diagram currency (2026-07-28):** both sheets LAG in three ways, and the third is
+the newest.
+
+**The architecture sheet labels the constitution `folder-structure.md`, a name
+that no longer exists.** `#140` renamed the three estate root documents to say
+what they contain — `folder-structure.md` → `CONSTITUTION.md`, `setup.md` →
+`AI-SETUP-PROMPT.md`, `installing.md` → `INSTALL-INSTRUCTIONS.md` — and the sheet
+renders the first of those as label text. Only the constitution is drawn, so this
+is one stale label, not three. It is accepted knowingly: the sheet already carries
+the false claim below, a redraw commission is required before the release
+regardless, and no wave edits an SVG.
 
 **The architecture sheet names three scripts the harness no longer ships.**
 `check_run`, `append_entry` and `literate_capture` were removed by `#280` — none
@@ -23,7 +32,7 @@ Work root, they are still right about where things sit.
 
 NO WAVE EDITS AN SVG — the divergences are named rather than drawn, and `#178` is
 where the redraw is tracked. For current enforcement/status/naming behaviour,
-`folder-structure.md` (the constitution) remains the source of truth.
+`CONSTITUTION.md` (the constitution) remains the source of truth.
 
 **The pattern (every layer):** file states the rule → agent does the work →
 hook catches the miss → git undoes the damage. Corollary: status observes,

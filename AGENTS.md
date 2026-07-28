@@ -1,6 +1,6 @@
 # Agent contract — read before acting
 
-1. The rulebook is `folder-structure.md` at this workspace root. Read PART I
+1. The rulebook is `CONSTITUTION.md` at this workspace root. Read PART I
    before doing anything; pull PART II sections only when your task needs them.
 2. Context budget: backbone PART I + the target ticket's header + Current
    State ONLY, unless pointed deeper. Never bulk-read Session Logs,

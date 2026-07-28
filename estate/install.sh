@@ -309,13 +309,13 @@ read_version() {
 }
 # route_change <label> <established> <typed> <file-to-edit> — a re-run answer that DIFFERS from the
 # established value is ROUTED, never applied: the installer edits NOTHING pre-existing (cond 2).
-# It warns, names the exact file to edit, and offers the AI-assistant handoff (setup.md).
+# It warns, names the exact file to edit, and offers the AI-assistant handoff (AI-SETUP-PROMPT.md).
 route_change() {
   echo "WARN: you asked to change the $1 from '$2' (established) to '$3'." \
        "Changing established config"
   echo "  can break the harness, so the installer changes NOTHING." \
        "To apply it, edit $4 yourself, or"
-  echo "  hand it to your AI assistant (see setup.md):" \
+  echo "  hand it to your AI assistant (see AI-SETUP-PROMPT.md):" \
        "\"Change the $1 from $2 to $3 in $4, re-validate.\""
 }
 # NOTE on array expansion: stock-macOS bash 3.2 errors on "${arr[@]}" when arr is EMPTY under
@@ -377,7 +377,7 @@ offer_board_widening() {
   if ! printf '%s' "$BOARD" | grep -qE '^[A-Z][A-Z0-9-]*$'; then
     echo "  warning: '$BOARD' has characters the grammar can't recognise even widened;" \
          "tickets under it won't validate until you edit ticket-grammar.sh" \
-         "(see folder-structure.md)." >&2
+         "(see CONSTITUTION.md)." >&2
     return 0
   fi
   echo "  note: '$BOARD' contains a hyphen, which the default ticket grammar's board segment" \
@@ -451,8 +451,8 @@ derive_product_paths() {
 }
 
 # ---- PRODUCT laydown plan (create-absent-only, from the derivation) ----------------------------
-# install.sh and setup.md are PRODUCT (the user-facing surface); they live under the estate tree,
-# so the rule above picks them up with everything else and they are laid down too.
+# install.sh and AI-SETUP-PROMPT.md are PRODUCT (the user-facing surface); they live under the
+# estate tree, so the rule above picks them up with everything else and they are laid down too.
 plan_product() {
   product_paths="$(derive_product_paths)"
   while IFS= read -r row; do
@@ -567,12 +567,12 @@ was_created() { created_this_run "$1"; }
 apply_board_widen() {
   [ "$BOARD_WIDEN" -eq 1 ] || return 0
   if was_created "_harness/scripts/ticket-grammar.sh"; then
-    # The documented one-line widening: board segment [A-Z0-9]* -> [A-Z0-9-]* (folder-structure.md).
+    # The documented one-line widening: board segment [A-Z0-9]* -> [A-Z0-9-]* (CONSTITUTION.md).
     sedi "s/\[A-Z\]\[A-Z0-9\]\*/[A-Z][A-Z0-9-]*/" "$TARGET/_harness/scripts/ticket-grammar.sh"
     return 0
   fi
   echo "note: ticket-grammar.sh already existed — NOT edited. To widen it yourself, change" \
-       "[A-Z0-9]* to [A-Z0-9-]* (see folder-structure.md)."
+       "[A-Z0-9]* to [A-Z0-9-]* (see CONSTITUTION.md)."
   return 0
 }
 
@@ -592,7 +592,8 @@ apply_model_pins() {
 # ---- hook config: COPY the single schema home (no second literal lives here) --------------------
 create_hook_config() {
   if [ "$NEED_HOOK" -eq 0 ]; then
-    echo "exists — $HOOK_REL present; to change it, edit that file (see setup.md). Left untouched."
+    echo "exists — $HOOK_REL present; to change it, edit that file (see AI-SETUP-PROMPT.md)." \
+      "Left untouched."
     return 0
   fi
   mkdir -p "$TARGET/.github/hooks"
@@ -1002,7 +1003,7 @@ audit_estate() {
 divergence_nudge() {
   echo "note: if status WARNed a ticket whose name diverges from the grammar," \
        "that ticket is surfaced"
-  echo "      but not validated. Rename it to conform, widen the grammar (see folder-structure.md),"
+  echo "      but not validated. Rename it to conform, widen the grammar (see CONSTITUTION.md),"
   echo "      or mark it '.not-a-ticket'. The installer changes nothing here."
   return 0
 }
@@ -1098,7 +1099,7 @@ print_summary_board() {
   fi
   if [ "$DETECTED_BOARD_REAL" -eq 1 ]; then
     echo "  board key         = $BOARD (established; to change it, edit ticket-grammar.sh —" \
-         "see setup.md). Left untouched."
+         "see AI-SETUP-PROMPT.md). Left untouched."
     return 0
   fi
   echo "  board key         = $BOARD (template default; no established ticket yet)."
@@ -1128,7 +1129,7 @@ print_summary_knobs() {
 final_gate() {
   echo
   echo "FINAL STEP — hand this estate to your AI assistant of choice as the last gate." \
-       "Paste setup.md's"
+       "Paste AI-SETUP-PROMPT.md's"
   echo "prompt (it references everything established above), then have the assistant:" \
        "read the SUMMARY,"
   echo "confirm validator + status are green, spot-check the scaffolded tickets," \

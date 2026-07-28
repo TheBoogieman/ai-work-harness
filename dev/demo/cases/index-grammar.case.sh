@@ -3,7 +3,7 @@
 # by the runner; see dev/scripts/run_demo.sh for the contract.
 #
 # The validator names a file ONLY by an index line's first token after "- "; prose, '#' comments
-# and '<...>' placeholders are inert (grammar pinned in folder-structure.md). These cases prove
+# and '<...>' placeholders are inert (grammar pinned in CONSTITUTION.md). These cases prove
 # that in BOTH directions: honest records must PASS (no false ghosts, no false orphans — the R-12
 # point) and real breakage must FAIL. A parser that scans whole prose lines flips the PASS cases
 # to false FAILs — see the R-04 revert-proof.

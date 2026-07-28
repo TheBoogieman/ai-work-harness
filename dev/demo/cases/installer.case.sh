@@ -143,6 +143,57 @@ in_product_only() {
   echo "  ok [product-only] — installed estate holds $i39_n PRODUCT files and zero DEV files"
 }
 
+# (b2) estate-root-tracked (#140): every ROOT-PINNED product file the installer lays down must be
+#      TRACKABLE in the estate it lands in. This is the failure that ships silently and looks fine.
+#      The shipped `.gitignore` denies everything at the root and re-admits named files, so the
+#      estate's own documents are tracked only because a line names each one. Rename a document and
+#      leave its line behind and the file is still on disk, the estate still reports healthy, and
+#      the record has silently stopped covering it — including the constitution.
+#
+#      IT ASKS THE QUESTION STRUCTURALLY, so it never needs editing when a name changes. The subject
+#      is derived: the product paths with no directory component, which is the same "root-pinned"
+#      shape upgrade_is_machinery uses. `git check-ignore` is the only thing that can answer this —
+#      a grep for the expected line would be a restatement of the whitelist, not a test of it, and
+#      would pass on a line that git parses differently from the way the grep read it.
+#
+#      `--no-index` IS LOAD-BEARING AND THIS GUARD WAS WRITTEN WITHOUT IT FIRST. By default
+#      check-ignore says nothing about a path that is already in the index, and the installer
+#      commits the estate it creates — so every file this guard asks about is tracked by the time
+#      it asks, and the first version returned "not ignored" for all twelve with the whitelist
+#      deliberately broken underneath it. It reported ok twice on a sabotaged estate. `--no-index`
+#      is git's own answer to exactly that question ("why did this path become tracked when the
+#      rules say ignore"), and it is what makes the answer about the WHITELIST rather than about
+#      what happens to be staged.
+#
+#      WATCHED FAILING: with `--no-index` in place, putting the three pre-#140 whitelist lines back
+#      into an installed estate reds this guard by name on all three renamed documents.
+in_estate_root_tracked() {
+  local i39_p i39_rel i39_seen=0 i39_ignored=0
+  # THE SUBJECT COMES FIRST. An estate that was never created has no root-pinned file to be
+  # ignored, so "nothing was ignored" would be the same answer as a clean whitelist.
+  while IFS= read -r i39_p; do
+    i39_rel=${i39_p#estate/}
+    case "$i39_rel" in */*) continue ;; esac      # root-pinned only: no directory component
+    [ -e "$I39_EST/$i39_rel" ] || continue
+    i39_seen=$((i39_seen + 1))
+    if git -C "$I39_EST" check-ignore -q --no-index -- "$i39_rel"; then
+      echo "  IGNORED at the estate root: $i39_rel"
+      i39_ignored=$((i39_ignored + 1))
+    fi
+  done < <(in_shipped_paths)
+  [ "$i39_seen" -gt 0 ] \
+    || { echo "BUG [estate-root-tracked]: the estate holds ZERO root-pinned PRODUCT files, so" \
+           "'none of them is ignored' would be vacuously true — the installer laid nothing down"; \
+         exit 1; }
+  [ "$i39_ignored" -eq 0 ] \
+    || { echo "BUG [estate-root-tracked]: $i39_ignored root-pinned PRODUCT file(s) named above" \
+           "are IGNORED in the installed estate — they are on disk but OUTSIDE the record, and the" \
+           "estate will still report healthy. Add each one's re-include to the ESTATE block of" \
+           ".gitignore (a renamed file needs its whitelist line renamed with it)."; exit 1; }
+  echo "  ok [estate-root-tracked] — all $i39_seen root-pinned PRODUCT files at the estate root" \
+    "are inside the record (none ignored)"
+}
+
 # (c) dumb creator (cond 2, ABSOLUTE): a pre-existing (corrupted) file is byte-UNCHANGED by a
 #     re-run. Compare with cmp against a snapshot (portable — no sha256sum, which stock macOS
 #     lacks).
@@ -627,6 +678,7 @@ case_installer() {
   in_schema_one_home
   in_installer_ran
   in_product_only
+  in_estate_root_tracked
   in_dumb_creator
   in_idempotent_rerun
   in_dry_run

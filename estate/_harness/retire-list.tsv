@@ -43,3 +43,17 @@
 0.1.0	_harness/scripts/append_entry.sh	removed — write the session entry by hand or via the ticket-scribe agent; check_ticket_log.sh still validates it
 0.1.0	_harness/scripts/check_run.sh	removed — record checks as executable cells via append_notebook_cell.py and run them in the notebook
 0.1.0	_harness/scripts/literate_capture.py	removed — append notebook cells with append_notebook_cell.py
+#
+# THE THREE ROWS AFTER THOSE (#140) ARE THE LIST'S FIRST TRUE RENAMES — the same path under a new
+# name, which is what the format was written for. Each estate document was named after where it
+# sits in the project rather than what a reader gets from opening it, and all three are
+# root-pinned, so upgrade_is_machinery reads them as machinery and will retire them.
+#
+# WHY A RENAME STILL NEEDS A ROW. The replacement is laid down by the ordinary create arm the
+# moment the new name is absent, so WITHOUT these rows an upgraded estate would simply hold both
+# names — the old constitution beside the new one, each claiming to be the law. The row is what
+# moves the old one out, and the printed restore command is what makes that survivable for a user
+# who had edited their copy: their text is in quarantine, named, with the mv that puts it back.
+0.1.0	folder-structure.md	renamed to CONSTITUTION.md — same document, named for what it is (the constitution) rather than for its table of contents
+0.1.0	setup.md	renamed to AI-SETUP-PROMPT.md — it is a prompt addressed to an AI assistant, not human setup instructions
+0.1.0	installing.md	renamed to INSTALL-INSTRUCTIONS.md — one letter from install.sh in every listing; the prose manual is now named apart from the installer

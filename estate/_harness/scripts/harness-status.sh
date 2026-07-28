@@ -491,7 +491,7 @@ warn_pending() {
   # the intended resolution is naming the ticket, not waving it away.
   msg="Tickets/$name is a pending ticket — ticket-init created it but couldn't determine its"
   msg="$msg proper name. Rename it to a conforming name to complete it (this IS a real ticket)."
-  msg="$msg See the recognised pattern in folder-structure.md"
+  msg="$msg See the recognised pattern in CONSTITUTION.md"
   msg="$msg or _harness/scripts/ticket-grammar.sh."
   warn "pending-unnamed:$name" "$msg"
   return 0

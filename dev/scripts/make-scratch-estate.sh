@@ -32,7 +32,7 @@ cp "$REPO_ROOT/.gitignore"  "$DEST/.gitignore"
 # would CRLF the copied scripts on the next checkout and break the live hooks. Pin LF here too.
 cp "$REPO_ROOT/.gitattributes" "$DEST/.gitattributes"
 # named once so the test and the copy can never point at different files
-CONSTITUTION="$REPO_ROOT/estate/folder-structure.md"
+CONSTITUTION="$REPO_ROOT/estate/CONSTITUTION.md"
 [ -f "$CONSTITUTION" ] && cp "$CONSTITUTION" "$DEST/"
 [ -f "$REPO_ROOT/AGENTS.md" ] && cp "$REPO_ROOT/AGENTS.md" "$DEST/"
 

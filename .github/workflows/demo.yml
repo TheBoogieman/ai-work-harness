@@ -129,7 +129,7 @@ jobs:
           # asserts their frontmatter and the reader spine), estate/General AI-Knowledge/Skills/** (the
           # #84 index<->tree guard), and estate/Tickets/** (the demo's own fixture ticket).
           # KNOWN RESIDUAL COUPLING, recorded rather than hidden: make_context_pack.sh stages
-          # README.md, AGENTS.md, folder-structure.md and "estate/General AI-Knowledge/AI Harness/" into
+          # README.md, AGENTS.md, CONSTITUTION.md and "estate/General AI-Knowledge/AI Harness/" into
           # the pack that stage 6 builds, and audits the result for scrub-table placeholder
           # tokens. An edit that introduced such a token in a case the SCRUB table does not
           # rewrite would red the demo and would be skipped here; the post-merge push-to-main run

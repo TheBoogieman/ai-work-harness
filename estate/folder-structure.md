@@ -519,6 +519,6 @@ AI-Knowledge.
 
 The harness is coupled to GitHub Copilot at only three thin, isolated points —
 the `_agents/*.agent.md` format, the `hooks.example.json` hook shape, and
-`deploy_agents.sh`'s deploy target; everything else is assistant-agnostic. See
-**Porting to another AI assistant (the vendor seam)** in `CLAUDE.md` for the
-full seam map and the planned (not-yet-built) `ADAPTERS/` layer.
+`deploy_agents.sh`'s deploy target; everything else is assistant-agnostic.
+Porting means translating those three — mechanical work, not redesign. There is
+no adapter layer to select: the three points are edited in place.

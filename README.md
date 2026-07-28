@@ -195,13 +195,16 @@ documents cannot drift apart. Read it before you change anything; don't hand-edi
 the machinery from memory.
 
 **Merge gate:** work is issues-first — open or claim an issue, branch or fork,
-then open a PR whose body closes it (`Fixes #NN`). **The acceptance demo on Linux
-and macOS is the only required check** (`.github/workflows/demo.yml`), and it is
-required on both because the GNU/BSD split is real and the demo is the only thing
-that exercises it. Four other gates used to sit beside it — documentation,
-governance, shell lint and a Windows witness — and were removed (#281): a checking
-layer built to make an implementer paranoid has no job once the findings come from
-using the product. Branch naming and issue anchoring are still the convention
+then open a PR whose body closes it (`Fixes #NN`). **One workflow gates every merge**
+(`.github/workflows/demo.yml`): the acceptance demo on Linux *and* macOS, required on
+both because the GNU/BSD split is real and the demo is the only thing that exercises
+it, plus **four documentation detectors** — broken links, unbalanced code fences,
+carriage returns, dead pointers — which run as a step in the Linux lane on every pull
+request and fail it when one reds. Four separate gates used to sit beside the demo:
+documentation, governance, shell lint and a Windows witness. They were removed (#281)
+— a checking layer built to make an implementer paranoid has no job once the findings
+come from using the product; the four detectors worth keeping moved into the lane that
+was already running. Branch naming and issue anchoring are still the convention
 (`NN-lowercase-kebab`), now kept by review rather than by a script.
 
 **For an external design review**, take the scrubbed, disposable zip from

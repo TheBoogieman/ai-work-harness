@@ -53,16 +53,19 @@ Doctrine you must never violate when changing this code:
   CI run URL is the release evidence. A green lane is NOT proof the demo ran: the job
   always reports, but skips its body on changes that cannot move its verdict — read the
   run log and say which of the two happened. Which changes skip its body is decided in
-  `.github/workflows/demo.yml` itself. STOP at the PR — do not merge; the operator
-  merges once CI is green. A red lane means that lane failed; read it — the demo is
-  the truth-teller.
+  `.github/workflows/demo.yml` itself. THE DOCUMENTATION CHECK IS THE EXCEPTION: it is a
+  step in the same job's Linux leg and is NEVER skipped, so a green `demo (ubuntu-latest)`
+  always means the four detectors ran and passed, whatever the demo's own body did.
+  STOP at the PR — do not merge; the operator merges once CI is green. A red lane means
+  that lane failed; read it — the demo is the truth-teller.
 - Branch grammar + PR anchor — a CONVENTION now, not a gate (#281 removed the workflow
   that enforced it, along with the docs, shell-lint and Windows-witness workflows). A
   branch should still match `^[0-9]+-[a-z0-9]+(-[a-z0-9]+)*$` (leading issue number +
   lowercase-kebab slug, e.g. `281-the-great-cut`) with its leading number among the PR's
   `Fixes #NN` set, and every PR body should still carry a closing reference
-  (`Fixes`/`Closes`/`Resolves #NN`) to a real, OPEN issue. What keeps it now is review.
-  `dev/scripts/branch-grammar.sh` still holds the pattern and can be run by hand.
+  (`Fixes`/`Closes`/`Resolves #NN`) to a real, OPEN issue. The regex above IS the pattern
+  — the four scripts that used to hold and enforce it went with their workflow, so this
+  line is its only home. What keeps it now is review.
 - Before pushing, self-check: the demo passes, the commit is scoped to one
   concern, and every claim you wrote (including in comments) is true at HEAD.
 
@@ -86,12 +89,15 @@ enforcement claim the repository cannot cash.
   without having been in the room, and the same standard binds the repository's
   own documents. A document that is right about most things is worse than one
   that is silent: it teaches its reader to stop checking.
-- *What enforces it.* Review and the pre-push self-check, and that is now the whole
-  answer. `dev/scripts/docs-check.sh` survives as a HAND-RUN tool with four detectors
-  — broken intra-repo links, unbalanced code fences, carriage returns in documents,
-  dead pointers — the four that catch something a READER hits. It gates nothing: #281
-  cut the seventeen doctrine detectors and deleted the workflow that ran it. Run it
-  before you push (`bash dev/scripts/docs-check.sh`); nothing will run it for you.
+- *What enforces it.* Two things, and the split is worth knowing. FOUR DETECTORS RUN IN
+  CI, as a step inside the demo job on the Linux leg (`.github/workflows/demo.yml`) —
+  broken intra-repo links, unbalanced code fences, carriage returns in documents, dead
+  pointers. They are the four that catch what a READER hits, they run on every pull
+  request regardless of what it touched, and a red one FAILS THE JOB, so `demo
+  (ubuntu-latest)` is red until it is fixed. #281 cut the other seventeen, which policed
+  internal doctrine. EVERY OTHER CLAIM rests on review and on the pre-push self-check —
+  no script judges an arbitrary sentence. Run `bash dev/scripts/docs-check.sh` before you
+  push if you want the answer early; CI will run it either way.
 
 **GUARD-PER-BUG — a fix is finished when a guard has been WATCHED failing.**
 - *Statement.* A guard is required for a behaviour change to shipped machinery
@@ -252,5 +258,5 @@ the issue board is clear and the project is self-contained.
   where every named guard lives. A new guard goes in the case file for its family (or
   a new one), and a NEW case file must be added to `demo_order()` in the runner;
   the runner's `[case-completeness]` check reds by name if it is not.
-- dev/scripts/docs-check.sh — four hand-run documentation detectors (#281). Nothing
-  runs it for you; run it before you push.
+- dev/scripts/docs-check.sh — the four documentation detectors (#281). CI runs it as a
+  step in the demo job's Linux leg, unconditionally; a red fails that lane.

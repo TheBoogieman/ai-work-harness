@@ -5,6 +5,12 @@
 # and manual dispatch; no scheduled runs. Per-branch concurrency cancels superseded runs
 # to keep usage minimal.
 #
+# IT ALSO CARRIES THE DOCUMENTATION CHECK (#281). After the cut this is the repository's ONLY
+# workflow, so the four surviving documentation detectors run as a STEP in this job rather than
+# in one of their own — a gate nobody runs catches nothing, and two of the four (fence balance,
+# line endings) catch damage a reader or a shell hits directly. That step is on the Linux leg
+# only and is NOT subject to the scope skip below; see the step for why.
+#
 # SCOPE (#115): a pull request that changes ONLY documentation does not pay for four full demo
 # runs. The saving is made INSIDE the job, never by a `paths:` filter or a job-level `if:` — the
 # job, its matrix and its two generated names (`demo (ubuntu-latest)`, `demo (macos-latest)`) are
@@ -49,6 +55,29 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      # DOCUMENTATION CHECK — four detectors, and this step is where they run (#281).
+      #
+      # IT IS DELIBERATELY NOT BEHIND THE SCOPE STEP BELOW. Its whole subject is documentation,
+      # so gating it on "can this change move the demo's verdict" would switch it off for exactly
+      # the changes it exists to read. It runs before the scope decision so the ordering cannot
+      # drift into that mistake later.
+      #
+      # NO `continue-on-error`, NO `|| true`, NO `if: always()`. docs-check.sh exits 1 when any
+      # detector reds, and a plain `run:` step that exits non-zero FAILS THIS JOB — which is the
+      # entire point. A step that reported and carried on would be the vacuous gate this
+      # repository removed seventeen detectors over.
+      #
+      # ONE LEG OF THE MATRIX. The detectors read prose, not portability, so a second run on
+      # macOS would re-read the same bytes for the same answer; docs-check.sh is also written for
+      # GNU grep, which is what ubuntu has. Skipping a STEP on the macOS leg is safe — that leg's
+      # check name still reports. Skipping the JOB would leave a required check pending forever,
+      # which is the trap this file's header describes.
+      #
+      # Measured at ~13s on a runner, against minutes locally. It belongs here, not on a seat.
+      - name: Documentation check (four detectors, #281)
+        if: matrix.os == 'ubuntu-latest'
+        run: bash dev/scripts/docs-check.sh
 
       # SCOPE DECISION (#115) — the only step that always does work. It answers one question:
       # can this change possibly move the demo's verdict? It writes `run=true|false` to the step

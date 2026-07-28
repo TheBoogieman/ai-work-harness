@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # install.sh — scaffold or complete a harness Work ESTATE from this source distribution.
 #
-# It is a DUMB CREATOR (#39 cond 2): it creates only what is ABSENT and NEVER edits, appends to,
+# It is a DUMB CREATOR (#39): it creates only what is ABSENT and NEVER edits, appends to,
 # or repairs any file that already exists — even a broken one. Surfacing and fixing broken state
 # is the validator's/status's/agent's job, on the record; the installer judges nothing and heals
 # nothing. A second run finds nothing absent, so it creates nothing: the plan reports "PRODUCT
@@ -19,7 +19,7 @@
 #     that puts it back; a RECORD is never touched at all. Nothing this installer touches, in
 #     either mode, ever stops existing.
 #
-# It is the SHIPPING BOUNDARY (#43 cond 2): it lays down PRODUCT files ONLY, DERIVED from the
+# It is the SHIPPING BOUNDARY (#43): it lays down PRODUCT files ONLY, DERIVED from the
 # source tree by derive_product_paths below (#282). A fresh estate contains ZERO dev files.
 #
 # Runs FROM the source distribution (this file's directory), targeting an estate dir.
@@ -223,7 +223,8 @@ ask() {  # ask <prompt> <default> ; echoes the answer (default under --yes or on
   local prompt="$1" def="$2" ans=""
   if [ "$YES" -eq 1 ]; then printf '%s' "$def"; return; fi
   # The hint names the SAME $def the code returns on empty input — ONE variable, so the advertised
-  # default can never drift from the real fallback (a guarded G4 claim, not decoration).
+  # default can never drift from the real fallback. That makes the printed claim true by
+  # construction rather than by upkeep: there is one value, so there is nothing to keep in step.
   printf '%s\n  [PRESS ENTER TO ACCEPT DEFAULT: %s]: ' "$prompt" "$def" >&2
   IFS= read -r ans || true
   [ -n "$ans" ] && printf '%s' "$ans" || printf '%s' "$def"
@@ -308,7 +309,7 @@ read_version() {
   printf '%s' "$v"
 }
 # route_change <label> <established> <typed> <file-to-edit> — a re-run answer that DIFFERS from the
-# established value is ROUTED, never applied: the installer edits NOTHING pre-existing (cond 2).
+# established value is ROUTED, never applied: the installer edits NOTHING pre-existing (#39).
 # It warns, names the exact file to edit, and offers the AI-assistant handoff (AI-SETUP-PROMPT.md).
 route_change() {
   echo "WARN: you asked to change the $1 from '$2' (established) to '$3'." \
@@ -338,12 +339,12 @@ banner_reconfigure() {
   return 0
 }
 
-# ---- identity interview (ask-everything + re-run REVIEW loop; #39 amendment A/C) ---------------
+# ---- identity interview (ask-everything + re-run REVIEW loop; #39) -----------------------------
 # On a RE-RUN of an established estate, every DETECTABLE established value becomes the OFFERED
 # default (ask()'s hint shows it), so a user can Enter-through to REVIEW or type to change. The
 # installer still edits NOTHING pre-existing — a changed answer is ROUTED (route_change: warn +
-# name the file + assistant handoff), never applied (amendment C / cond 2 absolute). A first run
-# has no established values, so it falls back to today's defaults.
+# name the file + assistant handoff), never applied; the dumb-creator law at the top of this file
+# stands. A first run has no established values, so it falls back to today's defaults.
 interview_board() {
   DEF_BOARD="PROJ"
   BOARD_WIDEN=0
@@ -369,7 +370,7 @@ interview_board() {
 }
 
 # offer_board_widening — FIRST RUN only: offer the documented hyphen widening escape hatch
-# (amendment B). The default grammar's board segment is [A-Z][A-Z0-9]* (no internal hyphen), so a
+# (#39). The default grammar's board segment is [A-Z][A-Z0-9]* (no internal hyphen), so a
 # board that already conforms needs nothing; one the grammar could accept WIDENED gets the offer;
 # one it could not recognise even widened gets a warning and no offer.
 offer_board_widening() {
@@ -548,8 +549,9 @@ create_scaffold() {
   return 0
 }
 
-# ---- config applied AT LAYDOWN, to CREATED files ONLY (amendment C reconciles cond 2) ----------
-# We parameterise only files THIS run created. A pre-existing file is reported, never edited.
+# ---- config applied AT LAYDOWN, to CREATED files ONLY (#39) ------------------------------------
+# This is how ask-everything coexists with the dumb-creator law rather than contradicting it: we
+# parameterise only files THIS run created. A pre-existing file is reported, never edited.
 # created_this_run — the membership scan behind was_created(): is <path> in CREATED?
 created_this_run() {
   local c
@@ -694,12 +696,15 @@ upgrade_is_machinery() {
 #   DECLINED     a body that BOTH tests whether it created a file (`was_created`, or a NEED_*
 #                flag) AND creates that file — its other arm is the declined-edit handler. The
 #                "and creates" half is load-bearing rather than decoration: print_plan tests
-#                NEED_HOOK too and merely NAMES the path, and that is precisely the false member
-#                020 warns no path filter can catch.
-# THE CANARY 020 ASKS FOR COMES FREE. It says a version stamp should have no declined-edit
-# handler, and that writing one is the moment the stamp became user-owned. Write one and this
-# query returns VERSION on the very next run, with nobody assigned to remember.
-# WHAT IT DOES NOT DO, said plainly: the OWNERSHIP test — 020's boundary between classes 2 and 3 —
+#                NEED_HOOK too and merely NAMES the path — a line that merely names a file is not
+#                that file's handler, and it is precisely the false member a path filter cannot
+#                catch (#133).
+# THE CANARY COMES FREE. A version stamp should have NO declined-edit handler, because the
+# installer owns and maintains it; writing one would be the moment the stamp became user-owned
+# (#133). Write one and this query returns VERSION on the very next run, with nobody assigned to
+# remember.
+# WHAT IT DOES NOT DO, said plainly: the OWNERSHIP test — who owns the per-estate value, which is
+# what divides replaceable plain machinery from carried-forward parameterised machinery (#133) —
 # is a human judgement and is NOT mechanised here. This returns CANDIDATES. Today every candidate
 # is user-owned, so the candidate set and class 3 coincide; a future installer-owned candidate
 # has to be ruled on by a person, and the generated list is what puts it in front of them.
@@ -735,8 +740,8 @@ upgrade_param_substituted() {
 
 # upgrade_param_declined <function body> — half two. A body qualifies only if it BOTH carries a
 # creation test AND creates a laid-down file; the path it creates is the subject. A `$VAR` operand
-# is expanded, because the member this half exists for — the hook configuration, which 020 calls
-# the worst one to get wrong, since it governs whether the estate commits by itself — is spelled
+# is expanded, because the member this half exists for — the hook configuration, the worst one to
+# get wrong since it governs whether the estate commits by itself (#133) — is spelled
 # "$TARGET/$HOOK_REL" and would otherwise be reported as the literal text of a variable name.
 upgrade_param_declined() {
   local p v
@@ -810,7 +815,8 @@ plan_upgrade_products() {
   done < <(upgrade_paths)
   # The hook configuration is LAID DOWN but is not a shipped path — it is copied from the shipped
   # example under a different name — so the loop above never sees it. It is class 3 and it is the
-  # member 020 singles out, so it is named in the plan by itself rather than going unmentioned.
+  # one member a substitution-derived list would miss entirely (#133), so it is named in the plan
+  # by itself rather than going unmentioned.
   upgrade_is_param "$HOOK_REL" && [ -e "$TARGET/$HOOK_REL" ] && up_keep+=("$HOOK_REL")
   return 0
 }
@@ -979,7 +985,7 @@ arm_estate_key() {
   return 0
 }
 
-# ---- deploy agents, then AUDIT with validator + status (agent-as-auditor flow, cond 3) ---------
+# ---- deploy agents, then AUDIT with validator + status (agent-as-auditor flow, #39) ------------
 audit_estate() {
   # The REPLACEMENT arm of the gate (#134): an upgrade that rewrote agent definitions created
   # nothing, so the CREATED test alone would leave the deployed copies at their pre-upgrade
@@ -997,7 +1003,7 @@ audit_estate() {
   return 0
 }
 
-# ---- format-divergence nudge (amendment 2): surface, never enforce -----------------------------
+# ---- format-divergence nudge (#39): surface, never enforce -------------------------------------
 # harness-status already WARNs hand-made / non-conforming ticket folders; we echo the pointer so
 # a heavy divergence is noticed at install time. We NEVER rename or edit — the user decides.
 divergence_nudge() {
@@ -1008,7 +1014,7 @@ divergence_nudge() {
   return 0
 }
 
-# ---- CLOSING SUMMARY = a record (amendment D) --------------------------------------------------
+# ---- CLOSING SUMMARY = a record (#39) ----------------------------------------------------------
 print_summary() {
   echo
   echo "======================== INSTALL SUMMARY ========================"
@@ -1125,7 +1131,7 @@ print_summary_knobs() {
   return 0
 }
 
-# ---- AI-ASSISTANT FINAL GATE (amendment 2; OPERATOR-witnessed) ---------------------------------
+# ---- AI-ASSISTANT FINAL GATE (#39; OPERATOR-witnessed) -----------------------------------------
 final_gate() {
   echo
   echo "FINAL STEP — hand this estate to your AI assistant of choice as the last gate." \

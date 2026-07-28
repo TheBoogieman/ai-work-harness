@@ -1,18 +1,28 @@
 # Design notes — why the harness is shaped like this
 Last reviewed: 2026-07-26
 
-**Diagram currency (2026-07-27):** both sheets are CURRENT on WHAT the machinery
-is and WHERE it sits IN AN ESTATE, and now LAG on where it sits in this
-repository. The operator redrew them on 2026-07-24 at REV R / REV G to the full
-agent roster, and every script they name still exists, still does the same job
-and still sits at the same estate-relative path — an installation is unchanged,
-so a reader using a sheet to understand a Work root is not misled. What the
-sheets do not show is the repository split landed by `#136`: every shipped file
-now sits under an estate tree and every development file under a development
-tree, so a sheet read as a map of THIS CHECKOUT points at the pre-split
-locations. The divergence is named rather than drawn — NO WAVE EDITS AN SVG —
-and the operator redraws on their own schedule; `#178` is where that redraw is
-tracked. For current enforcement/status/naming behaviour,
+**Diagram currency (2026-07-28):** both sheets LAG in two ways, and the second is
+newer and sharper than the first.
+
+**The architecture sheet names three scripts the harness no longer ships.**
+`check_run`, `append_entry` and `literate_capture` were removed by `#280` — none
+had a job in the workflow, and nothing called any of them. Their labels are still
+rendered on the sheet, so a reader taking it as an inventory will look for three
+files that are not in their estate. `append_notebook_cell.py` is now the single
+door into a notebook, and a session record is written by a person or by
+`ticket-scribe`. **This is a false claim on a shipped picture and it is the one
+thing on this list that actively misleads** — it is named here, not drawn out, and
+the redraw is the operator's to schedule.
+
+**Both sheets still show the pre-split repository layout.** The operator redrew
+them on 2026-07-24 at REV R / REV G to the full agent roster. What they do not
+show is the split landed by `#136`: every shipped file now sits under an estate
+tree and every development file under a development tree, so a sheet read as a map
+of THIS CHECKOUT points at pre-split locations. Read as a map of an installed
+Work root, they are still right about where things sit.
+
+NO WAVE EDITS AN SVG — the divergences are named rather than drawn, and `#178` is
+where the redraw is tracked. For current enforcement/status/naming behaviour,
 `folder-structure.md` (the constitution) remains the source of truth.
 
 **The pattern (every layer):** file states the rule → agent does the work →

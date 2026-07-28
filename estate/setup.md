@@ -18,9 +18,9 @@ diffs before every write:
 1. **Read the installer's closing SUMMARY** (board key, model pins, the derived
    workspace root, and the tunable knobs with their defaults). Confirm the git
    repo is whitelist-scoped and has **no remote** (estates are local-only).
-2. **Manifest audit:** confirm the estate contains **zero DEV files** — nothing
-   from the DEV class of `dev/ship-manifest.txt` in the source (`dev/`,
-   `CLAUDE.md`, `run_demo.sh`, the manifest itself).
+2. **Shipping audit:** confirm the estate contains **zero DEV files** — nothing
+   from outside the source's `estate/` tree (`dev/`, `.github/`, `CLAUDE.md`,
+   `run_demo.sh`).
 3. **Green verification:** run `_harness/scripts/check_ticket_log.sh` and
    `_harness/scripts/harness-status.sh`; both must be green. Spot-check the
    scaffolded tickets — each has a valid `AI-Knowledge/_index.md` and the

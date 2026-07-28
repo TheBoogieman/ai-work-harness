@@ -1,8 +1,8 @@
 # CLAUDE.md — instructions for an AI working on this repository
 
 > **⚠️ DEVELOPMENT-REPO INSTRUCTIONS ONLY — this file is DEV, it never ships to a
-> work estate.** It is classified DEV in `dev/ship-manifest.txt` and the
-> installer never lays it down. If you are reading this on an installed Work
+> work estate.** It sits outside the `estate/` tree, which is what the installer
+> derives the shipped set from, so it is never laid down. If you are reading this on an installed Work
 > estate, the install was WRONG: this file describes how to develop the harness
 > (branches, PRs, CI) and directly contradicts an estate's law (no remote ever).
 > Delete it from the estate and re-install with `estate/install.sh`, which ships PRODUCT
@@ -52,19 +52,17 @@ Doctrine you must never violate when changing this code:
   both must be green before merge (enforced as required status checks on `main`), and the
   CI run URL is the release evidence. A green lane is NOT proof the demo ran: the job
   always reports, but skips its body on changes that cannot move its verdict — read the
-  run log and say which of the two happened. Which changes skip it is stated once, in
-  `.github/CONTRIBUTING.md`. STOP at the PR — do not merge; the operator merges
-  once CI is green. A red lane means that lane failed; read it — the demo is the
-  truth-teller.
-- Branch grammar + PR anchor (enforced at the merge gate by
-  `.github/workflows/governance.yml`, #47 + #49): a merging branch must match
-  `^[0-9]+-[a-z0-9]+(-[a-z0-9]+)*$` (leading issue number + lowercase-kebab slug, e.g.
-  `47-governance-pair`; no exception prefix) and its leading number must be among the
-  PR's `Fixes #NN` set. Every PR body must carry a closing reference
-  (`Fixes`/`Closes`/`Resolves #NN`) to a real, OPEN issue. Local branch names stay free;
-  the gate is the law. The grammar's one editable home is
-  `dev/scripts/branch-grammar.sh` — these checks never ship to a user's estate (#43).
-  See `.github/CONTRIBUTING.md` for the contributor-facing version.
+  run log and say which of the two happened. Which changes skip its body is decided in
+  `.github/workflows/demo.yml` itself. STOP at the PR — do not merge; the operator
+  merges once CI is green. A red lane means that lane failed; read it — the demo is
+  the truth-teller.
+- Branch grammar + PR anchor — a CONVENTION now, not a gate (#281 removed the workflow
+  that enforced it, along with the docs, shell-lint and Windows-witness workflows). A
+  branch should still match `^[0-9]+-[a-z0-9]+(-[a-z0-9]+)*$` (leading issue number +
+  lowercase-kebab slug, e.g. `281-the-great-cut`) with its leading number among the PR's
+  `Fixes #NN` set, and every PR body should still carry a closing reference
+  (`Fixes`/`Closes`/`Resolves #NN`) to a real, OPEN issue. What keeps it now is review.
+  `dev/scripts/branch-grammar.sh` still holds the pattern and can be run by hand.
 - Before pushing, self-check: the demo passes, the commit is scoped to one
   concern, and every claim you wrote (including in comments) is true at HEAD.
 
@@ -88,12 +86,12 @@ enforcement claim the repository cannot cash.
   without having been in the room, and the same standard binds the repository's
   own documents. A document that is right about most things is worse than one
   that is silent: it teaches its reader to stop checking.
-- *What enforces it.* The docs gate — `dev/scripts/docs-check.sh`, reported
-  by the required check named "docs completeness + separation" — pins a NAMED
-  SET of claims, and each detector reds when its claim leaves the document that
-  owns it, or drifts from the code it describes. That set is a growing subset of
-  the prose and never all of it: no script judges an arbitrary sentence. Every
-  claim outside the set rests on the pre-push self-check and on review.
+- *What enforces it.* Review and the pre-push self-check, and that is now the whole
+  answer. `dev/scripts/docs-check.sh` survives as a HAND-RUN tool with four detectors
+  — broken intra-repo links, unbalanced code fences, carriage returns in documents,
+  dead pointers — the four that catch something a READER hits. It gates nothing: #281
+  cut the seventeen doctrine detectors and deleted the workflow that ran it. Run it
+  before you push (`bash dev/scripts/docs-check.sh`); nothing will run it for you.
 
 **GUARD-PER-BUG — a fix is finished when a guard has been WATCHED failing.**
 - *Statement.* A guard is required for a behaviour change to shipped machinery
@@ -112,10 +110,9 @@ enforcement claim the repository cannot cash.
   is never asserted — that guard is SHOWN failing against the pre-fix code.
 - *Why it exists.* A guard that has never been run to failure is
   indistinguishable from a guard that CANNOT fail, because green is what both
-  look like from the outside; only an executed red tells them apart. The
-  reasoning is recorded in `dev/decisions/011`, and how that red is witnessed was
-  later amended — the amendment lives in `dev/decisions/019` and is NOT restated
-  here; read it before relying on a sampled review pass.
+  look like from the outside; only an executed red tells them apart. (The decision
+  records that carried the longer reasoning were deleted by #281; the rule as stated
+  above is now its own whole statement.)
 - *What enforces it.* The acceptance demo, `dev/scripts/run_demo.sh`, is
   where a guard lives and where it is shown failing. CI runs it on Linux and
   macOS as two required checks, and both must be green before a merge.
@@ -145,9 +142,9 @@ enforcement claim the repository cannot cash.
   on its own; a comment that restates the syntax costs a line and returns
   nothing. The next reader here is routinely an assistant with no memory of the
   session that wrote the code, and it acts on what the comment says.
-- *What enforces it.* No detector — review, and the pre-push self-check. Two
-  required checks constrain the code a comment sits over but never the comment
-  itself: "shellcheck (all tracked *.sh)" and "code-shape (all tracked *.sh)".
+- *What enforces it.* No detector — review, and the pre-push self-check. The two
+  checks that used to constrain the code a comment sits over (shellcheck and
+  code-shape) were removed by #281, so nothing mechanical is left here at all.
 
 ### The other standing obligations
 - Comment-only passes commit SEPARATELY from behaviour changes.
@@ -171,10 +168,9 @@ enforcement claim the repository cannot cash.
   hand — NO WAVE EVER EDITS AN SVG. A wave's only diagram duty is the DESIGN.md
   currency note: when a change touches machinery the sheets depict, update that
   note to name the divergence (honest lag), and the operator redraws on their own
-  schedule. README embeds NO diagrams — one pointer to the folder, no more. The
-  docs check (dev/scripts/docs-check.sh) enforces both: a machinery change
-  with no DESIGN.md note (and no `[diagrams-unaffected: reason]` in the PR body)
-  reds, and any `.svg` reference re-entering README reds.
+  schedule. README embeds NO diagrams — one pointer to the folder, no more. Both
+  halves used to be enforced by the docs check; #281 removed those detectors, so
+  this is now kept by the author and by review.
 
 ## Cross-platform
 This runs on Linux, macOS, and Windows. The canonical DEVELOPMENT lane is a
@@ -184,9 +180,10 @@ hooks-parse issue that once made Git Bash fragile is fixed, #8). Agents working 
 THIS repo execute shell via that native integrated bash, NOT WSL. Linux and macOS
 remain the STANDING fully-tested lanes via CI (the demo runs on ubuntu-latest +
 macos-latest on every push to `main`, and on a pull request whose changes could
-move its verdict — `.github/CONTRIBUTING.md` states which pull requests skip it),
-so a machinery change is proven on both before it merges; a windows-latest MSYS
-job witnesses the Windows lane informationally (non-gating). WSL is used ONLY as
+move its verdict — `.github/workflows/demo.yml` decides which), so a machinery
+change is proven on both before it merges. THE WINDOWS WITNESS JOB IS GONE (#281):
+the Windows lane is now verified only by a hand-run on this seat, which is the
+documented development lane anyway. WSL is used ONLY as
 ephemeral verification (fresh clone → run → discard), never a standing copy;
 plain PowerShell runs git only, not the bash machinery.
 Write portably — no GNU-only flags without a BSD/macOS fallback. Verify on the
@@ -247,11 +244,13 @@ the issue board is clear and the project is self-contained.
   deploy, notebook helper, and the ticket-grammar home).
 - estate/_agents/ — the Copilot agent contracts.
 - dev/scripts/run_demo.sh — the 6-stage acceptance demo; the truth-teller
-  for the shipped product. WHICH changes must run it is stated once, under
-  "Working on this harness" above — it is not every change. It is the RUNNER of
-  a suite split three ways (#143): it owns the shared estate and the stage
-  ORDER, `dev/demo/tour.sh` is the stage-based tour a person watches, and
-  `dev/demo/cases/*.case.sh` is one case file per guard family — where
-  every named guard lives. A new guard goes in the case file for its family (or
+  for the shipped product, and now the ONLY required check on a merge. WHICH
+  changes must run it is stated once, under "Working on this harness" above — it is
+  not every change. It is the RUNNER of a suite split three ways (#143): it owns the
+  shared estate and the stage ORDER, `dev/demo/tour.sh` is the stage-based tour a
+  person watches, and `dev/demo/cases/*.case.sh` is one case file per guard family —
+  where every named guard lives. A new guard goes in the case file for its family (or
   a new one), and a NEW case file must be added to `demo_order()` in the runner;
   the runner's `[case-completeness]` check reds by name if it is not.
+- dev/scripts/docs-check.sh — four hand-run documentation detectors (#281). Nothing
+  runs it for you; run it before you push.

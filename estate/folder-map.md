@@ -6,9 +6,8 @@ which part of the machinery owns it. This is the estate's **structure** — the
 `README.md`.
 
 The map lives in its own document because it has to grow every time the
-machinery grows: a check requires every shipped script's filename to appear
-below, so a front page that carried the map would grow with the machinery and
-stop being a front page.
+machinery grows: every shipped script's filename appears below, so a front page
+that carried the map would grow with the machinery and stop being a front page.
 
 ```
 Work/                                        [git root · local-only · whitelist]
@@ -18,7 +17,7 @@ Work/                                        [git root · local-only · whitelis
 ├── AGENTS.md                                door-note → folder-structure.md
 ├── install.sh                               the dumb creator that laid this estate down · manual: installing.md
 ├── setup.md                                 the AI-assistant final gate, pasted in after the install
-├── .github/workflows/                       CI — the demo on Linux + macOS: every push to main; PRs by scope (see .github/CONTRIBUTING.md)
+├── .github/workflows/                       CI — the acceptance demo on Linux + macOS, and nothing else: every push to main; PRs by scope
 │
 ├── _harness/
 │   ├── demo/                                THE ACCEPTANCE SUITE'S other two halves [dev-only · never installed]
@@ -28,13 +27,10 @@ Work/                                        [git root · local-only · whitelis
 │   └── scripts/                             THE MACHINERY (versioned)
 │       ├── check_ticket_log.sh              ← sessionStart hook │ sessionEnd (bonus)
 │       │       └── watermark →              ~/.harness/validated/<ticket>  [state · unversioned]
-│       │       └── append_entry.sh          record appender: text+ticket+section → stamped atomic append under an existing header, then check_ticket_log verdict
 │       ├── harness-status.sh                stdout report + one primary-observation record (each WARN's first-seen, for aging #71) · roster = _agents/ · checks siblings
 │       ├── ticket-grammar.sh                recognition home: TICKET_RE + ticket predicates · validator + status both source it (edit to retarget your board)
 │       ├── portability.sh                   shared GNU/BSD shims: ts14→epoch, sourced by validator + status (one home · no drift)
-│       ├── append_notebook_cell.py          ← check-scribe · runs on venv_global [user-created prereq]
-│       ├── literate_capture.py              transport: delimited SQL/python blocks → notebook cells (hash-deduped)
-│       ├── check_run.sh                     run-and-record: runs a command, appends one notebook cell (command, output, exit code, timestamp)
+│       ├── append_notebook_cell.py          ← check-scribe · THE ONE DOOR into a notebook: appends a real executable cell · runs on venv_global [user-created prereq]
 │       ├── make_context_pack.sh             → ~/Desktop/harness-pack-*.zip [disposable · outside repo]
 │       ├── tracker_sweep.sh                 human-run · on-demand board-vs-estate drift report · pluggable fetch seam · tracker-agnostic · fails open offline
 │       ├── retro_stats.sh                    dumb counter for the retrospective agent · tickets-by-month + checks + promotions · offline · exits 0 always

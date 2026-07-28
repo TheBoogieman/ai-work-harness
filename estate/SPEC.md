@@ -5,7 +5,7 @@ does **now**, not what it aspires to. If a line here is not true at HEAD, it is
 a defect — fix the product or fix the line. README is the tour and Setup guide;
 this file is the contract and the reader's key. The rules the product enforces
 live in `folder-structure.md` (the constitution); the reasoning behind each
-design choice lives in `dev/decisions/` (the ADR backfill). This file sits between
+design choice lives in the code and prose that implement it. This file sits between
 them: the guarantees, plus a glossary so a newcomer can read the vocabulary the
 product uses about itself. The rules that govern DEVELOPMENT of the harness are
 not here — they live with the development instructions, which never ship.
@@ -65,7 +65,7 @@ why. The founding goals, unchanged since:
   reports each move as it happens with the command that puts it back; it carries
   the files holding your own settings forward untouched; and it never touches a
   record. Running it twice is safe and says so. What it may and may not reach is
-  recorded in `dev/decisions/020`.
+  recorded in `install.sh`'s own header, which states the exception and its bounds.
 - **One home per fact.** Each rule, pattern, or convention lives in exactly one
   file; everything else points at it. The ticket-recognition pattern, the branch
   grammar, and the ship/dev classification each have a single editable home.

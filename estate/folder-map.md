@@ -30,7 +30,7 @@ Work/                                        [git root · local-only · whitelis
 │       ├── harness-status.sh                stdout report + one primary-observation record (each WARN's first-seen, for aging #71) · roster = _agents/ · checks siblings
 │       ├── ticket-grammar.sh                recognition home: TICKET_RE + ticket predicates · validator + status both source it (edit to retarget your board)
 │       ├── portability.sh                   shared GNU/BSD shims: ts14→epoch, sourced by validator + status (one home · no drift)
-│       ├── append_notebook_cell.py          ← check-scribe · THE ONE DOOR into a notebook: appends a real executable cell · runs on venv_global [user-created prereq]
+│       ├── append_notebook_cell.py          ← check-scribe · THE ONE DOOR into a notebook: appends a real executable cell · runs on whatever python3 is on the path, needs nbformat [user-created prereq]
 │       ├── make_context_pack.sh             → ~/Desktop/harness-pack-*.zip [disposable · outside repo]
 │       ├── tracker_sweep.sh                 human-run · on-demand board-vs-estate drift report · pluggable fetch seam · tracker-agnostic · fails open offline
 │       ├── retro_stats.sh                    dumb counter for the retrospective agent · tickets-by-month + checks + promotions · offline · exits 0 always
@@ -58,7 +58,7 @@ Work/                                        [git root · local-only · whitelis
 │       ├── AI-Knowledge/                    ← knowledge-keeper (capture) │ curator (compact)
 │       │   ├── _index.md                    roster · tombstones
 │       │   └── *.md                         —promotion (approved)→ General AI-Knowledge/
-│       ├── Checks/                          audit-trail notebook (any language) · venv_global kernel
+│       ├── Checks/                          audit-trail notebook (any language) · workspace default kernel
 │       ├── Logs/                            [gitignored · regenerable bulk]
 │       └── Dump/                            [gitignored · re-droppable inputs]
 │

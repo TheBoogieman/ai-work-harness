@@ -24,8 +24,7 @@ Installing takes two steps and about ten minutes. **Every command,
 prerequisite and caveat lives in exactly one place —
 [installing.md](estate/installing.md)**, which also carries reconfiguration and the
 hook-activation caveat. This page repeats none of them on purpose: two install
-documents drift apart, so the install commands are registered as a
-single-telling fact and the docs gate reds if one appears on both pages.
+documents drift apart, so every install command is told once, there.
 
 ## Assumptions
 
@@ -62,13 +61,11 @@ Anything marked *swappable* degrades gracefully if you differ.
   **How the Windows lane is verified (the one home for this fact):** by the
   maintainer, by hand — `run_demo.sh` ending in *ALL 6 DEMO STAGES PASSED* in
   Git-Bash/Cygwin on real Windows hardware, which is the seat this harness is
-  developed on. **No automated check gates Windows.** The lanes that gate a
-  change are the Linux + macOS ones named in **Setup**; a `windows-latest`
-  runner does re-run the demo under MSYS bash, but only after a merge and on
-  manual request — never on a pull request — and it is declared informational,
-  so it can neither block a change nor vouch for one. On your own Windows box
-  the demo you run (**Setup**, step 1) is the proof; there is no green badge
-  standing in for it.
+  developed on. **No automated check touches Windows at all** — the
+  `windows-latest` witness job that used to re-run the demo informationally was
+  removed (#281). The lanes that gate a change are the Linux + macOS ones named in
+  **Setup**. On your own Windows box the demo you run (**Setup**, step 1) is the
+  proof; there is no green badge standing in for it.
 
 ---
 
@@ -76,9 +73,9 @@ Anything marked *swappable* degrades gracefully if you differ.
 
 The annotated estate structure — every folder, what it is for, which part of the
 machinery owns it, and the four states a `Tickets/` folder can be in — lives in
-**[folder-map.md](estate/folder-map.md)**. It has its own document because a check
-requires every shipped script's filename to appear in it, so the map grows every
-time the machinery grows; a front page cannot carry that and stay a front page.
+**[folder-map.md](estate/folder-map.md)**. It has its own document because it names
+every shipped script, so the map grows every time the machinery grows; a front page
+cannot carry that and stay a front page.
 
 ## The layers, bottom to top
 
@@ -128,35 +125,31 @@ telling lives in `folder-structure.md` (Part II) or the home named inline.
 
 - `harness-status.sh` — estate-wide health report; every FAIL line ends with its fix.
 - `tracker_sweep.sh` — board-vs-estate drift through a pluggable, tracker-agnostic
-  fetch seam that fails open offline (`dev/decisions/015-pluggable-tracker-fetch-seam.md`).
+  fetch seam that fails open offline; the seam is documented in the script's header.
 - `make_context_pack.sh` — scrubbed, disposable zip of the harness for external
   review; skim before it leaves the machine.
 - `harness-housekeeping.sh` — `git gc`/repack to reclaim `.git` growth, all history kept.
 - `harness-drill.sh` — rehearse recovery on a calm day: three read-only modes
   (`restore-drill`, `bundle-drill`, `undo-drill`); modes documented in the script's header.
 
-## Capture — checks, records, literate blocks
+## Capture — checks and records
 
-Everything you verify or record goes through a dumb, one-home writer — never a
-hand-edit — so half-written records are never seen and the format detail lives in
-exactly one place: each script's own commented header. Three capture tools:
+**There is one door into a notebook, and a session record is written by hand.**
 
-- **`_harness/scripts/literate_capture.py`** — *literate capture*: mark blocks in
-  your `.sql`/`.py` with a `%%` host-language comment (the comment lines above
-  become the why-note), and it appends each as a markdown + code cell pair —
-  content-hashed and re-runnable, sources byte-unchanged, transport never
-  execution. The delimiter grammar and properties live in the script's header.
-- **`_harness/scripts/append_entry.sh`** — the sanctioned way to add an entry to a
-  ticket `.md` (as `append_notebook_cell.py` is for notebooks): text + ticket +
-  an **existing** header → a stamped, atomic append, then `check_ticket_log.sh`
-  runs and its verdict passes straight through (write-then-validate; a red never
-  un-writes a good record). It **declines with the fix named**, never invents
-  structure. Detail: the script's header.
-- **`_harness/scripts/check_run.sh`** — capture an ad-hoc terminal check as you run
-  it: `check_run.sh "<command>"` runs your literal command and records four fields
-  (command, output, exit code, timestamp) to the notebook named by
-  `CHECK_RUN_NOTEBOOK`. Adds no auth surface, fails open, never touches the
-  network. Detail: the script's header.
+- **`_harness/scripts/append_notebook_cell.py`** — the single deterministic writer
+  for `Checks/checks_master.ipynb`: one why-note + one **real, executable** code
+  cell per verified check. The `check-scribe` agent appends the cell; you open the
+  notebook and run it, and the notebook format binds the actual output to the cell
+  that produced it. An executed cell is a stronger record than a transcription.
+  Detail: the script's own commented header.
+- **A session entry in a ticket `.md` you write yourself**, or ask the
+  `ticket-scribe` agent to write. It is not a stamping job: an entry restates
+  where the ticket now stands, which is judgement. `check_ticket_log.sh` then
+  validates what was written and names the exact fix if it is wrong.
+
+Three earlier tools sat here — a record appender, a shell-output transcriber and a
+block-transport helper (#280). Nothing called any of them, and none had a job the
+two routes above do not do better; they were removed rather than kept for symmetry.
 
 ## The one pattern, repeated everywhere
 
@@ -179,9 +172,9 @@ States — Operational Rules*.
 
 > **About the SOURCE repository, not your work estate.** This section is for
 > people hacking on the harness itself (branches, PRs, CI). None of it is estate
-> setup — the files it names (`CLAUDE.md`, `.github/`, `run_demo.sh`) are
-> classified DEV in `dev/ship-manifest.txt` and never ship. To *install* the
-> harness, see **Setup** above; nothing here points a user at dev machinery.
+> setup — the files it names (`CLAUDE.md`, `.github/`, `run_demo.sh`) live
+> outside the `estate/` tree and never ship. To *install* the harness, see
+> **Setup** above; nothing here points a user at dev machinery.
 
 The harness is developed the way you'd use it: clone the repo and point an
 agentic AI assistant at it. The repo root's **`CLAUDE.md`** — read automatically
@@ -201,16 +194,18 @@ and the regression guard a fix owes all live there, in one home, so the two
 documents cannot drift apart. Read it before you change anything; don't hand-edit
 the machinery from memory.
 
-**Merge-gate governance:** work is issues-first — open or claim an issue, branch
-or fork, then open a PR whose body closes it (`Fixes #NN`). Beyond the demo, two
-checks gate every PR into `main` (`.github/workflows/governance.yml`): the branch
-name must match `^[0-9]+-[a-z0-9]+(-[a-z0-9]+)*$` (leading issue number +
-lowercase-kebab slug, e.g. `47-governance-pair`) with its number among the PR's
-`Fixes #NN`, and the PR must reference a real, open issue via a closing keyword.
-Local branch names stay free; the gate is the law, and fork PRs get grammar
-leniency but still need the issue anchor. These checks are development
-infrastructure and never ship to an estate. Full contributor guide:
-[CONTRIBUTING.md](.github/CONTRIBUTING.md).
+**Merge gate:** work is issues-first — open or claim an issue, branch or fork,
+then open a PR whose body closes it (`Fixes #NN`). **One workflow gates every merge**
+(`.github/workflows/demo.yml`): the acceptance demo on Linux *and* macOS, required on
+both because the GNU/BSD split is real and the demo is the only thing that exercises
+it, plus **four documentation detectors** — broken links, unbalanced code fences,
+carriage returns, dead pointers — which run as a step in the Linux lane on every pull
+request and fail it when one reds. Four separate gates used to sit beside the demo:
+documentation, governance, shell lint and a Windows witness. They were removed (#281)
+— a checking layer built to make an implementer paranoid has no job once the findings
+come from using the product; the four detectors worth keeping moved into the lane that
+was already running. Branch naming and issue anchoring are still the convention
+(`NN-lowercase-kebab`), now kept by review rather than by a script.
 
 **For an external design review**, take the scrubbed, disposable zip from
 `make_context_pack.sh` (the maintenance port, above) to a design session, then let
@@ -226,13 +221,11 @@ folder map** or **Developing this harness** above is not repeated here, and
 
 | Document | Purpose (its one home) | Referenced by |
 |----------|------------------------|---------------|
-| `estate/SPEC.md` | The project spec: what the harness guarantees today, and the vocabulary those guarantees are written in. | `docs-check` (adr-shape: the glossary check) |
+| `estate/SPEC.md` | The project spec: what the harness guarantees today, and the vocabulary those guarantees are written in. | this page |
 | `estate/General AI-Knowledge/Skills/` (`_index.md`, `SKILL-TEMPLATE.md`, `SQL-Writing/SKILL.md`) | Worker-tier craft modules, discovered index-first. | `AGENTS.md` (rule 7), constitution (Skills Convention) |
-| `estate/General AI-Knowledge/AI Harness/DESIGN.md` | Design notes + the dated diagram-currency ledger (the honest-lag record). | `docs-check` (currency-note) |
+| `estate/General AI-Knowledge/AI Harness/DESIGN.md` | Design notes + the dated diagram-currency ledger (the honest-lag record). | the folder map, `CLAUDE.md` (diagram ownership) |
 | `estate/General AI-Knowledge/AI Harness/` (Architecture + Session-flow sheets) | The two operator-maintained blueprint drawings — what the machine is, and how a day moves through it. | the folder map, `DESIGN.md` |
-| `dev/DEVELOPMENT.md` | The dev-loop method doc: the four roles + five working laws. | `dev-loop/`, `docs-check` (dev-loop) |
-| `dev/dev-loop/` (`SETUP.md` + three `*.template.md`) | Starter kit to stand up the multi-seat dev loop; the templates ship **empty**. | `DEVELOPMENT.md`, `docs-check` (dev-loop) |
-| `dev/decisions/` (`000` template + the numbered records) | Architecture Decision Records — *the why* of each design choice. | `docs-check` (adr-shape); later ADRs cross-cite |
+| `CLAUDE.md` | The development rules: the four standing rules, the branch/PR loop, the environment. | this page (Developing this harness) |
 
 ---
 

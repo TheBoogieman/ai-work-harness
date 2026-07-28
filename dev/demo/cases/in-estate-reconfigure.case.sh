@@ -5,10 +5,11 @@
 # install.sh ships PRODUCT into the estate and has a real reconfigure-on-re-run feature (established
 # detection + route_change). But the natural in-estate gesture (cd ~/Work && ./install.sh) has
 # TARGET==SOURCE (the estate's own copy), which used to abort at the source guard BEFORE that
-# feature ran — and a naive relax dies at the manifest wall (the manifest is DEV, doesn't ship).
-# The fix: a KEYED estate (harness.estate=true, #60) enters RECONFIGURE-ONLY mode — skip
-# manifest/laydown/copy, run the interview + validator + status + summary. This proves it COMPLETES
-# (reaches the audit, no manifest error, no abort) and stays a DUMB CREATOR (a pre-existing file
+# feature ran — and a naive relax dies at the source-tree wall (an estate has no estate/ tree
+# beneath it to copy from; before #282 the same wall was spelled as a missing ship manifest).
+# The fix: a KEYED estate (harness.estate=true, #60) enters RECONFIGURE-ONLY mode — skip the
+# create path entirely, run the interview + validator + status + summary. This proves it COMPLETES
+# (reaches the audit, no source-tree error, no abort) and stays a DUMB CREATOR (a pre-existing file
 # byte-unchanged).
 
 ir_reconfigure_completes() {
@@ -30,8 +31,13 @@ ir_reconfigure_completes() {
   echo "$G64_OUT" | grep -q -- '--- validator ---' \
     || { echo "BUG [in-estate-reconfigure]: did not reach the validator/status audit (reconfigure" \
            "did not complete)"; exit 1; }
-  if echo "$G64_OUT" | grep -qi 'cannot find.*ship-manifest'; then
-    echo "BUG [in-estate-reconfigure]: hit a manifest error — the create path was not skipped"
+  # The create-path guard's own refusal, matched on the tail of its message rather than on the
+  # path it names — the path is a temp dir that changes every run. That message moved from the
+  # ship manifest to the source tree in #282; the assertion is the same one either way, that a
+  # keyed estate never reaches the guard at all.
+  if echo "$G64_OUT" | grep -qi 'run install.sh from the harness source'; then
+    echo "BUG [in-estate-reconfigure]: hit the create-path source-tree guard — the create path"
+    echo "    was not skipped"
     exit 1
   fi
   if echo "$G64_OUT" | grep -qi 'source distribution itself'; then
@@ -43,8 +49,8 @@ ir_reconfigure_completes() {
   [ "$G64_BEFORE" = "$G64_AFTER" ] \
     || { echo "BUG [reconfigure-creates-only]: the reconfigure re-run changed a pre-existing file" \
            "($G64_PROBE)"; exit 1; }
-  echo "  ok [in-estate-reconfigure] — banner + validator/status reached, no manifest error, no" \
-    "abort; pre-existing file byte-unchanged"
+  echo "  ok [in-estate-reconfigure] — banner + validator/status reached, no source-tree error," \
+    "no abort; pre-existing file byte-unchanged"
 }
 
 # #64 block preserved: only a KEYED estate gains passage; a genuine source checkout (no key) and a

@@ -3,7 +3,7 @@
 # primary observation on disk — each WARN's first-seen day, for aging (#71) — and NOTHING derived.
 # "Side-effect-free" is the safety property (running status can never corrupt an estate); the one
 # stored record is a primary observation the filesystem doesn't remember, not a stored derived view.
-# See dev/decisions/014. Grammar: OK: / WARN: / FAIL: / NOTE: single lines. Exit !=0 if any FAIL.
+# Grammar: OK: / WARN: / FAIL: / NOTE: single lines. Exit !=0 if any FAIL.
 #
 # SHAPE (#128): each check below is a FUNCTION that main() calls in the order the report has always
 # printed. The code inside is the code that used to sit at the top level, MOVED rather than

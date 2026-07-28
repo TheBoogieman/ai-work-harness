@@ -16,8 +16,8 @@
 #
 # WHAT RETIREMENT IS. The installer MOVES the file into a quarantine folder inside the estate and
 # reports the move at the moment it happens, naming the command that puts it back. It is never a
-# delete (dev/decisions/020), and it is never applied to a record: a row naming a path outside the
-# machinery trees is REFUSED out loud and the file is left where it is.
+# delete — never, under any circumstance — and it is never applied to a record: a row naming
+# a path outside the machinery trees is REFUSED out loud and the file is left where it is.
 #
 # FORMAT — one row per superseded path, TAB-delimited, three fields:
 #   <version><TAB><estate-relative path><TAB><what replaced it, in one sentence>
@@ -28,7 +28,18 @@
 # EXAMPLE ROW, shown commented out so it is never acted on:
 #   0.2.0	_harness/scripts/old-name.sh	renamed to _harness/scripts/new-name.sh
 #
-# THERE ARE NO DATA ROWS TODAY, and that is the honest state rather than an oversight: at 0.1.0
-# no release has yet superseded anything, so there is nothing for an upgrade to retire. The
-# machinery is proven against a fixture row by the acceptance suite's [upgrade-*] guards, not by
-# this file having content. Add the row in the same change that performs the rename.
+# THE THREE ROWS BELOW ARE THIS LIST'S FIRST (#280). They are not renames — they are removals,
+# which is the other way a path becomes superseded: the product no longer ships these three, so an
+# estate installed before this release is holding machinery that nothing calls. Retirement is what
+# takes them out of that estate without deleting anything: each is MOVED into `_retired/` and the
+# command that puts it back is printed as it moves.
+#
+# WHY THESE THREE WENT. None had a job in the workflow this harness is for, and nothing called any
+# of them. A session record restates where a ticket now stands, which is judgement, not stamping —
+# a person writes it, or `ticket-scribe` does. A check is recorded as a REAL executable notebook
+# cell through `append_notebook_cell.py` and run by the operator, which binds the output to the
+# cell that produced it; transcribing a shell command's output into markdown is the weaker record.
+# And a pure transport helper that executes nothing is a copy-and-paste an editor already does.
+0.1.0	_harness/scripts/append_entry.sh	removed — write the session entry by hand or via the ticket-scribe agent; check_ticket_log.sh still validates it
+0.1.0	_harness/scripts/check_run.sh	removed — record checks as executable cells via append_notebook_cell.py and run them in the notebook
+0.1.0	_harness/scripts/literate_capture.py	removed — append notebook cells with append_notebook_cell.py

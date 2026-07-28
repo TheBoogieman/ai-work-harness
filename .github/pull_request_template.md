@@ -18,7 +18,7 @@ Fixes #NN
      one, write a keyword for each.
 
      Your branch must lead with one of the numbers closed here (the NN-slug grammar), except on a
-     fork, where the branch name is informational. Full rules: .github/CONTRIBUTING.md. -->
+     fork, where the branch name is informational. -->
 
 ## What this changes
 

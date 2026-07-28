@@ -8,10 +8,10 @@
 # files to create: 0" and each prerequisite already in place says so and is left untouched.
 #
 # THAT LAW TAKES EXACTLY ONE EXCEPTION, and it is opt-in: `--upgrade` (#134). The law used to be
-# stated here as ABSOLUTE and no longer is, because the word became false the day this mode landed
-# — the reasoning, the bound and the three classes of file it is drawn over are recorded in
-# dev/decisions/020 and are NOT restated here. Two things about it belong at the top of this file,
-# because a reader meeting the word "dumb creator" has to know them straight away:
+# stated here as ABSOLUTE and no longer is, because the word became false the day this mode
+# landed. The bound and the three classes of file the exception is drawn over are stated at
+# UPGRADE MODE below. Two things about it belong at the top of this file, because a reader
+# meeting the word "dumb creator" has to know them straight away:
 #   * WITHOUT `--upgrade` NOTHING BELOW CHANGES. Every default run still creates only what is
 #     absent. The exception is reachable only by asking for it by name.
 #   * THE EXCEPTION IS A MOVE, NEVER A DELETE. A superseded or replaced file is moved into a
@@ -19,8 +19,8 @@
 #     that puts it back; a RECORD is never touched at all. Nothing this installer touches, in
 #     either mode, ever stops existing.
 #
-# It is the SHIPPING BOUNDARY (#43 cond 2): it lays down PRODUCT files ONLY, read from
-# dev/ship-manifest.txt (the one classification home). A fresh estate contains ZERO dev files.
+# It is the SHIPPING BOUNDARY (#43 cond 2): it lays down PRODUCT files ONLY, DERIVED from the
+# source tree by derive_product_paths below (#282). A fresh estate contains ZERO dev files.
 #
 # Runs FROM the source distribution (this file's directory), targeting an estate dir.
 #   Usage: install.sh [--dry-run] [--yes] [--upgrade] [TARGET_DIR]
@@ -75,19 +75,20 @@ set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # THE INSTALLER NOW SHIPS FROM INSIDE THE ESTATE TREE (#136), so where this file sits is what
 # says which of two things it is running as, and the two need different roots:
-#   SOURCE DISTRIBUTION — <root>/estate/install.sh, with the development tree (and the manifest
-#                         inside it) sitting beside the estate tree. SOURCE is <root>.
+#   SOURCE DISTRIBUTION — <root>/estate/install.sh, with the development tree sitting beside the
+#                         estate tree. SOURCE is <root>.
 #   INSTALLED ESTATE    — <estate>/install.sh, laid down at the estate root with nothing above
 #                         it. SOURCE is the estate itself, and the create path never runs.
-# The DISCRIMINATOR is the manifest, which is the same fact guard_manifest already reads — not
-# the directory's NAME, which a user may rename the moment they clone.
-if [ -f "$HERE/../dev/ship-manifest.txt" ]; then
+# The DISCRIMINATOR is THE DEVELOPMENT TREE (#282): a source checkout has one sitting beside the
+# estate tree, an installed estate never does — that was always the real fact, and the ship
+# manifest that used to be tested here was only standing in for it. NOT the directory's NAME,
+# which a user may rename the moment they clone.
+if [ -d "$HERE/../dev" ]; then
   SOURCE="$(cd "$HERE/.." && pwd)"
 else
   SOURCE="$HERE"
 fi
 ESTATE_SRC="$HERE"                              # the estate tree: what a laydown copies FROM
-MANIFEST="$SOURCE/dev/ship-manifest.txt"
 # INVOKE — how the caller ran this script, spelled relative to SOURCE, so the fix the refusal
 # below prescribes is the command that actually works from where they are standing.
 INVOKE="install.sh"
@@ -203,11 +204,15 @@ guard_upgrade_mode() {
   exit 1
 }
 
-# guard_manifest — the estate's own shipped install.sh has NO manifest (it is DEV, does not ship)
-# and reconfigure-only never reads one, so require the manifest ONLY for the create path (#64).
-guard_manifest() {
-  [ "$RECONFIGURE" -eq 1 ] || [ -f "$MANIFEST" ] || {
-    echo "install: cannot find $MANIFEST — run install.sh from the harness source distribution." >&2
+# guard_source_tree — the create path copies FROM the source distribution's estate tree, and the
+# estate's own shipped install.sh has no such tree beneath it (an estate IS the estate tree, with
+# nothing above it). Reconfigure-only never copies anything, so require it ONLY for the create
+# path (#64). This replaces the old manifest test (#282): the file is gone, and the thing the
+# create path actually needs is the tree it reads, not a list describing it.
+guard_source_tree() {
+  [ "$RECONFIGURE" -eq 1 ] || [ -d "$SOURCE/estate" ] || {
+    echo "install: cannot find $SOURCE/estate — run install.sh from the harness source" \
+         "distribution." >&2
     exit 1
   }
   return 0
@@ -319,7 +324,7 @@ route_change() {
 
 # ---- reconfigure-mode banner (#64): announce the mode UP FRONT, before the interview, so BOTH
 # intents are visible immediately — reconfigure is served here; create/repair points back to the
-# source checkout. Every line is true in-estate: there genuinely is no manifest/source here to
+# source checkout. Every line is true in-estate: there genuinely is no source tree here to
 # create or repair from.
 banner_reconfigure() {
   [ "$RECONFIGURE" -eq 1 ] || return 0
@@ -425,11 +430,31 @@ interview_models() {
   return 0
 }
 
-# ---- PRODUCT laydown plan (create-absent-only, from the manifest) ------------------------------
-# The manifest is TAB-delimited "CLASS<TAB>path"; take PRODUCT paths only. install.sh and setup.md
-# are PRODUCT (the user-facing surface); the manifest classifies them so they are laid down too.
+# ---- the shipped set, DERIVED from the tree (#282) ---------------------------------------------
+# THE RULE, and it is the whole of it: everything under the estate tree, plus the five files an
+# external system requires at the REPOSITORY ROOT — the two the code host renders (README.md,
+# LICENSE), the two git itself applies (.gitignore, .gitattributes), and the one an AI assistant
+# auto-loads (AGENTS.md). Those five are not a convenience list and must not be folded into the
+# estate tree to tidy the rule: moving any of them breaks the host, git, or the assistant.
+#
+# DERIVED FROM THE GIT INDEX, NEVER FROM A DIRECTORY WALK. A walk would sweep up whatever happens
+# to be sitting untracked in a developer's checkout — a scratch ticket, a stray note — and lay it
+# down in a user's estate. `git ls-files` answers "what does this distribution consist of", which
+# is the question being asked. It replaces dev/ship-manifest.txt, a hand-maintained list of 142
+# rows that could drift from the tree it claimed to describe; the rule cannot.
+derive_product_paths() {
+  git -C "$SOURCE" ls-files | while IFS= read -r dp_p; do
+    case "$dp_p" in
+      estate/*|README.md|AGENTS.md|LICENSE|.gitignore|.gitattributes) printf '%s\n' "$dp_p" ;;
+    esac
+  done
+}
+
+# ---- PRODUCT laydown plan (create-absent-only, from the derivation) ----------------------------
+# install.sh and setup.md are PRODUCT (the user-facing surface); they live under the estate tree,
+# so the rule above picks them up with everything else and they are laid down too.
 plan_product() {
-  product_paths="$(awk -F'\t' '$1=="PRODUCT"{print $2}' "$MANIFEST")"
+  product_paths="$(derive_product_paths)"
   while IFS= read -r row; do
     [ -n "$row" ] || continue
     # THE STRIP IS A TREE RELATIONSHIP, not a text edit: what is wanted is the row's path
@@ -593,8 +618,8 @@ init_git_record() {
 }
 
 # ---- CREATE PATH (#64): laydown plan -> file-copy execute -> git init. SKIPPED WHOLESALE in
-# reconfigure-only mode — every step below reads the manifest or copies from $SOURCE, none of
-# which exists in-estate. The order of these calls IS the order the old top-level block ran in.
+# reconfigure-only mode — every step below derives the shipped set or copies from $SOURCE, and
+# neither exists in-estate. The order of these calls IS the order the old top-level block ran in.
 create_path() {
   plan_product
   plan_scaffold
@@ -619,7 +644,7 @@ reconfigure_only() {
 }
 
 # ================================================================================================
-# ---- UPGRADE MODE (#134) — the dumb-creator law's one exception (dev/decisions/020) -------------
+# ---- UPGRADE MODE (#134) — the dumb-creator law's one exception --------------------------------
 # ================================================================================================
 # THREE VERBS, and nothing else happens to an estate:
 #   CREATE   an absent shipped file is copied in, exactly as the create path does.
@@ -633,11 +658,11 @@ reconfigure_only() {
 # Anything that is neither — a record, or a file carrying the user's own settings — is KEPT and
 # said out loud. There is no fourth verb, and in particular there is no delete.
 
-# upgrade_paths — the estate-relative shipped paths, read from the manifest, which is the SAME one
-# classification home the create path reads. The `estate/` prefix is a fact about the source tree,
-# not about an installed estate, so it is stripped exactly as plan_product strips it.
+# upgrade_paths — the estate-relative shipped paths, from the SAME derivation the create path uses
+# (#282), so the two can never disagree about what ships. The `estate/` prefix is a fact about the
+# source tree, not about an installed estate, so it is stripped exactly as plan_product strips it.
 upgrade_paths() {
-  awk -F'\t' '$1=="PRODUCT"{print $2}' "$MANIFEST" | sed 's|^estate/||'
+  derive_product_paths | sed 's|^estate/||'
   return 0
 }
 
@@ -657,9 +682,10 @@ upgrade_is_machinery() {
 }
 
 # ---- CLASS 3 (parameterised machinery), DERIVED FROM THIS INSTALLER'S OWN STRUCTURE ------------
-# dev/decisions/020 forbids a curated list here, and gives the reason: a list kept beside the
-# installer drifts from it silently, and the drift is invisible exactly when it matters — at an
-# upgrade. So the set is GENERATED, as a union of two halves, from the PARSED function bodies of
+# NO CURATED LIST IS ALLOWED HERE, and the reason is the same one that removed the ship
+# manifest: a list kept beside the installer drifts from it silently, and the drift is
+# invisible exactly when it matters — at an upgrade. So the set is GENERATED, as a union of
+# two halves, from the PARSED function bodies of
 # this file (`declare -f`, which strips comments — so no comment and no closing-summary line can
 # inject a member):
 #   SUBSTITUTED  a body that runs this installer's one in-place substitution verb, `sedi`. The
@@ -781,7 +807,7 @@ plan_upgrade_products() {
     if cmp -s "$(src_of "$rel")" "$TARGET/$rel"; then up_same=$((up_same + 1)); continue; fi
     up_replace+=("$rel")
   done < <(upgrade_paths)
-  # The hook configuration is LAID DOWN but is not a manifest row — it is copied from the shipped
+  # The hook configuration is LAID DOWN but is not a shipped path — it is copied from the shipped
   # example under a different name — so the loop above never sees it. It is class 3 and it is the
   # member 020 singles out, so it is named in the plan by itself rather than going unmentioned.
   upgrade_is_param "$HOOK_REL" && [ -e "$TARGET/$HOOK_REL" ] && up_keep+=("$HOOK_REL")
@@ -1118,7 +1144,7 @@ main() {
   guard_target_is_source
   guard_upgrade_mode
   guard_no_remote
-  guard_manifest
+  guard_source_tree
   banner_reconfigure
   interview_board
   interview_models

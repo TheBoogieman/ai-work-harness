@@ -19,14 +19,14 @@ so running it in place is correct:
   auto-detect GNU vs BSD userland):
   ```bash
   git clone https://github.com/TheBoogieman/ai-work-harness.git ~/ai-work-harness
-  cd ~/ai-work-harness && bash _harness/scripts/run_demo.sh
+  cd ~/ai-work-harness && bash dev/scripts/run_demo.sh
   ```
 - **Windows** — the integrated **Git-Bash/Cygwin** terminal (plain PowerShell can
   push git but cannot run the bash machinery). This run, by hand on real Windows
   hardware, *is* how the Windows lane is verified — see **Assumptions**:
   ```bash
   git clone https://github.com/TheBoogieman/ai-work-harness.git ~/ai-work-harness
-  cd ~/ai-work-harness && bash _harness/scripts/run_demo.sh
+  cd ~/ai-work-harness && bash dev/scripts/run_demo.sh
   ```
 
 It must end with **ALL 6 DEMO STAGES PASSED**. The demo inits the local git
@@ -36,8 +36,8 @@ with an exact fix**, round-trips the notebook helper, breaks and restores an
 agent deployment, and builds a scrubbed context pack with a manifest self-audit.
 The same demo runs in CI on Linux + macOS — in full on every push to `main`, and
 on a pull request whose changes could move its verdict — so the GNU/BSD
-portability branches are exercised for real, not via shims. Which pull requests
-skip it is stated once, in `.github/CONTRIBUTING.md`.
+portability branches are exercised for real, not via shims. It is the only
+required check on a merge into `main`.
 
 **2 · Install onto your estate and wire your assistant (~10 minutes).**
 
@@ -90,8 +90,8 @@ Re-running `install.sh` serves three different intents, each with its own home:
   stays your (or your assistant's) deliberate act via `setup.md`, on the record.
 - **Complete or repair** (add or fix estate files): run `install.sh` from your
   **source checkout**, targeting the estate (`bash estate/install.sh ~/Work`). The estate's
-  own copy cannot create files — there is no manifest or source to copy from in-estate
-  — and the reconfigure banner points you back to the checkout for this.
+  own copy cannot create files — there is no source tree inside an estate to copy from —
+  and the reconfigure banner points you back to the checkout for this.
 - **Upgrade** (bring an existing estate's machinery up to a newer source): run
   `install.sh` from your **source checkout** with `--upgrade`, targeting the estate.
   Look before you leap — `--dry-run` prints the whole plan and touches nothing:

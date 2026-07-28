@@ -46,7 +46,6 @@ jobs:
         os: [ubuntu-latest, macos-latest]
     steps:
       # fetch-depth 0 so the scope step below can diff this PR against its base branch.
-      # (docs.yml already checks out full history for the same reason.)
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -91,14 +90,12 @@ jobs:
 
           # THE DOCUMENTATION RULE (#115), stated so a reader can check it against the demo:
           #  (1) Anything other than a content EDIT (status M) runs the demo — whatever the path,
-          #      documentation included. The demo's #43 classification guard asserts over the
-          #      TRACKED FILE SET (every tracked file classified in the ship-manifest, and every
-          #      manifest line a real file), so an add/delete/rename can red the demo even when
-          #      the file itself is pure prose.
+          #      documentation included. An add, delete or rename changes the tracked file set,
+          #      and the suite asserts over that set (the [case-completeness] guard is the
+          #      clearest example), so it can red even when the file itself is pure prose.
           #  (2) An edit is skippable only if its path is one of: a *.md at the repository root,
-          #      anything under dev/decisions/ (the ADRs), or anything under
-          #      "estate/General AI-Knowledge/AI Harness/" (the DESIGN note and the operator's drawings).
-          #      Nothing else — the default is to run.
+          #      or anything under "estate/General AI-Knowledge/AI Harness/" (the DESIGN note
+          #      and the operator's drawings). Nothing else — the default is to run.
           # Deliberately NOT skippable although they are markdown: estate/_agents/*.agent.md (the demo
           # asserts their frontmatter and the reader spine), estate/General AI-Knowledge/Skills/** (the
           # #84 index<->tree guard), and estate/Tickets/** (the demo's own fixture ticket).
@@ -124,7 +121,7 @@ jobs:
               *.md) continue ;;                                    # a root-level *.md is documentation
             esac
             case "$path" in
-              dev/decisions/*|"estate/General AI-Knowledge/AI Harness/"*) continue ;;
+              "estate/General AI-Knowledge/AI Harness/"*) continue ;;
             esac
             echo "SCOPE: '$path' is not documentation the demo is blind to — running the demo."
             run=true

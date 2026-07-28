@@ -18,7 +18,7 @@
 # text gate + parser (so it is decidable offline and the demo can revert-prove it).
 
 # The closing-keyword pattern. This is the ONE definition of "a valid anchor";
-# CONTRIBUTING.md and the README/CLAUDE docs describe it and must match (G4).
+# README.md and CLAUDE.md describe the same convention in prose and must match.
 CLOSING_RE='(Fixes|Closes|Resolves)[ ]+#[0-9]+'
 
 text="$(cat)"
@@ -31,7 +31,7 @@ if [[ -z "$nns" ]]; then
   {
     echo "FAIL [PR references an issue]: this PR has no closing issue reference."
     echo "  Every change on main traces to a numbered, discussable record. To anchor this PR:"
-    echo "  open an issue describing the change, then add 'Fixes #NN' to this PR body — see CONTRIBUTING.md."
+    echo "  open an issue describing the change, then add 'Fixes #NN' to this PR body — see CLAUDE.md."
     echo "  (Welcome — this is how the project keeps every change reviewable, not a bounce.)"
   } >&2
   exit 1

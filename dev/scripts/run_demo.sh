@@ -15,11 +15,12 @@
 # Proves the harness machinery works on THIS machine in ~20s. No Copilot needed. Safe: uses temp
 # state, creates+destroys one scratch ticket.
 #
-# WHAT THIS SUITE DOES NOT KNOW (#42 decoupling, cond 2): the documentation-completeness and
-# branch-grammar DOC checks that once lived inside it have MOVED to dev/scripts/docs-check.sh
-# (run by .github/workflows/docs.yml). The suite carries ZERO documentation knowledge — doc state
-# can never again red the product demo. The demo gates the PRODUCT; docs.yml gates the docs. Two
-# truths, two instruments.
+# WHAT THIS SUITE DOES NOT KNOW (#42 decoupling, cond 2): the documentation checks that once
+# lived inside it MOVED OUT to dev/scripts/docs-check.sh, and the suite carries ZERO
+# documentation knowledge — doc state can never red the product demo. That separation is
+# unchanged; what changed in #281 is the other side of it. docs-check.sh is now a HAND-RUN
+# tool with four detectors and no workflow behind it, and THIS suite is the only required
+# check on a merge. If the demo is green, nothing else is standing behind it.
 #
 # HOW A UNIT IS NAMED AND FOUND: demo_order() below prints one unit per line as "<kind>:<name>".
 # "tour:<name>" calls tour_<name> in tour.sh; "case:<name>" calls case_<name>, which is defined by
@@ -136,31 +137,26 @@ demo_order() {
     case:index-grammar \
     tour:notebook \
     case:notebook-direct-exec \
-    case:literate-capture \
     tour:deploy \
     case:ticket-recognition \
     case:session-clock \
     case:housekeeping \
     case:worktree-store \
     case:backfill-guards \
-    case:check-run \
     case:recovery-drill \
     case:undo-drill \
     case:status-consolidation \
-    case:append-entry \
     case:warn-aging \
     case:roster-completes \
     case:junk-ignored \
     case:oversize-root \
     case:retro-stats \
     case:record-whitelisted \
-    case:governance-gates \
     case:crlf-tripwire \
     tour:break-restore \
     case:no-fixed-temp \
     case:agent-invocability \
     case:skills-index \
-    case:ship-classification \
     case:installer \
     case:worked-example \
     case:tracker-sweep \

@@ -7,7 +7,7 @@
 #   (a) install-into-source EXITS NON-ZERO (guards the abort — break the condition and it reds);
 #   (b) stderr offers a runnable `bash install.sh <separate-dir>/Work` fix (revert the message ->
 #       it reds).
-# Fixture: a minimal SOURCE-like dir (install.sh + the manifest it reads) git-init'd with NO REMOTE.
+# Fixture: a bare dir holding nothing but install.sh, git-init'd with NO REMOTE.
 # Isolation matters — a real checkout carries an origin remote, and install.sh's SEPARATE
 # remote-refusal guard would MASK a broken source-guard (both abort), so (a) could never red. With
 # no remote here, a broken source-guard falls through to the --yes --dry-run plan-and-exit-0
@@ -18,7 +18,9 @@ case_source_refusal() {
   echo "--- #62 source-refusal prescribes: install-into-source aborts with a concrete fix ---"
   G62_SRC=$(mktemp -d)
   cp estate/install.sh "$G62_SRC/install.sh"
-  mkdir -p "$G62_SRC/dev"; cp dev/ship-manifest.txt "$G62_SRC/dev/ship-manifest.txt"
+  # NOTHING ELSE IS COPIED IN. The fixture used to carry a ship manifest beside install.sh; that
+  # file is gone (#282) and the installer no longer looks for one. What decides the run is that
+  # TARGET and SOURCE are the same directory, which is true of this dir either way.
   # a repo but with NO remote, so the remote-refusal guard cannot mask (a)
   git -C "$G62_SRC" init -q
   set +e

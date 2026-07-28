@@ -50,20 +50,42 @@ in_install() {   # $1 = guard name to report under; $2.. = install.sh's own argu
   exit 1
 }
 
-# in_product_count — how many of the manifest's PRODUCT files actually exist in an estate.
+# in_shipped_paths / in_dev_paths — the two halves of the tree, DERIVED the way install.sh derives
+# them (#282): everything under estate/ plus the five root files an external system requires at the
+# repository root is PRODUCT; every other tracked file is DEV. The ship manifest that used to
+# answer both questions is gone, so these guards ask the tree directly. The rule is RESTATED here
+# rather than imported from install.sh on purpose — a guard that called the code under test could
+# not tell a broken rule from a broken installer.
+in_shipped_paths() {
+  git ls-files | while IFS= read -r in_p; do
+    case "$in_p" in
+      estate/*|README.md|AGENTS.md|LICENSE|.gitignore|.gitattributes) printf '%s\n' "$in_p" ;;
+    esac
+  done
+}
+in_dev_paths() {
+  git ls-files | while IFS= read -r in_p; do
+    case "$in_p" in
+      estate/*|README.md|AGENTS.md|LICENSE|.gitignore|.gitattributes) ;;
+      *) printf '%s\n' "$in_p" ;;
+    esac
+  done
+}
+
+# in_product_count — how many of the DERIVED PRODUCT files actually exist in an estate.
 # THE SUBJECT-EXISTS PRIMITIVE (#264). WHY it is needed: every guard below concludes something
 # about an installed estate's CONTENTS, and an empty result set carries two meanings — "nothing
 # found" and "nothing looked at". A guard that cannot tell them apart reports success about an
 # estate that was never created. Counting the PRODUCT files that DID arrive separates the two.
-# Manifest paths carry the source tree's `estate/` prefix, which install.sh strips when it lays
-# them down, so strip it here too. The total is DERIVED at run time and never hard-coded: a
-# number baked into this file would silently go stale on the next legitimate manifest edit.
-in_product_count() {   # $1 = estate dir; prints how many manifest PRODUCT files are present
+# Derived paths carry the source tree's `estate/` prefix, which install.sh strips when it lays
+# them down, so strip it here too. The total is read at run time and never hard-coded: a
+# number baked into this file would silently go stale the next time a shipped file is added.
+in_product_count() {   # $1 = estate dir; prints how many derived PRODUCT files are present
   local est="$1" p rel n=0
   while IFS= read -r p; do
     rel=${p#estate/}
     if [ -e "$est/$rel" ]; then n=$((n + 1)); fi
-  done < <(awk -F'\t' '$1=="PRODUCT"{print $2}' dev/ship-manifest.txt)
+  done < <(in_shipped_paths)
   printf '%s\n' "$n"
 }
 
@@ -75,7 +97,7 @@ in_product_count() {   # $1 = estate dir; prints how many manifest PRODUCT files
 #     its OWN fresh estate so it depends on no other sub-case, and reds by name when the answer
 #     is no. Deliberately NOT an expected-count check: the claim is "the installer laid something
 #     down", not "the installer laid down exactly N files", which would be a claim about the
-#     manifest's size and would go stale on the next entry added to it.
+#     size of the shipped set and would go stale the next time a file joins it.
 in_installer_ran() {
   local i39_ran i39_n
   i39_ran="$I39_ROOT/ranest"
@@ -83,7 +105,7 @@ in_installer_ran() {
   i39_n=$(in_product_count "$i39_ran")
   [ "$i39_n" -gt 0 ] \
     || { echo "BUG [installer-ran]: install.sh --yes exited 0 but laid down NONE of the PRODUCT" \
-           "files the manifest names — the installer ran and did nothing"; exit 1; }
+           "files the derivation names — the installer ran and did nothing"; exit 1; }
   echo "  ok [installer-ran] — the installer created the estate ($i39_n PRODUCT files present)"
 }
 
@@ -110,10 +132,10 @@ in_product_only() {
   i39_n=$(in_product_count "$I39_EST")
   [ "$i39_n" -gt 0 ] \
     || { echo "BUG [product-only]: nothing to scan — the estate holds ZERO of the PRODUCT files" \
-           "the manifest names, so 'contains no DEV files' would be vacuously true"; exit 1; }
+           "the derivation names, so 'contains no DEV files' would be vacuously true"; exit 1; }
   while IFS= read -r d; do
     if [ -e "$I39_EST/$d" ]; then echo "  DEV leak: $d"; i39_leak=1; fi
-  done < <(awk -F'\t' '$1=="DEV"{print $2}' dev/ship-manifest.txt)
+  done < <(in_dev_paths)
   [ "$i39_leak" -eq 0 ] \
     || { echo "BUG [product-only]: a DEV file reached the installed estate"; exit 1; }
   # The success line says what was MEASURED, not the broader claim: an estate that demonstrably
@@ -313,7 +335,7 @@ in_missing_value_audible() {
 }
 
 # ================================================================================================
-# --- #134 UPGRADE MODE — the dumb-creator law's one exception (dev/decisions/020) ----------------
+# --- #134 UPGRADE MODE — the dumb-creator law's one exception -----------------------------------
 # ================================================================================================
 # SEVEN guards over ONE fixture, because the fixture is the expensive part of this family: a
 # scratch SOURCE distribution built from this tree, an estate installed from it, that estate
@@ -357,6 +379,13 @@ in_upgrade_fixture() {
   while IFS= read -r f; do
     mkdir -p "$UP_SRC/$(dirname "$f")"; cp -p "$f" "$UP_SRC/$f"
   done < <(git ls-files)
+  # THE SCRATCH SOURCE IS GIT-INITIALISED, because install.sh now derives the shipped set from
+  # the git index (#282) and a bare directory copy has none — the installer would find nothing
+  # to lay down. `add -f` because the copy carries this repository's whitelist .gitignore,
+  # which would otherwise ignore most of what was just copied in; the set being forced is
+  # exactly the set `git ls-files` handed over, so nothing untracked can enter this way.
+  git -C "$UP_SRC" init -q
+  git -C "$UP_SRC" add -A -f
   in_up_run upgrade-fixture --yes "$UP_EST"
   in_up_customise
   in_up_advance_source
@@ -377,9 +406,9 @@ in_up_customise() {
     && mv "$I39_ROOT/hk.t" "$UP_HOOK"
   printf '# a hand-made note\nLast reviewed: 2026-01-01\nnobody but me put this here\n' > "$UP_REC"
   # THE RECORD GUARD'S SUBJECT HAS TO BE ONE THE UPGRADE COULD ACTUALLY REACH. A hand-made file
-  # under a knowledge folder is not in the manifest, so no version of this installer would ever
+  # under a knowledge folder is not a shipped path, so no version of this installer would ever
   # consider it and asserting it survived proves nothing. The SHIPPED TEMPLATE TICKET is the
-  # subject that bites: it IS a manifest path, so only the record test stops it being replaced —
+  # subject that bites: it IS a shipped path, so only the record test stops it being replaced —
   # and editing it here is what makes the estate's copy differ from the source's, which is the
   # condition under which a replacement would happen. A user annotating their example ticket is
   # the most ordinary thing in this estate.
@@ -406,8 +435,10 @@ in_up_advance_source() {
   local sc="$UP_SRC/estate/_harness/scripts"
   printf '0.2.0-upgrade-fixture\n' > "$UP_SRC/estate/VERSION"
   cp -p "$sc/retro_stats.sh" "$sc/retro-stats.sh"; rm -f "$sc/retro_stats.sh"
-  sed 's|scripts/retro_stats\.sh|scripts/retro-stats.sh|' "$UP_SRC/dev/ship-manifest.txt" \
-    > "$I39_ROOT/mf.t" && mv "$I39_ROOT/mf.t" "$UP_SRC/dev/ship-manifest.txt"
+  # The rename has to reach the scratch source's INDEX, because that is what the installer now
+  # derives the shipped set from (#282). This line used to edit the ship manifest instead: the
+  # same declaration, made to the tree rather than to a list describing the tree.
+  git -C "$UP_SRC" add -A -f
   printf '%s\t%s\t%s\n' 0.2.0-upgrade-fixture _harness/scripts/retro_stats.sh \
     "renamed to _harness/scripts/retro-stats.sh" >> "$UP_SRC/estate/_harness/retire-list.tsv"
   printf '# upgrade fixture: an upstream change to a plain machinery file.\n' \
@@ -465,7 +496,7 @@ in_upgrade_retires() {
     || { echo "BUG [upgrade-retires]: the replacement was never laid down"; exit 1; }
   find "$UP_EST/_retired" -name retro_stats.sh 2>/dev/null | grep -q . \
     || { echo "BUG [upgrade-retires]: the superseded file is not in quarantine — it was DELETED," \
-           "and deletion is forbidden in every class (dev/decisions/020)"; exit 1; }
+           "and deletion is forbidden in every class"; exit 1; }
   grep -A2 '^RETIRED ' "$I39_ROOT/up.first" | grep -q 'RESTORE IT WITH: *mv ' \
     || { echo "BUG [upgrade-retires]: the retirement was not reported with the command that puts" \
            "it back. The quarantine folder is untracked, so that report is the only signal"; \
@@ -495,14 +526,14 @@ in_upgrade_keeps_settings() {
     "and named in the run"
 }
 
-# (p) upgrade-record-untouched: class 1 of dev/decisions/020. A record is never touched, under any
+# (p) upgrade-record-untouched: class 1 of the upgrade's three. A record is never touched, under any
 #     circumstance, retirement included.
-#     ITS SUBJECT IS THE USER-EDITED SHIPPED TICKET, because that is a manifest path whose estate
+#     ITS SUBJECT IS THE USER-EDITED SHIPPED TICKET, because that is a shipped path whose estate
 #     copy DIFFERS from the source's — the exact condition under which every other machinery path
 #     IS replaced, so only the record test spares it. That difference is asserted in the fixture
 #     builder, BEFORE the upgrade runs; see the note there for why it cannot be asked afterwards.
-#     The hand-made knowledge note is checked too, but it is the weaker claim: nothing in the
-#     manifest names it, so no version of this installer would ever have considered it.
+#     The hand-made knowledge note is checked too, but it is the weaker claim: it is not a
+#     shipped path, so no version of this installer would ever have considered it.
 in_upgrade_record_untouched() {
   cmp -s "$I39_ROOT/snap.tick" "$UP_TICK" \
     || { echo "BUG [upgrade-record-untouched]: the upgrade REPLACED a user-edited ticket. An"; \

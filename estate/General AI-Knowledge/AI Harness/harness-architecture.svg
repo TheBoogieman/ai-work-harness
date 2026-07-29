@@ -30,8 +30,8 @@
   <text x="60" y="112" fill="#9DBBD6" font-size="13" letter-spacing="3">PERSONAL AI WORKSPACE · ~/Work</text>
   <line x1="60" y1="128" x2="700" y2="128" stroke="#CFE4F5" stroke-width="1.5"></line>
   <text x="2200" y="86" fill="#7FD1F0" font-size="12" letter-spacing="2" text-anchor="end">DWG HARNESS-001</text>
-  <text x="2200" y="104" fill="#9DBBD6" font-size="11" letter-spacing="2" text-anchor="end">REV R · SHEET 1 OF 2</text>
-  <text x="2200" y="124" fill="#9DBBD6" font-size="10" letter-spacing="1" text-anchor="end">R — roster expanded: readers, retrospective, capture scripts, human-knowledge folder</text>
+  <text x="2200" y="104" fill="#9DBBD6" font-size="11" letter-spacing="2" text-anchor="end">REV S · SHEET 1 OF 2</text>
+  <text x="2200" y="124" fill="#9DBBD6" font-size="10" letter-spacing="1" text-anchor="end">S — three tools removed, filenames settled on one spelling, constitution renamed</text>
 
   
   <text x="60" y="168" fill="#7FD1F0" font-size="11" letter-spacing="3">L5 — THINKING</text>
@@ -67,7 +67,7 @@
   <text x="676" y="464" fill="#E8F2FB" font-size="12.5" font-weight="700">ticket-init</text>
   <text x="676" y="484" fill="#9DBBD6" font-size="10.5">interactive kickoff · SONNET · DIRECT · at pickup</text>
   <text x="676" y="503" fill="#9DBBD6" font-size="10.5">guided mode on an empty estate</text>
-  <text x="80" y="540" fill="#9DBBD6" font-size="10.5">*via append_notebook_cell.py</text>
+  <text x="80" y="540" fill="#9DBBD6" font-size="10.5">*via append-notebook-cell.py</text>
   <rect x="1040" y="344" width="300" height="156" fill="none" stroke="#CFE4F5" stroke-width="1"></rect>
   <text x="1054" y="363" fill="#9DBBD6" font-size="10.5">readers — narrate, never write</text>
   <rect x="1052" y="372" width="276" height="36" fill="#1B3E5F" stroke="#CFE4F5" stroke-width="1.5"></rect>
@@ -86,7 +86,7 @@
   <text x="60" y="620" fill="#7FD1F0" font-size="11" letter-spacing="3">L3 — FILESYSTEM · SINGLE SOURCE OF TRUTH</text>
   <rect x="60" y="632" width="1300" height="256" fill="none" stroke="#CFE4F5" stroke-width="1.5"></rect>
   <rect x="80" y="648" width="460" height="78" fill="#1B3E5F" stroke="#7FD1F0" stroke-width="2"></rect>
-  <text x="96" y="674" fill="#E8F2FB" font-size="14" font-weight="700">folder-structure.md</text>
+  <text x="96" y="674" fill="#E8F2FB" font-size="14" font-weight="700">CONSTITUTION.md</text>
   <text x="96" y="694" fill="#9DBBD6" font-size="11">THE CONSTITUTION — every rule lives here</text>
   <text x="96" y="710" fill="#9DBBD6" font-size="11">conventions · atomicity · context budget</text>
   <rect x="560" y="648" width="460" height="78" fill="#1B3E5F" stroke="#CFE4F5" stroke-width="1.5"></rect>
@@ -99,7 +99,7 @@
   <text x="96" y="822" fill="#9DBBD6" font-size="11">&#34;Last reviewed:&#34; dated · incl. this drawing</text>
   <rect x="560" y="760" width="460" height="78" fill="#1B3E5F" stroke="#CFE4F5" stroke-width="1.5"></rect>
   <text x="576" y="786" fill="#E8F2FB" font-size="14" font-weight="700">AGENTS.md</text>
-  <text x="576" y="806" fill="#9DBBD6" font-size="11">THE LOADER — six-rule contract Copilot reads</text>
+  <text x="576" y="806" fill="#9DBBD6" font-size="11">THE LOADER — seven-rule contract Copilot reads</text>
   <text x="576" y="822" fill="#9DBBD6" font-size="11">on every surface → points at the constitution</text>
   <rect x="1040" y="648" width="300" height="78" fill="#1B3E5F" stroke="#CFE4F5" stroke-width="1.5"></rect>
   <text x="1056" y="674" fill="#E8F2FB" font-size="14" font-weight="700">General Human Knowledge/</text>
@@ -139,7 +139,7 @@
   <g transform="translate(320,0)">
   <text x="1080" y="168" fill="#7FD1F0" font-size="11" letter-spacing="3">M — MAINTENANCE PORT · OFFLINE, ON DEMAND</text>
   <rect x="1080" y="180" width="780" height="300" fill="none" stroke="#7FD1F0" stroke-width="1.5" stroke-dasharray="6 4"></rect>
-  <text x="1100" y="212" fill="#E8F2FB" font-size="13" font-weight="700">make_context_pack.sh</text>
+  <text x="1100" y="212" fill="#E8F2FB" font-size="13" font-weight="700">make-context-pack.sh</text>
   <text x="1100" y="232" fill="#9DBBD6" font-size="11">scrub table → zip + manifest → Desktop (disposable) → external review</text>
   <text x="1100" y="268" fill="#E8F2FB" font-size="13" font-weight="700">harness-status.sh</text>
   <text x="1100" y="288" fill="#9DBBD6" font-size="11">estate report: last-session + AI-Knowledge counts · naming/size/commit-lag WARNs</text>
@@ -186,21 +186,15 @@
   </g>
   </g>
 
-  <text x="60" y="1204" fill="#7FD1F0" font-size="11" letter-spacing="3">SCRIPTS · THE MACHINERY (NEW) — SHARED SCRIPTS REMAIN AT RIGHT</text>
+  <text x="60" y="1204" fill="#7FD1F0" font-size="11" letter-spacing="3">SCRIPTS · THE MACHINERY — SHARED SCRIPTS REMAIN AT RIGHT</text>
   <rect x="60" y="1216" width="1300" height="100" fill="none" stroke="#CFE4F5" stroke-width="1.5" stroke-dasharray="6 4"></rect>
   <g font-size="12.5" font-weight="700" fill="#E8F2FB">
     <rect x="80" y="1234" width="196" height="64" fill="#1B3E5F" stroke="#CFE4F5" stroke-width="1.5"></rect>
-    <text x="94" y="1272">check_run</text>
-    <rect x="292" y="1234" width="196" height="64" fill="#1B3E5F" stroke="#CFE4F5" stroke-width="1.5"></rect>
-    <text x="306" y="1272">append_entry</text>
-    <rect x="504" y="1234" width="196" height="64" fill="#1B3E5F" stroke="#CFE4F5" stroke-width="1.5"></rect>
-    <text x="518" y="1272">tracker_sweep</text>
-    <rect x="716" y="1234" width="196" height="64" fill="#1B3E5F" stroke="#CFE4F5" stroke-width="1.5"></rect>
-    <text x="730" y="1272">harness-drill</text>
-    <rect x="928" y="1234" width="196" height="64" fill="#1B3E5F" stroke="#CFE4F5" stroke-width="1.5"></rect>
-    <text x="942" y="1272">retro_stats</text>
-    <rect x="1140" y="1234" width="196" height="64" fill="#1B3E5F" stroke="#CFE4F5" stroke-width="1.5"></rect>
-    <text x="1154" y="1272">literate_capture</text>
+    <text x="94" y="1272">tracker-sweep</text>
+    <rect x="612" y="1234" width="196" height="64" fill="#1B3E5F" stroke="#CFE4F5" stroke-width="1.5"></rect>
+    <text x="626" y="1272">harness-drill</text>
+    <rect x="1144" y="1234" width="196" height="64" fill="#1B3E5F" stroke="#CFE4F5" stroke-width="1.5"></rect>
+    <text x="1158" y="1272">retro-stats</text>
   </g>
 
   <g font-size="10" fill="#9DBBD6" letter-spacing="1">
@@ -208,6 +202,6 @@
     <text x="60" y="1364">PROJECT: AI HARNESS v2</text>
     <text x="560" y="1364">DRAWN: THE HARNESS PROJECT</text>
     <text x="1060" y="1364">CLIENT: YOU</text>
-    <text x="2200" y="1364" text-anchor="end">SCALE: NTS · 2026-07-24</text>
+    <text x="2200" y="1364" text-anchor="end">SCALE: NTS · 2026-07-29</text>
   </g>
 </svg>

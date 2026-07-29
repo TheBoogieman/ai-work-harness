@@ -215,7 +215,7 @@ seat is also a machine that uses the harness for real, so a hand-run without the
 flag deploys whatever contracts your working tree happens to carry — including
 fixture pins — into the operator's live assistant directory, which is exactly how
 that directory came to hold a fake model pin and the path of a script that exists
-under no name. The deploy refuses to overwrite a directory it cannot account for,
+under no name. The deploy refuses a directory another estate has already claimed,
 so the flag is not the only thing standing between you and that; it is still the
 thing that makes the run leave nothing behind. Pick targets under a temp root, and
 delete them — the home directory currently holds five throwaway estates nobody

@@ -70,7 +70,9 @@
 # and OUTSIDE the record, while the estate goes on reporting healthy.
 !/WORKED-EXAMPLE.md
 !/install.sh
-!/VERSION
+# No `!/VERSION` line here any more (#298): the estate ships no version stamp, so there is no such
+# path to re-include. A whitelist line for a file that does not exist is harmless to git and
+# misleading to a reader, who takes this block as the inventory of what an estate root holds.
 !/_agents/
 !/_harness/
 !/Tickets/

@@ -54,7 +54,7 @@
 #     Most functions here do. Three other shapes satisfy the property WITHOUT one and must not be
 #     swept into it — the test is "did an unstated branch decide this status", never "is the word
 #     `return` present":
-#       * EMITTERS, whose tail IS the emission — detect_model, read_version, src_of, route_change.
+#       * EMITTERS, whose tail IS the emission — detect_model, src_of, route_change.
 #         The zero belongs to the emission itself; no branch chose it.
 #       * DELIBERATE PROPAGATORS — sedi and was_created hand the caller the inner command's status
 #         ON PURPOSE, which is the entire reason each exists.
@@ -115,7 +115,7 @@ UPGRADE=0
 # report the run prints is then the only signal a retirement ever gives.
 QUAR_REL="_retired/$(date -u +%Y%m%dT%H%M%SZ)"
 QUAR_DEST=""
-# The shipped retire list — versioned DATA, read from the source, never inferred from a disk.
+# The shipped retire list — DATA, read from the source, never inferred from a disk.
 RETIRE_LIST="$ESTATE_SRC/_harness/retire-list.tsv"
 up_create=(); up_replace=(); up_retire=(); up_keep=()
 up_same=0; up_record=0; UPGRADE_PARAM=""
@@ -294,20 +294,13 @@ note_missing_pin() {
   echo "note: no model pin readable from _agents/$1 — offering the placeholder $2 instead." >&2
   return 0
 }
-# read_version <root> — the harness version recorded at <root>, or the word "unknown" when no
-# VERSION file is there. It READS the stamp; it never restates the number, so VERSION stays the one
-# home of that fact and this script carries no version literal to drift from it. "unknown" is the
-# honest answer for an estate laid down before the stamp existed — a number inferred from what the
-# estate happens to contain would be a guess that a reader would take for a fact. Only the FIRST
-# line is read (the stamp is one line) and a trailing carriage return is stripped, because a clone
-# with core.autocrlf=true checks the file out CRLF and the version would otherwise carry a CR.
-read_version() {
-  local v=""
-  [ -f "$1/VERSION" ] && { IFS= read -r v < "$1/VERSION" || true; }
-  v="${v%$'\r'}"
-  [ -n "$v" ] || v="unknown"
-  printf '%s' "$v"
-}
+# THERE IS NO read_version HERE ANY MORE (#298). This installer used to read a shipped VERSION
+# stamp and echo it — in the upgrade plan and in the closing summary — and that was the whole of
+# what it did with it: no comparison, no arithmetic, no branch anywhere. The apparatus was a label,
+# and the label was wrong six times before anyone checked it against what the tagged release
+# actually shipped. An installed estate now makes NO version claim of any kind, and "am I current?"
+# is answered by `--upgrade --dry-run`, which compares FILES against a source checkout. A file
+# comparison cannot quietly go stale the way a hand-maintained number does.
 # route_change <label> <established> <typed> <file-to-edit> — a re-run answer that DIFFERS from the
 # established value is ROUTED, never applied: the installer edits NOTHING pre-existing (#39).
 # It warns, names the exact file to edit, and offers the AI-assistant handoff (AI-SETUP-PROMPT.md).
@@ -672,7 +665,7 @@ upgrade_paths() {
 # upgrade_is_machinery <estate-relative path> — MACHINERY (classes 2 and 3, replaceable) or RECORD
 # (class 1, never touched)? STRUCTURAL, with no list of record folders to keep in step: a shipped
 # path is machinery when it is ROOT-PINNED (no directory component — the estate's own documents,
-# its installer, its version stamp, its git control files) or when it sits under one of the TWO
+# its installer, its git control files) or when it sits under one of the TWO
 # trees this installer lays the harness machinery down into. Everything else is a record.
 # THE FAIL-SAFE DIRECTION IS "LEAVE IT ALONE": an unrecognised folder reads as a record, so a
 # record folder invented after this was written is protected without anyone editing this function.
@@ -699,10 +692,13 @@ upgrade_is_machinery() {
 #                NEED_HOOK too and merely NAMES the path — a line that merely names a file is not
 #                that file's handler, and it is precisely the false member a path filter cannot
 #                catch (#133).
-# THE CANARY COMES FREE. A version stamp should have NO declined-edit handler, because the
-# installer owns and maintains it; writing one would be the moment the stamp became user-owned
-# (#133). Write one and this query returns VERSION on the very next run, with nobody assigned to
-# remember.
+# THE CANARY COMES FREE, and it is a PROPERTY of the query rather than a list of suspects: any
+# installer-owned file that acquires a declined-edit handler is reported here on the very next run,
+# with nobody assigned to remember. That is the moment such a file has become user-owned in fact
+# (#133), and the query surfaces it whether or not anyone noticed writing the handler. The example
+# this note used to give was the VERSION stamp; that file no longer exists (#298), and naming a
+# deleted file as the standing illustration would teach a reader to look for something that is not
+# there — the property is what was load-bearing, not the specimen.
 # WHAT IT DOES NOT DO, said plainly: the OWNERSHIP test — who owns the per-estate value, which is
 # what divides replaceable plain machinery from carried-forward parameterised machinery (#133) —
 # is a human judgement and is NOT mechanised here. This returns CANDIDATES. Today every candidate
@@ -776,7 +772,7 @@ upgrade_is_param() {
 
 # upgrade_retire_rows — the shipped retire list, one row per superseded path. Its format, why it
 # is data rather than inference, and why it is CUMULATIVE (which is what makes an upgrade that
-# skips versions retire everything across the whole span) are documented in the file itself; that
+# skips releases retire everything across the whole span) are documented in the file itself; that
 # is its one home and none of it is restated here. Carriage returns are stripped so a checkout
 # made with core.autocrlf=true parses identically to one made with `input`.
 upgrade_retire_rows() {
@@ -830,7 +826,9 @@ plan_upgrade_products() {
 plan_upgrade_retirements() {
   local row rel
   while IFS= read -r row; do
-    rel="$(printf '%s' "$row" | cut -f2)"
+    # Field ONE is the path. The retire list carried a leading version column until #298; removing
+    # it SHIFTED every field left, and this is one of the three sites that read the shifted row.
+    rel="$(printf '%s' "$row" | cut -f1)"
     [ -n "$rel" ] || continue
     [ -e "$TARGET/$rel" ] || continue
     if upgrade_is_machinery "$rel"; then up_retire+=("$row"); continue; fi
@@ -843,8 +841,9 @@ plan_upgrade_retirements() {
 # ---- print the plan: every create, replace and retire, BEFORE anything happens -----------------
 print_upgrade_plan() {
   echo "=== upgrade plan for estate: $TARGET ==="
-  echo "  version $(read_version "$TARGET")  ->  $(read_version "$ESTATE_SRC")" \
-       "  (this source's stamp)"
+  # No version line here any more (#298). It used to read both stamps and print "old -> new", which
+  # was a label comparison; the rows below are a FILE comparison, and they are what actually tells
+  # a user whether this estate is current.
   print_upgrade_rows
   print_upgrade_keeps
   echo "  untouched: $up_record record file(s); $up_same machinery file(s) already current"
@@ -865,9 +864,12 @@ print_upgrade_rows() {
   for p in ${up_replace[@]+"${up_replace[@]}"}; do
     echo "  replace  $p   (your copy is moved to quarantine first)"
   done
+  # The retire line names the path (field one) and WHAT REPLACED IT (field two). It used to open
+  # with the release that performed the supersession, read from a third column that no longer
+  # exists (#298); the sentence is what a reader acts on, and the number never was.
   for row in ${up_retire[@]+"${up_retire[@]}"}; do
-    echo "  retire   $(printf '%s' "$row" | cut -f2)   (superseded at" \
-         "$(printf '%s' "$row" | cut -f1): $(printf '%s' "$row" | cut -f3))"
+    echo "  retire   $(printf '%s' "$row" | cut -f1)  " \
+         "($(printf '%s' "$row" | cut -f2))"
   done
   return 0
 }
@@ -945,10 +947,15 @@ upgrade_execute() {
     cp -p "$(src_of "$rel")" "$TARGET/$rel"
     quarantine_report "REPLACED" "$rel" "your copy, superseded by this release's"
   done
+  # Field one is the path, field two is what replaced it — the same shifted-left row the plan reads
+  # (#298). The parenthetical the user sees at the moment of the move is that SENTENCE, passed
+  # THROUGH UNPREFIXED: it already opens with its own verb ("removed — …", "renamed to …"), so any
+  # "superseded" lead-in this line added would read as a doubled clause on every removal row. It
+  # used to say "superseded at <release>", read from the column this release deleted.
   for row in ${up_retire[@]+"${up_retire[@]}"}; do
-    rel="$(printf '%s' "$row" | cut -f2)"
+    rel="$(printf '%s' "$row" | cut -f1)"
     quarantine_move "$rel"
-    quarantine_report "RETIRED " "$rel" "superseded at $(printf '%s' "$row" | cut -f1)"
+    quarantine_report "RETIRED " "$rel" "$(printf '%s' "$row" | cut -f2)"
   done
   return 0
 }
@@ -1019,7 +1026,6 @@ print_summary() {
   echo
   echo "======================== INSTALL SUMMARY ========================"
   echo "Estate: $TARGET"
-  print_summary_version
   print_summary_created
   echo "Choices (asked or defaulted):"
   print_summary_board
@@ -1030,31 +1036,12 @@ print_summary() {
   return 0
 }
 
-# print_summary_version — the version line of the record. It reports the ESTATE's stamp, because
-# that is the only version true OF THE ESTATE: the installer creates only what is ABSENT, so a
-# repair run from a NEWER source leaves an older estate's stamp exactly where it found it. When the
-# two differ, say so plainly instead of printing the source's number over an estate that does not
-# carry it — that would be the summary claiming an upgrade the installer never performed. The note
-# stays silent in the ordinary cases: on a fresh install the estate's stamp was just copied from
-# the source's; in reconfigure-only mode TARGET and SOURCE are the same directory, so both reads
-# return the same number; and after an --upgrade the stamp is root-pinned plain machinery the run
-# REPLACED, so the two agree because the estate genuinely moved. The source side is read from the
-# ESTATE TREE, which is where the version stamp ships from; in an installed estate that tree and
-# the estate root are one directory.
-print_summary_version() {
-  est_version="$(read_version "$TARGET")"
-  src_version="$(read_version "$ESTATE_SRC")"
-  echo "Harness version: $est_version   (this estate's VERSION stamp)"
-  [ "$est_version" = "$src_version" ] && return 0
-  # The prescription now NAMES the mode that would move the stamp (#134). This line used to end
-  # "Nothing here upgrades an estate" — true of every mode the installer had, and false from the
-  # day --upgrade landed. A summary telling a user no upgrade path exists is worse than silence,
-  # because it is the sentence that stops them looking for one.
-  echo "  NOTE: the source you ran is $src_version. A plain run creates only what is absent, so"
-  echo "        it did NOT replace this estate's stamp. To bring this estate's machinery up to"
-  echo "        this source's, re-run from the source checkout with --upgrade (--dry-run first)."
-  return 0
-}
+# THE SUMMARY CARRIES NO VERSION LINE (#298). It used to open with "Harness version: <stamp>", plus
+# a note whenever the estate's stamp and the source's disagreed, prescribing --upgrade. Both are
+# gone with the stamp itself: an estate states no version, so the summary has none to report, and
+# the question that note existed to answer — is this estate behind the source? — is answered
+# exactly by `install.sh --upgrade --dry-run`, which lists the differing files rather than two
+# labels that were only ever as honest as whoever last edited them.
 
 # print_summary_created — the one honest count line: reconfigure-only never creates anything, and
 # an upgrade's count is FOUR numbers rather than one, because "created" is not the interesting

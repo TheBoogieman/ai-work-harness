@@ -213,7 +213,7 @@ we_mismatch() {  # $1 = block number, $2 = the differing line's position in the 
   we_line "$WE_TMP/b$1.act" "$2" | sed 's/^/    /'
   echo "  Fix ONE of the two: bring $WE_DOC into line with what the machinery now prints, or put"
   echo "  the machinery back. The document is EXECUTED, which is why a reworded message, a renamed"
-  echo "  script or a moved version stamp reaches you here instead of rotting unread."
+  echo "  script or a report line that came or went reaches you here instead of rotting unread."
   exit 1
 }
 

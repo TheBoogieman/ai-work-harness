@@ -27,8 +27,8 @@
   <text x="60" y="112" fill="#9DBBD6" font-size="12" letter-spacing="2">ONE SESSION, START TO FINISH · WHAT YOU DO · WHAT RUNS ITSELF · READ LEFT TO RIGHT</text>
   <line x1="60" y1="128" x2="900" y2="128" stroke="#CFE4F5" stroke-width="1.5"></line>
   <text x="2640" y="86" fill="#7FD1F0" font-size="12" letter-spacing="2" text-anchor="end">DWG HARNESS-002</text>
-  <text x="2640" y="104" fill="#9DBBD6" font-size="11" letter-spacing="2" text-anchor="end">REV G · SHEET 2 OF 2</text>
-  <text x="2640" y="124" fill="#9DBBD6" font-size="10" letter-spacing="1" text-anchor="end">G — on-demand readers and the retrospective&#39;s single write</text>
+  <text x="2640" y="104" fill="#9DBBD6" font-size="11" letter-spacing="2" text-anchor="end">REV H · SHEET 2 OF 2</text>
+  <text x="2640" y="124" fill="#9DBBD6" font-size="10" letter-spacing="1" text-anchor="end">H — script filenames settled on one spelling</text>
 
   <g font-size="10.5" fill="#9DBBD6">
     <rect x="1180" y="74" width="14" height="14" fill="#1B3E5F" stroke="#7FD1F0" stroke-width="2"></rect><text x="1200" y="85">YOU ACT</text>
@@ -48,12 +48,12 @@
 
   <rect x="60" y="294" width="420" height="56" fill="none" stroke="#CFE4F5" stroke-width="1.5" stroke-dasharray="5 4"></rect>
   <text x="76" y="316" fill="#E8F2FB" font-size="12">AUTO: sessionStart fires →</text>
-  <text x="76" y="336" fill="#9DBBD6" font-size="10.5">check_ticket_log.sh audits state left by the PAST</text>
+  <text x="76" y="336" fill="#9DBBD6" font-size="10.5">check-ticket-log.sh audits state left by the PAST</text>
   <line x1="270" y1="350" x2="270" y2="376" stroke="#CFE4F5" stroke-width="2" marker-end="url(#arw)"></line>
 
   <text x="60" y="398" fill="#7FD1F0" font-size="10.5" letter-spacing="1">THE ENTRY SWEEP — EACH Tickets/ SUBDIR SORTS INTO ONE STATE</text>
   <rect x="60" y="406" width="660" height="150" fill="none" stroke="#CFE4F5" stroke-width="1.5" stroke-dasharray="5 4"></rect>
-  <text x="76" y="430" fill="#E8F2FB" font-size="11" font-weight="700">check_ticket_log.sh classifies by fact, never guesses:</text>
+  <text x="76" y="430" fill="#E8F2FB" font-size="11" font-weight="700">check-ticket-log.sh classifies by fact, never guesses:</text>
   <text x="76" y="452" fill="#9DBBD6" font-size="10.5">① recognised name → validated (recency · state · index)</text>
   <text x="76" y="472" fill="#9DBBD6" font-size="10.5">② .not-a-ticket marker → SILENT — deliberately skipped</text>
   <text x="76" y="492" fill="#F5B84A" font-size="10.5">③ .ticket-pending marker → NON-SILENCEABLE nag until renamed + marker removed</text>
@@ -108,7 +108,7 @@
   <line x1="550" y1="1026" x2="550" y2="1048" stroke="#CFE4F5" stroke-width="1.5" marker-end="url(#arw)"></line>
 
   <rect x="380" y="1052" width="340" height="52" fill="#1B3E5F" stroke="#F5B84A" stroke-width="2"></rect>
-  <text x="396" y="1074" fill="#E8F2FB" font-size="12" font-weight="700">Re-run check_ticket_log.sh → green.</text>
+  <text x="396" y="1074" fill="#E8F2FB" font-size="12" font-weight="700">Re-run check-ticket-log.sh → green.</text>
   <text x="396" y="1092" fill="#F5B84A" font-size="10.5">NEVER fabricate a record to silence the gate.</text>
   <path d="M380 1078 H310 V1130 H281" fill="none" stroke="#F5B84A" stroke-width="2" marker-end="url(#arwA)"></path>
 
@@ -221,7 +221,7 @@
   <text x="1538" y="888" fill="#E8F2FB" font-size="12.5" font-weight="700">S4 — AGENT WROTE GARBAGE</text>
   <text x="1538" y="910" fill="#9DBBD6" font-size="10.5">git -C ~/Work log → revert the paths → re-run the agent, or fix by hand</text>
   <text x="1538" y="936" fill="#F5B84A" font-size="10.5">same failure ×3 = upstream bug: stop mopping →</text>
-  <text x="1538" y="954" fill="#9DBBD6" font-size="10.5">make_context_pack.sh → design session (harnessception)</text>
+  <text x="1538" y="954" fill="#9DBBD6" font-size="10.5">make-context-pack.sh → design session (harnessception)</text>
 
   <rect x="1520" y="996" width="620" height="128" fill="#1B3E5F" stroke="#F5B84A" stroke-width="2"></rect>
   <text x="1538" y="1020" fill="#E8F2FB" font-size="12.5" font-weight="700">S5 — MACHINERY ITSELF BROKEN</text>
@@ -249,6 +249,6 @@
     <text x="60" y="1204">PROJECT: AI HARNESS v2</text>
     <text x="560" y="1204">DRAWN: THE HARNESS PROJECT</text>
     <text x="1060" y="1204">CLIENT: YOU</text>
-    <text x="2640" y="1204" text-anchor="end">SHEET 2 · REV G · 2026-07-24</text>
+    <text x="2640" y="1204" text-anchor="end">SCALE: NTS · 2026-07-29</text>
   </g>
 </svg>

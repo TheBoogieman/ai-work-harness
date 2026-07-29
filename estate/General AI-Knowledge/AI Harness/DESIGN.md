@@ -1,46 +1,40 @@
 # Design notes — why the harness is shaped like this
-Last reviewed: 2026-07-26
+Last reviewed: 2026-07-29
 
-**Diagram currency (2026-07-29):** both sheets LAG in four ways, and the fourth is
-the newest.
+**Diagram currency (2026-07-29):** the operator redrew both sheets to REV S /
+REV H, which cleared three of the four divergences this note used to carry. TWO
+remain, and the second is newly true rather than newly noticed.
 
-**The architecture sheet labels the constitution `folder-structure.md`, a name
-that no longer exists.** `#140` renamed the three estate root documents to say
-what they contain — `folder-structure.md` → `CONSTITUTION.md`, `setup.md` →
-`AI-SETUP-PROMPT.md`, `installing.md` → `INSTALL-INSTRUCTIONS.md` — and the sheet
-renders the first of those as label text. Only the constitution is drawn, so this
-is one stale label, not three. It is accepted knowingly: the sheet already carries
-the false claim below, a redraw commission is required before the release
-regardless, and no wave edits an SVG.
+**RESOLVED at REV S / REV H.** The architecture sheet labelled the constitution
+`folder-structure.md` after `#140` renamed it to `CONSTITUTION.md`; it named
+`check_run`, `append_entry` and `literate_capture`, three scripts `#280` removed;
+and both sheets spelled the script names the way they were spelled before `#141`
+settled every shipped script on the hyphen convention. The redraw corrected all
+three: the constitution's label, the scripts strip (three boxes removed, the three
+survivors respaced), and every filename on both sheets — `make-context-pack.sh`,
+`tracker-sweep`, `retro-stats`, `append-notebook-cell.py` and
+`check-ticket-log.sh`. It also corrected the loader's rule count from six to seven,
+matching `AGENTS.md`, and dropped a "(NEW)" from the scripts-strip heading that had
+long stopped being true.
 
-**The architecture sheet names three scripts the harness no longer ships.**
-`check_run`, `append_entry` and `literate_capture` were removed by `#280` — none
-had a job in the workflow, and nothing called any of them. Their labels are still
-rendered on the sheet, so a reader taking it as an inventory will look for three
-files that are not in their estate. `append-notebook-cell.py` is now the single
-door into a notebook, and a session record is written by a person or by
-`ticket-scribe`. **This is a false claim on a shipped picture and it is the one
-thing on this list that actively misleads** — it is named here, not drawn out, and
-the redraw is the operator's to schedule.
+**Both sheets still show the pre-split repository layout.** This is the one
+divergence the redraw did not close. What the sheets do not show is the split
+landed by `#136`: every shipped file now sits under an estate tree and every
+development file under a development tree, so a sheet read as a map of THIS
+CHECKOUT points at pre-split locations. Read as a map of an installed Work root —
+which is how an estate's reader meets them — they are still right about where
+things sit.
 
-**Both sheets still show the pre-split repository layout.** The operator redrew
-them on 2026-07-24 at REV R / REV G to the full agent roster. What they do not
-show is the split landed by `#136`: every shipped file now sits under an estate
-tree and every development file under a development tree, so a sheet read as a map
-of THIS CHECKOUT points at pre-split locations. Read as a map of an installed
-Work root, they are still right about where things sit.
+**Both sheets carry `PROJECT: AI HARNESS v2` in the title block.** `#298` deleted
+the version apparatus and removed every version statement from the estate's prose,
+so these two title blocks are now the only place in the tree that states a harness
+version. The claim is not wrong so much as orphaned: nothing else issues or tracks
+a "v2", so a reader has no way to check it and no other statement to reconcile it
+against. It is named here rather than drawn out.
 
-**Both sheets spell six script names the way they were spelled before `#141`.**
-That item settled every shipped script on the hyphen convention, so the sheets'
-`make_context_pack.sh`, `tracker_sweep`, `retro_stats` and `append_notebook_cell.py`
-(architecture) and `check_ticket_log.sh` (session flow) are all one underscore away
-from the files an estate now holds. This is the mildest divergence on the list: the
-names differ by a separator, so a reader looking for `check_ticket_log.sh` finds
-`check-ticket-log.sh` beside it and loses a moment, not the thread. It is still a
-false claim on a shipped picture, and it rides the same redraw as the three above.
-
-NO WAVE EDITS AN SVG — the divergences are named rather than drawn, and `#178` is
-where the redraw is tracked. For current enforcement/status/naming behaviour,
+NO WAVE EDITS AN SVG — the remaining divergences are named rather than drawn, and
+`#178` is where the redraw is tracked and stays OPEN: REV S / REV H discharged the
+label corrections, not the layout. For current enforcement/status/naming behaviour,
 `CONSTITUTION.md` (the constitution) remains the source of truth.
 
 **The pattern (every layer):** file states the rule → agent does the work →

@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # recovery-drill.case.sh — #75 [recovery-drill]: harness-drill rehearses recovery and must be
-# READ-ONLY toward the estate it rehearses on. SOURCED by the runner; see run_demo.sh.
+# READ-ONLY toward the estate it rehearses on. SOURCED by the runner; see run-demo.sh.
 #
 # This family builds a FIXTURE estate (a throwaway git repo carrying a copy of _harness plus one
 # valid ticket — harness-drill derives its root from its OWN location, so the script must live
 # INSIDE the fixture, exactly like the #86 case), then proves three things: (1) a restore-drill
-# from the fixture's own .git yields a copy that passes check_ticket_log.sh; (2) a bundle-drill
-# (local git bundle -> restore) yields a copy that passes check_ticket_log.sh; and (3) the fixture
+# from the fixture's own .git yields a copy that passes check-ticket-log.sh; (2) a bundle-drill
+# (local git bundle -> restore) yields a copy that passes check-ticket-log.sh; and (3) the fixture
 # estate is BYTE-IDENTICAL before and after — a recovery tool that damaged the record it is
 # rehearsing to protect would be the worst possible bug in this repo, so this is a byte-comparison,
 # not an eyeball. Cleanup is an explicit rm on every exit path — the runner's single
@@ -19,7 +19,7 @@
 hd_manifest() { find "$HD_FIX" -type f -not -path '*/.git/*' | sort | xargs cksum; }
 
 # hd_fixture — the throwaway estate that plays the 'live estate'. A minimal but VALID ticket — a
-# <name>.md with a Current State section and one session-log header — so check_ticket_log.sh
+# <name>.md with a Current State section and one session-log header — so check-ticket-log.sh
 # validates the RESTORED copy green (a vacuous pass would prove nothing).
 hd_fixture() {
   echo "--- #75: harness-drill rehearses restore/bundle recovery, estate byte-untouched ---"
@@ -43,7 +43,7 @@ HDMD
   HD_BEFORE=$(hd_manifest)
 }
 
-# 1. restore-drill on the fixture -> the restored copy passes check_ticket_log.sh (exit 0). Run the
+# 1. restore-drill on the fixture -> the restored copy passes check-ticket-log.sh (exit 0). Run the
 #    fixture's OWN copy of the script so WORK_ROOT resolves to the fixture, never the live estate.
 hd_restore_drill() {
   local HD_OUT HD_RC
@@ -60,7 +60,7 @@ hd_restore_drill() {
   echo "  ok [recovery-drill] — restore-drill rebuilt the record from .git and it validated green"
 }
 
-# 2. bundle-drill on the SAME fixture -> the restored-from-bundle copy passes check_ticket_log.sh.
+# 2. bundle-drill on the SAME fixture -> the restored-from-bundle copy passes check-ticket-log.sh.
 hd_bundle_drill() {
   local HD_OUT HD_RC
   set +e

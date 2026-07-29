@@ -42,7 +42,7 @@ CORE=(ticket-init ticket-scribe check-scribe doc-writer knowledge-keeper knowled
 # of the record). HARNESS_WARN_STATE_FILE lets the demo/tests redirect the single write to a
 # throwaway path; the default lives under _harness/ (whitelisted) so a real estate versions and
 # auto-commits it. This file does NOT exist in the dev repo — it is created only in a user estate
-# at runtime (no manifest line). run_demo.sh EXPORTS an override globally so status stays
+# at runtime (no manifest line). run-demo.sh EXPORTS an override globally so status stays
 # side-effect-free across all its runs.
 HARNESS_WARN_STATE_FILE="${HARNESS_WARN_STATE_FILE:-$WORK_ROOT/_harness/state/warn-aging.tsv}"
 # Escalating age tiers in days (ruling 4b — tunable, obvious, at the top). Why these numbers: 14 = a
@@ -182,8 +182,8 @@ check_version() {
 # ticket-grammar.sh is in this list too: it is the shared grammar both tools source,
 # so a missing/inert grammar lib must itself be caught here, not silently tolerated.
 check_siblings() {
-  for f in check_ticket_log.sh harness-status.sh ticket-grammar.sh portability.sh \
-    append_notebook_cell.py make_context_pack.sh deploy_agents.sh harness-housekeeping.sh; do
+  for f in check-ticket-log.sh harness-status.sh ticket-grammar.sh portability.sh \
+    append-notebook-cell.py make-context-pack.sh deploy-agents.sh harness-housekeeping.sh; do
     p="$SCRIPT_DIR/$f"
     [[ -f "$p" ]] || {
       echo "FAIL: missing script $f. Fix: restore from git:" \
@@ -343,10 +343,10 @@ check_agents() {
     base=$(basename "$src"); dep="$DEPLOY_DIR/$base"
     if [[ ! -f "$dep" ]]; then
       echo "FAIL: agent $base not deployed to $DEPLOY_DIR." \
-           "Fix: _harness/scripts/deploy_agents.sh"
+           "Fix: _harness/scripts/deploy-agents.sh"
       fails=$((fails+1))
     elif ! cmp -s "$src" "$dep"; then
-      echo "FAIL: agent $base drifted from source. Fix: _harness/scripts/deploy_agents.sh"
+      echo "FAIL: agent $base drifted from source. Fix: _harness/scripts/deploy-agents.sh"
       fails=$((fails+1))
     fi
   done

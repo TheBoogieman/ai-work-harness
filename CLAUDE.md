@@ -29,7 +29,7 @@ Doctrine you must never violate when changing this code:
 - Comment every code change in plain English. That rule's one home — its full
   statement, the reason it exists, and what enforces it — is PLAIN-ENGLISH
   COMMENTS under "Hard rules" below; it is not restated here.
-- Run the demo — `bash dev/scripts/run_demo.sh` — for every BEHAVIOUR CHANGE
+- Run the demo — `bash dev/scripts/run-demo.sh` — for every BEHAVIOUR CHANGE
   TO SHIPPED MACHINERY. It must end with "ALL 6 DEMO STAGES PASSED"; it is the
   truth-teller for such a change and nothing here weakens that. (Stage 5
   deliberately breaks and restores a deployment — an internal FAIL followed by
@@ -119,7 +119,7 @@ enforcement claim the repository cannot cash.
   look like from the outside; only an executed red tells them apart. (The decision
   records that carried the longer reasoning were deleted by #281; the rule as stated
   above is now its own whole statement.)
-- *What enforces it.* The acceptance demo, `dev/scripts/run_demo.sh`, is
+- *What enforces it.* The acceptance demo, `dev/scripts/run-demo.sh`, is
   where a guard lives and where it is shown failing. CI runs it on Linux and
   macOS as two required checks, and both must be green before a merge.
 
@@ -203,7 +203,7 @@ working tree; `.gitattributes` pins `*.sh`/`*.py` to LF as the permanent backsto
 and the demo's CRLF tripwire reds if any tracked script ever carries a carriage
 return. Requirements: node/npm, claude-code (or your agent tool), `python3` with
 `nbformat` (the notebook helper needs it: `pip install nbformat`), and `unzip`
-(`zip` optional — `make_context_pack` falls back to Python's zipfile). Git push
+(`zip` optional — `make-context-pack` falls back to Python's zipfile). Git push
 works over HTTPS via `gh auth`. `gh` is a **development** convenience only — used
 for pushing and issue management while working on the harness. NO shipped harness
 component (validation, status, the git safety net, agents, hooks) depends on
@@ -229,7 +229,7 @@ The three Copilot-specific pieces:
 2. **`estate/_harness/hooks/hooks.example.json`** uses Copilot's `postToolUse` hook
    format to fire the auto-commit on file writes. Another assistant's hook
    system would use a different config shape.
-3. **`estate/_harness/scripts/deploy_agents.sh`** targets the Copilot agents directory
+3. **`estate/_harness/scripts/deploy-agents.sh`** targets the Copilot agents directory
    (`~/.copilot/agents`).
 
 Porting to another assistant means translating these three — mechanical work,
@@ -249,7 +249,7 @@ the issue board is clear and the project is self-contained.
 - estate/_harness/scripts/ — the machinery (validator, status, context-pack, demo,
   deploy, notebook helper, and the ticket-grammar home).
 - estate/_agents/ — the Copilot agent contracts.
-- dev/scripts/run_demo.sh — the 6-stage acceptance demo; the truth-teller
+- dev/scripts/run-demo.sh — the 6-stage acceptance demo; the truth-teller
   for the shipped product, and now the ONLY required check on a merge. WHICH
   changes must run it is stated once, under "Working on this harness" above — it is
   not every change. It is the RUNNER of a suite split three ways (#143): it owns the

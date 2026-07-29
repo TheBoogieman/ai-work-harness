@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # oversize-root.case.sh — [oversize-root-warn]: a ticket whose TRACKED root (excluding the ignored
 # Logs/, Dump/) grows large gets a yellow WARN prescribing Dump/ — never a block. SOURCED by the
-# runner; see dev/scripts/run_demo.sh.
+# runner; see dev/scripts/run-demo.sh.
 #
 # It also proves Dump/ is EXCLUDED from the measure (so moving scratch there actually clears it)
 # and that the knob is honoured both ways. ~2 MiB of padding lands the root over a 1 MiB threshold.

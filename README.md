@@ -77,7 +77,7 @@ Anything marked *swappable* degrades gracefully if you differ.
 
 ### How the Windows lane is verified (the one home for this fact)
 
-By the maintainer, by hand — `run_demo.sh` ending in *ALL 6 DEMO STAGES PASSED*
+By the maintainer, by hand — `run-demo.sh` ending in *ALL 6 DEMO STAGES PASSED*
 in Git-Bash/Cygwin on real Windows hardware, which is the seat this harness is
 developed on.
 
@@ -111,7 +111,7 @@ constitution, `AGENTS.md`, and General AI-Knowledge — promoted knowledge never
 leaves version control, and every other `Work/` folder never enters it. No
 remote exists, nothing ever pushes.
 
-### L2 — Hooks + `check_ticket_log.sh`
+### L2 — Hooks + `check-ticket-log.sh`
 
 The dumb inspector. Runs at session START (the entry gate — it audits what the
 previous session left behind; sessionEnd is a best-effort bonus), and checks
@@ -160,9 +160,9 @@ Five human-run tools; each has a one-line purpose in the folder map, and its ful
 telling lives in `CONSTITUTION.md` (Part II) or the home named inline.
 
 - `harness-status.sh` — estate-wide health report; every FAIL line ends with its fix.
-- `tracker_sweep.sh` — board-vs-estate drift through a pluggable, tracker-agnostic
+- `tracker-sweep.sh` — board-vs-estate drift through a pluggable, tracker-agnostic
   fetch seam that fails open offline; the seam is documented in the script's header.
-- `make_context_pack.sh` — scrubbed, disposable zip of the harness for external
+- `make-context-pack.sh` — scrubbed, disposable zip of the harness for external
   review; skim before it leaves the machine.
 - `harness-housekeeping.sh` — `git gc`/repack to reclaim `.git` growth, all history kept.
 - `harness-drill.sh` — rehearse recovery on a calm day: three read-only modes
@@ -172,7 +172,7 @@ telling lives in `CONSTITUTION.md` (Part II) or the home named inline.
 
 **There is one door into a notebook, and a session record is written by hand.**
 
-- **`_harness/scripts/append_notebook_cell.py`** — the single deterministic writer
+- **`_harness/scripts/append-notebook-cell.py`** — the single deterministic writer
   for `Checks/checks_master.ipynb`: one why-note + one **real, executable** code
   cell per verified check. The `check-scribe` agent appends the cell; you open the
   notebook and run it, and the notebook format binds the actual output to the cell
@@ -180,7 +180,7 @@ telling lives in `CONSTITUTION.md` (Part II) or the home named inline.
   Detail: the script's own commented header.
 - **A session entry in a ticket `.md` you write yourself**, or ask the
   `ticket-scribe` agent to write. It is not a stamping job: an entry restates
-  where the ticket now stands, which is judgement. `check_ticket_log.sh` then
+  where the ticket now stands, which is judgement. `check-ticket-log.sh` then
   validates what was written and names the exact fix if it is wrong.
 
 Three earlier tools sat here — a record appender, a shell-output transcriber and a
@@ -208,7 +208,7 @@ States — Operational Rules*.
 
 > **About the SOURCE repository, not your work estate.** This section is for
 > people hacking on the harness itself (branches, PRs, CI). None of it is estate
-> setup — the files it names (`CLAUDE.md`, `.github/`, `run_demo.sh`) live
+> setup — the files it names (`CLAUDE.md`, `.github/`, `run-demo.sh`) live
 > outside the `estate/` tree and never ship. To *install* the harness, see
 > **Setup** above; nothing here points a user at dev machinery.
 
@@ -236,7 +236,7 @@ plain PowerShell runs `git` but not the bash machinery.
 Verify the host once, end to end:
 
 ```bash
-bash dev/scripts/run_demo.sh   # must end with: ALL 6 DEMO STAGES PASSED
+bash dev/scripts/run-demo.sh   # must end with: ALL 6 DEMO STAGES PASSED
 ```
 
 That hand-run is the whole of the Windows lane's verification, because no merge
@@ -265,7 +265,7 @@ Branch naming and issue anchoring are still the convention
 
 ### For an external design review
 
-Take the scrubbed, disposable zip from `make_context_pack.sh` (the maintenance
+Take the scrubbed, disposable zip from `make-context-pack.sh` (the maintenance
 port, above) to a design session, then let the acceptance demo prove the change
 you bring back. The system was built that way.
 

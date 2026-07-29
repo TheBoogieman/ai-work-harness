@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ticket-grammar.sh — the ONE home for what the tools treat as a ticket.
-# Sourced (not run) by check_ticket_log.sh and harness-status.sh so the
+# Sourced (not run) by check-ticket-log.sh and harness-status.sh so the
 # validator and the estate view share ONE answer to every "is this a
 # ticket?" question and can never drift apart. Owns three predicates.
 

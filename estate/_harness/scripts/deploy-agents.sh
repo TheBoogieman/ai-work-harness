@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# deploy_agents.sh — sync _agents/ (source of truth) -> Copilot user-level discovery dir.
+# deploy-agents.sh — sync _agents/ (source of truth) -> Copilot user-level discovery dir.
 # Live copies are derived and disposable; source wins on any disagreement.
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

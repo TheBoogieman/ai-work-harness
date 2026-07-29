@@ -31,26 +31,26 @@ Work/                                        [git root · local-only · whitelis
 │   ├── hooks/hooks.example.json             the ONE hook-schema home · install.sh copies it to .github/hooks/harness.json above
 │   ├── retire-list.tsv                      shipped DATA (not code): which paths a release SUPERSEDED · the ONLY thing --upgrade retires · cumulative · never inferred
 │   └── scripts/                             THE MACHINERY (versioned)
-│       ├── check_ticket_log.sh              ← sessionStart hook │ sessionEnd (bonus)
+│       ├── check-ticket-log.sh              ← sessionStart hook │ sessionEnd (bonus)
 │       │       └── watermark →              ~/.harness/validated/<ticket>  [state · unversioned]
 │       ├── harness-status.sh                stdout report + one primary-observation record (each WARN's first-seen, for aging #71) · roster = _agents/ · checks siblings
 │       ├── ticket-grammar.sh                recognition home: TICKET_RE + ticket predicates · validator + status both source it (edit to retarget your board)
 │       ├── portability.sh                   shared GNU/BSD shims: ts14→epoch, sourced by validator + status (one home · no drift)
-│       ├── append_notebook_cell.py          ← check-scribe · THE ONE DOOR into a notebook: appends a real executable cell · runs on whatever python3 is on the path, needs nbformat [user-created prereq]
-│       ├── make_context_pack.sh             → ~/Desktop/harness-pack-*.zip [disposable · outside repo]
-│       ├── tracker_sweep.sh                 human-run · on-demand board-vs-estate drift report · pluggable fetch seam · tracker-agnostic · fails open offline
-│       ├── retro_stats.sh                    dumb counter for the retrospective agent · tickets-by-month + checks + promotions · offline · exits 0 always
-│       ├── deploy_agents.sh                 → user-level agent dir (sync source → live)
+│       ├── append-notebook-cell.py          ← check-scribe · THE ONE DOOR into a notebook: appends a real executable cell · runs on whatever python3 is on the path, needs nbformat [user-created prereq]
+│       ├── make-context-pack.sh             → ~/Desktop/harness-pack-*.zip [disposable · outside repo]
+│       ├── tracker-sweep.sh                 human-run · on-demand board-vs-estate drift report · pluggable fetch seam · tracker-agnostic · fails open offline
+│       ├── retro-stats.sh                    dumb counter for the retrospective agent · tickets-by-month + checks + promotions · offline · exits 0 always
+│       ├── deploy-agents.sh                 → user-level agent dir (sync source → live)
 │       ├── harness-housekeeping.sh          human-run · git gc + size report · never touches records
 │       └── harness-drill.sh                 human-run · rehearse restore/bundle/undo · read-only toward the estate
 │
 ├── _agents/                                 SOURCE OF TRUTH (versioned)
 │   ├── ticket-init.agent.md                 ┐
-│   ├── ticket-scribe.agent.md               │ deploy_agents.sh → user-level dir
+│   ├── ticket-scribe.agent.md               │ deploy-agents.sh → user-level dir
 │   ├── ticket-recall.agent.md               │
 │   ├── check-scribe.agent.md                │   [live · derived · unversioned]
 │   ├── doc-writer.agent.md                  │   drift check (status): differ ⇒ FAIL
-│   ├── knowledge-keeper.agent.md            │   fix ⇒ re-run deploy_agents.sh
+│   ├── knowledge-keeper.agent.md            │   fix ⇒ re-run deploy-agents.sh
 │   ├── knowledge-curator.agent.md           │
 │   ├── weekly-digest.agent.md               │
 │   ├── harness-recall.agent.md              │

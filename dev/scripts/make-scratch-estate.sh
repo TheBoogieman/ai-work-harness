@@ -61,7 +61,7 @@ echo
 echo "Confirmation-run steps — VS Code Copilot IDE agent:"
 echo "  1. Open the folder:   code \"$DEST\""
 echo "  2. Confirm the Copilot agent extension is active against this workspace."
-echo "  3. sessionStart: start an agent session -> the validator (check_ticket_log.sh) runs."
+echo "  3. sessionStart: start an agent session -> the validator (check-ticket-log.sh) runs."
 echo "  4. postToolUse: have the agent EDIT a file under Tickets/999912Z-PROJ-99999/, then run"
 echo "       git -C \"$DEST\" log --oneline"
 echo "     and look for an 'auto-write ...' commit."

@@ -55,7 +55,7 @@ Log entries — never the whole log. THEN lift cross-ticket THEMES from those ro
 the context-budget failure at its most expensive, the exact waste the harness exists
 to prevent.
 
-RUN THE DUMB STATS PRE-PASS AND FOLD IT IN. Run `_harness/scripts/retro_stats.sh`
+RUN THE DUMB STATS PRE-PASS AND FOLD IT IN. Run `_harness/scripts/retro-stats.sh`
 (pass it the same window) — it counts, dumbly and offline, tickets by closing month,
 checks captured, and knowledge promoted. Those numbers ride INSIDE the final
 document, woven into the prose, not pasted beside it: arithmetic below, judgement

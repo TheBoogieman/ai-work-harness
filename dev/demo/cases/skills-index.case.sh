@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # skills-index.case.sh — [skills-index]: Skills tree <-> _index.md correspondence, both directions,
-# plus the frozen module shape. SOURCED by the runner; see dev/scripts/run_demo.sh.
+# plus the frozen module shape. SOURCED by the runner; see dev/scripts/run-demo.sh.
 #
 # The worker tier discovers craft modules INDEX-FIRST: it matches its task against
 # Skills/_index.md and reads only the matching SKILL.md, never crawling the tree. That only holds

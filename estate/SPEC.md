@@ -39,7 +39,7 @@ why. The founding goals, unchanged since:
   carries the positive-identity key `harness.estate=true`, so it can never
   commit into a nested foreign project repo. The git net is the backstop when
   the hook does not fire; nothing in the record depends on it firing.
-- **A dumb inspector at session start.** `check_ticket_log.sh` checks facts
+- **A dumb inspector at session start.** `check-ticket-log.sh` checks facts
   only — log appended, current state present, index matches files — and fails
   loudly with an exact fix. It heals nothing and judges nothing.
 - **A four-state view of ticket folders.** Any `Tickets/` folder is conforming
@@ -49,7 +49,7 @@ why. The founding goals, unchanged since:
 - **An offline health report.** `harness-status.sh` reports ticket ages, index
   nags, stale knowledge, and git/hook/agent liveness. Every FAIL line ends with
   its fix.
-- **A scrubbed, disposable context pack.** `make_context_pack.sh` builds a
+- **A scrubbed, disposable context pack.** `make-context-pack.sh` builds a
   datestamped zip of the harness structure for external review, with a manifest
   self-audit; the structure travels, the payload never.
 - **A non-destructive installer.** `install.sh` is a dumb creator: it lays down
@@ -92,7 +92,7 @@ operator, one active session at a time, and no remote — ever.
 - **one-home** — the doctrine that each fact, pattern, or rule has exactly one
   editable home, and every other reference points at it rather than copying it.
   Duplication is the drift bug this doctrine exists to prevent.
-- **dumb inspector** — the session-start validator (`check_ticket_log.sh`): it
+- **dumb inspector** — the session-start validator (`check-ticket-log.sh`): it
   checks facts only and prescribes fixes, but forms no opinion and repairs
   nothing. "Dumb" is the design goal, not a limitation — judgment lives in the
   operator, not the checker.

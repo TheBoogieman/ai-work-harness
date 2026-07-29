@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # ticket-recognition.case.sh — surface (never enforce) unrecognised ticket folders, plus the
-# pending fourth state and its completion path. SOURCED by the runner; see run_demo.sh.
+# pending fourth state and its completion path. SOURCED by the runner; see run-demo.sh.
 #
 # This family runs BEFORE the tour's break-and-restore demonstration ON PURPOSE: it is the first
-# thing after deploy_agents, which makes no status call, so a lane where a plain `harness-status`
+# thing after deploy-agents, which makes no status call, so a lane where a plain `harness-status`
 # aborts under set -e (e.g. the Git-Bash issue #8) still reaches and witnesses every case here
 # before that abort-prone call. The status rc assertions are baseline-relative (see BASELINE_RC):
 # each fixture must add no NEW failure versus the untouched estate, so a pre-existing estate
@@ -43,7 +43,7 @@ tr_status() {
 
 # tr_validate — the same, for the validator.
 tr_validate() {
-  set +e; R09_OUT=$(bash estate/_harness/scripts/check_ticket_log.sh 2>&1); R09_RC=$?; set -e
+  set +e; R09_OUT=$(bash estate/_harness/scripts/check-ticket-log.sh 2>&1); R09_RC=$?; set -e
 }
 
 # [misnamed-warn] space-named ticket-bearing folder → harness-status WARNs it, exit stays 0.
@@ -120,21 +120,21 @@ tr_malformed_ignored() {
 # [space-named-pack] the pack builder handles a space-named ticket at exit 0 (zip needed). Writes
 # to its OWN throwaway pack dir (like [pack-without-zip]), NOT the run's shared PACK_OUT_DIR: if
 # this pack and the tour's stage-6 pack both landed in the shared dir across a minute boundary
-# (make_context_pack's STAMP is minute-granular), two harness-pack-*.zip would accumulate there
+# (make-context-pack's STAMP is minute-granular), two harness-pack-*.zip would accumulate there
 # and stage 6's unzip glob would match both and fail — the timing flake CI caught on the slower
 # macOS runner. Own dir = timing can't matter.
 tr_space_named_pack() {
   local R09D_OUT
   R09D_OUT=$(mktemp -d)
   set +e
-  PACK_OUT_DIR="$R09D_OUT" bash estate/_harness/scripts/make_context_pack.sh \
+  PACK_OUT_DIR="$R09D_OUT" bash estate/_harness/scripts/make-context-pack.sh \
     --ticket "My Random Ticket 42" >/dev/null; R09_RC=$?
   set -e
   rm -rf "$R09D_OUT"
   [ "$R09_RC" -eq 0 ] \
     || { echo "BUG [space-named-pack]: context pack failed on a space-named ticket (rc=$R09_RC)"; \
          exit 1; }
-  echo "  ok [space-named-pack] — make_context_pack.sh handled a space-named ticket, exit 0"
+  echo "  ok [space-named-pack] — make-context-pack.sh handled a space-named ticket, exit 0"
 }
 
 # --- pending-ticket fourth state (graceful cancellation of custom names) — issue #25 -------------

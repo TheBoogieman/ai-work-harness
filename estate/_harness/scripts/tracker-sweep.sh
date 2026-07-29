@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# tracker_sweep.sh — on-demand board-vs-estate drift report. A dumb M-lane sibling of
+# tracker-sweep.sh — on-demand board-vs-estate drift report. A dumb M-lane sibling of
 # harness-status: HUMAN-RUN and ON-DEMAND, NEVER wired to a hook. It reads each local
 # ticket's upstream status through a PLUGGABLE FETCH SEAM, compares it against the local
 # fact (the ticket folder is present, so the ticket is ACTIVE locally), and WARNs per

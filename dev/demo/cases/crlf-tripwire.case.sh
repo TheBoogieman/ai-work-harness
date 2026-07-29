@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # crlf-tripwire.case.sh — [crlf-tripwire]: no TRACKED shell/python script may carry a carriage
-# return. SOURCED by the runner; see dev/scripts/run_demo.sh.
+# return. SOURCED by the runner; see dev/scripts/run-demo.sh.
 #
 # A CRLF in a shebang or heredoc breaks execution, and .gitattributes only helps clones that HAVE
 # it — this case is the standing backstop that reads the working-tree bytes directly, so it catches

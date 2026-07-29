@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # warn-aging.case.sh — #71 WARN aging + #72 knowledge staleness. SOURCED by the runner; see
-# dev/scripts/run_demo.sh for the contract.
+# dev/scripts/run-demo.sh for the contract.
 #
 # Every string below is anchored with one of the warn-aging-* labels or [knowledge-staleness], and
 # every assertion is revert-provable RED against pre-fix code.

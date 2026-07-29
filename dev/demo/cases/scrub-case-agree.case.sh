@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # scrub-case-agree.case.sh — [scrub-case-agree]: the pack's SCRUB rules and its self-AUDIT must
-# agree on case. SOURCED by the runner; see dev/scripts/run_demo.sh.
+# agree on case. SOURCED by the runner; see dev/scripts/run-demo.sh.
 #
 # The SCRUB rules once matched case-SENSITIVELY while the self-audit matched case-INSENSITIVELY
 # (grep -qiE), so a lowercase placeholder in an ordinary prose file survived the scrub and then
@@ -15,7 +15,7 @@
 # the pack.
 #
 # THE TOKEN IS ASSEMBLED AT RUNTIME, never written contiguously in this file. When this case lived
-# in the single-file suite that was load-bearing: make_context_pack stages the estate's own
+# in the single-file suite that was load-bearing: make-context-pack stages the estate's own
 # `_harness/scripts/*`, so
 # the suite's own source rode into every pack it built, and a literal token here would have redded
 # the FIRST pack build ([space-named-pack], far earlier) with that case's message instead of this
@@ -34,7 +34,7 @@ case_scrub_case_agree() {
   printf '# case fixture\nReach us at %s for access.\n' "$G169_TOKEN" \
     > "estate/Tickets/$G169_TICKET/$G169_TICKET.md"
   set +e
-  G169_OUT=$(PACK_OUT_DIR="$G169_OUT_DIR" bash estate/_harness/scripts/make_context_pack.sh \
+  G169_OUT=$(PACK_OUT_DIR="$G169_OUT_DIR" bash estate/_harness/scripts/make-context-pack.sh \
     --ticket "$G169_TICKET" 2>&1); G169_RC=$?
   set -e
   # A no-match must not trip set -e / pipefail, hence the `|| true`.

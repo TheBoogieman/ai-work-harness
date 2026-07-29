@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""append_notebook_cell.py — deterministic notebook writer for check-scribe.
+"""append-notebook-cell.py — deterministic notebook writer for check-scribe.
 Agents must NEVER hand-edit .ipynb JSON; they call this instead.
-Usage: append_notebook_cell.py <notebook.ipynb> "<why-note markdown>" "<code>"
+Usage: append-notebook-cell.py <notebook.ipynb> "<why-note markdown>" "<code>"
 """
 import sys, nbformat
 def main():
     # Exactly three args (notebook, why-note, code); anything else is a usage error, not a silent no-op.
     if len(sys.argv) != 4:
-        print("FAIL: usage: append_notebook_cell.py <nb.ipynb> <note> <code>"); sys.exit(2)
+        print("FAIL: usage: append-notebook-cell.py <nb.ipynb> <note> <code>"); sys.exit(2)
     path, note, code = sys.argv[1:4]
     # Read the existing notebook and APPEND — this helper is the only writer, so each check adds to
     # the running audit trail instead of replacing it (agents never hand-edit the .ipynb JSON).

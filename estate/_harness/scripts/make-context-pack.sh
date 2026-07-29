@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# make_context_pack.sh — scrubbed, disposable export of harness state with a stable, sorted file set.
+# make-context-pack.sh — scrubbed, disposable export of harness state with a stable, sorted file set.
 # Bundling the scrubbed files is the job — the .zip is NOT byte-reproducible (zip records per-run
 # file mtimes; the Python zipfile fallback differs again). What IS stable: the file SET and the
 # sorted MANIFEST inside it.
@@ -60,9 +60,9 @@ fi
 # Deterministic MANIFEST + self-audit
 ( cd "$STAGE"
   find . -type f ! -name MANIFEST.txt | sort | sed 's|^\./||' > MANIFEST.txt
-  if grep -RqiE "$AUDIT_TERMS" . --exclude=MANIFEST.txt --exclude='make_context_pack.sh' 2>/dev/null; then
+  if grep -RqiE "$AUDIT_TERMS" . --exclude=MANIFEST.txt --exclude='make-context-pack.sh' 2>/dev/null; then
     echo "self-audit: FAILED — scrub-table terms found" >> MANIFEST.txt
-    echo "FAIL: scrub-table terms survived staging. Fix the SCRUB table in make_context_pack.sh and re-run." >&2
+    echo "FAIL: scrub-table terms survived staging. Fix the SCRUB table in make-context-pack.sh and re-run." >&2
     exit 1
   fi
   echo "self-audit: zero scrub-table hits" >> MANIFEST.txt

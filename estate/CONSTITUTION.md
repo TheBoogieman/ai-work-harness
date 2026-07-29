@@ -156,13 +156,13 @@ Any supporting files (spreadsheets, exports, scripts, etc.) also live in this fo
 Each ticket folder has four standard subfolders:
 
 - **`AI-Knowledge/`** — AI agent memory/knowledge `.md` files for this ticket (see *AI Memory Convention* below — including the **index + compaction** rules).
-- **`Checks/`** — the ticket's reproducible evidence, in ANY language your work needs (SQL, Python, shell, API probes). `checks_master.ipynb` is the default recorder — one markdown why-note + one code cell per verified check, appended via `append_notebook_cell.py`, on the workspace default kernel (`venv_global` by convention — see *Python environment* below; register other kernels freely). Disposable spot-checks can live in scratch files; anything worth remembering goes in the notebook. Add per-tool subfolders if your stack wants them — the harness imposes none.
+- **`Checks/`** — the ticket's reproducible evidence, in ANY language your work needs (SQL, Python, shell, API probes). `checks_master.ipynb` is the default recorder — one markdown why-note + one code cell per verified check, appended via `append-notebook-cell.py`, on the workspace default kernel (`venv_global` by convention — see *Python environment* below; register other kernels freely). Disposable spot-checks can live in scratch files; anything worth remembering goes in the notebook. Add per-tool subfolders if your stack wants them — the harness imposes none.
 - **`Logs/`** — long-running command output (e.g. build/test output, dbt runs, pipeline logs). **AI agents: always redirect long logs here** instead of printing them into chat, so they can be sliced with `grep`/`tail`/`awk` and don't overflow the session context window.
 - **`Dump/`** — the "landfill" for user-generated misc files dropped in for the AI to read: `.csv` extracts, screenshots (`.png`/`.jpg`), `.docx`/`.pptx`/`.eml`. This is *user input for the AI*, distinct from checks you write (`Checks/`) and command output (`Logs/`). Large scratch or dropped inputs belong **here** (git-ignored), not in the tracked ticket root — `harness-status` WARNs (yellow, never blocks) if a ticket's tracked root grows past `HARNESS_TICKET_WARN_MB` (default 5), pointing you here. **No customer PII, credentials, or secrets ever land in `Dump/`** — if an extract contains PII it doesn't belong in this folder tree at all; work with it in the approved location and reference it by path/description instead.
 
 > **STRICT — check logging (AI agents & humans):** Run **all** ad-hoc verifications through **`Checks/checks_master.ipynb`** — **never** as throwaway terminal one-offs that vanish. Add each check as a new cell with a one-line markdown note (*what* and *why*), so the check **and its result** are preserved as a reproducible record of everything verified on the ticket. Disposable spot-checks may use scratch files, but anything worth remembering goes in the notebook.
 
-**Python environment (PREREQUISITE):** the harness requires **a Python environment whose interpreter can `import nbformat`** — that, and nothing else. `append_notebook_cell.py` runs under whatever `python3` is on the path and sets no kernel, so **no part of the machinery reads, requires or validates the environment's name**. It is created BY THE USER — the harness never creates it, it only depends on it. Set it as the **workspace default interpreter** (in `GitHub/<your>.code-workspace`), so new terminals under `Work/` auto-activate it and notebooks default to its kernel — every ticket picks it up automatically. It also backs the Data Wrangler extension (view/clean `.csv`/`.parquet`/`.xlsx`). Create a repo-specific venv only when a repo needs different pins.
+**Python environment (PREREQUISITE):** the harness requires **a Python environment whose interpreter can `import nbformat`** — that, and nothing else. `append-notebook-cell.py` runs under whatever `python3` is on the path and sets no kernel, so **no part of the machinery reads, requires or validates the environment's name**. It is created BY THE USER — the harness never creates it, it only depends on it. Set it as the **workspace default interpreter** (in `GitHub/<your>.code-workspace`), so new terminals under `Work/` auto-activate it and notebooks default to its kernel — every ticket picks it up automatically. It also backs the Data Wrangler extension (view/clean `.csv`/`.parquet`/`.xlsx`). Create a repo-specific venv only when a repo needs different pins.
 
 **The name is a convention, not a requirement.** These documents call it **`venv_global`** (Python 3.12 with `nbformat` + your toolchain, e.g. dbt) and one shared name is worth keeping — it is what makes "the workspace default interpreter" mean the same thing in every ticket and every conversation with an assistant. Rename it if you have a reason to; nothing will notice.
 
@@ -343,7 +343,7 @@ current one. Triage in two bins:
   captured every write even though the paperwork failed). Late-but-true
   beats fabricated. Truly unreconstructable? Log it as:
   `## <ts> - Session unrecorded; changes per commits <range>`.
-Then re-run `check_ticket_log.sh` to confirm green, and start work.
+Then re-run `check-ticket-log.sh` to confirm green, and start work.
 
 **S2 — WARN/NOTE nags.** Never interrupt flow for these. Fat index → run
 `knowledge-curator` at ticket close-out or end of day. Zero-capture nag →
@@ -375,11 +375,11 @@ When taking the harness itself for external review/design (outside sanctioned
 tooling), never hand-assemble files. Run:
 
 ```
-_harness/scripts/make_context_pack.sh [--ticket <TICKET-ID>]
+_harness/scripts/make-context-pack.sh [--ticket <TICKET-ID>]
 ```
 
 It stages the harness state — `CONSTITUTION.md`, `README.md`,
-`AGENTS.md`, all `.agent.md` files, the hooks config, `check_ticket_log.sh`,
+`AGENTS.md`, all `.agent.md` files, the hooks config, `check-ticket-log.sh`,
 and `General AI-Knowledge/AI Harness/` — applies the scrub table — which you seed with your identifier classes
 (employee IDs and personal paths, org/tracker URLs, cloud account locators) —
 and zips it with a datestamped name. With
@@ -521,6 +521,6 @@ AI-Knowledge.
 
 The harness is coupled to GitHub Copilot at only three thin, isolated points —
 the `_agents/*.agent.md` format, the `hooks.example.json` hook shape, and
-`deploy_agents.sh`'s deploy target; everything else is assistant-agnostic.
+`deploy-agents.sh`'s deploy target; everything else is assistant-agnostic.
 Porting means translating those three — mechanical work, not redesign. There is
 no adapter layer to select: the three points are edited in place.

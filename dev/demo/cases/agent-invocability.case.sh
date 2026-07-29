@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # agent-invocability.case.sh — [agents-invocable]: every agent is directly human-callable.
-# SOURCED by the runner; see dev/scripts/run_demo.sh.
+# SOURCED by the runner; see dev/scripts/run-demo.sh.
 #
 # Asserts every estate/_agents/*.agent.md declares `user-invocable: true`. The clerk agents
 # (ticket-scribe, knowledge-keeper, check-scribe) still run automatically at task end, but a human

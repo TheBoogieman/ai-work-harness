@@ -3,13 +3,13 @@
   "version": 1,
   "hooks": {
     "sessionStart": [
-      { "type": "command", "bash": "bash _harness/scripts/check_ticket_log.sh", "cwd": ".", "timeoutSec": 60 }
+      { "type": "command", "bash": "bash _harness/scripts/check-ticket-log.sh", "cwd": ".", "timeoutSec": 60 }
     ],
     "postToolUse": [
       { "type": "command", "bash": "[ \"$(git config --local harness.estate 2>/dev/null)\" = \"true\" ] || exit 0; git add -A && git diff-index --quiet HEAD || git commit -q -m \"auto-write $(date +%Y%m%d-%H%M%S): $(git diff --cached --name-only | tr '\\n' ' ')\"", "cwd": ".", "timeoutSec": 60 }
     ],
     "sessionEnd": [
-      { "type": "command", "bash": "[ \"$(git config --local harness.estate 2>/dev/null)\" = \"true\" ] || exit 0; bash _harness/scripts/check_ticket_log.sh; git add -A && git diff-index --quiet HEAD || git commit -q -m \"auto-session-end $(date +%Y%m%d-%H%M%S): $(git diff --cached --name-only | tr '\\n' ' ')\"", "cwd": ".", "timeoutSec": 120 }
+      { "type": "command", "bash": "[ \"$(git config --local harness.estate 2>/dev/null)\" = \"true\" ] || exit 0; bash _harness/scripts/check-ticket-log.sh; git add -A && git diff-index --quiet HEAD || git commit -q -m \"auto-session-end $(date +%Y%m%d-%H%M%S): $(git diff --cached --name-only | tr '\\n' ' ')\"", "cwd": ".", "timeoutSec": 120 }
     ]
   }
 }

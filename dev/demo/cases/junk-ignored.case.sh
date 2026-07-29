@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # junk-ignored.case.sh — [junk-ignored]: objective editor/OS junk must be ignored even inside
-# re-included dirs so it never enters the record. SOURCED by the runner; see run_demo.sh.
+# re-included dirs so it never enters the record. SOURCED by the runner; see run-demo.sh.
 # Pre-fix (no junk patterns in .gitignore), git add -A stages it — red.
 
 case_junk_ignored() {

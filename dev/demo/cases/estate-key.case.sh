@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # estate-key.case.sh — #60: commit-bearing hooks no-op outside a genuine estate. SOURCED by the
-# runner; see dev/scripts/run_demo.sh.
+# runner; see dev/scripts/run-demo.sh.
 #
 # The hook cwd is "." (the workspace root), so if a session's effective repo is a NESTED FOREIGN
 # project (e.g. under Github/), a naive auto-commit would commit into THAT repo. The fix: both

@@ -101,7 +101,7 @@ RECONFIGURE=0
 CREATED=()
 plan_create=(); plan_exists=()
 # NEED_GIT (#64) default: reconfigure-only skips the create block that computes this, so define it
-# here (an existing estate needs no init) for the deploy_agents gate in audit_estate.
+# here (an existing estate needs no init) for the deploy-agents gate in audit_estate.
 NEED_GIT=0
 DETECTED_BOARD="PROJ"; DETECTED_BOARD_REAL=0
 # ---- upgrade-mode state (#134). All of it is defined HERE, unconditionally, because three
@@ -991,11 +991,11 @@ audit_estate() {
   # nothing, so the CREATED test alone would leave the deployed copies at their pre-upgrade
   # contents while the estate reported success. Replacing a file is a reason to redeploy too.
   if [ ${#CREATED[@]} -gt 0 ] || [ "$NEED_GIT" -eq 1 ] || [ ${#up_replace[@]} -gt 0 ]; then
-    bash "$TARGET/_harness/scripts/deploy_agents.sh" \
+    bash "$TARGET/_harness/scripts/deploy-agents.sh" \
       || echo "note: agent deploy reported an issue — see above (verify your Copilot agent dir)."
   fi
   echo "--- validator ---"
-  bash "$TARGET/_harness/scripts/check_ticket_log.sh" \
+  bash "$TARGET/_harness/scripts/check-ticket-log.sh" \
     || echo "(validator surfaced issues above — fix on the record; the installer heals nothing)"
   echo "--- status ---"
   bash "$TARGET/_harness/scripts/harness-status.sh" \
@@ -1121,7 +1121,7 @@ print_summary_knobs() {
        "(harness-status.sh)"
   echo "  HARNESS_COMMIT_LAG_WARN_S default 300  — commit-vs-session lag WARN (harness-status.sh)"
   echo "  HARNESS_AGENT_DEPLOY_DIR  default ~/.copilot/agents — agent deploy target" \
-       "(deploy_agents.sh)"
+       "(deploy-agents.sh)"
   echo "Declared residuals (honest): verifying the hook fires inside a live assistant session," \
        "and any"
   echo "  platform whose agent directory differs (HARNESS_AGENT_DEPLOY_DIR override stands)." \

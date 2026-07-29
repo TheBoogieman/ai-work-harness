@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # no-fixed-temp.case.sh — [no-fixed-temp] (#210): no literal system-temp path anywhere in the
-# acceptance suite's own source. SOURCED by the runner; see dev/scripts/run_demo.sh.
+# acceptance suite's own source. SOURCED by the runner; see dev/scripts/run-demo.sh.
 #
 # WHAT IT ASSERTS: every file the suite is made of — the runner, the tour, and every case file —
 # carries no literal system-temp path. The file list comes from demo_suite_files() in the runner,

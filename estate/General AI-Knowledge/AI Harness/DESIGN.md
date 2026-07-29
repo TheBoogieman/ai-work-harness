@@ -1,7 +1,7 @@
 # Design notes — why the harness is shaped like this
 Last reviewed: 2026-07-26
 
-**Diagram currency (2026-07-28):** both sheets LAG in three ways, and the third is
+**Diagram currency (2026-07-29):** both sheets LAG in four ways, and the fourth is
 the newest.
 
 **The architecture sheet labels the constitution `folder-structure.md`, a name
@@ -17,7 +17,7 @@ regardless, and no wave edits an SVG.
 `check_run`, `append_entry` and `literate_capture` were removed by `#280` — none
 had a job in the workflow, and nothing called any of them. Their labels are still
 rendered on the sheet, so a reader taking it as an inventory will look for three
-files that are not in their estate. `append_notebook_cell.py` is now the single
+files that are not in their estate. `append-notebook-cell.py` is now the single
 door into a notebook, and a session record is written by a person or by
 `ticket-scribe`. **This is a false claim on a shipped picture and it is the one
 thing on this list that actively misleads** — it is named here, not drawn out, and
@@ -29,6 +29,15 @@ show is the split landed by `#136`: every shipped file now sits under an estate
 tree and every development file under a development tree, so a sheet read as a map
 of THIS CHECKOUT points at pre-split locations. Read as a map of an installed
 Work root, they are still right about where things sit.
+
+**Both sheets spell six script names the way they were spelled before `#141`.**
+That item settled every shipped script on the hyphen convention, so the sheets'
+`make_context_pack.sh`, `tracker_sweep`, `retro_stats` and `append_notebook_cell.py`
+(architecture) and `check_ticket_log.sh` (session flow) are all one underscore away
+from the files an estate now holds. This is the mildest divergence on the list: the
+names differ by a separator, so a reader looking for `check_ticket_log.sh` finds
+`check-ticket-log.sh` beside it and loses a moment, not the thread. It is still a
+false claim on a shipped picture, and it rides the same redraw as the three above.
 
 NO WAVE EDITS AN SVG — the divergences are named rather than drawn, and `#178` is
 where the redraw is tracked. For current enforcement/status/naming behaviour,

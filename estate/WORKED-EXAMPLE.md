@@ -43,7 +43,7 @@ twice. It goes in the ticket's `AI-Knowledge/` folder as its own markdown file,
 and it must be listed in that folder's `_index.md` — one line per file, saying
 what the file covers.
 
-**The validator** is `_harness/scripts/check_ticket_log.sh`. It reads the records
+**The validator** is `_harness/scripts/check-ticket-log.sh`. It reads the records
 and refuses the ones that are broken. It judges nothing subjective: it checks
 that a changed record gained a session-log entry, that the record has a
 `## Current State` section, and that the knowledge index and the knowledge files
@@ -140,7 +140,7 @@ Then you ask the validator whether the estate accepts what you just made.
 ```console
 $ cp -r Tickets/999912Z-PROJ-99999 Tickets/202607A-PROJ-4021
 $ mv Tickets/202607A-PROJ-4021/999912Z-PROJ-99999.md Tickets/202607A-PROJ-4021/202607A-PROJ-4021.md
-$ bash _harness/scripts/check_ticket_log.sh
+$ bash _harness/scripts/check-ticket-log.sh
 OK: 202607A-PROJ-4021 validated.
 ```
 
@@ -162,7 +162,7 @@ Then you ask the validator again.
 ```console
 $ printf '%s\n' 'Rows with a null effective date are dropped by the staging model.' > Tickets/202607A-PROJ-4021/AI-Knowledge/staging-model-quirk.md
 $ printf '\n## %s - Traced the missing rows\n- Null effective dates are dropped by the staging model.\n' "$(date +%Y%m%d%H%M%S)" >> Tickets/202607A-PROJ-4021/202607A-PROJ-4021.md
-$ bash _harness/scripts/check_ticket_log.sh
+$ bash _harness/scripts/check-ticket-log.sh
 FAIL: 202607A-PROJ-4021 orphan file AI-Knowledge/staging-model-quirk.md not in _index.md. Fix: echo '- staging-model-quirk.md — <what it covers>' >> '<ESTATE>/Tickets/202607A-PROJ-4021/AI-Knowledge/_index.md'
 FAIL: 1 ticket(s) need attention — red blocks.
 $ echo $?
@@ -182,7 +182,7 @@ record that a machine quietly repaired is no longer a record of what happened.
 
 ```console
 $ echo '- staging-model-quirk.md — null effective dates are dropped — read before editing the model' >> Tickets/202607A-PROJ-4021/AI-Knowledge/_index.md
-$ bash _harness/scripts/check_ticket_log.sh
+$ bash _harness/scripts/check-ticket-log.sh
 OK: 202607A-PROJ-4021 validated.
 ```
 
@@ -226,7 +226,7 @@ disposable; you can build another one whenever you like. Left to itself it lands
 on your Desktop.
 
 ```console
-$ bash _harness/scripts/make_context_pack.sh --ticket 202607A-PROJ-4021
+$ bash _harness/scripts/make-context-pack.sh --ticket 202607A-PROJ-4021
 OK: pack written to <PACK-DIR>/harness-pack-<PACK-STAMP>.zip (disposable — delete after upload; regenerate anytime).
 NOTE: manually SKIM the zip before it leaves the machine. Automation reduces redaction errors; it does not replace the human check.
 ```
@@ -326,6 +326,6 @@ prints, or change the machinery back.
 
 The check is not in your estate and you are not expected to run it. It lives in
 the harness's own source repository, at `dev/demo/cases/worked-example.case.sh`,
-and runs as part of that project's acceptance suite, `dev/scripts/run_demo.sh`.
+and runs as part of that project's acceptance suite, `dev/scripts/run-demo.sh`.
 The page you are reading is a copy the installer laid down, checked before it was
 shipped to you.

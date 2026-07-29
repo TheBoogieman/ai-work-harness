@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # session-clock.case.sh — the session-log header clock is LOCAL machine time. SOURCED by the
-# runner; see dev/scripts/run_demo.sh for the contract.
+# runner; see dev/scripts/run-demo.sh for the contract.
 #
 # The validator reads a 14-digit header via epoch_from_ts14 (date -d/-j — LOCAL tz) and compares it
 # to the watermark stamp_wall (date +%s — absolute epoch). Those two frames agree ONLY when the
@@ -23,7 +23,7 @@
 # wrong way is exactly what this pairing catches (#161). set +e brackets the call so an expected
 # non-zero rc cannot abort the demo before the assertions read it.
 r10_validate() {
-  set +e; R10_OUT=$(bash estate/_harness/scripts/check_ticket_log.sh 2>&1); R10_RC=$?; set -e
+  set +e; R10_OUT=$(bash estate/_harness/scripts/check-ticket-log.sh 2>&1); R10_RC=$?; set -e
   if [ "$1" = clean ] && [ "$R10_RC" -ne 0 ]; then
     echo "BUG [$2]: the validator exited $R10_RC on a header it must ACCEPT — honest work blocked:"
     printf '%s\n' "$R10_OUT"; exit 1
@@ -42,7 +42,7 @@ sc_fixture() {
   R10_TZ_SAVE="${TZ-__unset__}"
   export TZ='Etc/GMT-10'   # fixed UTC+10, no DST — makes local differ from UTC by a clear 10h
   r09_make "$R10"
-  bash estate/_harness/scripts/check_ticket_log.sh >/dev/null 2>&1 || true
+  bash estate/_harness/scripts/check-ticket-log.sh >/dev/null 2>&1 || true
 }
 
 # [local-clock-ok] a LOCAL-now header (what the named convention requires) is newer than the

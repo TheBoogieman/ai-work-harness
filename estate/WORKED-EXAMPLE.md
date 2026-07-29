@@ -114,7 +114,6 @@ only looks.
 
 ```console
 $ bash _harness/scripts/harness-status.sh
-NOTE: harness version 0.1.0 (from VERSION, laid down by install.sh).
 OK: work repo present; last commit <HOW-LONG-AGO>.
 OK: record repo .git <SIZE> MiB (working tree <SIZE> MiB) — under the 50 MiB housekeeping threshold.
 OK: hooks config parses.
@@ -208,7 +207,6 @@ wrote and a count of the knowledge you captured.
 
 ```console
 $ bash _harness/scripts/harness-status.sh
-NOTE: harness version 0.1.0 (from VERSION, laid down by install.sh).
 OK: work repo present; last commit <HOW-LONG-AGO>.
 OK: record repo .git <SIZE> MiB (working tree <SIZE> MiB) — under the 50 MiB housekeeping threshold.
 OK: hooks config parses.
@@ -318,8 +316,8 @@ one: it stops printing what this document says it prints. When the check fails i
 names this file, gives the line number in it, and prints the document's line
 above the line that was actually produced.
 
-So: if a script is renamed, if a message is reworded, if the version stamp moves,
-if a check gains a line — this document goes red and says so. Prose usually rots
+So: if a script is renamed, if a message is reworded, if a line is dropped from a
+report, if a check gains a line — this document goes red and says so. Prose usually rots
 in silence. This prose reports when it has rotted, and the report is the
 instruction to fix it: bring the block back into line with what the machinery now
 prints, or change the machinery back.

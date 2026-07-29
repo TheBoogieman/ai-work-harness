@@ -106,6 +106,43 @@ and everything is green from there. A first-ever install on a machine never sees
 this. **Do not move or delete the stamp directory to make it go away**: its
 location is the thing that survives an estate being deleted.
 
+**A second expected red, if this machine already had agents deployed.** The agent
+deploy then stops rather than run, saying it found contracts in your assistant's
+agent directory that no record accounts for, and the summary repeats it: `Agents:
+NOT DEPLOYED`. Nothing was written and nothing was lost. It asks you to say which
+this is, once:
+
+```bash
+HARNESS_AGENT_ADOPT=1 bash ~/Work/_harness/scripts/deploy-agents.sh   # this estate owns them
+```
+
+From then on that estate deploys silently — the answer is recorded in the
+directory itself. The reason it asks at all is below, under **Rehearsing**.
+
+## Rehearsing the installer
+
+If you are trying `install.sh` out on a machine that also uses the harness for
+real — practising an upgrade, testing a change, following a walkthrough — say so:
+
+```bash
+bash estate/install.sh --rehearsal ~/scratch-estate
+```
+
+`--rehearsal` confines everything the installer would otherwise write **outside**
+the estate to `_rehearsal/` inside it: the agent deploy goes to
+`<target>/_rehearsal/agents` instead of your live assistant directory, and the
+validator's stamps to `<target>/_rehearsal/state` instead of `~/.harness`. The run
+says so at the top and again in its summary. **A rehearsal writes nothing outside
+its own target directory** — delete that directory and the machine is as it was.
+
+Without the flag, an install does what installing means: it puts agents where your
+assistant will find them. That is correct and is not going to change. It is also
+why a practice run that forgets to say it was practice used to overwrite a real
+assistant configuration with fixture-pinned contracts — which is what happened, and
+what the deploy refusal above exists to stop. **The refusal is the protection; the
+flag is the convenience.** The flag depends on you remembering; the refusal does
+not.
+
 ## Re-running / reconfiguring
 
 Re-running `install.sh` serves three different intents, each with its own home:

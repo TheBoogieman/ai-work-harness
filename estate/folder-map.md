@@ -76,6 +76,10 @@ Work/                                        [git root · local-only · whitelis
 ├── _retired/<timestamp>/                    QUARANTINE — appears only after install.sh --upgrade [gitignored · deliberately outside the record]
 │   └── <original path>                      your copy of a replaced or superseded file, moved never deleted · the run printed the mv that restores it
 │
+├── _rehearsal/                              appears only after install.sh --rehearsal [gitignored · outside the record, like _retired/]
+│   ├── agents/                              where a PRACTICE run deploys, instead of your live assistant directory
+│   └── state/                               where a PRACTICE run stamps, instead of ~/.harness/validated
+│
 └── [GitHub/ · Diagrams/ · Mappings/ · …]    [never enter history — whitelist excludes them]
 ```
 

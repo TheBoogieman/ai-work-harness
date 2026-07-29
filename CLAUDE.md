@@ -209,6 +209,18 @@ for pushing and issue management while working on the harness. NO shipped harnes
 component (validation, status, the git safety net, agents, hooks) depends on
 `gh`; the harness runs fully on a host without it.
 
+EVERY INSTALL YOU RUN WHILE DEVELOPING IS A REHEARSAL, AND MUST SAY SO (#304):
+`bash estate/install.sh --rehearsal <target-under-a-temp-root-you-created>`. This
+seat is also a machine that uses the harness for real, so a hand-run without the
+flag deploys whatever contracts your working tree happens to carry — including
+fixture pins — into the operator's live assistant directory, which is exactly how
+that directory came to hold a fake model pin and the path of a script that exists
+under no name. The deploy refuses to overwrite a directory it cannot account for,
+so the flag is not the only thing standing between you and that; it is still the
+thing that makes the run leave nothing behind. Pick targets under a temp root, and
+delete them — the home directory currently holds five throwaway estates nobody
+threw away.
+
 The UNSUPPORTED anti-pattern is a Windows-DRIVE checkout accessed THROUGH WSL (a
 `C:\…` path under `/mnt/c`): slow cross-boundary I/O and unreliable executable
 bits. If you need a Linux witness, clone fresh inside the WSL filesystem (`~/…`,

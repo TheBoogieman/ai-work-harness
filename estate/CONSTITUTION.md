@@ -30,7 +30,7 @@ Work/
 ├── General AI-Knowledge/  Non-ticket knowledge base — tooling/setup/how-to docs (one subfolder per topic) — what the machinery READS
 ├── General Human Knowledge/  Human-facing OUTPUTS the machinery writes (e.g. Retrospectives/) — mirrors General AI-Knowledge the other way: what it WRITES for you (append-only, versioned)
 ├── _harness/scripts/   THE MACHINERY — validator, status, notebook helper, context pack, agent deploy (versioned: the enforcement layer has undo + history)
-├── _agents/        SOURCE OF TRUTH for all .agent.md definitions (versioned; deployed to the user-level Copilot agent directory — live copies are derived and disposable; filesystem wins on drift)
+├── _agents/        SOURCE OF TRUTH for all .agent.md definitions (versioned; deployed to the user-level Copilot agent directory — live copies are derived and disposable; filesystem wins on drift). That directory is SHARED BY EVERY ESTATE ON THE MACHINE and is the only thing the harness writes outside an estate besides the validation stamps: a deploy that would overwrite contracts it cannot account for REFUSES and names the two ways to say which run it is (`HARNESS_AGENT_DEPLOY_DIR` for a rehearsal, `HARNESS_AGENT_ADOPT=1` for a hand-off). A practice install declares itself with `install.sh --rehearsal` and writes nothing outside its own target.
 ├── <anything else>/  Your other folders — untracked by the whitelist, no conventions imposed
 └── CONSTITUTION.md   ← this file
 ```

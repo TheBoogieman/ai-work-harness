@@ -83,13 +83,28 @@ status; it **never edits an existing file**, so a re-run finds nothing absent.
 (One flag changes that, and only if you type it: `--upgrade`, below. Every run
 that does not carry it behaves exactly as this paragraph describes.) It
 asks for your board key and model pins (Enter accepts each suggested default;
-`--dry-run` plans without touching anything, `--yes` accepts every default). The
+`--dry-run` plans without touching anything **and asks nothing** — a run that
+creates no file can apply no answer — while `--yes` accepts every default). The
 agents deploy to your Copilot version's discovery directory — verify that path
 for your version (override with `HARNESS_AGENT_DEPLOY_DIR`). Finally, paste
 `AI-SETUP-PROMPT.md` into your AI assistant, working in the new estate: it is the **final
 validation gate** — it confirms the validator + status are green, spot-checks the
 scaffolded tickets, and walks you through the personalisation the installer left
 you (model pins, `LICENSE`, scrub-table seeds, Owner lines).
+
+**One expected red, if this machine has had a harness estate on it before.** That
+first validator run then reports `FAIL: 999912Z-PROJ-99999 changed but no new
+Session Log entry since last validation.` and exits `1`, and the machinery is
+working: the validator keeps its validation stamps in `~/.harness/validated/`
+(`$HARNESS_STATE_DIR` if you set one), **outside every estate on purpose**, so
+that deleting an estate never destroys its validation history. A stamp from your
+previous estate therefore outlives it, and this estate's freshly-laid-down copy
+of the template ticket is a newer file whose newest session-log header is still
+the template's placeholder date. Clear it with the manual half of the fix the
+validator prints — one session-log line appended to that ticket, then re-run it —
+and everything is green from there. A first-ever install on a machine never sees
+this. **Do not move or delete the stamp directory to make it go away**: its
+location is the thing that survives an estate being deleted.
 
 ## Re-running / reconfiguring
 

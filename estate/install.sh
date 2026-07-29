@@ -24,7 +24,8 @@
 #
 # Runs FROM the source distribution (this file's directory), targeting an estate dir.
 #   Usage: install.sh [--dry-run] [--yes] [--upgrade] [TARGET_DIR]
-#     --dry-run  print the full plan and touch nothing
+#     --dry-run  print the full plan and touch nothing — and ASK NOTHING (#302): a run that
+#                creates no file can apply no answer, so no settings question is put
 #     --yes      non-interactive: accept every suggested default
 #     --upgrade  the ONE exception above: bring an EXISTING estate's machinery up to this
 #                source's, retiring what this release supersedes. Records untouched, settings
@@ -224,9 +225,25 @@ guard_source_tree() {
 }
 
 # ---- helpers ----------------------------------------------------------------------------------
-ask() {  # ask <prompt> <default> ; echoes the answer (default under --yes or on empty Enter)
+ask() {  # ask <prompt> <default> ; echoes the answer (default under --dry-run/--yes or empty Enter)
   local prompt="$1" def="$2" ans=""
-  if [ "$YES" -eq 1 ]; then printf '%s' "$def"; return; fi
+  # A DRY RUN ANSWERS ITSELF (#302), and the reason is the whole of what makes it a dry run: it
+  # CREATES NOTHING, so there is no file for an answer to be written into and no answer can be
+  # applied even in principle. Asking anyway stalls any piped or scripted invocation at a question
+  # whose reply is then discarded — measured as rc=124 on a timeout, with the plan never printed —
+  # and `--upgrade --dry-run` is the command the install document tells a user to run FIRST.
+  #
+  # THE TEST IS ON DRY AND ON DRY ALONE. It must never widen to UPGRADE: a real upgrade CAN create
+  # a file (machinery added since the estate was installed), and an agent file it creates is pinned
+  # from THESE answers — apply_model_pins substitutes the interview's model values into everything
+  # in CREATED. Silencing the interview whenever --upgrade is set would therefore lay an UNPINNED
+  # agent contract into somebody's live estate, which is worse than the stall it would be fixing.
+  #
+  # It lives in ask() rather than around main()'s two interview_* calls for two reasons: every
+  # question this installer will ever own passes through here, so one condition covers the set as
+  # it grows; and BOARD / CHEAP_MODEL / SONNET_MODEL stay ASSIGNED, where skipping the interviews
+  # would leave them unset — and under `set -u` an unset read is a fatal error, not an empty value.
+  if [ "$DRY" -eq 1 ] || [ "$YES" -eq 1 ]; then printf '%s' "$def"; return 0; fi
   # The hint names the SAME $def the code returns on empty input — ONE variable, so the advertised
   # default can never drift from the real fallback. That makes the printed claim true by
   # construction rather than by upkeep: there is one value, so there is nothing to keep in step.
@@ -1302,6 +1319,17 @@ print_summary_knobs() {
 }
 
 # ---- AI-ASSISTANT FINAL GATE (#39; OPERATOR-witnessed) -----------------------------------------
+# THE RE-INSTALL NOTE (#302) is printed HERE because this is the line that sends a user to look for
+# green, and on a machine that has installed a harness estate before, one thing is red. It is said
+# out loud rather than left to be discovered: three seats met that red, could not account for it,
+# and each concluded the machinery was broken.
+# IT IS UNCONDITIONAL, and that is a decision rather than a shortcut. Printing it only when a stamp
+# exists would need this file to carry the stamp directory's path, and that path has ONE home — the
+# validator, which derives it from HARNESS_STATE_DIR. A second copy here would be free to drift
+# from the first. The sentence carries its own condition instead, in the word IF.
+# NOTHING AUTOMATED COULD HAVE FOUND THIS: the acceptance suite points HARNESS_STATE_DIR at a
+# throwaway directory precisely so that running it never reads the machine's own stamps, so no run
+# of it is ever in the state this note describes. It took installing the release on a used machine.
 final_gate() {
   echo
   echo "FINAL STEP — hand this estate to your AI assistant of choice as the last gate." \
@@ -1311,6 +1339,28 @@ final_gate() {
   echo "confirm validator + status are green, spot-check the scaffolded tickets," \
        "and nudge you to fix"
   echo "anything red — on the record. That live validation is the final gate for local deployment."
+  final_gate_reinstall_note
+  return 0
+}
+
+# final_gate_reinstall_note — the one expected red, its cause, and the line that clears it. Its own
+# function only so final_gate stays one paragraph; it is part of that message, not a separate step.
+final_gate_reinstall_note() {
+  echo
+  echo "IF YOU HAVE INSTALLED A HARNESS ESTATE ON THIS MACHINE BEFORE, expect that first" \
+       "validator run to"
+  echo "report ONE red against the template ticket 999912Z-PROJ-99999, and it is not damage." \
+       "The validator"
+  echo "keeps its validation stamps in ~/.harness/validated/ — OUTSIDE every estate, on purpose," \
+       "so that"
+  echo "deleting an estate never destroys its validation history. A stamp from your last estate" \
+       "therefore"
+  echo "outlives it, and this estate's freshly-written copy of that ticket reads as a record" \
+       "that changed"
+  echo "without gaining a Session Log entry — which is exactly what the validator says, correctly." \
+       "Clear it"
+  echo "with the fix the validator itself prints (append one Session Log line to that ticket)," \
+       "and re-run."
   return 0
 }
 

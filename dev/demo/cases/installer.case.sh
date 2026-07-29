@@ -596,6 +596,55 @@ in_upgrade_plan() {
     "moved nothing"
 }
 
+# (w) dry-run-asks-nothing (#302): A DRY RUN ASKS NO QUESTIONS. Nothing is created by one, so no
+#     answer it collects can reach any file even in principle — and the three settings questions it
+#     used to ask stalled every piped or scripted invocation at a prompt whose reply was then
+#     discarded. Measured on the pre-fix installer: with stdin held open by a pipe that never
+#     delivers, `--upgrade --dry-run` never returned (rc=124 on a timeout, plan never printed); with
+#     stdin closed it emitted 359 bytes of prompts before the plan. `--upgrade --dry-run` is the
+#     command INSTALL-INSTRUCTIONS.md tells a user to run BEFORE an upgrade, so the stall sat on the
+#     recommended path.
+#     BOTH DRY-RUN PATHS ARE ASSERTED. The questions are asked before the mode is chosen, so a fix
+#     that reached only one of them would leave the other stalling: the create path against a fresh
+#     target, and the upgrade path against this family's fixture estate.
+#     STDIN IS CLOSED DELIBERATELY. `</dev/null` is the scripted user's stdin, and closing it is the
+#     only way this guard can tell "asked nothing" from "asked, and something upstream happened to
+#     answer" — under the suite's own stdin a prompt would be silently satisfied and the run would
+#     look clean. A prompt anywhere in the combined output is the defect.
+#     REVERT-PROVABLE: drop the DRY test from ask() in estate/install.sh and this reds on both
+#     invocations, quoting the prompt it found.
+in_dry_run_asks_nothing() {
+  in_dry_asks create estate/install.sh --dry-run "$I39_ROOT/dryask-never"
+  in_dry_asks upgrade "$UP_SRC/estate/install.sh" --upgrade --dry-run "$UP_EST"
+  echo "  ok [dry-run-asks-nothing] — with stdin CLOSED, neither the create nor the upgrade dry" \
+    "run asked a question; each printed its whole plan and exited 0"
+}
+
+# in_dry_asks — ONE dry-run invocation with stdin closed, asserted three ways: it exited 0, it
+# reached the end of its plan, and it asked nothing. The three are separate on purpose — an
+# installer that asked nothing because it died before the interview would satisfy the third alone.
+# $1 = which invocation (for the messages), $2 = the installer to run, $3.. = its own arguments.
+in_dry_asks() {
+  local which="$1" sh="$2" rc=0 out; shift 2
+  out="$I39_ROOT/dryask.$which"
+  HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash "$sh" "$@" >"$out" 2>&1 </dev/null || rc=$?
+  [ "$rc" -eq 0 ] \
+    || { echo "BUG [dry-run-asks-nothing]: the $which dry run exited rc=$rc with stdin closed —" \
+           "that is the stall a scripted user hits. Its last output was:"; \
+         tail -5 "$out" | sed 's/^/      /'; exit 1; }
+  grep -Fq -- '--dry-run: nothing was touched.' "$out" \
+    || { echo "BUG [dry-run-asks-nothing]: the $which dry run never printed its closing line, so" \
+           "it did not reach the end of the plan — 'it asked nothing' would then be an answer" \
+           "about a run that stopped early. What it printed:"; \
+         tail -5 "$out" | sed 's/^/      /'; exit 1; }
+  grep -qE 'ACCEPT DEFAULT|PRESS ENTER' "$out" \
+    && { echo "BUG [dry-run-asks-nothing]: the $which dry run ASKED a settings question. It" \
+           "creates nothing, so the answer could not be applied to anything, and with stdin" \
+           "closed or piped the prompt is a stall with no explanation. What it asked:"; \
+         grep -E 'ACCEPT DEFAULT|PRESS ENTER' "$out" | sed 's/^/      /'; exit 1; }
+  return 0
+}
+
 # (t) upgrade-needs-source: an estate re-running its OWN shipped installer has no source to copy
 #     new machinery from, so --upgrade there must REFUSE by name and print the command that works.
 #     The failure it prevents is quiet: a plan of zero-everything reads exactly like an estate that
@@ -862,6 +911,64 @@ in_upgrade_interrupted_check() {
     "quarantine), and re-running finished the job"
 }
 
+# (x) upgrade-still-interviews (#302): THE BOUND ON THE FIX ABOVE, and the guard that catches that
+#     fix going too far. An upgrade CAN create a file — machinery added since the estate was
+#     installed — and an agent file it creates is pinned from the interview's own values:
+#     apply_model_pins runs over CREATED on the upgrade path exactly as it does on the create path.
+#     So the questions are justified on a real upgrade, and a change that suppressed them whenever
+#     --upgrade was set would put an unpinned agent contract into somebody's live estate, which is
+#     worse than the stall it would be fixing.
+#     THE FIXTURE IS THE DEFECT'S OWN SHAPE: an agent file is DELETED from the upgraded estate, so
+#     the next upgrade must CREATE it, and the estate's cheap-tier reference agent carries the pin
+#     its user chose (UPCHEAP, planted in in_up_customise and asserted byte-unchanged above).
+#     WHICH HALF CATCHES THE OVERREACH, said plainly because the two are not equal. THE QUESTION
+#     COUNT is the tripwire: widening ask()'s test from DRY to "DRY or UPGRADE" makes this run ask
+#     nothing, and that was WATCHED — three questions became zero. THE PIN ASSERTION DOES NOT RED ON
+#     THAT VARIANT, and recording so is the point of writing it down: a silenced ask() still returns
+#     the DETECTED default, so an established pin still lands. What such a variant really costs is
+#     the estate whose pin CANNOT be detected — the placeholder is then applied with nobody told.
+#     The pin half is kept because it is the claim the questions exist to serve, not because it is
+#     what fails first.
+#     STDIN IS AN ENTER-THROUGH, which is a real user accepting each offered default. --yes would
+#     answer the questions from outside and prove nothing about whether they were asked at all.
+in_upgrade_still_interviews() {
+  local up_kk="_agents/knowledge-keeper.agent.md" up_n up_rc=0
+  grep -q '^model: PICK-A-CHEAP-MODEL' "$UP_SRC/estate/$up_kk" \
+    || { echo "BUG [upgrade-still-interviews]: fixture unsound — the SOURCE's $up_kk does not"; \
+         echo "    carry the cheap placeholder, so a pinned copy arriving in the estate would"; \
+         echo "    say nothing about whether the interview's value was applied to it"; exit 1; }
+  rm -f "$UP_EST/$up_kk"
+  set +e
+  printf '\n\n\n' | HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" \
+    bash "$UP_SRC/estate/install.sh" --upgrade "$UP_EST" \
+    >"$I39_ROOT/si.out" 2>"$I39_ROOT/si.err"
+  up_rc=$?
+  set -e
+  [ "$up_rc" -eq 0 ] \
+    || { echo "BUG [upgrade-still-interviews]: the Enter-through upgrade exited rc=$up_rc:"; \
+         tail -5 "$I39_ROOT/si.err" | sed 's/^/      /'; exit 1; }
+  up_n=$(grep -c 'ACCEPT DEFAULT' "$I39_ROOT/si.err" || true)
+  in_still_interviews_check "$up_kk" "$up_n"
+}
+
+# in_still_interviews_check — the two assertions, split out so each sits next to its own message and
+# the guard above stays inside the function-length limit. $1 = the agent file, $2 = questions asked.
+in_still_interviews_check() {
+  local up_kk="$1" up_n="$2"
+  [ "$up_n" -eq 3 ] \
+    || { echo "BUG [upgrade-still-interviews]: a real upgrade asked $up_n settings question(s),"; \
+         echo "    not 3. The dry-run fix has widened onto --upgrade. An upgrade that creates an"; \
+         echo "    agent file pins it from these answers, so silencing them here lays an"; \
+         echo "    unpinned contract into a live estate — what this guard stops."; exit 1; }
+  grep -q '^model: UPCHEAP' "$UP_EST/$up_kk" \
+    || { echo "BUG [upgrade-still-interviews]: the upgrade created $up_kk but did not pin it to"; \
+         echo "    the estate's established cheap model. The source ships the placeholder, so"; \
+         echo "    the file has arrived carrying one. Its model line reads:"; \
+         grep -m1 '^model:' "$UP_EST/$up_kk" | sed 's/^/      /'; exit 1; }
+  echo "  ok [upgrade-still-interviews] — a real upgrade that CREATES an agent file still asks" \
+    "all 3 questions and still pins the new file to the estate's own model (UPCHEAP)"
+}
+
 case_installer() {
   in_fixture
   in_schema_one_home
@@ -883,6 +990,9 @@ case_installer() {
   # create path without that fixture standing anywhere near it.
   in_upgrade_fixture
   in_upgrade_plan
+  # #302 — the dry-run interview. It runs HERE, straight after the plan guard, because both of its
+  # invocations must touch nothing and the fixture estate is still exactly as the plan left it.
+  in_dry_run_asks_nothing
   in_upgrade_needs_source
   in_upgrade_retires
   in_upgrade_retires_version
@@ -892,5 +1002,9 @@ case_installer() {
   in_upgrade_idempotent
   in_upgrade_restore_works
   in_upgrade_interrupted
+  # #302 — the bound on the dry-run fix. LAST, because it is the only guard here that deletes a
+  # shipped file from the fixture estate to force a create, and every guard above must read the
+  # estate the upgrade family built rather than one this has reached into.
+  in_upgrade_still_interviews
   rm -rf "$I39_ROOT" "$I39_DEPLOY"
 }

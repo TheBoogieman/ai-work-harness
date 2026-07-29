@@ -24,7 +24,17 @@ diffs before every write:
 3. **Green verification:** run `_harness/scripts/check-ticket-log.sh` and
    `_harness/scripts/harness-status.sh`; both must be green. Spot-check the
    scaffolded tickets — each has a valid `AI-Knowledge/_index.md` and the
-   git-ignored `Logs/` + `Dump/`.
+   git-ignored `Logs/` + `Dump/`. **One red here is expected rather than a
+   defect, and only on a machine that has had a harness estate before:**
+   `FAIL: 999912Z-PROJ-99999 changed but no new Session Log entry since last
+   validation.` The validator keeps its stamps in `~/.harness/validated/`
+   (`$HARNESS_STATE_DIR` if set) — outside every estate on purpose, so deleting
+   an estate never destroys its validation history — so a stamp from the previous
+   estate outlives it and this estate's fresh copy of the template ticket looks
+   changed with no new entry. Do not conclude the machinery is broken and do not
+   move or delete the stamp directory; apply the manual half of the fix the
+   validator prints (append one session-log line to that ticket), re-run it, and
+   tell me you did — on the record.
 4. **Finish the personalisation the installer left to me** (it never edits a
    pre-existing file — only `--upgrade` does, and only if you type it; see
    `INSTALL-INSTRUCTIONS.md`): any model pin still `PICK-A-*` → enumerate the models

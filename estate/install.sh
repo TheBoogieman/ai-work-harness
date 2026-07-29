@@ -23,13 +23,19 @@
 # source tree by derive_product_paths below (#282). A fresh estate contains ZERO dev files.
 #
 # Runs FROM the source distribution (this file's directory), targeting an estate dir.
-#   Usage: install.sh [--dry-run] [--yes] [--upgrade] [TARGET_DIR]
+#   Usage: install.sh [--dry-run] [--yes] [--upgrade] [--rehearsal] [TARGET_DIR]
 #     --dry-run  print the full plan and touch nothing — and ASK NOTHING (#302): a run that
 #                creates no file can apply no answer, so no settings question is put
 #     --yes      non-interactive: accept every suggested default
 #     --upgrade  the ONE exception above: bring an EXISTING estate's machinery up to this
 #                source's, retiring what this release supersedes. Records untouched, settings
 #                carried forward, nothing deleted. Combine with --dry-run to see the plan first.
+#     --rehearsal this run is PRACTICE, not somebody's install (#304). Every write the installer
+#                would otherwise make OUTSIDE the estate — the agent deploy into the machine's
+#                live assistant directory, and the validator's stamps — is confined to
+#                TARGET/_rehearsal/ instead, so the run leaves nothing anywhere but its own
+#                target. Say it whenever you are trying the installer out on a machine that also
+#                uses the harness for real.
 #     TARGET_DIR the estate root to create/complete (default: current directory — but the estate
 #                must be SEPARATE from the source checkout, so in practice pass a target dir)
 #
@@ -98,6 +104,18 @@ INVOKE="install.sh"
 # ---- state the steps share --------------------------------------------------------------------
 DRY=0; YES=0; TARGET=""
 RECONFIGURE=0
+# REHEARSAL (#304) — the run DECLARING that it is a practice run rather than somebody's actual
+# install. It exists because those two are otherwise the same command, so the only thing keeping a
+# rehearsal out of a live assistant configuration was every caller remembering to redirect it — and
+# a caller forgot, putting fixture-pinned agent contracts into a real ~/.copilot/agents. What the
+# declaration changes is stated at confine_rehearsal below. THE DEFAULT IS 0 AND CANNOT BE THE
+# SAFETY: a rehearsal that forgets the flag looks exactly like a real install here, which is why
+# the refusal that actually protects the live directory lives in deploy-agents.sh, where the
+# evidence is, and not in this flag.
+REHEARSAL=0
+# DEPLOY_RC — what the agent deploy in audit_estate reported, carried to the summary so a REFUSED
+# deploy is in the closing record and not only in a line that has scrolled past.
+DEPLOY_RC=0
 # CREATED — paths (relative to TARGET) this run actually created; the ONLY things config may touch.
 CREATED=()
 plan_create=(); plan_exists=()
@@ -132,10 +150,11 @@ up_same=0; up_record=0; UPGRADE_PARAM=""
 parse_args() {
   for a in "$@"; do
     case "$a" in
-      --dry-run) DRY=1 ;;
-      --yes)     YES=1 ;;
-      --upgrade) UPGRADE=1 ;;
-      -*)        echo "install: unknown option: $a" >&2; exit 2 ;;
+      --dry-run)   DRY=1 ;;
+      --yes)       YES=1 ;;
+      --upgrade)   UPGRADE=1 ;;
+      --rehearsal) REHEARSAL=1 ;;
+      -*)          echo "install: unknown option: $a" >&2; exit 2 ;;
       *)
         [ -z "$TARGET" ] || { echo "install: only one TARGET_DIR allowed" >&2; exit 2; }
         TARGET="$a" ;;
@@ -221,6 +240,37 @@ guard_source_tree() {
          "distribution." >&2
     exit 1
   }
+  return 0
+}
+
+# confine_rehearsal (#304) — the whole of what `--rehearsal` DOES: point every write this run makes
+# outside the estate back INSIDE it, and say so where it cannot be missed.
+#
+# THERE ARE EXACTLY TWO SUCH WRITES, and both have a named override already, which is why this is a
+# redirection and not new machinery: the agent deploy into the machine's live assistant directory
+# (HARNESS_AGENT_DEPLOY_DIR, deploy-agents.sh) and the validator's stamps (HARNESS_STATE_DIR,
+# check-ticket-log.sh). Both land under TARGET/_rehearsal/, which sits outside the estate's
+# whitelist exactly as _retired/ does — untracked, so a rehearsal adds nothing to a record either.
+# The claim this buys is checkable in one sentence: a rehearsal writes nothing outside its own
+# target directory.
+#
+# IT OVERRIDES A PRE-SET VALUE RATHER THAN DEFERRING TO IT, deliberately. Deferring would make the
+# sentence above conditional on what the environment already held, and a promise that quietly
+# depends on the environment is the same shape of trust that produced this defect. A caller who
+# wants a different throwaway directory has the plainer way of saying it: set the variable and
+# leave the flag off.
+#
+# IT DOES NOT CREATE THE DIRECTORIES. --dry-run must touch nothing, and the two consumers each
+# mkdir their own path when they actually write, so a planned-but-not-run rehearsal leaves no
+# empty folders behind either.
+confine_rehearsal() {
+  [ "$REHEARSAL" -eq 1 ] || return 0
+  export HARNESS_AGENT_DEPLOY_DIR="$TARGET/_rehearsal/agents"
+  export HARNESS_STATE_DIR="$TARGET/_rehearsal/state"
+  echo "=== REHEARSAL: this run is practice. Nothing outside $TARGET will be written. ==="
+  echo "    agents      -> $HARNESS_AGENT_DEPLOY_DIR   (not your live assistant directory)"
+  echo "    validation  -> $HARNESS_STATE_DIR   (not ~/.harness)"
+  echo "    Drop --rehearsal when you mean it for real."
   return 0
 }
 
@@ -1195,8 +1245,18 @@ audit_estate() {
   # assistant still reading the dead filename — which is the entire defect, uncorrected.
   if [ ${#CREATED[@]} -gt 0 ] || [ "$NEED_GIT" -eq 1 ] || [ ${#up_replace[@]} -gt 0 ] \
      || [ ${#up_repoint[@]} -gt 0 ]; then
-    bash "$TARGET/_harness/scripts/deploy-agents.sh" \
-      || echo "note: agent deploy reported an issue — see above (verify your Copilot agent dir)."
+    # A REFUSAL IS NOT A FAILURE (#304). deploy-agents.sh exits 3 when it declines to overwrite a
+    # live agent directory it cannot account for; it wrote nothing, it printed the two ways past,
+    # and the run continues so the validator and status below still report. Any other non-zero is
+    # the old "it tried and broke" case and keeps its old note. DEPLOY_RC carries the distinction
+    # to the summary, because a line printed here scrolls past — and this one has a fix to type.
+    DEPLOY_RC=0
+    bash "$TARGET/_harness/scripts/deploy-agents.sh" || DEPLOY_RC=$?
+    if [ "$DEPLOY_RC" -eq 3 ]; then
+      echo "note: agents were NOT deployed — the deploy REFUSED (see the two options above)."
+    elif [ "$DEPLOY_RC" -ne 0 ]; then
+      echo "note: agent deploy reported an issue — see above (verify your Copilot agent dir)."
+    fi
   fi
   echo "--- validator ---"
   bash "$TARGET/_harness/scripts/check-ticket-log.sh" \
@@ -1218,11 +1278,29 @@ divergence_nudge() {
   return 0
 }
 
+# print_summary_mode (#304) — the two things about THIS run that the record would otherwise not
+# contain: that it was a rehearsal, and that the agent deploy refused. Both are silent by design on
+# an ordinary run, so the summary of a real install is unchanged byte for byte.
+# The refusal line REPEATS THE FIX rather than pointing back at it: a person reading a summary has
+# by definition stopped reading the scrollback.
+print_summary_mode() {
+  [ "$REHEARSAL" -eq 0 ] || echo "Mode: REHEARSAL — agents and validation stamps stayed under" \
+    "$TARGET/_rehearsal/. Nothing outside this estate was written."
+  [ "$DEPLOY_RC" -ne 3 ] || {
+    echo "Agents: NOT DEPLOYED — the deploy refused to overwrite an agent directory it could not"
+    echo "  account for, and wrote nothing. If this estate is the one this machine should read"
+    echo "  agents from: HARNESS_AGENT_ADOPT=1 bash $TARGET/_harness/scripts/deploy-agents.sh"
+    echo "  If you were rehearsing: re-run with --rehearsal, or set HARNESS_AGENT_DEPLOY_DIR."
+  }
+  return 0
+}
+
 # ---- CLOSING SUMMARY = a record (#39) ----------------------------------------------------------
 print_summary() {
   echo
   echo "======================== INSTALL SUMMARY ========================"
   echo "Estate: $TARGET"
+  print_summary_mode
   print_summary_created
   echo "Choices (asked or defaulted):"
   print_summary_board
@@ -1309,6 +1387,10 @@ print_summary_knobs() {
   echo "  HARNESS_COMMIT_LAG_WARN_S default 300  — commit-vs-session lag WARN (harness-status.sh)"
   echo "  HARNESS_AGENT_DEPLOY_DIR  default ~/.copilot/agents — agent deploy target" \
        "(deploy-agents.sh)"
+  echo "  HARNESS_AGENT_ADOPT       default 0    — set 1 once to let THIS estate take over a" \
+       "live agent"
+  echo "                                           directory another estate deployed to" \
+       "(deploy-agents.sh)"
   echo "Declared residuals (honest): verifying the hook fires inside a live assistant session," \
        "and any"
   echo "  platform whose agent directory differs (HARNESS_AGENT_DEPLOY_DIR override stands)." \
@@ -1372,6 +1454,9 @@ main() {
   guard_upgrade_mode
   guard_no_remote
   guard_source_tree
+  # Before anything is printed about the plan, so a rehearsal's banner is the first thing on the
+  # screen rather than a line inside a block, and before any step can read either variable.
+  confine_rehearsal
   banner_reconfigure
   interview_board
   interview_models

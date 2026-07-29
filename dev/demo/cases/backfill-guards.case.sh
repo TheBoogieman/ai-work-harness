@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # backfill-guards.case.sh — issue #18: retroactive guards for #1, #3 and #10, plus the #35
-# here-string safety proof they depend on. SOURCED by the runner; see run_demo.sh.
+# here-string safety proof they depend on. SOURCED by the runner; see run-demo.sh.
 #
 # These three bugs were fixed and closed BEFORE the guard-per-bug law (#18) existed, so they
 # shipped without guards. One guard each below, all witnessable on this host (no Mac needed), each
@@ -109,14 +109,14 @@ bg_independent_clocks() {
   sleep 1   # make the validation wall-clock strictly after the header time
   touch -t "$(date +%Y)01010000" "$g3md"      # anchor mtime to Jan 1 this year (mt1)
   # the stamp is written here: line 1 = wall1 (now), line 2 = mt1 (Jan 1)
-  bash estate/_harness/scripts/check_ticket_log.sh >/dev/null 2>&1 || true
+  bash estate/_harness/scripts/check-ticket-log.sh >/dev/null 2>&1 || true
   touch -t "$(date +%Y)02010000" "$g3md"
-  set +e; G3A=$(bash estate/_harness/scripts/check_ticket_log.sh 2>&1); set -e
+  set +e; G3A=$(bash estate/_harness/scripts/check-ticket-log.sh 2>&1); set -e
   printf '%s\n' "$G3A" | grep -q "202607S-PROJ-33 changed but no new Session Log entry" \
     || { echo "BUG [independent-clocks]: an mtime change below the wall clock was NOT noticed —" \
            "freshness isn't reading the stamp's mtime line:"; printf '%s\n' "$G3A"; exit 1; }
   printf '\n## %s - real new session\n- work recorded\n' "$(date +%Y%m%d%H%M%S)" >> "$g3md"
-  set +e; G3B=$(bash estate/_harness/scripts/check_ticket_log.sh 2>&1); set -e
+  set +e; G3B=$(bash estate/_harness/scripts/check-ticket-log.sh 2>&1); set -e
   printf '%s\n' "$G3B" | grep -q "OK: 202607S-PROJ-33 validated" \
     || { echo "BUG [independent-clocks]: a real new session header was not accepted:"; \
          printf '%s\n' "$G3B"; exit 1; }
@@ -171,13 +171,13 @@ bg_wip_not_absorbed() {
 # own copy; both source portability.sh; and the one shared function converts a known header
 # correctly. Re-introducing a local copy in either script reddens this.
 bg_epoch_one_home() {
-  grep -qE '^[[:space:]]*epoch_from_ts14\(\)' estate/_harness/scripts/check_ticket_log.sh \
-    && { echo "BUG [epoch-one-home]: check_ticket_log.sh defines its own epoch_from_ts14 (drift" \
+  grep -qE '^[[:space:]]*epoch_from_ts14\(\)' estate/_harness/scripts/check-ticket-log.sh \
+    && { echo "BUG [epoch-one-home]: check-ticket-log.sh defines its own epoch_from_ts14 (drift" \
            "risk — source portability.sh)"; exit 1; }
   grep -qE '^[[:space:]]*epoch_from_ts14\(\)' estate/_harness/scripts/harness-status.sh \
     && { echo "BUG [epoch-one-home]: harness-status.sh defines its own epoch_from_ts14 (drift" \
            "risk — source portability.sh)"; exit 1; }
-  { grep -q 'source .*portability\.sh' estate/_harness/scripts/check_ticket_log.sh \
+  { grep -q 'source .*portability\.sh' estate/_harness/scripts/check-ticket-log.sh \
     && grep -q 'source .*portability\.sh' estate/_harness/scripts/harness-status.sh; } \
     || { echo "BUG [epoch-one-home]: validator and status must source portability.sh"; exit 1; }
   ( source estate/_harness/scripts/portability.sh

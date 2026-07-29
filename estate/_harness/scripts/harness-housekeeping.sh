@@ -85,7 +85,7 @@ fi
 echo "AFTER:  .git ${git_kb_after} KiB (${reclaim_note})"
 
 # ---- 3) NOTEBOOK HYGIENE — REPORT ONLY (never mutate a record here) ------------------
-# Checks/ notebooks are tracked JSON that append_notebook_cell.py rewrites in full on every
+# Checks/ notebooks are tracked JSON that append-notebook-cell.py rewrites in full on every
 # cell append, and git delta-compresses them poorly, so they are the other real accumulator.
 # We only REPORT the largest tracked notebooks. Stripping outputs shrinks them but MUTATES a
 # record, so it stays a deliberate manual choice (see the constitution's Repo Health section),

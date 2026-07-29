@@ -2,7 +2,7 @@
 # record-whitelisted.case.sh — [record-whitelisted]: the whitelist re-include
 # (`!/estate/`, which re-includes the whole estate tree) must make a file dropped under
 # estate/General Human Knowledge/
-# TRACKABLE: these are record artifacts, versioned. SOURCED by the runner; see run_demo.sh.
+# TRACKABLE: these are record artifacts, versioned. SOURCED by the runner; see run-demo.sh.
 #
 # Probe: create a file there and assert `git add -A --dry-run` WOULD stage it. This is #38's
 # junk-ignore method run in the OPPOSITE direction — #38 proves junk is NEVER staged, this proves

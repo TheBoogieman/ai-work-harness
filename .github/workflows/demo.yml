@@ -1,4 +1,4 @@
-# demo.yml — runs the harness acceptance demo (run_demo.sh) on macOS and Linux.
+# demo.yml — runs the harness acceptance demo (run-demo.sh) on macOS and Linux.
 # The demo IS the truth-teller: it exits 0 only on "ALL 6 DEMO STAGES PASSED", so a green job
 # means the machinery works on that OS — including the GNU/BSD portability branches, which run
 # for REAL on macOS here (not via shims). Triggers on push to main, PRs into main,
@@ -132,7 +132,7 @@ jobs:
           # Deliberately NOT skippable although they are markdown: estate/_agents/*.agent.md (the demo
           # asserts their frontmatter and the reader spine), estate/General AI-Knowledge/Skills/** (the
           # #84 index<->tree guard), and estate/Tickets/** (the demo's own fixture ticket).
-          # KNOWN RESIDUAL COUPLING, recorded rather than hidden: make_context_pack.sh stages
+          # KNOWN RESIDUAL COUPLING, recorded rather than hidden: make-context-pack.sh stages
           # README.md, AGENTS.md, CONSTITUTION.md and "estate/General AI-Knowledge/AI Harness/" into
           # the pack that stage 6 builds, and audits the result for scrub-table placeholder
           # tokens. An edit that introduced such a token in a case the SCRUB table does not
@@ -203,4 +203,4 @@ jobs:
       # checkout) never commits to the repo — it runs fully headless and exits 0 only on success.
       - name: Run acceptance demo
         if: steps.scope.outputs.run == 'true'
-        run: bash dev/scripts/run_demo.sh
+        run: bash dev/scripts/run-demo.sh

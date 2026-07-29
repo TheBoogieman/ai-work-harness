@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # source-refusal.case.sh — #62: installing into the source aborts AND names a concrete fix.
-# SOURCED by the runner; see dev/scripts/run_demo.sh.
+# SOURCED by the runner; see dev/scripts/run-demo.sh.
 #
 # install.sh must refuse TARGET==SOURCE (source/estate separation is fundamental) — but the refusal
 # has to PRESCRIBE, not just name the wrong. Two assertions, both revert-provable:

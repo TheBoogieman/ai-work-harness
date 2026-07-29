@@ -12,7 +12,7 @@
 #
 # DEV infrastructure: it never ships to a user estate, and no PRODUCT script references it. Pure
 # greps, zero judgment, each detector's failure names its exact fix. The demo (dev/scripts/
-# run_demo.sh) is what gates the product; this gates the prose. Two truths, two instruments.
+# run-demo.sh) is what gates the product; this gates the prose. Two truths, two instruments.
 #
 # Run it from the repository root:  bash dev/scripts/docs-check.sh
 set -uo pipefail

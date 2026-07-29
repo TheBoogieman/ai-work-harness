@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # index-grammar.case.sh — R-04 index-grammar regressions, the substance of tour stage 3. SOURCED
-# by the runner; see dev/scripts/run_demo.sh for the contract.
+# by the runner; see dev/scripts/run-demo.sh for the contract.
 #
 # The validator names a file ONLY by an index line's first token after "- "; prose, '#' comments
 # and '<...>' placeholders are inert (grammar pinned in CONSTITUTION.md). These cases prove
@@ -24,7 +24,7 @@ reg_run() {
   sleep 1
   printf '\n## %s - regression probe\n- exercising the index grammar\n' \
     "$(date +%Y%m%d%H%M%S)" >> "$S/999911Z-PROJ-99998.md"
-  set +e; REG_OUT=$(bash estate/_harness/scripts/check_ticket_log.sh 2>&1); REG_RC=$?; set -e
+  set +e; REG_OUT=$(bash estate/_harness/scripts/check-ticket-log.sh 2>&1); REG_RC=$?; set -e
 }
 
 # reg_pass asserts an honest index was accepted ($1 = case label). A false FAIL here is the R-12

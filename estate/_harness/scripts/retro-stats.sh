@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# retro_stats.sh — the retrospective's DUMB counting pre-pass. It reads the record
+# retro-stats.sh — the retrospective's DUMB counting pre-pass. It reads the record
 # and the git history and emits plain counts; it makes NO judgement about impact or
 # theme (that is the retrospective agent's job, ABOVE the arithmetic). It talks to
 # NOTHING on the network and it ALWAYS exits 0 — a sparse or brand-new estate yields

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# check_ticket_log.sh — entry-gate validator. Facts only, no AI.
+# check-ticket-log.sh — entry-gate validator. Facts only, no AI.
 # Output grammar: single-line OK: / WARN: / FAIL: / NOTE: records. Exit !=0 on any FAIL.
 #
 # SHAPE (#128): the per-ticket checks are FUNCTIONS that main()'s loop calls in the order they have

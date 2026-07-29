@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # sed-portability.case.sh — [sed-portability]: reject in-place sed anywhere in the shipped
 # machinery or the acceptance suite (BSD-incompatible;
-# use tmp+mv instead). SOURCED by the runner; see dev/scripts/run_demo.sh for the contract.
+# use tmp+mv instead). SOURCED by the runner; see dev/scripts/run-demo.sh for the contract.
 #
 # It runs FIRST, before the tour's first stage banner, because it is a lexical check over the
 # source tree rather than a behaviour test: if the shipped machinery carries a GNU-only in-place
@@ -28,7 +28,7 @@ case_sed_portability() {
   # existence assertion and the scan below both read it: spelled twice they could disagree about
   # which operands this case covers, and the assertion would then be guarding a set nobody scans.
   local sp_operands sp_op sp_gone=0
-  sp_operands=(estate/_harness/ dev/demo/ dev/scripts/run_demo.sh)
+  sp_operands=(estate/_harness/ dev/demo/ dev/scripts/run-demo.sh)
   # Every operand is checked before any is scanned, and a missing one reds under THIS case's own
   # tag instead of quietly shrinking the scan. All are reported, not just the first: a tree that
   # moved is easier to re-point when the case lists everything it could not find.

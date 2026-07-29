@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # worked-example.case.sh — [worked-example] (#149): the worked-example document is EXECUTED, not
-# read. SOURCED by the runner; see dev/scripts/run_demo.sh.
+# read. SOURCED by the runner; see dev/scripts/run-demo.sh.
 #
 # WHAT IT DOES: builds a brand-new estate with install.sh, reads every fenced console block out of
 # estate/WORKED-EXAMPLE.md, runs each block's commands inside that estate IN DOCUMENT ORDER, and

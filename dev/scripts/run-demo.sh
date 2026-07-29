@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# run_demo.sh — THE RUNNER of the acceptance suite (#143). It owns the shared estate the suite
+# run-demo.sh — THE RUNNER of the acceptance suite (#143). It owns the shared estate the suite
 # runs against, the ORDER the suite runs in, and nothing else. The suite itself is two other
 # kinds of artifact, and the split is the point:
 #   dev/demo/tour.sh          the STAGE-BASED TOUR — a demonstration a person watches. It
@@ -194,7 +194,7 @@ demo_case_names() {
 # having to remember to extend it.
 demo_suite_files() {
   local f
-  printf '%s\n' "$DEMO_ROOT/dev/scripts/run_demo.sh" "$DEMO_ROOT/dev/demo/tour.sh"
+  printf '%s\n' "$DEMO_ROOT/dev/scripts/run-demo.sh" "$DEMO_ROOT/dev/demo/tour.sh"
   for f in "$(demo_cases_dir)"/*.case.sh; do
     if [ -f "$f" ]; then printf '%s\n' "$f"; fi
   done
@@ -262,14 +262,14 @@ demo_completeness_report() {  # $1 = case files never executed, $2 = executed na
   if [ -n "$1" ]; then
     echo "BUG [case-completeness]: case file(s) EXIST but the runner never executed them, so"
     echo "  every assertion they hold was silently skipped. Add each to demo_order() in"
-    echo "  dev/scripts/run_demo.sh, at the point in the run where it belongs:"
+    echo "  dev/scripts/run-demo.sh, at the point in the run where it belongs:"
     printf '%s\n' "$1" | sed 's/^/    /'
     exit 1
   fi
   if [ -n "$2" ]; then
     echo "BUG [case-completeness]: the runner executed case name(s) with no matching case file"
     echo "  under dev/demo/cases/ — the file was renamed or deleted and demo_order() in"
-    echo "  dev/scripts/run_demo.sh still names the old identity:"
+    echo "  dev/scripts/run-demo.sh still names the old identity:"
     printf '%s\n' "$2" | sed 's/^/    /'
     exit 1
   fi

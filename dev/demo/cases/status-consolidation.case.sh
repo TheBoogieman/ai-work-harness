@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # status-consolidation.case.sh — the awkward hooks path, the shipped hook schema, the zip fallback
-# and the stale-commit WARN. SOURCED by the runner; see dev/scripts/run_demo.sh.
+# and the stale-commit WARN. SOURCED by the runner; see dev/scripts/run-demo.sh.
 
 # [awkward-hooks-path] — the hooks-parse check must work when the path contains a character that
 # would BREAK a Python source-string literal. A single quote is the reliable case (a space or plain
@@ -69,7 +69,7 @@ sk_pack_without_zip() {
   local G14_OUT_DIR G14_OUT G14_RC g14zip
   G14_OUT_DIR=$(mktemp -d)
   set +e; G14_OUT=$(HARNESS_PACK_NO_ZIP=1 PACK_OUT_DIR="$G14_OUT_DIR" \
-    bash estate/_harness/scripts/make_context_pack.sh --ticket 999911Z-PROJ-99998 2>&1)
+    bash estate/_harness/scripts/make-context-pack.sh --ticket 999911Z-PROJ-99998 2>&1)
   G14_RC=$?; set -e
   [ "$G14_RC" -eq 0 ] \
     || { echo "BUG [pack-without-zip]: pack failed with zip forced off (rc=$G14_RC):"; \

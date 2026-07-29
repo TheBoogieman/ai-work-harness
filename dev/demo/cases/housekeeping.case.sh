@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # housekeeping.case.sh — issue #16: the human-run repo-maintenance script runs and reports, and
-# status's .git-size nudge fires in both directions. SOURCED by the runner; see run_demo.sh.
+# status's .git-size nudge fires in both directions. SOURCED by the runner; see run-demo.sh.
 
 # [housekeeping-ok] Pins that harness-housekeeping.sh runs cleanly and reports sizes without
 # touching records. It runs against a THROWAWAY repo (not the demo's real tree) so `git gc` has

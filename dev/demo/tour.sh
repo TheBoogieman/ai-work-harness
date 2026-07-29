@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # tour.sh — THE STAGE-BASED TOUR of the acceptance suite (#143). SOURCED by
-# dev/scripts/run_demo.sh, never executed on its own: every unit here runs against the shared
+# dev/scripts/run-demo.sh, never executed on its own: every unit here runs against the shared
 # estate that runner builds ($S, $DEMO_ROOT, the temp deploy dir, the single EXIT trap).
 #
 # WHAT THIS FILE IS FOR, AND WHAT IT IS DELIBERATELY NOT. It is the demonstration a PERSON watches:
@@ -20,8 +20,8 @@
 # vacuous rerun that must also pass (nothing changed, so nothing is re-validated).
 tour_validator() {
   echo "=== 1/6 validator: first pass + vacuous rerun ==="
-  bash estate/_harness/scripts/check_ticket_log.sh
-  bash estate/_harness/scripts/check_ticket_log.sh
+  bash estate/_harness/scripts/check-ticket-log.sh
+  bash estate/_harness/scripts/check-ticket-log.sh
 }
 
 # --- 2/6 -----------------------------------------------------------------------------------------
@@ -35,7 +35,7 @@ tour_happy_path() {
     "$(date +%Y%m%d%H%M%S)" >> "$S/999911Z-PROJ-99998.md"
   echo "- notes.md — platform quirk — read before editing" >> "$S/AI-Knowledge/_index.md"
   echo "quirk" > "$S/AI-Knowledge/notes.md"
-  bash estate/_harness/scripts/check_ticket_log.sh
+  bash estate/_harness/scripts/check-ticket-log.sh
 }
 
 # --- 3/6 -----------------------------------------------------------------------------------------
@@ -50,7 +50,7 @@ tour_corruption() {
 # The notebook helper writes a deterministic cell pair into the scratch ticket's checks notebook.
 tour_notebook() {
   echo "=== 4/6 notebook helper (deterministic .ipynb writes) ==="
-  python3 estate/_harness/scripts/append_notebook_cell.py "$S/Checks/checks_master.ipynb" \
+  python3 estate/_harness/scripts/append-notebook-cell.py "$S/Checks/checks_master.ipynb" \
     "check: row counts match" "SELECT COUNT(*) FROM model;"
 }
 
@@ -61,7 +61,7 @@ tour_notebook() {
 # harness-status call aborts.
 tour_deploy() {
   echo "=== 5/6 deploy + status; break an agent; watch it prescribe ==="
-  bash estate/_harness/scripts/deploy_agents.sh
+  bash estate/_harness/scripts/deploy-agents.sh
 }
 
 # Break-and-restore: the visible heart of stage 5, and the reason it is placed HERE rather than
@@ -99,5 +99,5 @@ tour_break_restore() {
 # [one-pack-per-run] and [scrub-case-agree] cases that follow.
 tour_context_pack() {
   echo "=== 6/6 scrubbed context pack + self-audit ==="
-  bash estate/_harness/scripts/make_context_pack.sh --ticket 999911Z-PROJ-99998
+  bash estate/_harness/scripts/make-context-pack.sh --ticket 999911Z-PROJ-99998
 }

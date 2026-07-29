@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # roster-completes.case.sh — [roster-completes]: harness-status must NOT abort on a conforming
 # ticket with NO AI-Knowledge/ dir (hand-made/legacy — the validator tolerates it). SOURCED by the
-# runner; see dev/scripts/run_demo.sh.
+# runner; see dev/scripts/run-demo.sh.
 #
 # Pre-fix, the unguarded find in harness-status's roster loop exits non-zero on the missing dir and
 # (pipefail + set -e) aborts that loop BEFORE this ticket's line prints — suppressing the whole

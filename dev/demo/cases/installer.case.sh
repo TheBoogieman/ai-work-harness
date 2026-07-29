@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # installer.case.sh — #39 installer guards: the non-destructive / dumb-creator claims are the
 # richest revert surface, so every one gets a case that reds if a run WOULD edit/clobber a
-# pre-existing file or leak a DEV file. SOURCED by the runner; see dev/scripts/run_demo.sh.
+# pre-existing file or leak a DEV file. SOURCED by the runner; see dev/scripts/run-demo.sh.
 #
 # install.sh is exercised for real into a throwaway estate (agent deploy is sent to a throwaway dir
 # so nothing touches $HOME). Plain-English asserts; guard-per-bug on each claim. I39_ROOT, I39_EST
@@ -499,13 +499,18 @@ in_up_customise() {
 in_up_advance_source() {
   local sc="$UP_SRC/estate/_harness/scripts"
   printf '0.2.0-upgrade-fixture\n' > "$UP_SRC/estate/VERSION"
-  cp -p "$sc/retro_stats.sh" "$sc/retro-stats.sh"; rm -f "$sc/retro_stats.sh"
+  # The fixture's rename is SYNTHETIC — retro-counts.sh is a name the product never ships. It used
+  # to rename retro_stats.sh -> retro-stats.sh, which stopped being a rename the day #141 settled
+  # every script on the hyphen convention and made retro-stats.sh the real shipped name. A fixture
+  # whose two halves collapse to one name deletes the file instead of renaming it, so the pair is
+  # now anchored to a target that cannot collide with a real one.
+  cp -p "$sc/retro-stats.sh" "$sc/retro-counts.sh"; rm -f "$sc/retro-stats.sh"
   # The rename has to reach the scratch source's INDEX, because that is what the installer now
   # derives the shipped set from (#282). This line used to edit the ship manifest instead: the
   # same declaration, made to the tree rather than to a list describing the tree.
   git -C "$UP_SRC" add -A -f
-  printf '%s\t%s\t%s\n' 0.2.0-upgrade-fixture _harness/scripts/retro_stats.sh \
-    "renamed to _harness/scripts/retro-stats.sh" >> "$UP_SRC/estate/_harness/retire-list.tsv"
+  printf '%s\t%s\t%s\n' 0.2.0-upgrade-fixture _harness/scripts/retro-stats.sh \
+    "renamed to _harness/scripts/retro-counts.sh" >> "$UP_SRC/estate/_harness/retire-list.tsv"
   printf '# upgrade fixture: an upstream change to a plain machinery file.\n' \
     >> "$sc/harness-drill.sh"
   return 0
@@ -516,15 +521,15 @@ in_up_advance_source() {
 in_upgrade_plan() {
   in_up_run upgrade-plan --upgrade --dry-run --yes "$UP_EST"
   local v
-  for v in 'create   _harness/scripts/retro-stats.sh' \
+  for v in 'create   _harness/scripts/retro-counts.sh' \
            'replace  _harness/scripts/harness-drill.sh' \
-           'retire   _harness/scripts/retro_stats.sh'; do
+           'retire   _harness/scripts/retro-stats.sh'; do
     grep -Fq "  $v" "$UP_OUT" \
       || { echo "BUG [upgrade-plan]: the plan never said '$v' — every create, replace and retire"; \
            echo "    must be shown before anything happens. What it printed:"; \
            grep -E '^  (create|replace|retire|keep)' "$UP_OUT" | sed 's/^/      /'; exit 1; }
   done
-  [ ! -e "$UP_EST/_retired" ] && [ -e "$UP_EST/_harness/scripts/retro_stats.sh" ] \
+  [ ! -e "$UP_EST/_retired" ] && [ -e "$UP_EST/_harness/scripts/retro-stats.sh" ] \
     || { echo "BUG [upgrade-plan]: --dry-run TOUCHED the estate — it must plan and stop"; exit 1; }
   echo "  ok [upgrade-plan] — create/replace/retire all shown before acting; --dry-run moved" \
     "nothing"
@@ -554,12 +559,12 @@ in_upgrade_needs_source() {
 in_upgrade_retires() {
   in_up_run upgrade-retires --upgrade --yes "$UP_EST"
   cp -p "$UP_OUT" "$I39_ROOT/up.first"
-  [ ! -e "$UP_EST/_harness/scripts/retro_stats.sh" ] \
+  [ ! -e "$UP_EST/_harness/scripts/retro-stats.sh" ] \
     || { echo "BUG [upgrade-retires]: the superseded file is STILL in place — an upgraded estate" \
            "would hold both names, which is the defect retirement exists to stop"; exit 1; }
-  [ -e "$UP_EST/_harness/scripts/retro-stats.sh" ] \
+  [ -e "$UP_EST/_harness/scripts/retro-counts.sh" ] \
     || { echo "BUG [upgrade-retires]: the replacement was never laid down"; exit 1; }
-  find "$UP_EST/_retired" -name retro_stats.sh 2>/dev/null | grep -q . \
+  find "$UP_EST/_retired" -name retro-stats.sh 2>/dev/null | grep -q . \
     || { echo "BUG [upgrade-retires]: the superseded file is not in quarantine — it was DELETED," \
            "and deletion is forbidden in every class"; exit 1; }
   grep -A2 '^RETIRED ' "$I39_ROOT/up.first" | grep -q 'RESTORE IT WITH: *mv ' \
@@ -638,7 +643,7 @@ in_upgrade_restore_works() {
   bash -c "$cmd" \
     || { echo "BUG [upgrade-restore-works]: the printed restore command FAILED to run: $cmd"; \
          exit 1; }
-  [ -e "$UP_EST/_harness/scripts/retro_stats.sh" ] \
+  [ -e "$UP_EST/_harness/scripts/retro-stats.sh" ] \
     || { echo "BUG [upgrade-restore-works]: the restore command ran but the file did not come" \
            "back — the report names a reversal that does not reverse anything"; exit 1; }
   echo "  ok [upgrade-restore-works] — the printed restore command runs and puts the file back"

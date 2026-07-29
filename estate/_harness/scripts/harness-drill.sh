@@ -35,7 +35,7 @@ validate_copy() {
   st=$(mktemp -d)
   # set +e around the validator: we WANT its non-zero rc as data, not an abort under set -e.
   set +e
-  HARNESS_STATE_DIR="$st" bash "$root/_harness/scripts/check_ticket_log.sh"
+  HARNESS_STATE_DIR="$st" bash "$root/_harness/scripts/check-ticket-log.sh"
   rc=$?
   set -e
   rm -rf "$st"

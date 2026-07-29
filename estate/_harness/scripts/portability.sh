@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # portability.sh — the ONE home for computations shared by more than one harness tool.
-# check_ticket_log.sh (recency: is the newest header at/after the watermark?) and harness-status.sh
+# check-ticket-log.sh (recency: is the newest header at/after the watermark?) and harness-status.sh
 # (commit-vs-session liveness) BOTH turn a YYYYMMDDHHMMSS session-log header into an epoch, so they
 # must do it IDENTICALLY or their views disagree. It was duplicated once, and that copy risked
 # silent drift (R-21); sourcing this single definition in both tools makes drift impossible.

@@ -12,7 +12,7 @@ disciplined, record-keeping workspace. Two steps: prove the machinery runs on
 your machine (the demo — no AI assistant needed), then lay down the estate and
 wire your assistant.
 
-**1 · Prove the machinery — `run_demo.sh`.** Clone the repo to a **source**
+**1 · Prove the machinery — `run-demo.sh`.** Clone the repo to a **source**
 location and run the demo from that checkout — the demo needs no estate, so
 running it in place is correct:
 
@@ -20,14 +20,14 @@ running it in place is correct:
   auto-detect GNU vs BSD userland):
   ```bash
   git clone https://github.com/TheBoogieman/ai-work-harness.git ~/ai-work-harness
-  cd ~/ai-work-harness && bash dev/scripts/run_demo.sh
+  cd ~/ai-work-harness && bash dev/scripts/run-demo.sh
   ```
 - **Windows** — the integrated **Git-Bash/Cygwin** terminal (plain PowerShell can
   push git but cannot run the bash machinery). This run, by hand on real Windows
   hardware, *is* how the Windows lane is verified — see **Assumptions**:
   ```bash
   git clone https://github.com/TheBoogieman/ai-work-harness.git ~/ai-work-harness
-  cd ~/ai-work-harness && bash dev/scripts/run_demo.sh
+  cd ~/ai-work-harness && bash dev/scripts/run-demo.sh
   ```
 
 **How long it takes is not a number this page will quote.** The first run on a

@@ -20,8 +20,8 @@ diffs before every write:
    repo is whitelist-scoped and has **no remote** (estates are local-only).
 2. **Shipping audit:** confirm the estate contains **zero DEV files** — nothing
    from outside the source's `estate/` tree (`dev/`, `.github/`, `CLAUDE.md`,
-   `run_demo.sh`).
-3. **Green verification:** run `_harness/scripts/check_ticket_log.sh` and
+   `run-demo.sh`).
+3. **Green verification:** run `_harness/scripts/check-ticket-log.sh` and
    `_harness/scripts/harness-status.sh`; both must be green. Spot-check the
    scaffolded tickets — each has a valid `AI-Knowledge/_index.md` and the
    git-ignored `Logs/` + `Dump/`.
@@ -30,8 +30,8 @@ diffs before every write:
    `INSTALL-INSTRUCTIONS.md`): any model pin still `PICK-A-*` → enumerate the models
    actually enabled in my Copilot org and pin real **scalar** IDs into each
    `_agents/*.agent.md` (cheap tier for scribes/keeper/doc-writer, Sonnet-class
-   for init/curator), then re-run `_harness/scripts/deploy_agents.sh`;
-   the `LICENSE` name; the `make_context_pack.sh` scrub-table seeds (my
+   for init/curator), then re-run `_harness/scripts/deploy-agents.sh`;
+   the `LICENSE` name; the `make-context-pack.sh` scrub-table seeds (my
    identifier classes — employee ID, org domains, cloud account IDs); the
    `CONSTITUTION.md` Owner and key-repos lines.
 5. **Live hook-fire check:** with the config at `.github/hooks/harness.json`,

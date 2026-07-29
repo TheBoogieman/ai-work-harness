@@ -126,7 +126,7 @@ Re-running `install.sh` serves three different intents, each with its own home:
   left exactly as you have them — and it **never touches a record**: no ticket, no log,
   no knowledge file. Running it twice is safe; the second run says `NOTHING TO DO`.
   If a run is interrupted, run it again — every file it had already moved is in
-  `_retired/`, and the re-run lays down whatever is missing. Skipping versions is
+  `_retired/`, and the re-run lays down whatever is missing. Skipping releases is
   expected and needs nothing special: one upgrade retires everything superseded across
   the whole span. Run from **inside** the estate, `--upgrade` refuses — there is no
   source in there to upgrade from, and it prints the command that works.

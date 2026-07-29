@@ -23,7 +23,6 @@ Work/                                        [git root · local-only · whitelis
 ├── INSTALL-INSTRUCTIONS.md                  the ONE home for every install command, prerequisite and caveat
 ├── install.sh                               the dumb creator that laid this estate down · manual: INSTALL-INSTRUCTIONS.md
 ├── AI-SETUP-PROMPT.md                       the AI-assistant final gate, pasted in after the install
-├── VERSION                                  this estate's harness version stamp · what install.sh --upgrade reads
 ├── LICENSE                                  MIT · root-pinned because the code host renders it there
 ├── .github/hooks/harness.json               THE ONLY .github/ an estate has: the auto-commit hook config, written AT INSTALL
 │

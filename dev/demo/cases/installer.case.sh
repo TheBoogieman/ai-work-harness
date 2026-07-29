@@ -109,6 +109,41 @@ in_installer_ran() {
   echo "  ok [installer-ran] — the installer created the estate ($i39_n PRODUCT files present)"
 }
 
+# (v) no-version-claim (#298): A FRESH ESTATE STATES NO VERSION, in either of the two places one
+#     could survive. Deleting the stamp and deleting the sentences that printed it are separate
+#     mistakes, and either one alone leaves the claim half-made — a shipped VERSION file nothing
+#     prints is still a number the user finds and believes, and a summary line printing "unknown"
+#     over an estate with no stamp is the machinery talking about a fact it does not have. So both
+#     halves are asserted: no VERSION at the estate root, and no version claim anywhere in what
+#     the install said.
+#     ON ITS OWN FRESH ESTATE, so it depends on no other sub-case and reads an $I39_OUT that
+#     nothing else has rewritten under it.
+#     THE OUTPUT PATTERN IS DELIBERATELY BROAD — any line matching "version", case-insensitively.
+#     A grep for the exact old wording ("Harness version:") would pass the day somebody prints a
+#     release number a different way, and printing it a different way is precisely the failure
+#     this item exists to prevent. ONE line is excluded, and it is excluded because it is a claim
+#     about the USER'S EDITOR rather than about this harness: deploy-agents.sh tells them to verify
+#     the discovery directory for their Copilot version.
+#     REVERT-PROVABLE BOTH WAYS: restore estate/VERSION and the file half reds; restore
+#     print_summary_version in install.sh and the output half reds, quoting the line it found.
+in_no_version_claim() {
+  local i39_nv i39_hits
+  i39_nv="$I39_ROOT/nvest"
+  in_install no-version-claim --yes "$i39_nv"
+  [ ! -e "$i39_nv/VERSION" ] \
+    || { echo "BUG [no-version-claim]: the installed estate holds a VERSION file. Nothing in the" \
+           "machinery states a version (#298) — a tag is this project's only version artifact"; \
+         exit 1; }
+  i39_hits=$(grep -i 'version' "$I39_OUT" | grep -v 'Copilot version' || true)
+  [ -z "$i39_hits" ] \
+    || { echo "BUG [no-version-claim]: the install PRINTED a version claim. An estate makes no"; \
+         echo "    claim it cannot keep, and a release number it has no way to check is exactly"; \
+         echo "    that — it was wrong six times before anyone looked. What it printed:"; \
+         printf '%s\n' "$i39_hits" | sed 's/^/      /'; exit 1; }
+  echo "  ok [no-version-claim] — a fresh estate holds no VERSION file and the install printed no" \
+    "version claim"
+}
+
 # (a) single schema home: install.sh must carry NO hook-schema literal (it copies from the one
 #     home, hooks.example.json, by path). A second literal here is the two-homes finding.
 in_schema_one_home() {
@@ -470,6 +505,12 @@ in_up_customise() {
   sed 's/"timeoutSec": 60/"timeoutSec": 137/' "$UP_HOOK" > "$I39_ROOT/hk.t" \
     && mv "$I39_ROOT/hk.t" "$UP_HOOK"
   printf '# a hand-made note\nLast reviewed: 2026-01-01\nnobody but me put this here\n' > "$UP_REC"
+  # A PRE-#298 ESTATE HOLDS A VERSION STAMP, and this line is what makes UP_EST one. The scratch
+  # source stopped shipping VERSION when #298 deleted it, so an estate installed from that source
+  # has none — and [upgrade-retires-version] below would then be asserting about a file that was
+  # never there, which is a vacuous pass (#269) rather than a check. Planted BEFORE the upgrade
+  # runs, exactly as an estate laid down by an older release would be carrying it.
+  printf '0.1.0\n' > "$UP_EST/VERSION"
   # THE RECORD GUARD'S SUBJECT HAS TO BE ONE THE UPGRADE COULD ACTUALLY REACH. A hand-made file
   # under a knowledge folder is not a shipped path, so no version of this installer would ever
   # consider it and asserting it survived proves nothing. The SHIPPED TEMPLATE TICKET is the
@@ -494,11 +535,12 @@ in_up_customise() {
 }
 
 # in_up_advance_source — the release the estate is about to receive: a RENAME (declared in the
-# retire list, never inferred), an upstream change to a plain machinery file, and a new stamp.
+# retire list, never inferred) and an upstream change to a plain machinery file. It used to write a
+# new VERSION stamp into the scratch source too; there is no stamp to write since #298, and the
+# retire row it appends is now TWO fields, which is the format the parser reads.
 # The rename is the half that has never run anywhere — replacement is the easy half.
 in_up_advance_source() {
   local sc="$UP_SRC/estate/_harness/scripts"
-  printf '0.2.0-upgrade-fixture\n' > "$UP_SRC/estate/VERSION"
   # The fixture's rename is SYNTHETIC — retro-counts.sh is a name the product never ships. It used
   # to rename retro_stats.sh -> retro-stats.sh, which stopped being a rename the day #141 settled
   # every script on the hyphen convention and made retro-stats.sh the real shipped name. A fixture
@@ -509,7 +551,7 @@ in_up_advance_source() {
   # derives the shipped set from (#282). This line used to edit the ship manifest instead: the
   # same declaration, made to the tree rather than to a list describing the tree.
   git -C "$UP_SRC" add -A -f
-  printf '%s\t%s\t%s\n' 0.2.0-upgrade-fixture _harness/scripts/retro-stats.sh \
+  printf '%s\t%s\n' _harness/scripts/retro-stats.sh \
     "renamed to _harness/scripts/retro-counts.sh" >> "$UP_SRC/estate/_harness/retire-list.tsv"
   printf '# upgrade fixture: an upstream change to a plain machinery file.\n' \
     >> "$sc/harness-drill.sh"
@@ -575,6 +617,32 @@ in_upgrade_retires() {
     "restore command reported"
 }
 
+# (u) upgrade-retires-version (#298): THE ONE NEW BEHAVIOUR IN A CHANGE THAT IS OTHERWISE ALL
+#     SUBTRACTION. Deleting VERSION from the shipped set does not remove it from anybody's estate.
+#     An estate installed before this release is already holding one, has no remote, and runs
+#     nothing that would ever correct it — the stamp would sit at the root forever as a number no
+#     tool reads and no user thinks to doubt, which is worse than the drift that prompted the
+#     deletion. So VERSION retires like any other superseded path: through a row in the very list
+#     whose format this same release changed, moved to quarantine, restore command printed.
+#     ITS SUBJECT IS PLANTED IN in_up_customise — see the note there for why it has to be.
+#     REVERT-PROVABLE: drop the VERSION row from estate/_harness/retire-list.tsv and this reds on
+#     its first assertion, because the upgrade then has no declaration telling it to move anything.
+in_upgrade_retires_version() {
+  [ ! -e "$UP_EST/VERSION" ] \
+    || { echo "BUG [upgrade-retires-version]: the estate STILL holds its VERSION stamp after the" \
+           "upgrade — a release number nothing reads, that nothing will ever correct"; exit 1; }
+  find "$UP_EST/_retired" -name VERSION 2>/dev/null | grep -q . \
+    || { echo "BUG [upgrade-retires-version]: the stamp is not in quarantine — it was DELETED," \
+           "and deletion is forbidden in every class, retirement included"; exit 1; }
+  grep -A2 '^RETIRED  VERSION$' "$I39_ROOT/up.first" | grep -q 'RESTORE IT WITH: *mv ' \
+    || { echo "BUG [upgrade-retires-version]: the stamp was moved without the command that puts"; \
+         echo "    it back. _retired/ sits outside the record, so that printed line is the whole"; \
+         echo "    of what a user who wanted the file gets. What the run said about it:"; \
+         grep -A2 '^RETIRED  VERSION$' "$I39_ROOT/up.first" | sed 's/^/      /'; exit 1; }
+  echo "  ok [upgrade-retires-version] — a pre-#298 estate's VERSION stamp is MOVED to quarantine" \
+    "and its restore command is reported"
+}
+
 # (o) upgrade-keeps-settings: the three files carrying values the USER owns come through an upgrade
 #     BYTE-IDENTICAL. The hook config is the worst one to get wrong — it governs whether the estate
 #     commits by itself — and it is the member a substitution-only derivation misses entirely.
@@ -634,10 +702,15 @@ in_upgrade_idempotent() {
 # (r) upgrade-restore-works: the printed restore command is EXECUTED, not read. A command that
 #     names the right paths but cannot run is the same as no report at all, and the quarantine
 #     folder is untracked, so this line is the entire reversal path a user has.
+#     IT NAMES ITS RETIREMENT RATHER THAN TAKING THE FIRST ONE. The run retires TWO paths since
+#     #298 — the fixture's rename and the estate's old VERSION stamp — and this guard's assertion
+#     is about retro-stats.sh coming back, so it has to execute retro-stats.sh's restore line. An
+#     unanchored "first RETIRED block" would restore the stamp and then red on a file it never
+#     asked about, which reads as an installer defect and is not one.
 in_upgrade_restore_works() {
   local cmd
-  cmd=$(grep -A2 '^RETIRED ' "$I39_ROOT/up.first" | grep -m1 'RESTORE IT WITH:' \
-    | sed 's/.*RESTORE IT WITH: *//')
+  cmd=$(grep -A2 '^RETIRED  _harness/scripts/retro-stats.sh$' "$I39_ROOT/up.first" \
+    | grep -m1 'RESTORE IT WITH:' | sed 's/.*RESTORE IT WITH: *//')
   [ -n "$cmd" ] \
     || { echo "BUG [upgrade-restore-works]: no restore command was printed to execute"; exit 1; }
   bash -c "$cmd" \
@@ -696,6 +769,7 @@ case_installer() {
   in_fixture
   in_schema_one_home
   in_installer_ran
+  in_no_version_claim
   in_product_only
   in_estate_root_tracked
   in_dumb_creator
@@ -714,6 +788,7 @@ case_installer() {
   in_upgrade_plan
   in_upgrade_needs_source
   in_upgrade_retires
+  in_upgrade_retires_version
   in_upgrade_keeps_settings
   in_upgrade_record_untouched
   in_upgrade_idempotent

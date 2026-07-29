@@ -1,5 +1,5 @@
-# retire-list.tsv — THE VERSIONED RETIRE LIST. It names every estate file a release has
-# SUPERSEDED, and it is the ONLY thing `install.sh --upgrade` will ever retire.
+# retire-list.tsv — THE RETIRE LIST. It names every estate file a release has SUPERSEDED, and it
+# is the ONLY thing `install.sh --upgrade` will ever retire.
 #
 # WHY IT IS DATA AND NOT INFERENCE. Nothing on a file system says that one file supersedes
 # another. An upgrade that worked it out from what it found would eventually work it out wrong on
@@ -7,26 +7,33 @@
 # here, by the release that performed it, and the installer reads rather than reasons.
 #
 # WHY IT IS CUMULATIVE. A row is added when a release supersedes a path and is NEVER pruned.
-# Most upgrades will SKIP VERSIONS — an installed estate has no remote, so nobody is watching for
-# releases — and a list describing only the newest version's supersessions would leave every file
-# retired at an intermediate version sitting in the estate forever, for exactly the people who
+# Most upgrades will SKIP RELEASES — an installed estate has no remote, so nobody is watching for
+# releases — and a list describing only the newest release's supersessions would leave every file
+# retired by an intermediate release sitting in the estate forever, for exactly the people who
 # upgrade least often. Because the list is cumulative and the installer retires every listed path
-# it actually FINDS, an upgrade across any span of versions retires everything across that span,
-# with no version arithmetic to get wrong and no "unknown" stamp to special-case.
+# it actually FINDS, an upgrade across any span of releases retires everything across that span,
+# with nothing to compare and no arithmetic to get wrong.
 #
 # WHAT RETIREMENT IS. The installer MOVES the file into a quarantine folder inside the estate and
 # reports the move at the moment it happens, naming the command that puts it back. It is never a
 # delete — never, under any circumstance — and it is never applied to a record: a row naming
 # a path outside the machinery trees is REFUSED out loud and the file is left where it is.
 #
-# FORMAT — one row per superseded path, TAB-delimited, three fields:
-#   <version><TAB><estate-relative path><TAB><what replaced it, in one sentence>
-# <version> is the release that superseded the path — it is REPORTED to the user, not used as a
-# filter. Lines starting with "#" and blank lines are ignored. The path is spelled as it appears
+# FORMAT — one row per superseded path, TAB-delimited, TWO fields:
+#   <estate-relative path><TAB><what replaced it, in one sentence>
+# Lines starting with "#" and blank lines are ignored. The path is spelled as it appears
 # in an INSTALLED estate (no `estate/` prefix): `_harness/scripts/foo.sh`, not `estate/...`.
 #
+# THERE IS NO VERSION FIELD, AND ITS ABSENCE IS THE POINT (#298). It used to be column one. It was
+# only ever REPORTED to the user — nothing filtered, compared or branched on it, because the list
+# is cumulative precisely so that no version arithmetic is ever needed. Six rows here carried a
+# stamp that was never true (they named a release that was still shipping the very files they
+# claimed it had superseded), no check could have caught it, and a field that is unused and
+# uncheckable is a claim the estate cannot keep. A tag on the project's code host is now the only
+# version artifact this project has.
+#
 # EXAMPLE ROW, shown commented out so it is never acted on:
-#   0.2.0	_harness/scripts/old-name.sh	renamed to _harness/scripts/new-name.sh
+#   _harness/scripts/old-name.sh	renamed to _harness/scripts/new-name.sh
 #
 # THE THREE ROWS BELOW ARE THIS LIST'S FIRST (#280). They are not renames — they are removals,
 # which is the other way a path becomes superseded: the product no longer ships these three, so an
@@ -40,9 +47,9 @@
 # cell through `append_notebook_cell.py` and run by the operator, which binds the output to the
 # cell that produced it; transcribing a shell command's output into markdown is the weaker record.
 # And a pure transport helper that executes nothing is a copy-and-paste an editor already does.
-0.1.0	_harness/scripts/append_entry.sh	removed — write the session entry by hand or via the ticket-scribe agent; check_ticket_log.sh still validates it
-0.1.0	_harness/scripts/check_run.sh	removed — record checks as executable cells via append_notebook_cell.py and run them in the notebook
-0.1.0	_harness/scripts/literate_capture.py	removed — append notebook cells with append_notebook_cell.py
+_harness/scripts/append_entry.sh	removed — write the session entry by hand or via the ticket-scribe agent; check_ticket_log.sh still validates it
+_harness/scripts/check_run.sh	removed — record checks as executable cells via append_notebook_cell.py and run them in the notebook
+_harness/scripts/literate_capture.py	removed — append notebook cells with append_notebook_cell.py
 #
 # THE THREE ROWS AFTER THOSE (#140) ARE THE LIST'S FIRST TRUE RENAMES — the same path under a new
 # name, which is what the format was written for. Each estate document was named after where it
@@ -54,9 +61,9 @@
 # names — the old constitution beside the new one, each claiming to be the law. The row is what
 # moves the old one out, and the printed restore command is what makes that survivable for a user
 # who had edited their copy: their text is in quarantine, named, with the mv that puts it back.
-0.1.0	folder-structure.md	renamed to CONSTITUTION.md — same document, named for what it is (the constitution) rather than for its table of contents
-0.1.0	setup.md	renamed to AI-SETUP-PROMPT.md — it is a prompt addressed to an AI assistant, not human setup instructions
-0.1.0	installing.md	renamed to INSTALL-INSTRUCTIONS.md — one letter from install.sh in every listing; the prose manual is now named apart from the installer
+folder-structure.md	renamed to CONSTITUTION.md — same document, named for what it is (the constitution) rather than for its table of contents
+setup.md	renamed to AI-SETUP-PROMPT.md — it is a prompt addressed to an AI assistant, not human setup instructions
+installing.md	renamed to INSTALL-INSTRUCTIONS.md — one letter from install.sh in every listing; the prose manual is now named apart from the installer
 #
 # THE SIX ROWS BELOW (#141) SETTLE EVERY SHIPPED SCRIPT ON ONE NAMING CONVENTION. The estate ran
 # two spellings at once — six scripts separated words with an underscore, four with a hyphen — and
@@ -64,13 +71,6 @@
 # the tree is lowercase-kebab, and the one name a user types most (harness-status.sh) was already
 # spelled that way, so settling the other direction would have churned the most visible name in
 # the product to gain nothing.
-#
-# WHY THEY ARE STAMPED 0.2.0 AND NOT 0.1.0. The stamp names the release that PERFORMED the
-# supersession, and v0.1.0 is already tagged — it shipped all six of these files under their OLD
-# names. A release cannot supersede what it is still shipping, so 0.1.0 would be a claim that was
-# never true. The field is REPORTED to the user and never used as a filter, so an upgrade behaves
-# identically either way — which is exactly why a wrong stamp here would have gone unnoticed
-# rather than caught.
 #
 # THESE ARE RENAMES, NOT REMOVALS. Every one of the six still ships and still does the same job —
 # only the spelling of its filename moved. An estate that skips this release and upgrades later
@@ -82,9 +82,24 @@
 # forward byte-identical rather than rewriting it. An estate upgrading across this release keeps
 # a hook config naming check_ticket_log.sh, which the retirement has just moved to quarantine.
 # Re-copy _harness/hooks/hooks.example.json over it to pick the new name up.
-0.2.0	_harness/scripts/append_notebook_cell.py	renamed to _harness/scripts/append-notebook-cell.py — same writer, hyphen convention (#141)
-0.2.0	_harness/scripts/check_ticket_log.sh	renamed to _harness/scripts/check-ticket-log.sh — same validator, hyphen convention (#141)
-0.2.0	_harness/scripts/deploy_agents.sh	renamed to _harness/scripts/deploy-agents.sh — same deploy, hyphen convention (#141)
-0.2.0	_harness/scripts/make_context_pack.sh	renamed to _harness/scripts/make-context-pack.sh — same packer, hyphen convention (#141)
-0.2.0	_harness/scripts/retro_stats.sh	renamed to _harness/scripts/retro-stats.sh — same counter, hyphen convention (#141)
-0.2.0	_harness/scripts/tracker_sweep.sh	renamed to _harness/scripts/tracker-sweep.sh — same sweep, hyphen convention (#141)
+_harness/scripts/append_notebook_cell.py	renamed to _harness/scripts/append-notebook-cell.py — same writer, hyphen convention (#141)
+_harness/scripts/check_ticket_log.sh	renamed to _harness/scripts/check-ticket-log.sh — same validator, hyphen convention (#141)
+_harness/scripts/deploy_agents.sh	renamed to _harness/scripts/deploy-agents.sh — same deploy, hyphen convention (#141)
+_harness/scripts/make_context_pack.sh	renamed to _harness/scripts/make-context-pack.sh — same packer, hyphen convention (#141)
+_harness/scripts/retro_stats.sh	renamed to _harness/scripts/retro-stats.sh — same counter, hyphen convention (#141)
+_harness/scripts/tracker_sweep.sh	renamed to _harness/scripts/tracker-sweep.sh — same sweep, hyphen convention (#141)
+#
+# THE ROW BELOW (#298) RETIRES THE VERSION STAMP ITSELF, which is why this list's own format
+# changed in the same release. `VERSION` was a shipped, root-pinned file holding a release number,
+# read by the installer and by harness-status and echoed by both. Nothing ever computed with it:
+# no comparison, no arithmetic, no branch anywhere. It was a label, and labels drift.
+#
+# WHAT ANSWERS "AM I CURRENT?" NOW is both older and better: `install.sh --upgrade --dry-run`
+# against a source checkout either says NOTHING TO DO or lists exactly what differs, file by file.
+# That compares FILES. A stamp compared labels.
+#
+# WHY THE FILE DOES NOT SIMPLY VANISH. Estates installed before this release are holding a VERSION
+# file that nothing reads any more; without this row it would sit at the estate root forever, a
+# stale number no tool would ever correct and no user would think to doubt. Retirement moves it
+# into `_retired/` and prints the command that puts it back.
+VERSION	removed — nothing in the machinery states a version any more; a tag on the project's code host is the only version artifact (#298)

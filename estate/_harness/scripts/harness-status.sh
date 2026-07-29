@@ -153,30 +153,16 @@ ticket_names() {
     | grep -E "$TICKET_RE" || true
 }
 
-# check_version — which harness version this estate is running, read from the estate's own VERSION
-# stamp. Status READS the file and never restates the number, so VERSION remains the single home of
-# that fact and this script carries no version literal that could drift from it.
+# STATUS REPORTS NO VERSION (#298). It used to open every report with a NOTE naming the estate's
+# VERSION stamp, or "unknown" when there was none. That file is gone: nothing in the machinery
+# states a version, and a tag on the project's code host is the only version artifact this project
+# has. The line is not replaced by a commit hash, an install date or any other estate identity —
+# the point of the deletion is that the estate makes no claim it cannot keep, and a status report
+# is exactly where an unkeepable claim does the most damage, because it is the line a user reads
+# when they are checking whether to trust the rest of the report.
 #
-# UNSTAMPED IS "UNKNOWN", NOT A FAULT. An estate installed before the stamp existed has no VERSION,
-# and there is no honest way to work out which version laid it down. Guessing one from what the
-# estate happens to contain would produce a number a reader would believe, so the report says
-# unknown and stops. Absence is therefore a NOTE, never a WARN and never a FAIL: nothing is broken,
-# nothing needs scheduling, and $fails is not touched here.
-#
-# Only the FIRST line is read (the stamp is one line) and a trailing carriage return is stripped: a
-# clone with core.autocrlf=true checks the file out CRLF, and the version would otherwise carry it.
-check_version() {
-  version=""
-  [[ -f "$WORK_ROOT/VERSION" ]] && { IFS= read -r version < "$WORK_ROOT/VERSION" || true; }
-  version="${version%$'\r'}"
-  if [[ -n "$version" ]]; then
-    echo "NOTE: harness version $version (from VERSION, laid down by install.sh)."
-    return 0
-  fi
-  echo "NOTE: harness version unknown — this estate carries no VERSION stamp" \
-       "(installed before versioning existed; a version is never inferred from file contents)."
-  return 0
-}
+# WHAT ANSWERS "AM I CURRENT?" INSTEAD: `install.sh --upgrade --dry-run` run against a source
+# checkout, which compares FILES and either says NOTHING TO DO or lists exactly what differs.
 
 # check_siblings — the machinery checks its siblings.
 # ticket-grammar.sh is in this list too: it is the shared grammar both tools source,
@@ -503,7 +489,6 @@ warn_pending() {
 # touch $fails — aging bookkeeping can never change the verdict.
 main() {
   load_warn_state
-  check_version
   check_siblings
   check_git_liveness
   check_commit_lag

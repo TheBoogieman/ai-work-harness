@@ -114,7 +114,7 @@ only looks.
 
 ```console
 $ bash _harness/scripts/harness-status.sh
-NOTE: harness version 0.1.0 (from VERSION, laid down by install.sh).
+NOTE: harness version 0.2.0 (from VERSION, laid down by install.sh).
 OK: work repo present; last commit <HOW-LONG-AGO>.
 OK: record repo .git <SIZE> MiB (working tree <SIZE> MiB) — under the 50 MiB housekeeping threshold.
 OK: hooks config parses.
@@ -208,7 +208,7 @@ wrote and a count of the knowledge you captured.
 
 ```console
 $ bash _harness/scripts/harness-status.sh
-NOTE: harness version 0.1.0 (from VERSION, laid down by install.sh).
+NOTE: harness version 0.2.0 (from VERSION, laid down by install.sh).
 OK: work repo present; last commit <HOW-LONG-AGO>.
 OK: record repo .git <SIZE> MiB (working tree <SIZE> MiB) — under the 50 MiB housekeeping threshold.
 OK: hooks config parses.

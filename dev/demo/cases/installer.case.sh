@@ -714,15 +714,21 @@ in_upgrade_repoints() {
 # in_upgrade_repoints_bound — "rewrite paths only. Never a line, never a sentence, never a whole
 # file." Counted rather than eyeballed: one changed line, and what changed on it is the path.
 in_upgrade_repoints_bound() {
-  local n
-  n=$(diff "$I39_ROOT/snap.retro" "$UP_RETRO" | grep -c '^[<>]' || true)
+  local d n
+  # THE DIFF IS TAKEN ONCE INTO A VARIABLE, and the `|| true` is load-bearing rather than defensive:
+  # this suite runs under `pipefail`, and `diff` exits 1 whenever the files differ — which is every
+  # time this guard is doing its job — so piping it straight into grep fails the pipeline on the
+  # success path and reds a passing fix.
+  d=$(diff "$I39_ROOT/snap.retro" "$UP_RETRO" || true)
+  n=$(printf '%s\n' "$d" | grep -c '^[<>]' || true)
   [ "$n" -eq 2 ] \
     || { echo "BUG [upgrade-repoints]: $n diff lines between the user's copy and the re-pointed"; \
          echo "    one — a path rewrite is ONE line out and ONE line in. Anything more means the"; \
          echo "    upgrade rewrote prose the user may have edited. Diff:"; \
-         diff "$I39_ROOT/snap.retro" "$UP_RETRO" | head -8; exit 1; }
-  diff "$I39_ROOT/snap.retro" "$UP_RETRO" | grep '^>' | grep -q 'retro-counts.sh' \
-    || { echo "BUG [upgrade-repoints]: the one line that changed is not the path line"; exit 1; }
+         printf '%s\n' "$d" | head -8; exit 1; }
+  printf '%s\n' "$d" | grep '^>' | grep -q 'retro-counts.sh' \
+    || { echo "BUG [upgrade-repoints]: the one line that changed is not the path line. Diff:"; \
+         printf '%s\n' "$d" | head -8; exit 1; }
 }
 
 # in_upgrade_repoints_reported — editing a user's file silently is the thing this project exists to

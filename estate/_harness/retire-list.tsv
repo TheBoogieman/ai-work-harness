@@ -19,10 +19,21 @@
 # delete — never, under any circumstance — and it is never applied to a record: a row naming
 # a path outside the machinery trees is REFUSED out loud and the file is left where it is.
 #
-# FORMAT — one row per superseded path, TAB-delimited, TWO fields:
-#   <estate-relative path><TAB><what replaced it, in one sentence>
+# FORMAT — one row per superseded path, TAB-delimited, THREE fields, the third OPTIONAL:
+#   <estate-relative path><TAB><what replaced it, in one sentence><TAB><the new path, RENAMES ONLY>
 # Lines starting with "#" and blank lines are ignored. The path is spelled as it appears
 # in an INSTALLED estate (no `estate/` prefix): `_harness/scripts/foo.sh`, not `estate/...`.
+#
+# THE THIRD FIELD IS THE NEW PATH, MACHINE-READABLE, AND IT IS LAST ON PURPOSE (#287). Field two
+# is PROSE — "renamed to CONSTITUTION.md — same document, named for what it is" is a sentence a
+# person wrote, and getting a path back out of it means pattern-matching English. So a rename
+# states its target as a FIELD as well, and the upgrade re-points carried-forward files from it.
+# A REMOVAL LEAVES IT EMPTY — there is no new path to point anything at — which is exactly why it
+# sits LAST: a version field was just deleted from this file (see below) for being a leading
+# column that could only be wrong, and an empty LEADING field shifts every field after it. An
+# empty field at the END of a row shifts nothing, and a removal row simply stops after field two
+# with no trailing tab. Renames fill it; removals do not have it. A non-empty third field is
+# therefore the whole test for "this path was renamed, not deleted".
 #
 # THERE IS NO VERSION FIELD, AND ITS ABSENCE IS THE POINT (#298). It used to be column one. It was
 # only ever REPORTED to the user — nothing filtered, compared or branched on it, because the list
@@ -32,8 +43,10 @@
 # uncheckable is a claim the estate cannot keep. A tag on the project's code host is now the only
 # version artifact this project has.
 #
-# EXAMPLE ROW, shown commented out so it is never acted on:
-#   _harness/scripts/old-name.sh	renamed to _harness/scripts/new-name.sh
+# EXAMPLE ROWS, shown commented out so neither is ever acted on — a rename carrying the third
+# field, and a removal that stops after the second:
+#   _harness/scripts/old-name.sh	renamed to _harness/scripts/new-name.sh	_harness/scripts/new-name.sh
+#   _harness/scripts/gone.sh	removed — nothing calls it any more
 #
 # THE THREE ROWS BELOW ARE THIS LIST'S FIRST (#280). They are not renames — they are removals,
 # which is the other way a path becomes superseded: the product no longer ships these three, so an
@@ -61,9 +74,9 @@ _harness/scripts/literate_capture.py	removed — append notebook cells with appe
 # names — the old constitution beside the new one, each claiming to be the law. The row is what
 # moves the old one out, and the printed restore command is what makes that survivable for a user
 # who had edited their copy: their text is in quarantine, named, with the mv that puts it back.
-folder-structure.md	renamed to CONSTITUTION.md — same document, named for what it is (the constitution) rather than for its table of contents
-setup.md	renamed to AI-SETUP-PROMPT.md — it is a prompt addressed to an AI assistant, not human setup instructions
-installing.md	renamed to INSTALL-INSTRUCTIONS.md — one letter from install.sh in every listing; the prose manual is now named apart from the installer
+folder-structure.md	renamed to CONSTITUTION.md — same document, named for what it is (the constitution) rather than for its table of contents	CONSTITUTION.md
+setup.md	renamed to AI-SETUP-PROMPT.md — it is a prompt addressed to an AI assistant, not human setup instructions	AI-SETUP-PROMPT.md
+installing.md	renamed to INSTALL-INSTRUCTIONS.md — one letter from install.sh in every listing; the prose manual is now named apart from the installer	INSTALL-INSTRUCTIONS.md
 #
 # THE SIX ROWS BELOW (#141) SETTLE EVERY SHIPPED SCRIPT ON ONE NAMING CONVENTION. The estate ran
 # two spellings at once — six scripts separated words with an underscore, four with a hyphen — and
@@ -77,17 +90,20 @@ installing.md	renamed to INSTALL-INSTRUCTIONS.md — one letter from install.sh 
 # gets the same treatment, because the list is cumulative and the installer retires every listed
 # path it actually finds.
 #
-# THE HOOK CONFIGURATION IS THE ONE TO WATCH. .github/hooks/harness.json is written at install
-# time and carries the validator path; it is a file the USER owns, so an upgrade carries it
-# forward byte-identical rather than rewriting it. An estate upgrading across this release keeps
-# a hook config naming check_ticket_log.sh, which the retirement has just moved to quarantine.
-# Re-copy _harness/hooks/hooks.example.json over it to pick the new name up.
-_harness/scripts/append_notebook_cell.py	renamed to _harness/scripts/append-notebook-cell.py — same writer, hyphen convention (#141)
-_harness/scripts/check_ticket_log.sh	renamed to _harness/scripts/check-ticket-log.sh — same validator, hyphen convention (#141)
-_harness/scripts/deploy_agents.sh	renamed to _harness/scripts/deploy-agents.sh — same deploy, hyphen convention (#141)
-_harness/scripts/make_context_pack.sh	renamed to _harness/scripts/make-context-pack.sh — same packer, hyphen convention (#141)
-_harness/scripts/retro_stats.sh	renamed to _harness/scripts/retro-stats.sh — same counter, hyphen convention (#141)
-_harness/scripts/tracker_sweep.sh	renamed to _harness/scripts/tracker-sweep.sh — same sweep, hyphen convention (#141)
+# THE HOOK CONFIGURATION IS THE ONE TO WATCH, AND IT IS WHAT THE THIRD FIELD IS FOR (#287).
+# .github/hooks/harness.json is written at install time and carries the validator path; it is a
+# file the USER owns, so an upgrade carries it forward rather than replacing it. Carrying it
+# forward whole used to leave it naming check_ticket_log.sh — a script the same run had just moved
+# to quarantine — and the only remedy was a hand re-copy of _harness/hooks/hooks.example.json,
+# which threw away whatever the user had tuned in there. The upgrade now RE-POINTS it instead:
+# the dead path is rewritten to the new one from the third field, everything else in the file is
+# left exactly as the user left it, and the rewrite is reported at the moment it happens.
+_harness/scripts/append_notebook_cell.py	renamed to _harness/scripts/append-notebook-cell.py — same writer, hyphen convention (#141)	_harness/scripts/append-notebook-cell.py
+_harness/scripts/check_ticket_log.sh	renamed to _harness/scripts/check-ticket-log.sh — same validator, hyphen convention (#141)	_harness/scripts/check-ticket-log.sh
+_harness/scripts/deploy_agents.sh	renamed to _harness/scripts/deploy-agents.sh — same deploy, hyphen convention (#141)	_harness/scripts/deploy-agents.sh
+_harness/scripts/make_context_pack.sh	renamed to _harness/scripts/make-context-pack.sh — same packer, hyphen convention (#141)	_harness/scripts/make-context-pack.sh
+_harness/scripts/retro_stats.sh	renamed to _harness/scripts/retro-stats.sh — same counter, hyphen convention (#141)	_harness/scripts/retro-stats.sh
+_harness/scripts/tracker_sweep.sh	renamed to _harness/scripts/tracker-sweep.sh — same sweep, hyphen convention (#141)	_harness/scripts/tracker-sweep.sh
 #
 # THE ROW BELOW (#298) RETIRES THE VERSION STAMP ITSELF, which is why this list's own format
 # changed in the same release. `VERSION` was a shipped, root-pinned file holding a release number,

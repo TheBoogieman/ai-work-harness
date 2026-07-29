@@ -118,6 +118,11 @@ QUAR_DEST=""
 # The shipped retire list — DATA, read from the source, never inferred from a disk.
 RETIRE_LIST="$ESTATE_SRC/_harness/retire-list.tsv"
 up_create=(); up_replace=(); up_retire=(); up_keep=()
+# up_repoint (#287) — one entry per REWRITE this run will make inside a carried-forward file,
+# spelled "<estate-relative file><TAB><old path><TAB><new path>". Declared here with the rest
+# because audit_estate and the summary read it in every mode, and `set -u` makes an unset array
+# read fatal rather than empty.
+up_repoint=()
 up_same=0; up_record=0; UPGRADE_PARAM=""
 
 # ---- args -------------------------------------------------------------------------------------
@@ -642,7 +647,7 @@ reconfigure_only() {
 # ================================================================================================
 # ---- UPGRADE MODE (#134) — the dumb-creator law's one exception --------------------------------
 # ================================================================================================
-# THREE VERBS, and nothing else happens to an estate:
+# FOUR VERBS, and nothing else happens to an estate:
 #   CREATE   an absent shipped file is copied in, exactly as the create path does.
 #   REPLACE  a present PLAIN-MACHINERY file whose bytes differ from this source's is MOVED to
 #            quarantine and this source's copy laid down in its place. The move is what keeps the
@@ -651,8 +656,21 @@ reconfigure_only() {
 #   RETIRE   a path the shipped retire list names as superseded is MOVED to quarantine, with NO
 #            replacement laid down at that path — that is how a rename stops leaving an estate
 #            holding both names.
+#   REPOINT  (#287) a KEPT file naming a path that a rename has superseded has that PATH — and
+#            nothing else in the file — rewritten to the new one. This is the one verb that edits
+#            a file in place rather than moving it, and it exists because the other three cannot
+#            reach a carried-forward file at all: KEEP is what protects the user's settings, and
+#            it protects the dead filenames sitting beside them just as thoroughly. Its bound is
+#            narrow on purpose — a path token, never a line, never a sentence, never a whole file
+#            — because the file it is editing may hold hand-edits nobody else knows about. Its
+#            prior bytes go to quarantine first and every rewrite is reported as it happens.
 # Anything that is neither — a record, or a file carrying the user's own settings — is KEPT and
-# said out loud. There is no fourth verb, and in particular there is no delete.
+# said out loud. A KEPT file is still eligible for REPOINT, and that is the only thing that ever
+# happens to one. There is no fifth verb, and in particular there is no delete.
+#
+# A RECORD IS OUTSIDE ALL FOUR. Records are never created, replaced, retired or re-pointed —
+# an upgraded estate's drawings, design notes and notebooks keep whatever names they were written
+# with, and correcting those is a human act on the record, not something an installer does.
 
 # upgrade_paths — the estate-relative shipped paths, from the SAME derivation the create path uses
 # (#282), so the two can never disagree about what ships. The `estate/` prefix is a fact about the
@@ -781,16 +799,81 @@ upgrade_retire_rows() {
   return 0
 }
 
+# upgrade_rename_rows (#287) — the SAME rows, filtered to the ones that are RENAMES, printed as
+# "<old path><TAB><new path>". No second list and no new data file: the retire list already knew
+# which paths moved and where to, it just said so in prose; field three says it again as a field.
+# A REMOVAL HAS NO THIRD FIELD, so a non-empty one is the whole test — and it has to be, because
+# a removal has no new path to point anything at and re-pointing one would be inventing a target.
+# THIS IS DRIVEN OFF THE WHOLE LIST, not off what this run happened to retire. The two differ: a
+# user who deleted the old file by hand, or who upgraded once already, retires nothing this run
+# while a carried-forward file still names the dead path. Cumulative list, cumulative re-pointing.
+upgrade_rename_rows() {
+  upgrade_retire_rows | awk -F'\t' 'NF >= 3 && $3 != "" { print $1 "\t" $3 }'
+  return 0
+}
+
+# repoint_rewrite <file> <old> <new> <outfile> — rewrite every WHOLE-PATH mention of <old> as
+# <new>, writing the result to <outfile> and printing the number of rewrites to stdout. Passing
+# /dev/null as <outfile> makes it a pure counter, which is how the plan asks the question without
+# touching anything.
+#
+# WHY IT IS NOT `sed s|old|new|g`. `setup.md` is a substring of `my-setup.md` and of `setup.mdx`,
+# and a blind substitution would corrupt both — inside a file the user may have hand-edited, which
+# is the worst place in the estate to be approximately right. So a match counts only when the
+# characters either side of it are NOT name characters: the mention has to be the whole name, not
+# part of a longer one. The boundary set is a STRING and the test is `index`, not a regex, because
+# a bracket expression containing `/` is not portable across the awks this installer has to run on.
+#
+# ONE STATED DEVIATION, because it is a byte change beyond a path: a file that did not end in a
+# newline gets one. awk reads a trailing partial line as a record and `print` terminates it. Every
+# file this can reach today ends in a newline, so nothing is affected in practice, and the prior
+# bytes are in quarantine either way.
+repoint_rewrite() {
+  awk -v old="$2" -v new="$3" -v out="$4" '
+    BEGIN { W = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._-/"; n = 0 }
+    {
+      line = $0; res = ""
+      while ((i = index(line, old)) > 0) {
+        pre = substr(line, 1, i - 1); post = substr(line, i + length(old))
+        lc = (pre == "") ? "" : substr(pre, length(pre), 1)
+        rc = (post == "") ? "" : substr(post, 1, 1)
+        if ((lc != "" && index(W, lc) > 0) || (rc != "" && index(W, rc) > 0)) { res = res pre old }
+        else { res = res pre new; n++ }
+        line = post
+      }
+      print res line > out
+    }
+    END { print n }
+  ' "$1"
+  return 0
+}
+
+# repoint_pairs <old path> <new path> — the one or two SPELLINGS a rename has to be looked for in.
+# A carried-forward file names a script by its full estate-relative path (`_harness/scripts/x.sh`)
+# but names a root-pinned document by its bare name (`folder-structure.md`), and both are real
+# mentions of the same rename. The full path goes FIRST so that by the time the bare-basename pass
+# runs, every occurrence that was part of a path has already been rewritten — what is left is a
+# genuinely bare mention, and the `/` in the boundary set is what stops the second pass touching
+# a path the first one deliberately left alone. The second pair is skipped when the path IS its
+# own basename, which is every root-pinned rename.
+repoint_pairs() {
+  printf '%s\t%s\n' "$1" "$2"
+  [ "${1##*/}" = "$1" ] || printf '%s\t%s\n' "${1##*/}" "${2##*/}"
+  return 0
+}
+
 # ---- the plan: classify EVERYTHING before touching ANYTHING -------------------------------------
 # plan_upgrade — decide, for every shipped path and every retired path, which of the four things
 # happens. It moves nothing: the whole point of a separate planning step is that the plan can be
 # printed in full, and --dry-run can exit, before the first file has been touched.
 plan_upgrade() {
-  up_create=(); up_replace=(); up_retire=(); up_keep=()
+  up_create=(); up_replace=(); up_retire=(); up_keep=(); up_repoint=()
   up_same=0; up_record=0
   upgrade_param_set
   plan_upgrade_products
   plan_upgrade_retirements
+  # LAST, and it has to be: its subject is up_keep, which plan_upgrade_products is what fills.
+  plan_upgrade_repoints
   return 0
 }
 
@@ -838,7 +921,39 @@ plan_upgrade_retirements() {
   return 0
 }
 
-# ---- print the plan: every create, replace and retire, BEFORE anything happens -----------------
+# plan_upgrade_repoints (#287) — the rewrites, decided before a byte moves, so --dry-run can show
+# them and stop. It walks the KEPT files (the outer loop, which is what groups every rewrite of one
+# file together — the execute step relies on that to take one quarantine copy per file rather than
+# one per rewrite) and asks each rename row whether that file names the dead path.
+#
+# ONLY KEPT FILES. Not records, not replaced machinery, not created files: a record is outside all
+# four verbs, and a file this run replaced or created came from the source already correct. Kept
+# files are the entire population that can carry a dead name through an upgrade, which is precisely
+# the defect this exists for.
+#
+# THE `grep -F` IS A FILTER, NOT THE TEST. It is there so the awk pass runs on the handful of files
+# that could possibly match instead of on every kept file times every rename row; the real
+# whole-path test is repoint_rewrite's, and a grep hit that turns out to be part of a longer name
+# simply counts zero and records nothing.
+plan_upgrade_repoints() {
+  local rel row pair po pn n
+  for rel in ${up_keep[@]+"${up_keep[@]}"}; do
+    [ -f "$TARGET/$rel" ] || continue
+    while IFS= read -r row; do
+      while IFS= read -r pair; do
+        po="$(printf '%s' "$pair" | cut -f1)"; pn="$(printf '%s' "$pair" | cut -f2)"
+        [ -n "$po" ] || continue
+        grep -Fq -- "$po" "$TARGET/$rel" || continue
+        n="$(repoint_rewrite "$TARGET/$rel" "$po" "$pn" /dev/null)"
+        if [ "$n" -gt 0 ]; then up_repoint+=("$(printf '%s\t%s\t%s' "$rel" "$po" "$pn")"); fi
+      done < <(repoint_pairs "$(printf '%s' "$row" | cut -f1)" \
+                             "$(printf '%s' "$row" | cut -f2)")
+    done < <(upgrade_rename_rows)
+  done
+  return 0
+}
+
+# ---- print the plan: every create, replace, retire and repoint, BEFORE anything happens ---------
 print_upgrade_plan() {
   echo "=== upgrade plan for estate: $TARGET ==="
   # No version line here any more (#298). It used to read both stamps and print "old -> new", which
@@ -855,7 +970,7 @@ print_upgrade_plan() {
   return 0
 }
 
-# print_upgrade_rows — the three mutating verbs, one line each, named individually. These are the
+# print_upgrade_rows — the four mutating verbs, one line each, named individually. These are the
 # lines a person reads before deciding to let the run proceed, so none of them is ever collapsed
 # into a count.
 print_upgrade_rows() {
@@ -871,23 +986,34 @@ print_upgrade_rows() {
     echo "  retire   $(printf '%s' "$row" | cut -f1)  " \
          "($(printf '%s' "$row" | cut -f2))"
   done
+  # The repoint line names the FILE and the exact substitution (#287). Both paths are spelled out
+  # because this is the one verb that edits a file the user may have hand-edited, and "we tidied
+  # some paths in your agent contracts" is not something a reader can check or reverse.
+  for row in ${up_repoint[@]+"${up_repoint[@]}"}; do
+    echo "  repoint  $(printf '%s' "$row" | cut -f1)  " \
+         "($(printf '%s' "$row" | cut -f2) -> $(printf '%s' "$row" | cut -f3))"
+  done
   return 0
 }
 
-# upgrade_moves — how many files this run will move (replace + retire). The no-op case is the
-# whole reason it exists: a run with nothing to move must not name a quarantine folder it is
-# never going to create, and must not tell the user their files are in one.
-upgrade_moves() {
-  printf '%s' "$(( ${#up_replace[@]} + ${#up_retire[@]} ))"
+# upgrade_quarantined — how many files this run will put PRIOR BYTES into quarantine for: every
+# replace, every retire, and every repoint. The no-op case is the whole reason it exists: a run
+# with nothing to do must not name a quarantine folder it is never going to create, and must not
+# tell the user their files are in one. A REPOINT COUNTS EVEN THOUGH IT IS NOT A MOVE — it leaves
+# a copy of the file as it stood before the rewrite, which is the thing the quarantine sentence is
+# telling the user about, so leaving it out would make that sentence false on a repoint-only run.
+upgrade_quarantined() {
+  printf '%s' "$(( ${#up_replace[@]} + ${#up_retire[@]} + ${#up_repoint[@]} ))"
 }
 
 # print_upgrade_quarantine_line — name the quarantine folder only when something is actually going
 # into it. A SECOND RUN SAYS SO IN SO MANY WORDS: "safe to run twice" is a claim the run itself
-# has to make, not something a reader should have to infer from three zeros.
+# has to make, not something a reader should have to infer from four zeros.
 print_upgrade_quarantine_line() {
-  if [ "${#up_create[@]}" -eq 0 ] && [ "$(upgrade_moves)" -eq 0 ]; then
+  if [ "${#up_create[@]}" -eq 0 ] && [ "$(upgrade_quarantined)" -eq 0 ]; then
     echo "  NOTHING TO DO — this estate's machinery already matches this source. Safe to re-run:"
-    echo "    no file will be created, replaced or retired, and no quarantine folder is made."
+    echo "    no file will be created, replaced, retired or re-pointed, and no quarantine folder" \
+         "is made."
     return 0
   fi
   echo "  quarantine for this run: $QUAR_REL"
@@ -957,6 +1083,56 @@ upgrade_execute() {
     quarantine_move "$rel"
     quarantine_report "RETIRED " "$rel" "$(printf '%s' "$row" | cut -f2)"
   done
+  # RE-POINTING RUNS LAST, after every move, for the same interruption reason the order above has:
+  # it is the only step that edits a file in place, so a run killed before it leaves an estate whose
+  # kept files still name the old paths — stale, which is the state they were already in — rather
+  # than half-rewritten. Re-running from there finishes it.
+  upgrade_repoint_all
+  return 0
+}
+
+# upgrade_repoint_all (#287) — apply the planned rewrites, reporting each as it happens.
+#
+# ONE QUARANTINE COPY PER FILE, taken before that file's FIRST rewrite, which is why the plan is
+# built file-major: the copy has to be of the file as the USER left it, not of the file as an
+# earlier rewrite in the same run left it. `rel` carrying over between iterations is what detects
+# the change of file.
+#
+# THE REWRITE IS `cat > file`, NOT `mv tmp file`, and that is deliberate: it writes through the
+# existing inode and so keeps the file's mode, which matters for anything sourced or executed. It
+# also means the file is briefly truncated — the quarantine copy taken a moment earlier is what
+# makes that survivable, and it is taken before any of it starts.
+upgrade_repoint_all() {
+  local row rel prev="" po pn n tmp
+  tmp="$TARGET/$QUAR_REL/.repoint.tmp"
+  for row in ${up_repoint[@]+"${up_repoint[@]}"}; do
+    rel="$(printf '%s' "$row" | cut -f1)"
+    po="$(printf '%s' "$row" | cut -f2)"; pn="$(printf '%s' "$row" | cut -f3)"
+    QUAR_DEST="$TARGET/$QUAR_REL/$rel"
+    if [ "$rel" != "$prev" ]; then
+      mkdir -p "$(dirname "$QUAR_DEST")"
+      cp -p "$TARGET/$rel" "$QUAR_DEST"
+      prev="$rel"
+    fi
+    n="$(repoint_rewrite "$TARGET/$rel" "$po" "$pn" "$tmp")"
+    cat "$tmp" > "$TARGET/$rel"
+    rm -f "$tmp"
+    repoint_report "$rel" "$po" "$pn" "$n"
+  done
+  return 0
+}
+
+# repoint_report <file> <old> <new> <count> — SAID AT THE MOMENT THE FILE WAS REWRITTEN, and it is
+# the whole reason this verb is allowed to exist. Editing a file a user owns without saying so is
+# the thing this harness exists to prevent, even when the edit is right — so the report names the
+# file, both paths in full, how many mentions moved, and a literal command that puts the file back
+# exactly as it was. `cp` rather than `mv` because the file is still at its own path: this restores
+# the user's bytes over the re-pointed ones rather than moving anything.
+repoint_report() {
+  echo "REPOINTED $1"
+  echo "    $2  ->  $4 mention(s) rewritten to  $3"
+  echo "    your copy from BEFORE this rewrite is kept at: $QUAR_REL/$1"
+  echo "    RESTORE IT WITH:      cp \"$QUAR_DEST\" \"$TARGET/$1\""
   return 0
 }
 
@@ -997,7 +1173,11 @@ audit_estate() {
   # The REPLACEMENT arm of the gate (#134): an upgrade that rewrote agent definitions created
   # nothing, so the CREATED test alone would leave the deployed copies at their pre-upgrade
   # contents while the estate reported success. Replacing a file is a reason to redeploy too.
-  if [ ${#CREATED[@]} -gt 0 ] || [ "$NEED_GIT" -eq 1 ] || [ ${#up_replace[@]} -gt 0 ]; then
+  # THE REPOINT ARM (#287) is the same argument again: the files this verb rewrites are mostly
+  # AGENT CONTRACTS, and a contract corrected in the estate but not redeployed leaves the
+  # assistant still reading the dead filename — which is the entire defect, uncorrected.
+  if [ ${#CREATED[@]} -gt 0 ] || [ "$NEED_GIT" -eq 1 ] || [ ${#up_replace[@]} -gt 0 ] \
+     || [ ${#up_repoint[@]} -gt 0 ]; then
     bash "$TARGET/_harness/scripts/deploy-agents.sh" \
       || echo "note: agent deploy reported an issue — see above (verify your Copilot agent dir)."
   fi
@@ -1067,17 +1247,20 @@ print_summary_created() {
 # folder holding them is untracked, so nothing but those lines and this one records them.
 print_summary_upgrade() {
   echo "Upgraded this run: ${#up_create[@]} created, ${#up_replace[@]} replaced," \
-       "${#up_retire[@]} retired, ${#up_keep[@]} left carrying your settings."
+       "${#up_retire[@]} retired, ${#up_repoint[@]} path(s) re-pointed," \
+       "${#up_keep[@]} left carrying your settings."
   echo "  Untouched: $up_record record file(s); $up_same machinery file(s) already current."
   # The quarantine sentence is CONDITIONAL for the same reason the plan's line is: on a re-run
-  # nothing moved, and telling a user their copies are in a folder that was never created is a
-  # false statement in the closing record — the one place they are most likely to trust it.
-  if [ "$(upgrade_moves)" -eq 0 ]; then
-    echo "  Nothing was moved, so no quarantine folder was created."
+  # nothing was quarantined, and telling a user their copies are in a folder that was never
+  # created is a false statement in the closing record — the one place they are most likely to
+  # trust it.
+  if [ "$(upgrade_quarantined)" -eq 0 ]; then
+    echo "  Nothing was moved or rewritten, so no quarantine folder was created."
     return 0
   fi
-  echo "  NOTHING WAS DELETED. Every replaced and retired file is under $QUAR_REL, which is"
-  echo "  untracked — the RESTORE lines printed above are the only record of those moves."
+  echo "  NOTHING WAS DELETED. Every replaced and retired file is under $QUAR_REL, and so is a"
+  echo "  copy of every re-pointed file as it stood BEFORE the rewrite. That folder is untracked"
+  echo "  — the RESTORE lines printed above are the only record of any of it."
   return 0
 }
 

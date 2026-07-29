@@ -528,17 +528,32 @@ in_up_customise() {
     && { echo "BUG [upgrade-record-untouched]: fixture unsound — the estate's ticket already"; \
          echo "    matches the source's, so nothing would replace it whether a record test"; \
          echo "    exists or not, and the guard below would be asserting a coincidence"; exit 1; }
+  # THE RE-POINT SUBJECT (#287). retrospective.agent.md is a carried-forward file (it holds a model
+  # pin) that NAMES the script this fixture is about to rename — so it is the one file here that is
+  # both protected by KEEP and made wrong by the rename, which is exactly the defect. Its pin is
+  # moved off the shipped default for the same reason the others are: the guard has to be able to
+  # tell "the path was re-pointed" from "the whole file was re-derived from source".
+  UP_RETRO="$UP_EST/_agents/retrospective.agent.md"
+  awk '/^model:/{print "model: UPRETRO"; next} {print}' "$UP_RETRO" > "$I39_ROOT/rt.t" \
+    && mv "$I39_ROOT/rt.t" "$UP_RETRO"
+  grep -q '_harness/scripts/retro-stats.sh' "$UP_RETRO" \
+    || { echo "BUG [upgrade-repoints]: fixture unsound — the agent contract does not name the"; \
+         echo "    script this fixture renames, so there is no stale path for the upgrade to"; \
+         echo "    re-point and the guard below would assert nothing"; exit 1; }
   cp -p "$UP_TG" "$I39_ROOT/snap.tg"; cp -p "$UP_DW" "$I39_ROOT/snap.dw"
   cp -p "$UP_HOOK" "$I39_ROOT/snap.hk"; cp -p "$UP_REC" "$I39_ROOT/snap.rec"
-  cp -p "$UP_TICK" "$I39_ROOT/snap.tick"
+  cp -p "$UP_TICK" "$I39_ROOT/snap.tick"; cp -p "$UP_RETRO" "$I39_ROOT/snap.retro"
   return 0
 }
 
 # in_up_advance_source — the release the estate is about to receive: a RENAME (declared in the
 # retire list, never inferred) and an upstream change to a plain machinery file. It used to write a
-# new VERSION stamp into the scratch source too; there is no stamp to write since #298, and the
-# retire row it appends is now TWO fields, which is the format the parser reads.
+# new VERSION stamp into the scratch source too; there is no stamp to write since #298.
 # The rename is the half that has never run anywhere — replacement is the easy half.
+#
+# THE ROW IT APPENDS CARRIES THREE FIELDS (#287): path, prose, and the NEW PATH. The third is what
+# [upgrade-repoints] below runs on — drop it and the parser reads the row as a REMOVAL, nothing is
+# re-pointed, and that guard reds on its first assertion. That is how the guard is revert-proved.
 in_up_advance_source() {
   local sc="$UP_SRC/estate/_harness/scripts"
   # The fixture's rename is SYNTHETIC — retro-counts.sh is a name the product never ships. It used
@@ -551,30 +566,34 @@ in_up_advance_source() {
   # derives the shipped set from (#282). This line used to edit the ship manifest instead: the
   # same declaration, made to the tree rather than to a list describing the tree.
   git -C "$UP_SRC" add -A -f
-  printf '%s\t%s\n' _harness/scripts/retro-stats.sh \
-    "renamed to _harness/scripts/retro-counts.sh" >> "$UP_SRC/estate/_harness/retire-list.tsv"
+  printf '%s\t%s\t%s\n' _harness/scripts/retro-stats.sh \
+    "renamed to _harness/scripts/retro-counts.sh" _harness/scripts/retro-counts.sh \
+    >> "$UP_SRC/estate/_harness/retire-list.tsv"
   printf '# upgrade fixture: an upstream change to a plain machinery file.\n' \
     >> "$sc/harness-drill.sh"
   return 0
 }
 
-# (m) upgrade-plan: --upgrade --dry-run names every create, replace and retire BEFORE anything
-#     happens, and touches nothing. Pre-fix, --upgrade is an unknown option and the run exits 2.
+# (m) upgrade-plan: --upgrade --dry-run names every create, replace, retire and repoint BEFORE
+#     anything happens, and touches nothing. Pre-fix, --upgrade is an unknown option and the run
+#     exits 2.
 in_upgrade_plan() {
   in_up_run upgrade-plan --upgrade --dry-run --yes "$UP_EST"
   local v
   for v in 'create   _harness/scripts/retro-counts.sh' \
            'replace  _harness/scripts/harness-drill.sh' \
-           'retire   _harness/scripts/retro-stats.sh'; do
+           'retire   _harness/scripts/retro-stats.sh' \
+           'repoint  _agents/retrospective.agent.md'; do
     grep -Fq "  $v" "$UP_OUT" \
-      || { echo "BUG [upgrade-plan]: the plan never said '$v' — every create, replace and retire"; \
-           echo "    must be shown before anything happens. What it printed:"; \
-           grep -E '^  (create|replace|retire|keep)' "$UP_OUT" | sed 's/^/      /'; exit 1; }
+      || { echo "BUG [upgrade-plan]: the plan never said '$v' — every create, replace, retire"; \
+           echo "    and repoint must be shown before anything happens. What it printed:"; \
+           grep -E '^  (create|replace|retire|repoint|keep)' "$UP_OUT" | sed 's/^/      /'; \
+           exit 1; }
   done
   [ ! -e "$UP_EST/_retired" ] && [ -e "$UP_EST/_harness/scripts/retro-stats.sh" ] \
     || { echo "BUG [upgrade-plan]: --dry-run TOUCHED the estate — it must plan and stop"; exit 1; }
-  echo "  ok [upgrade-plan] — create/replace/retire all shown before acting; --dry-run moved" \
-    "nothing"
+  echo "  ok [upgrade-plan] — create/replace/retire/repoint all shown before acting; --dry-run" \
+    "moved nothing"
 }
 
 # (t) upgrade-needs-source: an estate re-running its OWN shipped installer has no source to copy
@@ -664,6 +683,83 @@ in_upgrade_keeps_settings() {
     "and named in the run"
 }
 
+# (v) upgrade-repoints (#287): THE FOURTH VERB. KEEP protects a carried-forward file from being
+#     replaced — and protects the dead filenames inside it just as thoroughly, so a rename declared
+#     in the retire list reached the estate's machinery but never the agent contract that calls it.
+#     An upgraded estate ended up holding an agent instructing an assistant to run a script the
+#     same run had just moved to quarantine.
+#     WHAT IT ASSERTS, and the second half is the harder one: the dead path is gone AND the file is
+#     otherwise untouched — the model pin survives and EXACTLY ONE LINE differs from the user's
+#     copy. A fix that re-derived the whole document from source would clear the first assertion
+#     and fail the second, which is the wider fix this item was narrowed away from.
+#     REVERT-PROVABLE: drop the third field from the retire row in in_up_advance_source and this
+#     reds on its first assertion — the row parses as a removal, which has no new path to point at.
+in_upgrade_repoints() {
+  grep -q '_harness/scripts/retro-stats.sh' "$UP_RETRO" \
+    && { echo "BUG [upgrade-repoints]: the carried-forward agent contract STILL names the script"; \
+         echo "    this run moved to quarantine — the assistant reading it is being sent to a"; \
+         echo "    file that is not there any more"; exit 1; }
+  grep -q '_harness/scripts/retro-counts.sh' "$UP_RETRO" \
+    || { echo "BUG [upgrade-repoints]: the stale path is gone but the NEW one never arrived —" \
+           "the mention was destroyed rather than re-pointed"; exit 1; }
+  grep -q '^model: UPRETRO' "$UP_RETRO" \
+    || { echo "BUG [upgrade-repoints]: the user's model pin is gone. Re-pointing a path must not" \
+           "cost the setting the file was carried forward to protect"; exit 1; }
+  in_upgrade_repoints_bound
+  in_upgrade_repoints_reported
+  echo "  ok [upgrade-repoints] — the dead path is re-pointed, the pin survives, exactly one line" \
+    "moved, and the rewrite is reported with a restore command that runs"
+}
+
+# in_upgrade_repoints_bound — "rewrite paths only. Never a line, never a sentence, never a whole
+# file." Counted rather than eyeballed: one changed line, and what changed on it is the path.
+in_upgrade_repoints_bound() {
+  local d n
+  # THE DIFF IS TAKEN ONCE INTO A VARIABLE, and the `|| true` is load-bearing rather than defensive:
+  # this suite runs under `pipefail`, and `diff` exits 1 whenever the files differ — which is every
+  # time this guard is doing its job — so piping it straight into grep fails the pipeline on the
+  # success path and reds a passing fix.
+  d=$(diff "$I39_ROOT/snap.retro" "$UP_RETRO" || true)
+  n=$(printf '%s\n' "$d" | grep -c '^[<>]' || true)
+  [ "$n" -eq 2 ] \
+    || { echo "BUG [upgrade-repoints]: $n diff lines between the user's copy and the re-pointed"; \
+         echo "    one — a path rewrite is ONE line out and ONE line in. Anything more means the"; \
+         echo "    upgrade rewrote prose the user may have edited. Diff:"; \
+         printf '%s\n' "$d" | head -8; exit 1; }
+  printf '%s\n' "$d" | grep '^>' | grep -q 'retro-counts.sh' \
+    || { echo "BUG [upgrade-repoints]: the one line that changed is not the path line. Diff:"; \
+         printf '%s\n' "$d" | head -8; exit 1; }
+}
+
+# in_upgrade_repoints_reported — editing a user's file silently is the thing this project exists to
+# prevent, even when the edit is right. So the rewrite is reported like a retirement: named, both
+# paths spelled out, and a LITERAL restore command that is EXECUTED here rather than read.
+# THE RE-RUN AT THE END IS NOT TIDYING. It leaves the estate re-pointed for the guards after this
+# one, and on the way it proves the property the plan is built on: re-pointing is driven off the
+# whole retire list, not off what this run retired. retro-stats.sh is long gone from the estate by
+# now, so that run retires NOTHING and must still correct the file the restore just made stale.
+in_upgrade_repoints_reported() {
+  local cmd
+  grep -q '^REPOINTED _agents/retrospective.agent.md$' "$I39_ROOT/up.first" \
+    || { echo "BUG [upgrade-repoints]: the run edited a file the user owns and never said so"; \
+         exit 1; }
+  cmd=$(grep -A3 '^REPOINTED _agents/retrospective.agent.md$' "$I39_ROOT/up.first" \
+    | grep -m1 'RESTORE IT WITH:' | sed 's/.*RESTORE IT WITH: *//')
+  [ -n "$cmd" ] \
+    || { echo "BUG [upgrade-repoints]: no restore command was printed to execute"; exit 1; }
+  bash -c "$cmd" || { echo "BUG [upgrade-repoints]: the restore command FAILED: $cmd"; exit 1; }
+  cmp -s "$I39_ROOT/snap.retro" "$UP_RETRO" \
+    || { echo "BUG [upgrade-repoints]: the restore ran but did not give the user their file back" \
+           "byte-for-byte"; exit 1; }
+  in_up_run upgrade-repoints --upgrade --yes "$UP_EST"
+  grep -qE '^RETIRED ' "$UP_OUT" \
+    && { echo "BUG [upgrade-repoints]: fixture unsound — that run retired something, so it cannot" \
+           "show re-pointing happening independently of retirement"; exit 1; }
+  grep -q '^REPOINTED _agents/retrospective.agent.md$' "$UP_OUT" \
+    || { echo "BUG [upgrade-repoints]: a run that retired nothing left the stale path in place —" \
+           "re-pointing is reading this run's retirements, not the cumulative list"; exit 1; }
+}
+
 # (p) upgrade-record-untouched: class 1 of the upgrade's three. A record is never touched, under any
 #     circumstance, retirement included.
 #     ITS SUBJECT IS THE USER-EDITED SHIPPED TICKET, because that is a shipped path whose estate
@@ -693,9 +789,10 @@ in_upgrade_idempotent() {
     || { echo "BUG [upgrade-idempotent]: a second run did not report itself as a no-op:"; \
          grep -E '^(  (create|replace|retire)|Upgraded this run)' "$UP_OUT" | sed 's/^/      /'; \
          exit 1; }
-  grep -qE '^(CREATED|REPLACED|RETIRED)' "$UP_OUT" \
-    && { echo "BUG [upgrade-idempotent]: a second run MOVED something — re-running must be safe"; \
-         exit 1; }
+  grep -qE '^(CREATED|REPLACED|RETIRED|REPOINTED)' "$UP_OUT" \
+    && { echo "BUG [upgrade-idempotent]: a second run MOVED or REWROTE something — re-running"; \
+         echo "    must be safe, and a repoint that fires twice is rewriting a file it already"; \
+         echo "    corrected"; exit 1; }
   echo "  ok [upgrade-idempotent] — the second run says NOTHING TO DO and moves no file"
 }
 
@@ -790,6 +887,7 @@ case_installer() {
   in_upgrade_retires
   in_upgrade_retires_version
   in_upgrade_keeps_settings
+  in_upgrade_repoints
   in_upgrade_record_untouched
   in_upgrade_idempotent
   in_upgrade_restore_works

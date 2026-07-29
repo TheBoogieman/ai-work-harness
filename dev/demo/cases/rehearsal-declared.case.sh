@@ -23,11 +23,20 @@
 # rd_home_run — one install run under a private, EMPTY home. Echoes nothing; the caller inspects
 # the directories afterwards. `set +e` around the run because a non-zero install is a thing some
 # guard below may want to assert on rather than abort at.
+#
+# THE TWO REDIRECTS ARE STRIPPED FROM THE ENVIRONMENT, and that is the whole reason this helper
+# exists rather than a bare call. The runner exports HARNESS_AGENT_DEPLOY_DIR and HARNESS_STATE_DIR
+# globally, as the safety floor under every other unit — so a guard here that simply ran install.sh
+# would measure the suite's own redirect and never the product's default, which is the only thing
+# this family is about. It cost a red on CI and a green locally to find that, since a case file run
+# on its own inherits neither. `env -u` rather than a subshell `unset` because the variables must be
+# absent from the CHILD's environment, and it is the same spelling on GNU and BSD.
 # $1 = the private HOME, $2.. = install.sh's own arguments.
 rd_home_run() {
   local rd_home="$1"; shift
   set +e
-  HOME="$rd_home" bash estate/install.sh "$@" >"$RD_OUT" 2>&1
+  env -u HARNESS_AGENT_DEPLOY_DIR -u HARNESS_STATE_DIR HOME="$rd_home" \
+    bash estate/install.sh "$@" >"$RD_OUT" 2>&1
   RD_RC=$?
   set -e
   return 0

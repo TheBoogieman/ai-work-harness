@@ -12,6 +12,14 @@
 in_fixture() {
   echo "--- #39 installer: non-destructive, PRODUCT-only, single-schema-home, idempotent ---"
   I39_ROOT=$(mktemp -d); I39_EST="$I39_ROOT/estate"; I39_DEPLOY=$(mktemp -d)
+  # THIS FILE DEPLOYS SEVERAL DIFFERENT THROWAWAY ESTATES INTO ONE THROWAWAY SINK, and since #304 a
+  # deploy that would take an agent directory off another estate refuses unless somebody says so.
+  # Sharing the sink is deliberate — it is what makes these runs cheap — so the case DECLARES the
+  # hand-offs once for the whole file rather than at eleven call sites. Exported, because the
+  # sub-shells running install.sh must see it, and UNSET in case_installer's teardown: the #304
+  # guard family runs later in this same shell and asserts the refusal, so leaving it set would
+  # make that family measure nothing.
+  export HARNESS_AGENT_ADOPT=1
 }
 
 # in_install — THE ONE WAY THIS CASE INVOKES THE INSTALLER when the invocation is expected to
@@ -1006,5 +1014,7 @@ case_installer() {
   # shipped file from the fixture estate to force a create, and every guard above must read the
   # estate the upgrade family built rather than one this has reached into.
   in_upgrade_still_interviews
+  # Hand the shared-sink declaration back before the next case runs — see in_fixture.
+  unset HARNESS_AGENT_ADOPT
   rm -rf "$I39_ROOT" "$I39_DEPLOY"
 }

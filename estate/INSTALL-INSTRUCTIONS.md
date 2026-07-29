@@ -106,6 +106,49 @@ and everything is green from there. A first-ever install on a machine never sees
 this. **Do not move or delete the stamp directory to make it go away**: its
 location is the thing that survives an estate being deleted.
 
+**Installing an estate stops for nothing else.** In particular the agent deploy
+asks you nothing about a directory that was already there: **the first deploy on a
+machine claims it**, whatever it held before, and records that it did.
+
+**Where that record starts to matter is your SECOND estate.** Once a directory is
+claimed, a deploy from a *different* estate stops rather than overwrite it — the
+summary says `Agents: NOT DEPLOYED`, nothing was written and nothing was lost —
+and it asks you to say, once, which estate this machine should read its agents
+from:
+
+```bash
+HARNESS_AGENT_ADOPT=1 bash ~/Work/_harness/scripts/deploy-agents.sh
+```
+
+From then on that estate deploys silently; ownership moved with the command. The
+reason it asks at all is below, under **Rehearsing**.
+
+## Rehearsing the installer
+
+If you are trying `install.sh` out on a machine that also uses the harness for
+real — practising an upgrade, testing a change, following a walkthrough — say so:
+
+```bash
+bash estate/install.sh --rehearsal ~/scratch-estate
+```
+
+`--rehearsal` confines everything the installer would otherwise write **outside**
+the estate to `_rehearsal/` inside it: the agent deploy goes to
+`<target>/_rehearsal/agents` instead of your live assistant directory, and the
+validator's stamps to `<target>/_rehearsal/state` instead of `~/.harness`. The run
+says so at the top and again in its summary. **A rehearsal writes nothing outside
+its own target directory** — delete that directory and the machine is as it was.
+
+Without the flag, an install does what installing means: it puts agents where your
+assistant will find them. That is correct and is not going to change. It is also
+why a practice run that forgets to say it was practice once overwrote a real
+assistant configuration with fixture-pinned contracts. What stops that happening
+again is the ownership rule above rather than the flag — **the first deploy on a
+machine claims the directory; every later one must prove it owns it** — because a
+rehearsal is, by definition, run from an estate that does not own your live
+agents. **The rule is the protection; the flag is the convenience**, and the flag
+is the half that depends on you remembering.
+
 ## Re-running / reconfiguring
 
 Re-running `install.sh` serves three different intents, each with its own home:

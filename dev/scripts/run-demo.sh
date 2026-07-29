@@ -172,6 +172,7 @@ demo_order() {
     case:estate-key \
     case:source-refusal \
     case:in-estate-reconfigure \
+    case:rehearsal-declared \
     tour:context-pack \
     case:one-pack-per-run \
     case:scrub-case-agree

@@ -1319,6 +1319,17 @@ print_summary_knobs() {
 }
 
 # ---- AI-ASSISTANT FINAL GATE (#39; OPERATOR-witnessed) -----------------------------------------
+# THE RE-INSTALL NOTE (#302) is printed HERE because this is the line that sends a user to look for
+# green, and on a machine that has installed a harness estate before, one thing is red. It is said
+# out loud rather than left to be discovered: three seats met that red, could not account for it,
+# and each concluded the machinery was broken.
+# IT IS UNCONDITIONAL, and that is a decision rather than a shortcut. Printing it only when a stamp
+# exists would need this file to carry the stamp directory's path, and that path has ONE home — the
+# validator, which derives it from HARNESS_STATE_DIR. A second copy here would be free to drift
+# from the first. The sentence carries its own condition instead, in the word IF.
+# NOTHING AUTOMATED COULD HAVE FOUND THIS: the acceptance suite points HARNESS_STATE_DIR at a
+# throwaway directory precisely so that running it never reads the machine's own stamps, so no run
+# of it is ever in the state this note describes. It took installing the release on a used machine.
 final_gate() {
   echo
   echo "FINAL STEP — hand this estate to your AI assistant of choice as the last gate." \
@@ -1328,6 +1339,28 @@ final_gate() {
   echo "confirm validator + status are green, spot-check the scaffolded tickets," \
        "and nudge you to fix"
   echo "anything red — on the record. That live validation is the final gate for local deployment."
+  final_gate_reinstall_note
+  return 0
+}
+
+# final_gate_reinstall_note — the one expected red, its cause, and the line that clears it. Its own
+# function only so final_gate stays one paragraph; it is part of that message, not a separate step.
+final_gate_reinstall_note() {
+  echo
+  echo "IF YOU HAVE INSTALLED A HARNESS ESTATE ON THIS MACHINE BEFORE, expect that first" \
+       "validator run to"
+  echo "report ONE red against the template ticket 999912Z-PROJ-99999, and it is not damage." \
+       "The validator"
+  echo "keeps its validation stamps in ~/.harness/validated/ — OUTSIDE every estate, on purpose," \
+       "so that"
+  echo "deleting an estate never destroys its validation history. A stamp from your last estate" \
+       "therefore"
+  echo "outlives it, and this estate's freshly-written copy of that ticket reads as a record" \
+       "that changed"
+  echo "without gaining a Session Log entry — which is exactly what the validator says, correctly." \
+       "Clear it"
+  echo "with the fix the validator itself prints (append one Session Log line to that ticket)," \
+       "and re-run."
   return 0
 }
 

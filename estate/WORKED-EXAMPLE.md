@@ -146,6 +146,36 @@ OK: 202607A-PROJ-4021 validated.
 The template ticket is not mentioned because it has not changed since the last
 time it was validated — the validator only re-reads records that moved.
 
+**On a machine that has had a harness estate on it before, it *is* mentioned,
+and it is the only thing mentioned.** The sentence above is what a genuinely new
+machine prints, and this page is written against one. A re-installer sees that
+same run also print
+
+```
+FAIL: 999912Z-PROJ-99999 changed but no new Session Log entry since last validation. Fix: run ticket-scribe (or log 'session unrecorded; changes per commits' from git history).
+FAIL: 1 ticket(s) need attention — red blocks.
+```
+
+and exit `1`. Nothing is broken, and the validator is right. It keeps its
+validation stamps in `~/.harness/validated/` (`$HARNESS_STATE_DIR`, if you set
+one) — **outside every estate, deliberately**, so that deleting an estate never
+destroys its validation history. That location is not a defect and is not moved.
+What follows from it is that a stamp written by your *previous* estate outlives
+that estate, and this one's freshly-installed copy of `999912Z-PROJ-99999` is a
+file newer than that stamp whose newest session-log header is still the
+template's placeholder date — a record that changed without gaining an entry,
+which is exactly what the validator refuses. Clear it with the manual half of
+the fix it prints, and the ticket validates:
+
+```bash
+printf '\n## %s - session unrecorded; changes per commits\n' "$(date +%Y%m%d%H%M%S)" \
+  >> Tickets/999912Z-PROJ-99999/999912Z-PROJ-99999.md
+bash _harness/scripts/check-ticket-log.sh    # OK: 999912Z-PROJ-99999 validated.
+```
+
+It happens once, on the first validator run in a new estate; the rest of the day
+below is unaffected.
+
 ## 3. Do the work, and record it
 
 You spend the morning on the staging model and find the cause: rows whose
@@ -297,11 +327,21 @@ without asking the assistant anything.
 
 ## How this document is kept true
 
-Every command above is run by an automatic check, in the order it appears, in a
-brand-new estate built from scratch for the purpose. The check compares what each
-command actually printed against what this document says it printed — character
-for character, apart from the six angle-bracket spans listed near the top, each
-of which is matched against a tight pattern rather than skipped.
+Every command in a `console` block above is run by an automatic check, in the
+order it appears, in a brand-new estate built from scratch for the purpose. The
+check compares what each command actually printed against what this document says
+it printed — character for character, apart from the six angle-bracket spans
+listed near the top, each of which is matched against a tight pattern rather than
+skipped.
+
+**One block is deliberately not run, and it is named here rather than left
+looking like the others.** The re-install remedy in section 2 is written as a
+`bash` block instead of a `console` transcript, because the condition it clears —
+a validation stamp left behind by an *earlier* estate — is one the check's own
+estate deliberately cannot be in: the check points the validator's stamp
+directory at a throwaway folder, so that running it never reads or writes the
+stamps on the machine it runs on. That block was checked by hand against a
+planted stamp, and it is the only thing on this page that was.
 
 It waits a second between the steps, and that is worth knowing because it says
 something about the machinery: the validator decides whether a record has changed

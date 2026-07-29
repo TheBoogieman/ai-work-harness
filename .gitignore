@@ -17,6 +17,10 @@
 # else. The five root-pinned lines below are the exception that proves it: they are the exact five
 # files install.sh ships from outside the estate tree (README.md, AGENTS.md, LICENSE, .gitignore,
 # .gitattributes — see derive_product_paths), so each one is a record in BOTH trees.
+
+# ADD THE LINE BEFORE YOU ADD THE FILE — a new top-level file or folder that no line below names
+# is skipped by `git add -A` in SILENCE, so the commit and the push both succeed without it, and
+# `git add <path>` is the only command that will tell you.
 /*
 !/.gitignore
 !/.gitattributes
@@ -73,8 +77,8 @@
 !/General AI-Knowledge/
 !/General Human Knowledge/
 # ^ the estate's root DOCUMENTS and folders end here: a newly shipped estate-root file adds its
-# line directly above this comment, and needs nothing else. What follows is the same block's
-# platform half, which is a different kind of subject and is kept apart on purpose.
+# line directly above this comment, and needs nothing else IN THIS FILE. What follows is the same
+# block's platform half, which is a different kind of subject and is kept apart on purpose.
 
 # The estate's half of the platform directory: the hook configuration install.sh WRITES at install
 # time by copying _harness/hooks/hooks.example.json to .github/hooks/harness.json. It is the one

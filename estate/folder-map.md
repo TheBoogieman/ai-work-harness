@@ -13,16 +13,22 @@ that carried the map would grow with the machinery and stop being a front page.
 Work/                                        [git root · local-only · whitelist]
 │
 ├── .gitignore                               /* deny-all → re-include record set
+├── .gitattributes                           pins tracked *.sh/*.py to LF on any clone (a stray CR breaks a shebang)
+├── README.md                                THE FRONT PAGE · the tour, and the Setup that wires your assistant
 ├── CONSTITUTION.md                          THE CONSTITUTION · Part I always / Part II on demand
+├── SPEC.md                                  what this harness guarantees TODAY · descriptive: a line untrue at HEAD is a defect
+├── folder-map.md                            THIS PAGE · the estate's structure (the rules are CONSTITUTION.md)
+├── WORKED-EXAMPLE.md                        one piece of work end to end — the day-in-the-life a newcomer reads first
 ├── AGENTS.md                                door-note → CONSTITUTION.md
+├── INSTALL-INSTRUCTIONS.md                  the ONE home for every install command, prerequisite and caveat
 ├── install.sh                               the dumb creator that laid this estate down · manual: INSTALL-INSTRUCTIONS.md
 ├── AI-SETUP-PROMPT.md                       the AI-assistant final gate, pasted in after the install
-├── .github/workflows/                       CI — the acceptance demo on Linux + macOS, and nothing else: every push to main; PRs by scope
+├── VERSION                                  this estate's harness version stamp · what install.sh --upgrade reads
+├── LICENSE                                  MIT · root-pinned because the code host renders it there
+├── .github/hooks/harness.json               THE ONLY .github/ an estate has: the auto-commit hook config, written AT INSTALL
 │
 ├── _harness/
-│   ├── demo/                                THE ACCEPTANCE SUITE'S other two halves [dev-only · never installed]
-│   │   ├── tour.sh                          the stage-based tour a newcomer watches: six stage banners + the machinery running · asserts nothing by name
-│   │   └── cases/*.case.sh                  one case file per guard family — the regression suite · every named guard lives in exactly one of them
+│   ├── hooks/hooks.example.json             the ONE hook-schema home · install.sh copies it to .github/hooks/harness.json above
 │   ├── retire-list.tsv                      shipped DATA (not code): which paths a release SUPERSEDED · the ONLY thing --upgrade retires · cumulative · never inferred
 │   └── scripts/                             THE MACHINERY (versioned)
 │       ├── check_ticket_log.sh              ← sessionStart hook │ sessionEnd (bonus)
@@ -36,8 +42,7 @@ Work/                                        [git root · local-only · whitelis
 │       ├── retro_stats.sh                    dumb counter for the retrospective agent · tickets-by-month + checks + promotions · offline · exits 0 always
 │       ├── deploy_agents.sh                 → user-level agent dir (sync source → live)
 │       ├── harness-housekeeping.sh          human-run · git gc + size report · never touches records
-│       ├── harness-drill.sh                 human-run · rehearse restore/bundle/undo · read-only toward the estate
-│       └── run_demo.sh                      the acceptance demo's RUNNER: owns the estate + the stage order, runs _harness/demo/ (see Setup) · wired to no hook
+│       └── harness-drill.sh                 human-run · rehearse restore/bundle/undo · read-only toward the estate
 │
 ├── _agents/                                 SOURCE OF TRUTH (versioned)
 │   ├── ticket-init.agent.md                 ┐
@@ -63,7 +68,8 @@ Work/                                        [git root · local-only · whitelis
 │       └── Dump/                            [gitignored · re-droppable inputs]
 │
 ├── General AI-Knowledge/                    durable knowledge (versioned · cull-safe via history)
-│   └── AI Harness/                          the sheets + build/design notes · Last reviewed: dated
+│   ├── AI Harness/                          the sheets + build/design notes · Last reviewed: dated
+│   └── Skills/                              the worker tier's craft modules · _index.md is BOTH the convention home and the availability index (read the index, then ONE SKILL.md)
 │
 ├── General Human Knowledge/                 human-facing OUTPUT the machinery writes (append-only · inside the whitelist)
 │   └── Retrospectives/                      ← retrospective agent · one timestamped file per run

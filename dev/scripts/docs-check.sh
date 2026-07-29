@@ -191,12 +191,12 @@ dc_link_targets() {
   done < <(dc_md_files)
 }
 
-# dead-pointer (#51 collapse) — the standalone flat-pack install doc was folded into README
-# Setup and DELETED. No tracked file may still name it: a dead pointer to a removed file ships dead
-# on a user estate. That file stays deleted; what has changed since (#146) is that "one install
-# home" is no longer a consequence of there being one document — the install-home detector above
-# asserts it directly, and $INSTALL_DOC is where a stale pointer should now be sent. The needle is
-# assembled from two string
+# dead-pointer (#51 collapse) — the standalone flat-pack install doc was folded away and DELETED.
+# No tracked file may still name it: a dead pointer to a removed file ships dead on a user estate.
+# That file stays deleted, and the install steps now live in $INSTALL_DOC, which is where this
+# detector sends a stale pointer. NOTHING ASSERTS "one install home" MECHANICALLY any more: the
+# detector that did was cut with the other sixteen (#281), so that separation is kept by review.
+# The needle is assembled from two string
 # pieces so THIS detector's own source never contains the contiguous name it hunts for — a literal
 # here would make the detector match itself forever. Its own detector (not folded into the link
 # check) because it hunts a bare name in ANY tracked text, not just markdown links.

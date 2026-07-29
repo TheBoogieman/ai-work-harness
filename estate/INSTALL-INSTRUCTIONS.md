@@ -121,10 +121,21 @@ Re-running `install.sh` serves three different intents, each with its own home:
   thing: your copy is **moved into `_retired/<timestamp>/` inside the estate**, never
   deleted, and the run prints the exact `mv` that puts it back **at the moment it moves
   it**. That printed line matters: `_retired/` is deliberately outside the record, so
-  nothing else anywhere will ever remind you. It carries your settings forward
-  untouched — your board grammar, your model pins and your hook configuration are all
-  left exactly as you have them — and it **never touches a record**: no ticket, no log,
-  no knowledge file. Running it twice is safe; the second run says `NOTHING TO DO`.
+  nothing else anywhere will ever remind you. It carries your settings forward — your
+  board grammar, your model pins and your hook configuration all keep the values you
+  gave them — and it **never touches a record**: no ticket, no log, no knowledge file.
+
+  There is a fourth thing it does, and it is the only one that edits a file in place.
+  A file carried forward for your settings can also be *naming* a file the same rename
+  has retired — an agent contract calling a script under its old name, or your hook
+  configuration pointing at the old validator. The upgrade **re-points** those: it
+  rewrites **the dead path and nothing else**, leaves every other byte of the file
+  exactly as you had it (hand-edits included), and reports each rewrite as it happens —
+  naming the file, both paths in full, and a literal `cp` that restores your version
+  from `_retired/<timestamp>/`, where a copy of the file as it stood before the rewrite
+  is kept. Only a path a release declared as a rename is ever rewritten, and only
+  inside a file that is being carried forward — never inside a record.
+  Running it twice is safe; the second run says `NOTHING TO DO`.
   If a run is interrupted, run it again — every file it had already moved is in
   `_retired/`, and the re-run lays down whatever is missing. Skipping releases is
   expected and needs nothing special: one upgrade retires everything superseded across

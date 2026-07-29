@@ -65,6 +65,13 @@
 # spelled that way, so settling the other direction would have churned the most visible name in
 # the product to gain nothing.
 #
+# WHY THEY ARE STAMPED 0.2.0 AND NOT 0.1.0. The stamp names the release that PERFORMED the
+# supersession, and v0.1.0 is already tagged — it shipped all six of these files under their OLD
+# names. A release cannot supersede what it is still shipping, so 0.1.0 would be a claim that was
+# never true. The field is REPORTED to the user and never used as a filter, so an upgrade behaves
+# identically either way — which is exactly why a wrong stamp here would have gone unnoticed
+# rather than caught.
+#
 # THESE ARE RENAMES, NOT REMOVALS. Every one of the six still ships and still does the same job —
 # only the spelling of its filename moved. An estate that skips this release and upgrades later
 # gets the same treatment, because the list is cumulative and the installer retires every listed
@@ -75,9 +82,9 @@
 # forward byte-identical rather than rewriting it. An estate upgrading across this release keeps
 # a hook config naming check_ticket_log.sh, which the retirement has just moved to quarantine.
 # Re-copy _harness/hooks/hooks.example.json over it to pick the new name up.
-0.1.0	_harness/scripts/append_notebook_cell.py	renamed to _harness/scripts/append-notebook-cell.py — same writer, hyphen convention (#141)
-0.1.0	_harness/scripts/check_ticket_log.sh	renamed to _harness/scripts/check-ticket-log.sh — same validator, hyphen convention (#141)
-0.1.0	_harness/scripts/deploy_agents.sh	renamed to _harness/scripts/deploy-agents.sh — same deploy, hyphen convention (#141)
-0.1.0	_harness/scripts/make_context_pack.sh	renamed to _harness/scripts/make-context-pack.sh — same packer, hyphen convention (#141)
-0.1.0	_harness/scripts/retro_stats.sh	renamed to _harness/scripts/retro-stats.sh — same counter, hyphen convention (#141)
-0.1.0	_harness/scripts/tracker_sweep.sh	renamed to _harness/scripts/tracker-sweep.sh — same sweep, hyphen convention (#141)
+0.2.0	_harness/scripts/append_notebook_cell.py	renamed to _harness/scripts/append-notebook-cell.py — same writer, hyphen convention (#141)
+0.2.0	_harness/scripts/check_ticket_log.sh	renamed to _harness/scripts/check-ticket-log.sh — same validator, hyphen convention (#141)
+0.2.0	_harness/scripts/deploy_agents.sh	renamed to _harness/scripts/deploy-agents.sh — same deploy, hyphen convention (#141)
+0.2.0	_harness/scripts/make_context_pack.sh	renamed to _harness/scripts/make-context-pack.sh — same packer, hyphen convention (#141)
+0.2.0	_harness/scripts/retro_stats.sh	renamed to _harness/scripts/retro-stats.sh — same counter, hyphen convention (#141)
+0.2.0	_harness/scripts/tracker_sweep.sh	renamed to _harness/scripts/tracker-sweep.sh — same sweep, hyphen convention (#141)

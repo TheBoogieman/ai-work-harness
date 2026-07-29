@@ -1287,8 +1287,8 @@ print_summary_mode() {
   [ "$REHEARSAL" -eq 0 ] || echo "Mode: REHEARSAL — agents and validation stamps stayed under" \
     "$TARGET/_rehearsal/. Nothing outside this estate was written."
   [ "$DEPLOY_RC" -ne 3 ] || {
-    echo "Agents: NOT DEPLOYED — the deploy refused to overwrite an agent directory it could not"
-    echo "  account for, and wrote nothing. If this estate is the one this machine should read"
+    echo "Agents: NOT DEPLOYED — the live agent directory is recorded as ANOTHER estate's, so the"
+    echo "  deploy refused it and wrote nothing. If this estate is the one this machine should read"
     echo "  agents from: HARNESS_AGENT_ADOPT=1 bash $TARGET/_harness/scripts/deploy-agents.sh"
     echo "  If you were rehearsing: re-run with --rehearsal, or set HARNESS_AGENT_DEPLOY_DIR."
   }

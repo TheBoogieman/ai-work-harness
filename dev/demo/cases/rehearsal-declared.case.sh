@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # rehearsal-declared.case.sh — [rehearsal-*] and [deploy-*] (#304): a rehearsal install has to SAY
-# SO, and the live agent directory refuses to be overwritten by an estate nothing recorded.
-# SOURCED by the runner; see dev/scripts/run-demo.sh.
+# SO, and the live agent directory refuses a deploy from an estate other than the one recorded as
+# owning it. SOURCED by the runner; see dev/scripts/run-demo.sh.
 #
 # WHAT THIS FAMILY IS ABOUT. A rehearsal install and a real install were the same command, so the
 # only thing keeping practice runs out of a person's live assistant configuration was every caller
@@ -9,8 +9,8 @@
 # carrying a model pin the product never ships and the path of a script that exists under no name —
 # were written into a real ~/.copilot/agents. The four guards below cover the two halves of the fix:
 #   * the DECLARATION: `install.sh --rehearsal` confines every out-of-estate write to the target.
-#   * the REFUSAL that does not depend on anyone remembering the declaration: deploy-agents.sh
-#     stops rather than overwrite agent contracts it cannot account for.
+#   * the OWNERSHIP RULE that does not depend on anyone remembering the declaration —
+#     THE FIRST DEPLOY ON A MACHINE CLAIMS IT; EVERY LATER ONE MUST PROVE IT OWNS IT.
 # The second is the one that matters, because the first is only as good as the caller's memory —
 # which is precisely what failed.
 #
@@ -76,11 +76,11 @@ rd_confined() {
     "landed under the target's _rehearsal/"
 }
 
-# (2) [rehearsal-default-unsafe] — THE HONEST HALF, and the reason guard (3) exists. Without the
-# flag, the very same command deploys straight into the home directory. This asserts the behaviour
-# rather than deploring it: the installer's default MUST reach the live directory or an install is
-# useless, so the safety cannot live in this flag. It is here so a reader cannot mistake
-# --rehearsal for the protection.
+# (2) [rehearsal-default-unsafe] — THE HONEST HALF, and it matters MORE now that the unrecorded-
+# contracts arm is gone, not less. Without the flag, the very same command deploys straight into the
+# home directory. This asserts that behaviour rather than deploring it: the installer's default MUST
+# reach the live directory or an install is useless, so the safety cannot live in this flag. It is
+# here so no later reader mistakes --rehearsal for the protection.
 rd_default_reaches_home() {
   local rd_est rd_home
   rd_est="$RD_TMP/real"; rd_home="$RD_TMP/home-real"; mkdir -p "$rd_home"
@@ -90,82 +90,94 @@ rd_default_reaches_home() {
            "directory. That is not a safety improvement, it is a broken install — the default" \
            "target is correct and must stay."; exit 1; }
   echo "  ok [rehearsal-default-unsafe] — an undeclared run still deploys to HOME, which is why" \
-    "the refusal below is where the protection lives"
+    "the ownership rule below is where the protection lives"
 }
 
-# (3) [deploy-refuses-unrecorded] — THE GUARD THAT WOULD HAVE CAUGHT THE ACCIDENT. A directory
-# holding agent contracts that no record accounts for is not overwritten. This is the state every
-# machine that ever deployed before this change is in.
-# REVERT-PROOF: delete the unrecorded-contracts arm of the gate in deploy-agents.sh and the deploy
-# returns 0 having overwritten the file -> this reds on both the status and the byte comparison.
-rd_refuses_unrecorded() {
-  local rd_est rd_live rd_err rd_rc
+# (3) [deploy-claims-unrecorded] — THE FIRST HALF OF THE RULE: the first deploy on a machine CLAIMS
+# it. A directory holding contracts that no record accounts for is deployed into, silently, rc 0 —
+# and the record is written on the way through, which is what arms the ownership test for every
+# deploy after this one.
+#
+# THIS GUARD REPLACED ITS OWN OPPOSITE, and saying so is part of its job. It used to assert that
+# such a directory was REFUSED — the arm that would have caught the original accident — and that arm
+# was removed on an operator ruling of NO FRICTION DURING AN ESTATE'S INSTALLATION. A guard
+# asserting a refusal that no longer happens can never red, so it went with the arm rather than
+# being left behind as a green that measures nothing.
+# REVERT-PROOF: restore the unrecorded-contracts arm in deploy-agents.sh and this reds on rc 3.
+rd_claims_unrecorded() {
+  local rd_est rd_live rd_rc
   rd_est="$RD_TMP/rehearsed"          # the estate guard (1) built; its scripts are what we run
   rd_live="$RD_TMP/live-unrecorded"; mkdir -p "$rd_live"
   # A contract of unknown provenance, standing in for what was actually found on the machine: a
   # real filename carrying a fixture's contents.
   printf 'model: NOT-A-REAL-PIN\n' > "$rd_live/doc-writer.agent.md"
   set +e
-  rd_err=$(HARNESS_AGENT_DEPLOY_DIR="$rd_live" \
-    bash "$rd_est/_harness/scripts/deploy-agents.sh" 2>&1 >/dev/null)
+  HARNESS_AGENT_DEPLOY_DIR="$rd_live" \
+    bash "$rd_est/_harness/scripts/deploy-agents.sh" >/dev/null 2>&1
   rd_rc=$?
   set -e
-  [ "$rd_rc" -eq 3 ] \
-    || { echo "BUG [deploy-refuses-unrecorded]: deploying over agent contracts of unknown origin" \
-           "returned rc=$rd_rc, not the refusal (3). It said: $rd_err"; exit 1; }
-  grep -q 'NOT-A-REAL-PIN' "$rd_live/doc-writer.agent.md" \
-    || { echo "BUG [deploy-refuses-unrecorded]: it printed a refusal but OVERWROTE the file" \
-           "anyway — a refusal that writes is worse than no refusal, because the message says" \
-           "the opposite of what happened"; exit 1; }
-  case "$rd_err" in
-    *HARNESS_AGENT_DEPLOY_DIR*HARNESS_AGENT_ADOPT*) : ;;
-    *) echo "BUG [deploy-refuses-unrecorded]: the refusal did not name BOTH ways past it" \
-         "(redirect for a rehearsal, adopt for a real hand-off). It said: $rd_err"; exit 1 ;;
-  esac
-  echo "  ok [deploy-refuses-unrecorded] — unaccounted-for contracts survive; the refusal names" \
-    "both declarations"
+  [ "$rd_rc" -eq 0 ] \
+    || { echo "BUG [deploy-claims-unrecorded]: deploying into a directory whose contracts no" \
+           "record accounts for returned rc=$rd_rc, not 0. An estate's installation must meet no" \
+           "friction — the ownership test arms on the RECORD, never on the contracts."; exit 1; }
+  cmp -s "$rd_est/_agents/doc-writer.agent.md" "$rd_live/doc-writer.agent.md" \
+    || { echo "BUG [deploy-claims-unrecorded]: rc was 0 but the contract was not replaced — the" \
+           "deploy reported success without deploying"; exit 1; }
+  [ "$(head -n1 "$rd_live/.deployed-from" 2>/dev/null)" = "$rd_est" ] \
+    || { echo "BUG [deploy-claims-unrecorded]: the deploy claimed the directory but wrote no" \
+           "record naming itself, so nothing is owned and the gate can never fire again. The" \
+           "record reads:" \
+           "$(head -n1 "$rd_live/.deployed-from" 2>/dev/null || echo '<absent>')"; exit 1; }
+  echo "  ok [deploy-claims-unrecorded] — unaccounted-for contracts are claimed without friction," \
+    "and the claim is recorded"
 }
 
-# (4) [deploy-adopt-and-own] — the declared hand-off works, is RECORDED, and a second deploy from
-# the same estate is then silent; a deploy from a DIFFERENT estate into that now-owned directory
-# refuses. One guard covering the record's two consequences, because they are the same fact.
-# REVERT-PROOF: stop writing .deployed-from and the second (silent) deploy reds; drop the
-# owner-mismatch arm and the foreign deploy returns 0 -> reds.
-rd_adopt_and_own() {
+# (4) [deploy-owner-enforced] — THE SECOND HALF OF THE RULE: every deploy after the first must prove
+# it owns the directory. The owning estate is silent forever after; a DIFFERENT estate refuses with
+# the contract left intact; and the declared hand-off is the way past, taking ownership with it. One
+# guard over the record's three consequences, because they are one fact read three ways.
+# REVERT-PROOF: stop writing .deployed-from and the owner's next deploy reds; drop the
+# owner-mismatch test and the foreign deploy returns 0 -> reds.
+rd_owner_enforced() {
   local rd_est rd_other rd_live rd_rc
   rd_est="$RD_TMP/rehearsed"; rd_other="$RD_TMP/real"
-  rd_live="$RD_TMP/live-unrecorded"
-  HARNESS_AGENT_ADOPT=1 HARNESS_AGENT_DEPLOY_DIR="$rd_live" \
-    bash "$rd_est/_harness/scripts/deploy-agents.sh" >/dev/null 2>&1 \
-    || { echo "BUG [deploy-adopt-and-own]: an ADOPTING deploy was still refused — the declaration" \
-           "is the way past the refusal and must always work"; exit 1; }
-  cmp -s "$rd_est/_agents/doc-writer.agent.md" "$rd_live/doc-writer.agent.md" \
-    || { echo "BUG [deploy-adopt-and-own]: the adopting deploy did not replace the contract"; \
-         exit 1; }
+  rd_live="$RD_TMP/live-unrecorded"   # guard (3) left this recorded as $rd_est's
   HARNESS_AGENT_DEPLOY_DIR="$rd_live" bash "$rd_est/_harness/scripts/deploy-agents.sh" \
     >/dev/null 2>&1 \
-    || { echo "BUG [deploy-adopt-and-own]: the SAME estate was refused on its second deploy —" \
-           "adoption must be recorded, or the declaration has to be typed forever"; exit 1; }
+    || { echo "BUG [deploy-owner-enforced]: the OWNING estate was refused on its next deploy —" \
+           "the claim must be recorded, or the rule stops being true after its first word"; \
+         exit 1; }
   set +e
   HARNESS_AGENT_DEPLOY_DIR="$rd_live" bash "$rd_other/_harness/scripts/deploy-agents.sh" \
     >/dev/null 2>&1
   rd_rc=$?
   set -e
   [ "$rd_rc" -eq 3 ] \
-    || { echo "BUG [deploy-adopt-and-own]: a DIFFERENT estate deployed into a directory recorded" \
+    || { echo "BUG [deploy-owner-enforced]: a DIFFERENT estate deployed into a directory recorded" \
            "as another estate's and got rc=$rd_rc instead of the refusal (3) — the record is" \
            "written but nothing reads it"; exit 1; }
-  echo "  ok [deploy-adopt-and-own] — adoption deploys and is recorded; same estate silent after," \
-    "a foreign estate refused"
+  cmp -s "$rd_est/_agents/doc-writer.agent.md" "$rd_live/doc-writer.agent.md" \
+    || { echo "BUG [deploy-owner-enforced]: it printed a refusal but OVERWROTE the contract" \
+           "anyway — a refusal that writes is worse than no refusal, because the message says the" \
+           "opposite of what happened"; exit 1; }
+  HARNESS_AGENT_ADOPT=1 HARNESS_AGENT_DEPLOY_DIR="$rd_live" \
+    bash "$rd_other/_harness/scripts/deploy-agents.sh" >/dev/null 2>&1 \
+    || { echo "BUG [deploy-owner-enforced]: an ADOPTING deploy was still refused — the" \
+           "declaration is the way past the refusal and must always work"; exit 1; }
+  [ "$(head -n1 "$rd_live/.deployed-from")" = "$rd_other" ] \
+    || { echo "BUG [deploy-owner-enforced]: the adoption deployed but did not take ownership, so" \
+           "the new owner would be refused on its own next run"; exit 1; }
+  echo "  ok [deploy-owner-enforced] — owner silent, foreign estate refused with the contract" \
+    "intact, adoption hands ownership over"
 }
 
 case_rehearsal_declared() {
-  echo "--- #304 rehearsal-declared: a rehearsal has to say so; the live agent dir refuses the" \
-    "rest ---"
+  echo "--- #304 rehearsal-declared: a rehearsal has to say so; the first deploy claims the live" \
+    "agent dir and every later one must own it ---"
   RD_TMP=$(mktemp -d); RD_OUT="$RD_TMP/install.out"; RD_RC=0
   rd_confined
   rd_default_reaches_home
-  rd_refuses_unrecorded
-  rd_adopt_and_own
+  rd_claims_unrecorded
+  rd_owner_enforced
   rm -rf "$RD_TMP"
 }

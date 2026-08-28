@@ -146,7 +146,7 @@ up_same=0; up_record=0; UPGRADE_PARAM=""
 # A shipped file carrying this exact self-declaration becomes user-owned after laydown. Reading the
 # marker from the file itself keeps ownership beside the content instead of adding another path
 # list that can drift; CONSTITUTION.md uses it because setup deliberately personalises that file.
-UPGRADE_USER_MARKER='harness-upgrade: preserve-user-content'
+UPGRADE_USER_MARKER='harness-upgrade:'" preserve-user-content"
 
 # ---- args -------------------------------------------------------------------------------------
 # parse_args — read the command line into DRY / YES / TARGET. An unknown option, or a second

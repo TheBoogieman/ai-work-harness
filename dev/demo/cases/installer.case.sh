@@ -592,6 +592,8 @@ in_up_advance_source() {
     >> "$UP_SRC/estate/_harness/retire-list.tsv"
   printf '# upgrade fixture: an upstream change to a plain machinery file.\n' \
     >> "$sc/harness-drill.sh"
+  printf '# upgrade fixture: the installer source itself moved forward.\n' \
+    >> "$UP_SRC/estate/install.sh"
   return 0
 }
 
@@ -603,6 +605,7 @@ in_upgrade_plan() {
   local v
   for v in 'create   _harness/scripts/retro-counts.sh' \
            'replace  _harness/scripts/harness-drill.sh' \
+           'replace  install.sh' \
            'retire   _harness/scripts/retro-stats.sh' \
            'repoint  _agents/retrospective.agent.md'; do
     grep -Fq "  $v" "$UP_OUT" \

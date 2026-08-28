@@ -36,7 +36,7 @@ Work/                                        [git root · local-only · whitelis
 │       ├── ticket-grammar.sh                recognition home: TICKET_RE + ticket predicates · validator + status both source it (edit to retarget your board)
 │       ├── portability.sh                   shared GNU/BSD shims: ts14→epoch, sourced by validator + status (one home · no drift)
 │       ├── append-notebook-cell.py          ← check-scribe · THE ONE DOOR into a notebook: appends one selected evidence capsule · runs on whatever python3 is on the path, needs nbformat [user-created prereq]
-│       ├── make-context-pack.sh             → ~/Desktop/harness-pack-*.zip [disposable · outside repo]
+│       ├── make-context-pack.sh             → ~/Desktop/harness-pack-*.zip [disposable · outside repo] · scrub table user-owned, KEEP on upgrade
 │       ├── tracker-sweep.sh                 human-run · on-demand board-vs-estate drift report · pluggable fetch seam · tracker-agnostic · fails open offline
 │       ├── retro-stats.sh                    dumb counter for the retrospective agent · tickets-by-month + checks + promotions · offline · exits 0 always
 │       ├── deploy-agents.sh                 → user-level agent dir (sync source → live)

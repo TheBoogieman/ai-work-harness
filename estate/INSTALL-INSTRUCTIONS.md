@@ -180,8 +180,12 @@ Re-running `install.sh` serves three different intents, each with its own home:
   deleted, and the run prints the exact `mv` that puts it back **at the moment it moves
   it**. That printed line matters: `_retired/` is deliberately outside the record, so
   nothing else anywhere will ever remind you. It carries your settings forward — your
-  board grammar, your model pins and your hook configuration all keep the values you
-  gave them — and it **never touches a record**: no ticket, no log, no knowledge file.
+  customized Constitution, board grammar, model pins and hook configuration all keep
+  the values you gave them — and it **never touches a record**: no ticket, no log, no
+  knowledge file. The Constitution declares that ownership in its own source marker,
+  so even an estate installed before the marker existed is protected on its first
+  upgrade; merge new upstream policy into that file deliberately rather than replacing
+  local policy.
 
   There is a fourth thing it does, and it is the only one that edits a file in place.
   A file carried forward for your settings can also be *naming* a file the same rename

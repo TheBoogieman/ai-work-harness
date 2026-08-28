@@ -1,5 +1,7 @@
 # AI Work Harness — Workspace Backbone
 
+<!-- harness-upgrade: preserve-user-content -->
+
 > **For AI agents:** Read this file at the start of every session. It explains who this workspace belongs to, how it is organised, and the conventions you must follow when logging work or creating ticket folders.
 >
 > **Context budget (STRICT):** By default, load only (1) **PART I** of this file and (2) the target ticket's header + **Current State** section. Do **not** read the full Session Log, the `AI-Knowledge/` contents, or `Logs/` unless the user explicitly asks for a deep dive or the Current State points you at a specific file. Context is metered — organise it, don't hoard it.

@@ -143,6 +143,10 @@ up_create=(); up_replace=(); up_retire=(); up_keep=()
 # read fatal rather than empty.
 up_repoint=()
 up_same=0; up_record=0; UPGRADE_PARAM=""
+# A shipped file carrying this exact self-declaration becomes user-owned after laydown. Reading the
+# marker from the file itself keeps ownership beside the content instead of adding another path
+# list that can drift; CONSTITUTION.md uses it because setup deliberately personalises that file.
+UPGRADE_USER_MARKER='<!-- harness-upgrade: preserve-user-content -->'
 
 # ---- args -------------------------------------------------------------------------------------
 # parse_args — read the command line into DRY / YES / TARGET. An unknown option, or a second
@@ -843,10 +847,23 @@ upgrade_param_set() {
   return 0
 }
 
-# upgrade_is_param <estate-relative path> — is this path class 3? The stored entries are GLOBS
-# (the agent files are one pattern, not ten paths), so the test is a glob match, not equality.
+# upgrade_has_user_marker <estate-relative path> — a source file may declare itself user-owned
+# after installation. The source marker controls classification so existing estates are protected
+# on their first upgrade; requiring the old installed copy to carry a newly-added marker would
+# expose exactly the customised file this mechanism exists to preserve.
+upgrade_has_user_marker() {
+  local src
+  src="$(src_of "$1")"
+  [ -f "$src" ] || return 1
+  grep -Fxq -- "$UPGRADE_USER_MARKER" "$src"
+}
+
+# upgrade_is_param <estate-relative path> — is this path class 3? A self-marked source file is
+# user-owned; the generated entries below are GLOBS (the agent files are one pattern, not ten
+# paths), so that half uses glob matching rather than equality.
 upgrade_is_param() {
   local g
+  upgrade_has_user_marker "$1" && return 0
   while IFS= read -r g; do
     [ -n "$g" ] || continue
     # shellcheck disable=SC2254  # the unquoted $g is the point: these entries ARE glob patterns.

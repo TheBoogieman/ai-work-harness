@@ -499,19 +499,22 @@ in_upgrade_fixture() {
   in_up_advance_source
 }
 
-# in_up_customise — the three settings a user owns, moved off their shipped defaults, and a record
+# in_up_customise — the settings a user owns, moved off their shipped defaults, and a record
 # written by hand. Snapshots are taken so the assertions below are BYTE comparisons rather than
 # greps: a grep can pass on a file the upgrade rewrote around the pattern it looked for.
 # The rewrite-to-tmp+mv idiom is BSD-portable — stock macOS sed has no GNU-style in-place edit.
 in_up_customise() {
   UP_TG="$UP_EST/_harness/scripts/ticket-grammar.sh"; UP_DW="$UP_EST/_agents/doc-writer.agent.md"
-  UP_HOOK="$UP_EST/.github/hooks/harness.json"; UP_REC="$UP_EST/General AI-Knowledge/up-note.md"
+  UP_HOOK="$UP_EST/.github/hooks/harness.json"; UP_CON="$UP_EST/CONSTITUTION.md"
+  UP_REC="$UP_EST/General AI-Knowledge/up-note.md"
   sed 's/\[A-Z\]\[A-Z0-9\]\*/[A-Z][A-Z0-9-]*/' "$UP_TG" > "$I39_ROOT/tg.t" \
     && mv "$I39_ROOT/tg.t" "$UP_TG"
   awk '/^model:/{print "model: UPCHEAP"; next} {print}' "$UP_DW" > "$I39_ROOT/dw.t" \
     && mv "$I39_ROOT/dw.t" "$UP_DW"
   sed 's/"timeoutSec": 60/"timeoutSec": 137/' "$UP_HOOK" > "$I39_ROOT/hk.t" \
     && mv "$I39_ROOT/hk.t" "$UP_HOOK"
+  sed 's/\*\*<Your Name>\*\*/**CUSTOM OWNER**/' "$UP_CON" > "$I39_ROOT/con.t" \
+    && mv "$I39_ROOT/con.t" "$UP_CON"
   printf '# a hand-made note\nLast reviewed: 2026-01-01\nnobody but me put this here\n' > "$UP_REC"
   # A PRE-#298 ESTATE HOLDS A VERSION STAMP, and this line is what makes UP_EST one. The scratch
   # source stopped shipping VERSION when #298 deleted it, so an estate installed from that source
@@ -549,7 +552,8 @@ in_up_customise() {
          echo "    script this fixture renames, so there is no stale path for the upgrade to"; \
          echo "    re-point and the guard below would assert nothing"; exit 1; }
   cp -p "$UP_TG" "$I39_ROOT/snap.tg"; cp -p "$UP_DW" "$I39_ROOT/snap.dw"
-  cp -p "$UP_HOOK" "$I39_ROOT/snap.hk"; cp -p "$UP_REC" "$I39_ROOT/snap.rec"
+  cp -p "$UP_HOOK" "$I39_ROOT/snap.hk"; cp -p "$UP_CON" "$I39_ROOT/snap.con"
+  cp -p "$UP_REC" "$I39_ROOT/snap.rec"
   cp -p "$UP_TICK" "$I39_ROOT/snap.tick"; cp -p "$UP_RETRO" "$I39_ROOT/snap.retro"
   return 0
 }
@@ -719,12 +723,13 @@ in_upgrade_retires_version() {
     "and its restore command is reported"
 }
 
-# (o) upgrade-keeps-settings: the three files carrying values the USER owns come through an upgrade
-#     BYTE-IDENTICAL. The hook config is the worst one to get wrong — it governs whether the estate
-#     commits by itself — and it is the member a substitution-only derivation misses entirely.
+# (o) upgrade-keeps-settings: files carrying values the USER owns come through an upgrade
+#     BYTE-IDENTICAL. The Constitution carries owner-, workflow- and estate-specific policy, while
+#     the hook config governs whether the estate commits by itself; neither may be replaced by the
+#     generic source copy.
 in_upgrade_keeps_settings() {
   local n f s
-  for n in tg:"$UP_TG" dw:"$UP_DW" hk:"$UP_HOOK"; do
+  for n in tg:"$UP_TG" dw:"$UP_DW" hk:"$UP_HOOK" con:"$UP_CON"; do
     s="$I39_ROOT/snap.${n%%:*}"; f="${n#*:}"
     cmp -s "$s" "$f" \
       || { echo "BUG [upgrade-keeps-settings]: the upgrade CHANGED $f, which carries a value the"; \
@@ -734,10 +739,11 @@ in_upgrade_keeps_settings() {
   done
   grep -q '_harness/scripts/ticket-grammar.sh' "$I39_ROOT/up.first" \
     && grep -q '.github/hooks/harness.json' "$I39_ROOT/up.first" \
+    && grep -q 'CONSTITUTION.md' "$I39_ROOT/up.first" \
     || { echo "BUG [upgrade-keeps-settings]: the run never SAID which files it carried forward —" \
            "a silently-correct upgrade is indistinguishable from a lucky one"; exit 1; }
-  echo "  ok [upgrade-keeps-settings] — board grammar, model pin and HOOK CONFIG byte-unchanged" \
-    "and named in the run"
+  echo "  ok [upgrade-keeps-settings] — board grammar, model pin, hook config and customized" \
+    "Constitution byte-unchanged and named in the run"
 }
 
 # (v) upgrade-repoints (#287): THE FOURTH VERB. KEEP protects a carried-forward file from being

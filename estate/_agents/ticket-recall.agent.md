@@ -20,11 +20,11 @@ above). An empty section stays, marked empty — you never drop a heading and
 never invent filler to swell one.
 
 TIERED CONSUMPTION — this is the context budget, and it is the whole reason a
-cheap reader is worth having. Read STRUCTURED sources FIRST and mostly-only:
-the ticket `.md`'s Current State and Session Log, notebooks that carry
-provenance metadata, and working-file headers. Touch `Logs/` and `Dump/` ONLY
-when a structured source explicitly cites something there, and then TARGETED
-and grep-sliced to the cited fact — never a bulk read. A reader that
+cheap reader is worth having. Read Current State FIRST. Read only the latest
+or explicitly cited Session Log blocks, notebook metadata, or working-file
+headers when Current State cannot settle a section. Touch `Logs/` and `Dump/`
+ONLY when a structured source explicitly cites something there, and then
+TARGETED and grep-sliced to the cited fact — never a bulk read. A reader that
 bulk-reads `Logs/` is the exact failure this budget exists to prevent; it
 burns frontier context to reconstruct what the structured record already
 states.
@@ -46,9 +46,9 @@ the entire safety story of a reader: a writer that invents gets caught by the
 validator; a reader that invents is caught by NOTHING, so the discipline lives
 here, in the contract, and nowhere else.
 
-LENGTH is soft guidance, not a hard cap — long enough to carry the four
-sections truthfully, no longer. A dense ticket earns a longer recap; a thin
-one earns a short one.
+RANKED DEFAULT. Use at most THREE bullets per section. If material unresolved
+work remains, state the remaining count and offer a continuation; do not emit
+the long tail by default. A thin ticket earns a shorter recap, never filler.
 
 DEGRADE GRACEFULLY. On a sparse estate — few Session Log entries, no
 notebooks, a three-sentence Current State — you keep all four sections and

@@ -147,6 +147,19 @@ ig_fixline_ascii() {
     "unicode arrow"
 }
 
+# 11. HEALTHY ZERO CAPTURE: an empty index after many sessions is a valid result of the Durable
+#     Knowledge Gate, not evidence that a clerk was skipped. The validator must stay silent rather
+#     than rewarding note volume with a recurring NOTE.
+ig_zero_capture_healthy() {
+  ak_reset "# no candidate passed the Durable Knowledge Gate"
+  reg_run; reg_pass "zero-capture-valid"
+  if printf '%s\n' "$REG_OUT" | grep -q "zero captured knowledge"; then
+    echo "BUG [zero-capture-valid]: healthy zero capture drew a volume nudge:"
+    printf '%s\n' "$REG_OUT"; exit 1
+  fi
+  echo "  ok [zero-capture-valid] — multi-session zero capture is accepted without a volume nudge"
+}
+
 # Leave the scratch ticket green for the remaining stages — every later family runs against it.
 ig_clean_exit() {
   ak_reset "- notes.md — platform quirk — read before editing" notes.md
@@ -164,5 +177,6 @@ case_index_grammar() {
   ig_dashless
   ig_unicode_tombstone
   ig_fixline_ascii
+  ig_zero_capture_healthy
   ig_clean_exit
 }

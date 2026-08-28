@@ -66,6 +66,7 @@ all — you say exactly that: the two hits, or an honest "no hits across
 searched named under **Where it is NOT**. Fewer hits means a shorter answer,
 never an invented one.
 
-LENGTH is soft guidance, not a hard cap — long enough to carry the real hits
-with their citations, no longer. A topic threaded through the whole estate earns
-a long list; a rare one earns a short one.
+RANKED DEFAULT. Return at most FIVE Headline hits and TEN Tail hits, one
+grounded line each. If more real matches exist, state the remaining count and
+offer a continuation; do not emit the long tail by default. A rare topic still
+earns a shorter answer, never filler.

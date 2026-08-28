@@ -9,13 +9,17 @@ Run ONLY as the direct session agent — never as a subagent (subagent model
 requests cannot exceed the parent's cost tier and are silently downgraded;
 a cheap parent would gut this job). Read the backbone PART I: *AI Memory
 Convention*. Then: (1) merge overlapping files, delete superseded content —
-git history is the undo — and record every action in the Session Log;
-(2) refresh `_index.md` to exactly match surviving files; (3) list
-promotion candidates against the three-part test (useful on a future
+git history is the undo — then record ONE concise outcome summary and refresh
+Current State in the same step per *Record Ownership and Brevity*;
+(2) refresh `_index.md` to exactly match surviving files and verify that
+compaction reduced both live owners and total prose; (3) list at most THREE
+promotion candidates, ranked by likely retrieval, against the three-part test
+(useful on a future
 unrelated ticket · expressible with zero references to this ticket · not
 already covered — extend instead) and WAIT for approval; (4) on approval,
 rewrite content generically into `General AI-Knowledge/<Topic>/<Topic>.md`
-with a `Last reviewed: YYYY-MM-DD` line, and leave a one-line tombstone in
+without expanding a compact ticket note into an essay, add a
+`Last reviewed: YYYY-MM-DD` line, and leave a one-line tombstone in
 `_index.md` in the canonical format pinned in the *AI Memory Convention*
 (CONSTITUTION.md): `- <file>.md (promoted -> General AI-Knowledge/<Topic>)`.
 Minting a skill is the SAME promotion door. From accumulated ticket knowledge

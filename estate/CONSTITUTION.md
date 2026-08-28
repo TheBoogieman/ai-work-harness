@@ -6,7 +6,7 @@
 >
 > **PART II routing (load only the section your task needs):** initialising a ticket → *Ticket Initialisation Procedure* · a FAIL/WARN at entry, or any operational question → *Session States* · building a review pack → *Context Pack Convention* · estate health → *Harness Status Convention* · craft work (writing SQL, a dbt model, a script) → *Skills Convention*.
 >
-> **Check logging (STRICT):** record every ad-hoc verification — SQL, Python, shell, whatever your work is — in the ticket's `Checks/checks_master.ipynb`, so the check + its result are kept; see the note under §2.
+> **Check retention (STRICT):** routine verification is ephemeral. Preserve only an observed result that passes the *Durable Evidence Gate* in the ticket's `Checks/checks_master.ipynb`; most searches, probes, and validation runs never enter the notebook. See the gate under §1.
 
 ---
 
@@ -156,11 +156,48 @@ Any supporting files (spreadsheets, exports, scripts, etc.) also live in this fo
 Each ticket folder has four standard subfolders:
 
 - **`AI-Knowledge/`** — AI agent memory/knowledge `.md` files for this ticket (see *AI Memory Convention* below — including the **index + compaction** rules).
-- **`Checks/`** — the ticket's reproducible evidence, in ANY language your work needs (SQL, Python, shell, API probes). `checks_master.ipynb` is the default recorder — one markdown why-note + one code cell per verified check, appended via `append-notebook-cell.py`, on the workspace default kernel (`venv_global` by convention — see *Python environment* below; register other kernels freely). Disposable spot-checks can live in scratch files; anything worth remembering goes in the notebook. Add per-tool subfolders if your stack wants them — the harness imposes none.
+- **`Checks/`** — selected, reproducible evidence in ANY language your work needs (SQL, Python, shell, API probes). `checks_master.ipynb` is the default recorder — one markdown why-note + one executable code cell per durable claim, appended via `append-notebook-cell.py`, on the workspace default kernel (`venv_global` by convention — see *Python environment* below; register other kernels freely). Routine verification stays ephemeral; scratch files may hold temporary work. Add per-tool subfolders if your stack wants them — the harness imposes none.
 - **`Logs/`** — long-running command output (e.g. build/test output, dbt runs, pipeline logs). **AI agents: always redirect long logs here** instead of printing them into chat, so they can be sliced with `grep`/`tail`/`awk` and don't overflow the session context window.
 - **`Dump/`** — the "landfill" for user-generated misc files dropped in for the AI to read: `.csv` extracts, screenshots (`.png`/`.jpg`), `.docx`/`.pptx`/`.eml`. This is *user input for the AI*, distinct from checks you write (`Checks/`) and command output (`Logs/`). Large scratch or dropped inputs belong **here** (git-ignored), not in the tracked ticket root — `harness-status` WARNs (yellow, never blocks) if a ticket's tracked root grows past `HARNESS_TICKET_WARN_MB` (default 5), pointing you here. **No customer PII, credentials, or secrets ever land in `Dump/`** — if an extract contains PII it doesn't belong in this folder tree at all; work with it in the approved location and reference it by path/description instead.
 
-> **STRICT — check logging (AI agents & humans):** Run **all** ad-hoc verifications through **`Checks/checks_master.ipynb`** — **never** as throwaway terminal one-offs that vanish. Add each check as a new cell with a one-line markdown note (*what* and *why*), so the check **and its result** are preserved as a reproducible record of everything verified on the ticket. Disposable spot-checks may use scratch files, but anything worth remembering goes in the notebook.
+### Durable Evidence Gate
+
+The durable unit is a **claim or decision**, not a command. The parent agent that
+observed the work applies this gate BEFORE invoking `check-scribe`; the scribe
+records a qualified handoff and never investigates for something to retain. If a
+gate answer is unknown, do not capture. Zero notebook additions is the expected
+outcome of ordinary ticket work.
+
+**All prerequisites must hold:**
+
+1. The exact check ran and its result was observed in this session.
+2. Source tests, CI, a PR check, a durable application log, or an existing notebook
+   capsule do not already retain the result adequately.
+3. The command/query and output are safe to retain: no credentials, tokens, PII,
+   customer data, or transient authentication material.
+4. A future reader could safely replay it, or it is explicitly scoped as a
+   point-in-time observation that must not be replayed blindly.
+
+**At least one durable-value condition must hold:**
+
+- It directly proves an acceptance criterion or release decision with no better
+  durable evidence.
+- It is the minimal reproduction of a non-obvious defect likely to recur.
+- It establishes a baseline, contract, reconciliation, or production observation
+  likely to be compared later.
+- It justifies an irreversible, regulated, high-risk, or operational decision.
+
+**Never capture** navigation and discovery (`pwd`, `ls`, search, file reads, symbol
+lookups); git inspection; environment activation; import/syntax/format checks;
+iterative lint, compile, build, or unit-test runs already owned by source tests or
+CI; failed attempts superseded by the decisive result; or exploratory SQL that
+supports no retained decision. Consolidate related commands into ONE capsule that
+proves ONE claim.
+
+An appended but unexecuted cell is a **captured replay definition**, not verified
+evidence. It becomes **verified evidence** only after execution in the notebook and
+saved output. Until the agent's VS Code notebook capability is explicitly proven,
+the user performs that execution; never imply that append alone proved the claim.
 
 **Python environment (PREREQUISITE):** the harness requires **a Python environment whose interpreter can `import nbformat`** — that, and nothing else. `append-notebook-cell.py` runs under whatever `python3` is on the path and sets no kernel, so **no part of the machinery reads, requires or validates the environment's name**. It is created BY THE USER — the harness never creates it, it only depends on it. Set it as the **workspace default interpreter** (in `GitHub/<your>.code-workspace`), so new terminals under `Work/` auto-activate it and notebooks default to its kernel — every ticket picks it up automatically. It also backs the Data Wrangler extension (view/clean `.csv`/`.parquet`/`.xlsx`). Create a repo-specific venv only when a repo needs different pins.
 
@@ -256,11 +293,60 @@ Logs are bullet points only — concise, factual, in past tense. Each new sessio
 
 Appending a Session Log block and refreshing **Current State** (and the Repos/Branches/PRs sections if they changed) are **one atomic step** — never do one without the other.
 
+### Record Ownership and Brevity
+
+Every fact gets one durable owner; other surfaces point to it or summarize it in
+one line. These are writer stop conditions and review targets, not validator
+failures: load-bearing detail may exceed a target when omitting it would make the
+record misleading.
+
+| Surface | Sole job | Default budget | Excludes |
+|---|---|---:|---|
+| Header | Current repo, branch, and PR addresses | Compact lists | Narrative, commit history, check details |
+| Current State | Now, next, blocker/gotcha, essential pointers | 3–5 sentences; target 120 words | Completed chronology, command lists, copied evidence |
+| Changes Made | Settled implementation summary by component | Update only on meaningful implementation change | Session-by-session narration |
+| Session Log | Delta since the previous entry | 2–6 bullets; target 120 words | Full reasoning, repeated header state, exact check bodies |
+| Checks | Selected evidence for a durable claim or decision | Default 0; normally at most 2 capsules per task | Iteration history, duplicate CI evidence |
+| AI-Knowledge | Hidden fact costly to rediscover and likely to be retrieved | Default 0; normally at most 1 topic update per task | Session narrative, check results, facts obvious in code |
+| Logs | Bulky temporary command output | As needed; git-ignored | Durable conclusions |
+| Git, CI, PR, tracker | Canonical history already retained there | Link, do not copy | Duplicated transcripts in ticket files |
+
 ---
 
 ## AI Memory Convention
 
 Create any new memory `.md` files under `Tickets/YYYYMM<seq>-<BOARD>-<num>/AI-Knowledge/`. If memory must be created in session/agent memory first (where the folder is not directly writable), copy those `.md` files into the ticket's `AI-Knowledge/` folder after creation. Each ticket's AI knowledge base lives in its own `AI-Knowledge/` subfolder so context survives across sessions.
+
+### Durable Knowledge Gate
+
+The parent agent invokes `knowledge-keeper` only with a NAMED candidate from the
+current task. It does not invoke the keeper merely to prove that zero is correct,
+and neither agent searches for something to preserve. Every candidate must pass all
+six tests:
+
+1. **Non-obvious:** a competent future agent would not infer it quickly from code,
+  tests, the ticket header, or normal tool output.
+2. **Verified:** this session established it from a named authoritative source or a
+  reproducible observation.
+3. **Retrievable:** there is a credible trigger expressible as "read before doing X."
+4. **Costly to rediscover:** losing it would require a fresh investigation across
+  source code, external documentation, or runtime evidence, or create material
+  delivery, data, security, or operational risk.
+5. **No better owner:** it is not already canonical in code comments, tests,
+  project documentation, the tracker, a PR, Checks, Current State, or General
+  AI-Knowledge.
+6. **One topic owner:** the index was checked and an existing note will be updated
+  whenever it already covers the topic.
+
+Ticket-local knowledge need only remain useful after context loss on THIS ticket.
+Promotion retains the stronger test: useful on a future unrelated ticket,
+expressible with no ticket references, and not already covered.
+
+A note is a compact retrieval card, not an essay: **Finding** (the durable fact),
+**Evidence** (a pointer, not a transcript), **Use when** (the retrieval trigger),
+and **Consequence** (what action or mistake it changes). Target 150–400 words and
+compress before 500. Zero is expected; one topic update is normal; two independent
+notes require the parent to state why they cannot share an owner.
 
 **Index + compaction rules (STRICT — this folder is not a landfill):**
 
@@ -317,10 +403,10 @@ Invoked with the Jira link; every step below is also the by-hand fallback:
 2. Compute the ticket ID: scan `Tickets/` for this month's latest sequence and take the next one — order sequences by LENGTH first, then alphabetically (A < … < Z < AA < AB < …), so a multi-letter run sorts after the single letters (a plain string sort is wrong: "AA" sorts before "B"). On exhausting a run, ask the user how to extend rather than guessing.
 3. Copy the `999912Z-PROJ-99999` template; fill the header (Jira URL, local path); then **name the folder and `.md` per two outcomes, never a silent misfile.** When you *can* determine the ticket's identity (tracker reachable, or the user supplied it), give it a **conforming** name matching the recommended pattern — an immediately-validated ticket; you conform on the user's behalf. When you *cannot* (tracker unreachable **and** no identity supplied), do **not** invent a fake-but-conforming name (it would validate silently as a misfiled stub); instead give the folder a deliberately non-conforming placeholder name (e.g. `pending-<timestamp>`) and drop a `.ticket-pending` marker inside it — a non-silenceable pending ticket that `harness-status` nags about until it is *completed*: renamed to a conforming name **and** the `.ticket-pending` marker removed (both steps — the marker, not the name, is what clears the nag, so a conforming rename alone can't leave a real ticket silently misfiled). The nag is the intended safety mechanism.
 4. Present a short digest of the issue, then ask the user EXACTLY three things: (a) a paragraph explaining the ticket **in their own words**, (b) the **non-negotiables**, (c) the repo(s) involved.
-5. Write **Background** — leading with the user's paragraph as an "**In my words:**" block, followed by the Jira-derived context — and **Scope**, leading with a "**Non-negotiables**" checklist.
-6. **Adjacency scan:** grep prior ticket titles and Current States plus the `General AI-Knowledge/` index for related work; record any hits as pointers in Current State (e.g. "see 202605A-PROJ-65474, AI-Knowledge/field-mapping.md").
+5. Write **Background** — leading with the user's paragraph as an "**In my words:**" block, followed by at most five Jira-context bullets, never copied comments or parent narrative — and **Scope**, leading with a "**Non-negotiables**" checklist followed by the acceptance criteria once.
+6. **Adjacency scan:** grep prior ticket titles and Current States plus the `General AI-Knowledge/` index for related work; keep at most three directly relevant pointers in Current State (e.g. "see 202605A-PROJ-65474, AI-Knowledge/field-mapping.md").
 7. For each repo given, suggest 2–3 branch names in the `feature/PROJ-XXXXX_<short-slug>` convention; the user picks or edits; record the choice in **Branches**. The agent NEVER creates branches or touches `GitHub/` — recording only.
-8. Seed a 3-sentence **Current State** (not started / next step / gotchas), then invoke `ticket-scribe` for the init Session Log entry.
+8. Seed a 3-sentence **Current State** (not started / next step / gotchas), create no Checks or AI-Knowledge during initialization, then invoke `ticket-scribe` for the init Session Log entry.
 
 ## Session States — Operational Rules
 
@@ -330,8 +416,9 @@ boundary. Never fabricate a record to silence the gate — a gap you cannot
 reconstruct is logged honestly AS a gap. These rules bind agents and human
 alike.
 
-**S0 — Green.** Entry gate silent. Work normally; scribe + keeper run at
-task end as usual.
+**S0 — Green.** Entry gate silent. Work normally; `ticket-scribe` runs once at
+the end of completed ticket work. `knowledge-keeper` runs only for a named candidate
+that passes the Durable Knowledge Gate; zero capture is expected.
 
 **S1 — FAIL at entry.** This is about the *previous* session, not the
 current one. Triage in two bins:
@@ -346,8 +433,7 @@ current one. Triage in two bins:
 Then re-run `check-ticket-log.sh` to confirm green, and start work.
 
 **S2 — WARN/NOTE nags.** Never interrupt flow for these. Fat index → run
-`knowledge-curator` at ticket close-out or end of day. Zero-capture nag →
-verify the keeper gets invoked at the next task end. Stale General
+`knowledge-curator` at ticket close-out or end of day. Stale General
 AI-Knowledge → batch into a review pass.
 
 **S3 — Resumed, compacted, or abandoned sessions.** Entry validation

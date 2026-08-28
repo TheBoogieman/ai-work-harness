@@ -12,12 +12,16 @@ interview instead of failing); compute the ID; copy the template
 `999912Z-PROJ-99999`; NAME the folder per the two outcomes below; show a
 short digest; ask EXACTLY three questions — (a) the user's own-words
 paragraph, (b) non-negotiables, (c) repo(s); write Background leading with
-"**In my words:**" and Scope leading with a "**Non-negotiables**" checklist;
+"**In my words:**" plus at most FIVE Jira-context bullets, and Scope leading
+with a "**Non-negotiables**" checklist followed by the acceptance criteria
+ONCE — never transcribe comments or parent narrative;
 run the adjacency scan (grep prior ticket titles + Current States + the
-General AI-Knowledge index; record hits as pointers in Current State);
+General AI-Knowledge index; keep at most THREE directly relevant pointers in
+Current State);
 suggest 2-3 branch names as `feature/PROJ-XXXXX_<short-slug>` and RECORD the
 user's pick — never create branches, never touch `GitHub/`; seed a
-3-sentence Current State; finish by invoking ticket-scribe for the init log.
+3-sentence Current State; create no Checks or AI-Knowledge during init; finish
+by invoking ticket-scribe for the init log.
 The month-sequence letter follows the natural A, B, C … progression; if a
 month exhausts the single-letter run, ASK the user how to extend the scheme
 (e.g. AA, AB …) rather than inventing one — the recommended pattern in

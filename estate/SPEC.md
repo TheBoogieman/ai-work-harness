@@ -16,9 +16,10 @@ The harness was built after a month of undisciplined frontier-model use burned
 roughly 40,000 credits and left no durable record of what had been decided or
 why. The founding goals, unchanged since:
 
-- **Leave records, not vibes.** Every unit of work leaves a log, a current
-  state, and captured knowledge on disk — reconstructable later by a human who
-  was not in the room.
+- **Leave records, not vibes.** Every ticket work unit leaves a log and current
+  state; qualifying evidence and knowledge are captured once, while routine
+  activity stays ephemeral. The result is reconstructable later by a human who
+  was not in the room without preserving every command.
 - **Cheap clerks, expensive thinkers.** Small, cheap agents do the bookkeeping
   so the frontier model and the operator spend their budget on judgment.
 - **Local-first and private.** The work record lives in a local-only git repo

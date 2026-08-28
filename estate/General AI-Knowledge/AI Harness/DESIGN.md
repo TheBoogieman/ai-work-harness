@@ -1,9 +1,9 @@
 # Design notes — why the harness is shaped like this
-Last reviewed: 2026-07-29
+Last reviewed: 2026-08-28
 
-**Diagram currency (2026-07-29):** the operator redrew both sheets to REV S /
-REV H, which cleared three of the four divergences this note used to carry. TWO
-remain, and the second is newly true rather than newly noticed.
+**Diagram currency (2026-08-28):** the operator redrew both sheets to REV S /
+REV H on 2026-07-29, which cleared three of the four divergences this note used
+to carry. THREE now remain; the third was introduced by #307.
 
 **RESOLVED at REV S / REV H.** The architecture sheet labelled the constitution
 `folder-structure.md` after `#140` renamed it to `CONSTITUTION.md`; it named
@@ -31,6 +31,13 @@ so these two title blocks are now the only place in the tree that states a harne
 version. The claim is not wrong so much as orphaned: nothing else issues or tracks
 a "v2", so a reader has no way to check it and no other statement to reconcile it
 against. It is named here rather than drawn out.
+
+**The session-flow sheet still shows the pre-#307 capture policy.** It says "a
+check worth keeping" without the Durable Evidence Gate and describes
+`knowledge-keeper` as writing 0–2 learnings at task end. The current contract
+makes routine checks ephemeral, invokes the keeper only for a named candidate,
+and normally permits one topic update. The sheet remains operator-owned; this
+ledger records the honest lag.
 
 NO WAVE EDITS AN SVG — the remaining divergences are named rather than drawn, and
 `#178` is where the redraw is tracked and stays OPEN: REV S / REV H discharged the

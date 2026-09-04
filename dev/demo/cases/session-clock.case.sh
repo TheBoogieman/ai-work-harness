@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# session-clock.case.sh — the session-log header clock is LOCAL machine time. SOURCED by the
-# runner; see dev/scripts/run-demo.sh for the contract.
+# session-clock.case.sh — the validator's two stamp axes: the session-log header clock is LOCAL
+# machine time, and freshness is judged on CONTENT. SOURCED by the runner; see
+# dev/scripts/run-demo.sh for the contract.
 #
 # The validator reads a 14-digit header via epoch_from_ts14 (date -d/-j — LOCAL tz) and compares it
 # to the watermark stamp_wall (date +%s — absolute epoch). Those two frames agree ONLY when the
@@ -93,9 +94,47 @@ sc_utc_clock_stale() {
     "convention must name it)"
 }
 
+# [identical-rewrite-absorbed] a byte-identical rewrite must NOT re-open a validated ticket. An
+#   editor write-back or the auto-commit hook rewrites a ticket file without changing a byte, moving
+#   mtime only. Judged on mtime, that re-opened an already-validated ticket; RECENCY then failed it
+#   for carrying no header newer than its own stamp, and because a failing check never advances the
+#   stamp the ticket stayed red forever. The documented remedy could not clear it either: a new
+#   entry is always written BEFORE the validation that stamps it, so the next stray touch re-opens
+#   the ticket and the entry is stale again — a loop that invites an agent to pad honest records
+#   with filler blocks (#309). Freshness is judged on the CONTENT hash, so the touch below is
+#   absorbed. Pre-fix this case exits 1.
+#
+# Sited here, between the two clock cases, because it needs the ticket in the VALIDATED state
+# sc_local_clock_ok leaves behind — sc_utc_clock_stale deliberately ends in a failing state.
+sc_identical_rewrite_absorbed() {
+  sc_hash() { { shasum -a 256 "$1" 2>/dev/null || sha256sum "$1" 2>/dev/null; } | cut -d' ' -f1; }
+  _before=$(sc_hash "$R10/202607R-PROJ-10.md")
+  # TWO stray rewrites, a second apart, because ONE is not enough to reproduce the deadlock: the
+  # first is absorbed by pre-fix code too (its header and stamp_wall share a second, so RECENCY's
+  # strict `<` does not trip) and it ADVANCES stamp_wall past the header. Only the second rewrite
+  # meets a wall clock strictly newer than the newest header — the real estate's shape, where the
+  # entry was written minutes before the validation that stamped it. Dropping either step yields a
+  # guard that passes on the pre-fix code and therefore proves nothing.
+  sleep 1
+  touch "$R10/202607R-PROJ-10.md"
+  bash estate/_harness/scripts/check-ticket-log.sh >/dev/null 2>&1 || true
+  sleep 1
+  touch "$R10/202607R-PROJ-10.md"
+  _after=$(sc_hash "$R10/202607R-PROJ-10.md")
+  [ "$_before" = "$_after" ] || { echo "BUG [identical-rewrite-absorbed]: the rewrites altered" \
+    "content — this case is not testing what it claims"; exit 1; }
+  r10_validate clean identical-rewrite-absorbed   # exit code here; message below
+  printf '%s\n' "$R10_OUT" | grep -q "202607R-PROJ-10 changed but no new Session Log entry" \
+    && { echo "BUG [identical-rewrite-absorbed]: an UNCHANGED record was re-opened and failed —" \
+           "freshness is being judged on mtime, not content:"; printf '%s\n' "$R10_OUT"; exit 1; }
+  echo "  ok [identical-rewrite-absorbed] — byte-identical rewrite absorbed; a validated ticket" \
+    "stays validated"
+}
+
 case_session_clock() {
   sc_fixture
   sc_local_clock_ok
+  sc_identical_rewrite_absorbed
   sc_utc_clock_stale
   # Restore TZ (whatever it was, including unset) and tear down this family's scratch ticket.
   if [ "$R10_TZ_SAVE" = "__unset__" ]; then unset TZ; else export TZ="$R10_TZ_SAVE"; fi

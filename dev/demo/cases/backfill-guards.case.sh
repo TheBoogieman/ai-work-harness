@@ -96,10 +96,15 @@ bg_sigpipe_safety() {
 # Mnemonics: mt1 = the anchored mtime (Jan 1), mt2 = the advanced mtime (Feb 1), wall1 = the
 # wall-clock at validation ('now'). Ordering that matters: mt1 < mt2 < wall1.
 #
-# Case A — advance mtime to Feb 1 (mt1 < mt2 < wall1) with NO new header. The change is above the
-# stored mtime but below the wall clock, so only a line-2 (mtime) freshness read notices it.
+# Case A — make a REAL change (content) and pin its mtime to Feb 1 (mt1 < mt2 < wall1), with NO new
+# header. The change is above the stored mtime but below the wall clock, so only a line-2 (mtime)
+# freshness read notices it.
 # Two-clock → re-checks and FAILs "no new Session Log entry". Single-clock (line2=line1=wall1) →
 # mt2 < wall1 → "unchanged" → silently skips (the bug).
+# The vehicle is a content edit, not a bare touch: #309 made freshness judge CONTENT, so a
+# mtime-only bump is now deliberately absorbed and can no longer stand in for a change. The
+# invariant under test is untouched — that freshness reads the stamp's mtime line, not the wall
+# clock — and pinning mtime after the edit is what keeps mt2 below wall1.
 # Case B — complement: a genuine new header at/after the watermark AND mtime advances → both axes
 # satisfied → validates OK.
 bg_independent_clocks() {
@@ -110,7 +115,8 @@ bg_independent_clocks() {
   touch -t "$(date +%Y)01010000" "$g3md"      # anchor mtime to Jan 1 this year (mt1)
   # the stamp is written here: line 1 = wall1 (now), line 2 = mt1 (Jan 1)
   bash estate/_harness/scripts/check-ticket-log.sh >/dev/null 2>&1 || true
-  touch -t "$(date +%Y)02010000" "$g3md"
+  printf '\n<!-- content edit carrying no new session header -->\n' >> "$g3md"
+  touch -t "$(date +%Y)02010000" "$g3md"      # pin mtime below wall1 AFTER the edit (mt2)
   set +e; G3A=$(bash estate/_harness/scripts/check-ticket-log.sh 2>&1); set -e
   printf '%s\n' "$G3A" | grep -q "202607S-PROJ-33 changed but no new Session Log entry" \
     || { echo "BUG [independent-clocks]: an mtime change below the wall clock was NOT noticed —" \

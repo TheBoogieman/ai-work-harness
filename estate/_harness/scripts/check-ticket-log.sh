@@ -48,15 +48,25 @@ ticket_dirs() {
 # — see the fallback below):
 #   line 1 stamp_wall  = wall-clock at last validation      → RECENCY: is the newest session-log
 #                        header at/after that moment?
-#   line 2 stamp_mtime = the .md's mtime at last validation → FRESHNESS: did the file actually
-#                        change since we last validated it?
+#   line 2 stamp_mtime = the .md's mtime at last validation → FRESHNESS: cheap pre-filter only.
+#   line 3 stamp_hash  = the .md's content hash at last validation → FRESHNESS: the real answer.
+# mtime alone cannot answer "did this change": an editor write-back or the auto-commit hook
+# rewrites a file byte-identically, moving mtime while the content stands still. Judged on mtime
+# that re-opened an already-validated ticket, RECENCY then failed it for having no log entry
+# newer than its own stamp, and because a failing check never advances the stamp the ticket was
+# red forever. The hash is what makes the answer honest; mtime survives only as a fast skip.
 read_stamp() {
-  stamp_wall=0; stamp_mtime=0
+  stamp_wall=0; stamp_mtime=0; stamp_hash=""
   [[ -f "$stamp" ]] || return 0
-  stamp_wall=$(sed -n 1p "$stamp"); stamp_mtime=$(sed -n 2p "$stamp")
+  stamp_wall=$(sed -n 1p "$stamp"); stamp_mtime=$(sed -n 2p "$stamp"); stamp_hash=$(sed -n 3p "$stamp")
   # legacy single-line stamp: reuse wall for both axes
   [[ -z "$stamp_mtime" ]] && stamp_mtime=$stamp_wall
   return 0
+}
+
+# md_hash — content fingerprint of a ticket .md, used as the real freshness test.
+md_hash() {
+  { shasum -a 256 "$1" 2>/dev/null || sha256sum "$1" 2>/dev/null; } | cut -d' ' -f1
 }
 
 # check_recency — 1) RECENCY (header time vs stamp line 1, the wall-clock watermark): the newest
@@ -187,15 +197,23 @@ main() {
     }
     read_stamp
     md_epoch=$(file_mtime "$md")
-    # FRESHNESS (mtime vs stamp line 2): if the file hasn't changed since last validation, skip it.
+    # FRESHNESS, step 1 (cheap): mtime unmoved means nothing can have changed — skip.
     (( md_epoch > stamp_mtime )) || continue
+    # FRESHNESS, step 2 (authoritative): mtime moved, but only a CONTENT change is a real change.
+    # Absorb a byte-identical rewrite by re-pinning mtime and leaving stamp_wall alone, so the
+    # ticket stays validated instead of being re-opened and then failed for not being re-logged.
+    cur_hash=$(md_hash "$md")
+    if [[ -n "$stamp_hash" && "$cur_hash" == "$stamp_hash" ]]; then
+      printf '%s\n%s\n%s\n' "$stamp_wall" "$md_epoch" "$cur_hash" > "$stamp"
+      continue
+    fi
     checked=$((checked+1))
     ok=1
     check_recency
     check_current_state
     check_knowledge
     if (( ok == 1 )); then
-      printf '%s\n%s\n' "$(date +%s)" "$md_epoch" > "$stamp"
+      printf '%s\n%s\n%s\n' "$(date +%s)" "$md_epoch" "$cur_hash" > "$stamp"
       echo "OK: $name validated."
     else
       fails=$((fails+1))

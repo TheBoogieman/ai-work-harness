@@ -158,6 +158,9 @@ dc_link_target() {
     \#*)  frag=${tgt#\#}; path="" ;;          # same-file anchor
     *\#*) path=${tgt%%#*}; frag=${tgt#*#} ;;  # path + anchor
   esac
+  # Markdown encodes spaces in these folder links; check the real path without
+  # skipping it as a prose placeholder or weakening missing-target detection.
+  path=${path//%20/ }
   target_file="$f"
   if [ -n "$path" ]; then
     cand="$dir/$path"; [ "$dir" = "." ] && cand="$path"   # resolve relative to the linking file

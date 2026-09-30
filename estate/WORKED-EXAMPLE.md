@@ -282,10 +282,11 @@ $ cat Tickets/202607A-PROJ-4021/AI-Knowledge/_index.md
 # _index.md — one line per file: `- <file>.md — <what it covers> — <when to read it>`
 # Tombstones for promoted files: `- <file>.md (promoted -> General AI-Knowledge/<Topic>)`
 - staging-model-quirk.md — null effective dates are dropped — read before editing the model
-$ grep -A2 '^## Current State' Tickets/202607A-PROJ-4021/202607A-PROJ-4021.md
+$ grep -A3 '^## Current State' Tickets/202607A-PROJ-4021/202607A-PROJ-4021.md
 ## Current State
-Template initialised; not started. Next step: run ticket-init against a real
-issue. Gotchas: none yet.
+- Now: template only; no ticket work started.
+- Next: run ticket-init against a real issue.
+- Blocked: no issue identity or interview answers yet.
 $ sed -n '/^## Session Log/,$p' Tickets/202607A-PROJ-4021/202607A-PROJ-4021.md
 ## Session Log
 
@@ -300,7 +301,7 @@ day-zero: harness estate scaffolded by install.sh
 ```
 
 The ticket folder; the index describing the knowledge beside it; Current State,
-which is the paragraph anyone picking this ticket up reads first and the one the
+which is the summary anyone picking this ticket up reads first and the one the
 validator insists every record has; the session log with the day's entry appended
 under the template's; and a commit history in which the day is one line.
 `Checks/`, `Dump/` and `Logs/` came from the template: `Checks/` holds a notebook

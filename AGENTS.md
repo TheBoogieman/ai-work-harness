@@ -18,3 +18,13 @@
 7. Before craft work (writing SQL, a dbt model, a transform, a script), check
    `General AI-Knowledge/Skills/_index.md` for a matching module and read only
    that `SKILL.md` — index-first, never crawl the tree.
+8. At ticket pickup or a change of repo/pipeline, follow PART I's *Context
+   Discovery* route: ticket knowledge index, both general knowledge indexes,
+   and the Work Map. Read only matching notes and workflows; use
+   `harness-recall` for bounded adjacent-ticket research before implementation.
+9. Use available CLI/MCP tools for task-relevant live facts. Follow PART I's
+   *Tools and Authentication*: resolve the configured environment, default to
+   read-only, and wait for the human to authenticate without collecting secrets.
+10. Records name the component, columns and logic changed. Follow *Record
+    Writing* and *Agent Routing*; do not narrate tool activity or invoke agents
+    merely to increase their usage.

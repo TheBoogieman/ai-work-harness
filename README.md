@@ -123,7 +123,7 @@ loudly, judges nothing.
 
 Single source of truth. `CONSTITUTION.md` holds every rule; each ticket folder
 holds its own log, state, and knowledge; `General AI-Knowledge/` holds the
-durable stuff; `AGENTS.md` is the seven-rule contract Copilot loads on every
+durable stuff; `AGENTS.md` is the entry contract Copilot loads on every
 surface.
 
 ### L4 — The agents
@@ -143,9 +143,9 @@ The workers:
 - `weekly-digest` (cheap, at a boundary) — read-only; narrates a period
   (default 14 days) from the record — active tickets, knowledge, status
   deltas — writes nothing
-- `harness-recall` (cheap, on demand) — read-only; FINDS where a topic
-  appears across tickets and knowledge, one cited hit per line — grep + git,
-  no stored index — writes nothing
+- `harness-recall` (cheap, at pickup or on demand) — read-only; finds related
+  tickets, knowledge and workflows through linked indexes, with scoped search
+  for unindexed work; one cited hit per line; parent-callable, writes nothing
 - `retrospective` (smart, at review time) — writes a period retrospective
   (default 12 months) FOR THE HUMAN in accomplishment register — one
   timestamped file to `General Human Knowledge/Retrospectives/`, nothing else
@@ -154,6 +154,23 @@ The workers:
 
 The thinking. Everything below exists so this layer stays cheap, focused, and
 honest.
+
+## Find the useful record
+
+Ticket summaries name the component, fields and logic changed. Current State is
+short Now / Next / Blocked bullets; historical Session Logs stay unchanged.
+See the constitution's *Record Writing* convention for writer defaults.
+
+The constitution's [Context Discovery](estate/CONSTITUTION.md#context-discovery)
+route points to reusable knowledge, repo workflows and the Work Map. Real
+repo/pipeline pages link to tickets and existing notes, giving Obsidian a
+navigable graph without a plugin. The shipped indexes are starting points,
+not fictional work.
+
+Ticket initialization uses the actual full template and a deterministic scaffold
+helper; the agent still supplies the interview, facts and final validation.
+Configured CLI/MCP tools are used for relevant live checks, with read-only
+defaults and human authentication. The constitution owns these procedures.
 
 ## The maintenance port (offline, on demand)
 

@@ -1,6 +1,11 @@
 # Design notes — why the harness is shaped like this
 Last reviewed: 2026-08-28
 
+**Additional diagram divergence (#311):** the sheets do not show the ticket
+scaffold helper, linked Work Map, or general knowledge/workflow indexes. The
+entry contract also has additional retrieval/tooling routes. No SVG was edited;
+the constitution describes the current behavior.
+
 **Diagram currency (2026-08-28):** the operator redrew both sheets to REV S /
 REV H on 2026-07-29, which cleared three of the four divergences this note used
 to carry. THREE now remain; the third was introduced by #307.

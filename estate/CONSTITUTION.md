@@ -43,7 +43,7 @@ Ticket folders live **outside** the VS Code multi-repo workspace (`GitHub/<your>
 
 `General Human Knowledge/` mirrors `General AI-Knowledge/` the other way round: GAK is what the machinery **reads**, GHK is what it **writes for you** — human-facing outputs (the first is `Retrospectives/`, written by the `retrospective` agent). Two rules govern it:
 
-- **APPEND-ONLY.** Files are timestamped on creation and **never edited** — the never-rewrite-the-record doctrine applied to human deliverables. A retrospective is a dated statement of what was true when it was written, not a living document; a later run writes a **new** file, it never rewrites an old one.
+- **HISTORY IS APPEND-ONLY; REFERENCES ARE LIVING.** Dated deliverables, including `Retrospectives/`, are timestamped and never rewritten. A later retrospective is a new file. `Repo Workflows/` and discovery `_index.md` files are living references: correct them in place when their sources change, and note substantive runbook corrections in their index. New folders are append-only unless explicitly declared living here. Agents may read human-facing runbooks; the audience label is not an access restriction.
 - **INSIDE THE WHITELIST.** These artifacts **are** record — a review deliverable is worth keeping and versioning — so the folder is re-included above and its contents are tracked and auto-committed like any other record, never treated as disposable scratch.
 
 ---
@@ -112,7 +112,8 @@ YYYYMM<seq>-<BOARD>-<num>
 
 **Example:** the first ticket picked up in May 2026, ticket number
 PROJ-65474 → `202605A-PROJ-65474`. A busy month past `Z` rolls to `AA`,
-`AB`, … — `ticket-init` asks you how to extend rather than guessing.
+`AB`, … automatically. The scaffold helper calculates this from the local
+machine month and existing names, not from the chat date or folder count.
 
 ### Using your own scheme — one editable home
 
@@ -224,10 +225,15 @@ Branches:
 Pull Requests:
 - [#NNN](<PR URL>) in `<repo>` — draft | in review
 
+Context:
+- <Links to matching repo/pipeline pages, runbook and directly related work>
+
 ---
 
 ## Current State
-<3–8 sentences, always up to date — see convention below>
+- Now: <component and current outcome>
+- Next: <one concrete next action>
+- Blocked: <blocker or none; essential gotcha/link if needed>
 
 ## Background
 <Why this ticket exists, business context>
@@ -249,7 +255,7 @@ Every ticket markdown file must include the **Repos**, **Branches**, and **Pull 
 
 ## Current State Convention
 
-**`## Current State` is the section AI agents read to rehydrate.** It is a living summary, 3–8 sentences, always reflecting *right now*:
+**`## Current State` is the section AI agents read to rehydrate.** It is a living summary, normally three short bullets labelled **Now**, **Next**, and **Blocked**, reflecting *right now*. Aim for under 100 words; add only a load-bearing gotcha or pointer:
 
 - Where the work stands (done / in flight / blocked, and on what).
 - The immediate next step.
@@ -262,7 +268,7 @@ Every ticket markdown file must include the **Repos**, **Branches**, and **Pull 
 
 ## Session Logging Convention
 
-**Default: automatic.** At the end of every completed task or working session, the AI agent appends a chronological record of work actions to the ticket markdown file under **Session Log** — without waiting to be asked. The user vetoes or amends; they do not have to initiate. (The user may still say "log this now" mid-session to force a checkpoint.)
+**Default: automatic for ticket work.** At the end of completed ticket work, append one outcome delta under **Session Log**, without waiting to be asked. Do not create a ticket merely to log a general tooling or navigation task. The user vetoes or amends; they may say "log this now" to force a checkpoint.
 
 **Section header format (strict — do not deviate):**
 ```
@@ -282,13 +288,11 @@ since last validation"* on the session where you have just written one.
 
 **Example:**
 ```markdown
-## 20260611143000 - Threaded the new field through the staging SQL
+## 20260611143000 - Added source-aware order deduplication
 
-- Reviewed existing dbt models in `<your dbt repo>`
-- Added `dm_new_metric` CTE to `intm__staging_model.sql`
-- Fixed sqlfluff violations (table qualifiers, capitalisation)
-- Updated unit test YAML to include the new field mock input
-- Opened PR `feature/PROJ-99999_example` for review
+- `orders` pipeline: added `source_id`; changed the dedup key from `order_id` to (`order_id`, `source_id`).
+- Verification: the two-source fixture retained both orders; the same-source duplicate was removed.
+- Deployment: not run; awaiting review.
 ```
 
 Logs are bullet points only — concise, factual, in past tense. Each new session appends a new block; older blocks are never edited. The header must strictly follow `## YYYYMMDDHHMMSS - [Short one line description of session update]` — no other format is accepted.
@@ -312,6 +316,30 @@ record misleading.
 | AI-Knowledge | Hidden fact costly to rediscover and likely to be retrieved | Default 0; normally at most 1 topic update per task | Session narrative, check results, facts obvious in code |
 | Logs | Bulky temporary command output | As needed; git-ignored | Durable conclusions |
 | Git, CI, PR, tracker | Canonical history already retained there | Link, do not copy | Duplicated transcripts in ticket files |
+
+### Record Writing
+
+Write for someone asking "what changed?", not "what did the agent do?" Name the
+pipeline, table, workflow or file first. List added/removed columns and explain
+changed keys, filters, joins, mappings or timing as **old -> new** when known.
+Do not invent a type, previous value, deployment or result. Investigation-only
+work names the finding and says that no implementation changed.
+
+| Surface | Keep | Leave elsewhere |
+|---|---|---|
+| Header | Repo/branch/PR addresses; relevant Context links | Narrative and command history |
+| Current State | Now, next, blocker; essential gotcha | Completed chronology |
+| Changes Made | Settled component-first change bullets | Session-by-session replay |
+| Session Log | Normally 2-5 outcome bullets, about 100 words | Copied explanations, tool lists |
+| AI-Knowledge | Finding, evidence link, use-when trigger, consequence | Facts already owned by code or a runbook |
+| General indexes / Work Map | Links and one-line retrieval cues | Duplicated facts or histories |
+
+Keep verification separate from implementation; name the check and observed
+outcome, or say "not run". Link to CI, PRs and detailed evidence instead of copying
+them. Prefer "added source_id" to "enhanced traceability" and a named test to
+"validated end to end". These are writer defaults, not validator gates. Keep
+necessary detail when a budget would hide an important distinction. Never rewrite
+old Session Log entries just to apply the new style.
 
 ---
 
@@ -380,6 +408,91 @@ Conventions:
 - The markdown file mirrors the folder name and should stand alone: what was done, why, the exact commands, and a worked **Example** section.
 - **Never commit secrets** (access keys, tokens). Use placeholders and reference the discovery commands instead.
 
+## Context Discovery
+
+At pickup, before implementation, and when the target repo/pipeline changes:
+
+1. Read the ticket header and Current State; check its `AI-Knowledge/_index.md`
+   for a matching retrieval trigger. Open only the relevant note.
+2. Check `General AI-Knowledge/_index.md` for reusable tooling, constraints and
+   ways of working; check `General Human Knowledge/_index.md` for repo runbooks.
+   Read the matching workflow before choosing build, branch, deployment or
+   environment commands. Human-facing references are available to agents too.
+3. Search `General AI-Knowledge/Work Map/_index.md` by exact repo/pipeline name
+   and recorded aliases. Follow its entity page to at most three relevant tickets
+   or notes. `harness-recall` can do this as a bounded read-only subtask.
+4. If the map has no match, use a scoped search of ticket headers, Current States
+   and knowledge indexes. State what was searched and what was not found; a
+   missing map entry does not prove no related work exists.
+
+Reuse observed findings with a link; recheck mutable runtime/deployment facts
+using the source repo or service. Do not treat old ticket status as live evidence.
+Do not repeat the scan every tool call or bulk-load Session Logs, notebooks,
+Logs or Dump. Go deeper only when a specific source or the user asks for it.
+
+### Linked Work Map
+
+`General AI-Knowledge/Work Map/` is a living navigation aid, not a database or a
+second knowledge store. `_index.md` links pages under `Repos/` and `Pipelines/`.
+Each entity page holds its exact name, observed aliases, links to relevant
+runbooks/knowledge, and ticket links with one-line context. These associations
+mean "this ticket discusses this component", **not** data lineage or deployment.
+
+The parent agent maintains affected links when work first establishes an entity
+or relationship. Only create a page backed by a source; do not generate pages for
+every noun. Use ordinary relative Markdown links (encode spaces), which work in
+editors and Obsidian without a plugin. Verify link targets. Never use bare ticket
+IDs as links when the actual filename has a month/sequence prefix.
+
+Add useful entity/runbook links under the optional **Context** header in new or
+actively updated tickets. Legacy records need not be rewritten: entity-page links
+already connect them in the graph. Maintain the appropriate general root index
+when adding/moving a topic or runbook; promotion also updates the existing ticket
+index/tombstone. Keep one owner for the underlying fact. The map may be partial;
+its index declares coverage, and discovery always has the fallback above.
+
+## Tools and Authentication
+
+Use available tools for task-relevant authoritative facts before asking the user
+to paste output: AWS CLI for cloud state, GitHub CLI/MCP for issues/PRs/CI,
+Snowflake CLI for warehouse metadata or approved checks, and Atlassian MCP for
+tracker/wiki context. These are optional adapters, not harness dependencies.
+Check availability and the local setup/workflow note first; never assume a tool
+or profile exists. If unavailable, state the limit and the next useful action.
+
+- Resolve the configured profile/connection, account, region, role and UAT/PROD
+  target before a remote operation. Keep actual profile mappings in a local
+  indexed setup note, not in public agent contracts. Never silently fall back to
+  a default account or switch environment to bypass denied access.
+- Default to scoped read-only operations. Request explicit approval before
+  changing remote data, infrastructure or tracker state. Authentication is access,
+  not permission to mutate. Do not run unrelated services on every task.
+- For MFA, passkeys, SSO or key passphrases, leave the terminal/browser prompt
+  visible and ask the human to complete it directly. Wait and resume the same
+  operation after completion; do not repeatedly retry, abandon the check, or
+  substitute an assumption. Never collect secrets through chat/question tools,
+  echo them, save them, or wrap interactive commands in output filters.
+- Use metadata or aggregate results where possible. Never copy credentials,
+  customer data, private account identifiers or raw authentication output into
+  tickets, knowledge, public issues or PRs. Report an unverified result honestly.
+
+## Agent Routing
+
+Choose an agent for its job, not to make the roster look busy. Supply the target,
+question and relevant pointers; a delegated reader returns findings, not new work.
+
+| Need | Agent | Boundary |
+|---|---|---|
+| Start a ticket, interview and scaffold | `ticket-init` | Direct interactive session |
+| Resume one ticket | `ticket-recall` | Read-only; parent may delegate |
+| Find related tickets or workflows | `harness-recall` | Read-only, bounded; parent may delegate |
+| Record completed ticket changes | `ticket-scribe` | One factual outcome delta |
+| Capture knowledge or evidence | `knowledge-keeper`, `check-scribe` | Follow the retention policy; never invent material |
+| Consolidate/promote knowledge | `knowledge-curator` | User-directed maintenance; approval for promotion |
+| Draft a PR/README | `doc-writer` | Draft only; publication is separately authorized |
+| Summarize a period | `weekly-digest` | Ephemeral, read-only |
+| Write a dated review deliverable | `retrospective` | User-requested, append-only |
+
 ---
 
 ## GitHub Repos (Key ones)
@@ -402,13 +515,13 @@ All repos live under `Work/GitHub/` (relative to this workspace root). List YOUR
 Invoked with the Jira link; every step below is also the by-hand fallback:
 
 1. Pull the full Jira issue — summary, description, acceptance criteria, comments, and the epic/parent one level up. (If Jira is unreachable, fill Background/Scope with `TODO` markers from the interview instead of failing — a *content* fallback; naming is decided separately in step 3.)
-2. Compute the ticket ID: scan `Tickets/` for this month's latest sequence and take the next one — order sequences by LENGTH first, then alphabetically (A < … < Z < AA < AB < …), so a multi-letter run sorts after the single letters (a plain string sort is wrong: "AA" sorts before "B"). On exhausting a run, ask the user how to extend rather than guessing.
-3. Copy the `999912Z-PROJ-99999` template; fill the header (Jira URL, local path); then **name the folder and `.md` per two outcomes, never a silent misfile.** When you *can* determine the ticket's identity (tracker reachable, or the user supplied it), give it a **conforming** name matching the recommended pattern — an immediately-validated ticket; you conform on the user's behalf. When you *cannot* (tracker unreachable **and** no identity supplied), do **not** invent a fake-but-conforming name (it would validate silently as a misfiled stub); instead give the folder a deliberately non-conforming placeholder name (e.g. `pending-<timestamp>`) and drop a `.ticket-pending` marker inside it — a non-silenceable pending ticket that `harness-status` nags about until it is *completed*: renamed to a conforming name **and** the `.ticket-pending` marker removed (both steps — the marker, not the name, is what clears the nag, so a conforming rename alone can't leave a real ticket silently misfiled). The nag is the intended safety mechanism.
-4. Present a short digest of the issue, then ask the user EXACTLY three things: (a) a paragraph explaining the ticket **in their own words**, (b) the **non-negotiables**, (c) the repo(s) involved.
-5. Write **Background** — leading with the user's paragraph as an "**In my words:**" block, followed by at most five Jira-context bullets, never copied comments or parent narrative — and **Scope**, leading with a "**Non-negotiables**" checklist followed by the acceptance criteria once.
-6. **Adjacency scan:** grep prior ticket titles and Current States plus the `General AI-Knowledge/` index for related work; keep at most three directly relevant pointers in Current State (e.g. "see 202605A-PROJ-65474, AI-Knowledge/field-mapping.md").
-7. For each repo given, suggest 2–3 branch names in the `feature/PROJ-XXXXX_<short-slug>` convention; the user picks or edits; record the choice in **Branches**. The agent NEVER creates branches or touches `GitHub/` — recording only.
-8. Seed a 3-sentence **Current State** (not started / next step / gotchas), create no Checks or AI-Knowledge during initialization, then invoke `ticket-scribe` for the init Session Log entry.
+2. Before creating anything, search for that exact tracker identity across existing ticket names, including earlier months. Resume an existing ticket; do not allocate a second folder. Present a short digest and ask the three kickoff questions: (a) the ticket **in the user's own words**, (b) **non-negotiables**, (c) repo(s). Reuse answers already provided; do not ask the user to repeat them.
+3. Follow **Context Discovery** above: inspect matching workflow/knowledge indexes and related tickets before proposing work. Keep at most three directly relevant links and one-line reasons; report a bounded negative search honestly.
+4. For each repo, suggest 2-3 branch names following its documented workflow (fallback `feature/PROJ-XXXXX_<short-slug>`). Record the user's choice only. The init agent never creates branches or edits code repos.
+5. Locate the actual installed template (shipped default `Tickets/999912Z-PROJ-99999`, possibly customized). Run `bash _harness/scripts/init-ticket.sh --template <actual-path> --identity <BOARD-num>`; use `--dry-run` to inspect the proposed name first. The helper reads local machine time, considers all boards in that month, orders sequences by length then alphabetically, increments past Z, copies the full tree including dotfiles, and renames the primary markdown only. It refuses duplicate identities, unsafe paths and collisions. Do not reconstruct a subset or hand-edit notebooks. `--root <estate>` is available when explicitly targeting another estate.
+6. If no identity can be determined, explicitly use `--pending` instead of `--identity`. The unfinished scaffold has a non-conforming name and `.ticket-pending`. Once identity is confirmed, put it in the record's first heading and preview with `--identity <BOARD-num> --resume <pending-path> --dry-run` alongside `--template`. This excludes only that confirmed pending folder from duplicate checks; it writes nothing. Complete the confirmed folder/primary-markdown rename using the returned name, fill the record, **remove the marker**, and record/validate the real completion. Never invent a conforming tracker identity. Copying a template is not a completed or validated ticket.
+7. Fill the real header, Context links, Background and Scope. Background starts with **In my words:** plus at most five tracker-context bullets; Scope contains **Non-negotiables** and acceptance criteria once. Do not copy comment transcripts. Seed Now / Next / Blocked, retaining unknowns as TODOs. Preserve all copied scaffold files; add no invented evidence or learnings.
+8. Invoke `ticket-scribe` with the observed initialization actions and local timestamp for one real init entry. Run `bash _harness/scripts/check-ticket-log.sh`; resolve any FAIL before calling initialization complete. A copied template or successful helper exit is not validation. If blocked, report the unfinished path and actual problem; do not manufacture another log entry to make a red disappear.
 
 ## Session States — Operational Rules
 

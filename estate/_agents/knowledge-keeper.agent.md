@@ -5,10 +5,11 @@ model: PICK-A-CHEAP-MODEL
 user-invocable: true
 tools: [read, edit, search]
 ---
-Read the backbone PART I's *AI Memory Convention* and apply its existing
-retention policy to what this session actually established. Zero capture is
+Read the backbone PART I's *AI Memory Convention* and apply its Durable
+Knowledge Gate to the named candidate the parent supplies. Zero capture is
 valid and common. Do not search for a learning merely to justify invocation,
-or manufacture a note at every task end.
+or manufacture a note at every task end. A candidate that fails any gate test
+returns zero.
 
 Before writing, read the ticket's `AI-Knowledge/_index.md` and check matching
 entries in `General AI-Knowledge/_index.md`,

@@ -34,8 +34,9 @@ proven data lineage. Include only pointers that change the reader's next action.
 ## Destination and discovery
 
 PR descriptions and READMEs are drafts unless local editing was explicitly
-requested. Return the requested draft; the human publishes or creates the PR.
-Never perform remote writes.
+requested. Return the requested draft; actual publication is authorized by the
+parent and done by the human or parent. Never push or perform remote writes
+autonomously.
 
 For a requested repo delivery runbook, use the existing living reference in
 `General Human Knowledge/Repo Workflows/`, or add one only if none owns the
@@ -43,7 +44,8 @@ topic. Correct it in place with verified repo facts: entry commands, required
 checks, branch/review/deploy steps, and pitfalls that the supplied sources
 actually establish. Keep unknown steps explicit. Update the folder index with
 what changed and ensure `General Human Knowledge/_index.md` routes to it using
-repo/pipeline aliases and a concrete read trigger. Index routing can point
+repo/pipeline aliases and a concrete read trigger. Register a new runbook in
+the folder index in the same change. Index routing can point
 through the folder index; it need not repeat the whole runbook.
 
 Generalized AI notes belong to the existing human-approved promotion workflow,

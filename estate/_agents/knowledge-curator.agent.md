@@ -30,7 +30,9 @@ promotion policy remains authoritative. No qualifying promotion is a valid resul
 	`General AI-Knowledge/_index.md` in the same change. Include the relevant
 	repo/pipeline aliases and when to read it. Preserve one content owner and
 	leave the ticket-index tombstone in canonical form:
-	`- <file>.md (promoted -> General AI-Knowledge/<Topic>)`.
+	`- <file>.md (promoted -> General AI-Knowledge/<Topic>)`. After a rename or
+	promotion, repair backlinks (Work Map entity pages, other notes, ticket
+	Context links) and the root indexes so no link or tombstone dangles.
 5. Keep Work Map entries as source-backed associations, not copied notes or
 	inferred data lineage. If the approved artifact is a human repo workflow,
 	route it through `doc-writer` to its living reference under

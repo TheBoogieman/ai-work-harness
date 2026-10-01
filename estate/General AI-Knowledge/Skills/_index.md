@@ -19,3 +19,5 @@
 #
 # LINE FORMAT (one per skill): `- <Skill-Name> — triggers: <keywords> — tools: <tool[, tool...] | none>`
 - SQL-Writing — triggers: sql, query, select, join, cte, window, aggregation, dbt model, warehouse query — tools: sqlfluff, dbt
+
+[SQL-Writing module](SQL-Writing/SKILL.md) | [Skill template](SKILL-TEMPLATE.md)

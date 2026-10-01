@@ -32,6 +32,7 @@ Work/                                        [git root · local-only · whitelis
 │   └── scripts/                             THE MACHINERY (versioned)
 │       ├── check-ticket-log.sh              ← sessionStart hook │ sessionEnd (bonus)
 │       │       └── watermark →              ~/.harness/validated/<ticket>  [state · unversioned]
+│       ├── check-work-map.py                ← second sessionStart command · read-only, warning-only navigation observer (links, mapped tickets, orphan notes) · --json for counts · --strict is manual-only, never a hook · asserts no lineage or truth
 │       ├── harness-status.sh                stdout report + one primary-observation record (each WARN's first-seen, for aging #71) · roster = _agents/ · checks siblings
 │       ├── ticket-grammar.sh                recognition home: TICKET_RE + ticket predicates · validator + status both source it (edit to retarget your board)
 │       ├── init-ticket.sh                   ticket-init's full-template scaffold helper · local month/sequence, duplicate refusal, pending completion preview · never invents ticket facts
@@ -63,7 +64,7 @@ Work/                                        [git root · local-only · whitelis
 │       ├── AI-Knowledge/                    ← knowledge-keeper (capture) │ curator (compact)
 │       │   ├── _index.md                    roster · tombstones
 │       │   └── *.md                         —promotion (approved)→ General AI-Knowledge/
-│       ├── Checks/                          selected durable evidence notebook (any language) · workspace default kernel
+│       ├── Checks/                          selected durable evidence (any language) · routine checks stay ephemeral · workspace default kernel
 │       ├── Logs/                            [gitignored · regenerable bulk]
 │       └── Dump/                            [gitignored · re-droppable inputs]
 │
@@ -76,6 +77,7 @@ Work/                                        [git root · local-only · whitelis
 │
 ├── General Human Knowledge/                 human-facing references and dated outputs · agents may read both
 │   ├── _index.md                           living discovery index
+│   ├── Harness Guide.md                    operator guide · how links are kept, hooks vs invoked agents, optional model profile, sample prompts
 │   ├── Repo Workflows/                     living repo runbooks · _index.md routes to verified delivery and environment steps
 │   └── Retrospectives/                      ← retrospective agent · one timestamped file per run
 │

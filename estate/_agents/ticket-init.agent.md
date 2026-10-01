@@ -85,13 +85,19 @@ or retain credentials in chat; let the user complete authentication privately.
   Now / Next / Blocked bullets with only an essential gotcha or related-work
   pointer. Keep unknowns as `TODO`; do not create findings,
   notebook evidence, or learning notes to make the new folder look complete.
+  Before the final scribe step, link the new ticket from its repo/pipeline page
+  entries and the map root (create a page only when a source backs it) and add up
+  to three useful Context links to the ticket header.
 8. **Record and validate the real init.** Observe local time with
   `date +%Y%m%d%H%M%S` after the work. Invoke `ticket-scribe` with the actual
   path, observed timestamp, interview facts, and actions performed, to append
   the init entry and refresh Current State together. Then run
   `bash _harness/scripts/check-ticket-log.sh` from the estate root. A `FAIL`
   means init is not done: preserve and diagnose the record, repair only from
-  observed facts, and rerun. Never invent a log to silence validation.
+  observed facts, and rerun. Never invent a log to silence validation. Run
+  `python3 _harness/scripts/check-work-map.py` once after the links are closed
+  out and report its warning-only findings; note, do not fake-fix, existing
+  uninitialized tickets or references outside the estate.
 
 Unknown identity remains pending even after its honest init entry. Once identity
 is confirmed, fill the pending record's first heading with it, then preview the

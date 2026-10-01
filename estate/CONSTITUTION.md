@@ -8,7 +8,7 @@
 >
 > **PART II routing (load only the section your task needs):** initialising a ticket → *Ticket Initialisation Procedure* · a FAIL/WARN at entry, or any operational question → *Session States* · building a review pack → *Context Pack Convention* · estate health → *Harness Status Convention* · craft work (writing SQL, a dbt model, a script) → *Skills Convention*.
 >
-> **Check retention (STRICT):** routine verification is ephemeral. Preserve only an observed result that passes the *Durable Evidence Gate* in the ticket's `Checks/checks_master.ipynb`; most searches, probes, and validation runs never enter the notebook. See the gate under §1.
+> **Check retention (STRICT):** routine verification is ephemeral. Preserve only an observed result that passes the *Durable Evidence Gate* in the ticket's `Checks/checks_master.ipynb`; most searches, probes and validation runs never enter a notebook. See the gate under *Ticket Workflow*.
 
 ---
 
@@ -149,7 +149,7 @@ Tickets/
 └── 202605A-PROJ-65474/
     ├── 202605A-PROJ-65474.md    ← primary ticket log file (source of truth)
     ├── AI-Knowledge/           ← AI agent memory .md files for this ticket (indexed + compacted, see below)
-    ├── Checks/                 ← reproducible evidence: checks_master.ipynb (+ scratch files / per-tool subfolders as YOUR stack needs)
+    ├── Checks/                 ← selected durable evidence: checks_master.ipynb (+ scratch files / per-tool subfolders as YOUR stack needs)
     ├── Logs/                   ← long run logs (build/test/pipeline output) — dump here so grep can slice them
     └── Dump/                   ← user-dropped misc files for the AI to read (.csv, screenshots, .docx/.pptx/.eml)
 ```
@@ -159,7 +159,7 @@ Any supporting files (spreadsheets, exports, scripts, etc.) also live in this fo
 Each ticket folder has four standard subfolders:
 
 - **`AI-Knowledge/`** — AI agent memory/knowledge `.md` files for this ticket (see *AI Memory Convention* below — including the **index + compaction** rules).
-- **`Checks/`** — selected, reproducible evidence in ANY language your work needs (SQL, Python, shell, API probes). `checks_master.ipynb` is the default recorder — one markdown why-note + one executable code cell per durable claim, appended via `append-notebook-cell.py`, on the workspace default kernel (`venv_global` by convention — see *Python environment* below; register other kernels freely). Routine verification stays ephemeral; scratch files may hold temporary work. Add per-tool subfolders if your stack wants them — the harness imposes none.
+- **`Checks/`** — selected, reproducible evidence in ANY language your work needs (SQL, Python, shell, API probes). `checks_master.ipynb` is the default recorder — one markdown why-note + one code cell per durable claim, appended via `append-notebook-cell.py`, on the workspace default kernel (`venv_global` by convention — see *Python environment* below; register other kernels freely). Routine verification stays ephemeral; scratch files may hold temporary work. Add per-tool subfolders if your stack wants them — the harness imposes none.
 - **`Logs/`** — long-running command output (e.g. build/test output, dbt runs, pipeline logs). **AI agents: always redirect long logs here** instead of printing them into chat, so they can be sliced with `grep`/`tail`/`awk` and don't overflow the session context window.
 - **`Dump/`** — the "landfill" for user-generated misc files dropped in for the AI to read: `.csv` extracts, screenshots (`.png`/`.jpg`), `.docx`/`.pptx`/`.eml`. This is *user input for the AI*, distinct from checks you write (`Checks/`) and command output (`Logs/`). Large scratch or dropped inputs belong **here** (git-ignored), not in the tracked ticket root — `harness-status` WARNs (yellow, never blocks) if a ticket's tracked root grows past `HARNESS_TICKET_WARN_MB` (default 5), pointing you here. **No customer PII, credentials, or secrets ever land in `Dump/`** — if an extract contains PII it doesn't belong in this folder tree at all; work with it in the approved location and reference it by path/description instead.
 
@@ -176,31 +176,29 @@ outcome of ordinary ticket work.
 1. The exact check ran and its result was observed in this session.
 2. Source tests, CI, a PR check, a durable application log, or an existing notebook
    capsule do not already retain the result adequately.
-3. The command/query and output are safe to retain: no credentials, tokens, PII,
+3. The command and output are safe to retain: no credentials, tokens, PII,
    customer data, or transient authentication material.
 4. A future reader could safely replay it, or it is explicitly scoped as a
    point-in-time observation that must not be replayed blindly.
 
-**At least one durable-value condition must hold:**
-
-- It directly proves an acceptance criterion or release decision with no better
-  durable evidence.
-- It is the minimal reproduction of a non-obvious defect likely to recur.
-- It establishes a baseline, contract, reconciliation, or production observation
-  likely to be compared later.
-- It justifies an irreversible, regulated, high-risk, or operational decision.
+**At least one durable-value condition must hold:** it directly proves an
+acceptance criterion or release decision with no better durable evidence; it is
+the minimal reproduction of a non-obvious defect likely to recur; it establishes a
+baseline, contract, reconciliation or production observation likely to be compared
+later; or it justifies an irreversible, regulated, high-risk or operational
+decision.
 
 **Never capture** navigation and discovery (`pwd`, `ls`, search, file reads, symbol
 lookups); git inspection; environment activation; import/syntax/format checks;
-iterative lint, compile, build, or unit-test runs already owned by source tests or
-CI; failed attempts superseded by the decisive result; or exploratory SQL that
-supports no retained decision. Consolidate related commands into ONE capsule that
+iterative lint, compile, build or unit-test runs already owned by source tests or
+CI; failed attempts superseded by the decisive result; or exploratory queries that
+support no retained decision. Consolidate related commands into ONE capsule that
 proves ONE claim.
 
 An appended but unexecuted cell is a **captured replay definition**, not verified
 evidence. It becomes **verified evidence** only after execution in the notebook and
-saved output. Until the agent's VS Code notebook capability is explicitly proven,
-the user performs that execution; never imply that append alone proved the claim.
+saved output. Never imply that appending a cell proved the claim; until notebook
+execution by the agent is demonstrated, the human runs it.
 
 **Python environment (PREREQUISITE):** the harness requires **a Python environment whose interpreter can `import nbformat`** — that, and nothing else. `append-notebook-cell.py` runs under whatever `python3` is on the path and sets no kernel, so **no part of the machinery reads, requires or validates the environment's name**. It is created BY THE USER — the harness never creates it, it only depends on it. Set it as the **workspace default interpreter** (in `GitHub/<your>.code-workspace`), so new terminals under `Work/` auto-activate it and notebooks default to its kernel — every ticket picks it up automatically. It also backs the Data Wrangler extension (view/clean `.csv`/`.parquet`/`.xlsx`). Create a repo-specific venv only when a repo needs different pins.
 
@@ -262,7 +260,7 @@ Every ticket markdown file must include the **Repos**, **Branches**, and **Pull 
 - Anything non-obvious an agent must know before touching the ticket (gotchas, decisions made, files that matter).
 - Pointers into `AI-Knowledge/` or the Session Log **only when** deeper context is genuinely needed (e.g. "see `AI-Knowledge/field-mapping.md` before editing the staging model").
 
-**AI agents: update Current State at the end of every session, as part of the same step as the Session Log append.** Overwrite it — unlike the Session Log, it has no history; history lives in the log. If the user asks a question the Current State can't answer, *then* deep-dive the Session Log / AI-Knowledge and say you're doing so.
+**AI agents: update Current State at the end of every ticket session, as part of the same step as the Session Log append.** Overwrite it — unlike the Session Log, it has no history; history lives in the log. If the user asks a question the Current State can't answer, *then* deep-dive the Session Log / AI-Knowledge and say you're doing so.
 
 ---
 
@@ -350,33 +348,28 @@ Create any new memory `.md` files under `Tickets/YYYYMM<seq>-<BOARD>-<num>/AI-Kn
 ### Durable Knowledge Gate
 
 The parent agent invokes `knowledge-keeper` only with a NAMED candidate from the
-current task. It does not invoke the keeper merely to prove that zero is correct,
-and neither agent searches for something to preserve. Every candidate must pass all
-six tests:
+current ticket task, never merely to prove that zero is correct; neither agent
+searches for something to preserve. A candidate must pass all six tests:
 
 1. **Non-obvious:** a competent future agent would not infer it quickly from code,
-  tests, the ticket header, or normal tool output.
+   tests, the ticket header, or normal tool output.
 2. **Verified:** this session established it from a named authoritative source or a
-  reproducible observation.
+   reproducible observation.
 3. **Retrievable:** there is a credible trigger expressible as "read before doing X."
-4. **Costly to rediscover:** losing it would require a fresh investigation across
-  source code, external documentation, or runtime evidence, or create material
-  delivery, data, security, or operational risk.
+4. **Costly to rediscover:** losing it would force a fresh investigation or create
+   material delivery, data, security, or operational risk.
 5. **No better owner:** it is not already canonical in code comments, tests,
-  project documentation, the tracker, a PR, Checks, Current State, or General
-  AI-Knowledge.
-6. **One topic owner:** the index was checked and an existing note will be updated
-  whenever it already covers the topic.
+   project documentation, the tracker, a PR, retained checks, Current State, or
+   General AI-Knowledge.
+6. **One topic owner:** the index was checked and an existing note is updated
+   whenever it already covers the topic.
 
-Ticket-local knowledge need only remain useful after context loss on THIS ticket.
-Promotion retains the stronger test: useful on a future unrelated ticket,
-expressible with no ticket references, and not already covered.
-
-A note is a compact retrieval card, not an essay: **Finding** (the durable fact),
-**Evidence** (a pointer, not a transcript), **Use when** (the retrieval trigger),
-and **Consequence** (what action or mistake it changes). Target 150–400 words and
-compress before 500. Zero is expected; one topic update is normal; two independent
-notes require the parent to state why they cannot share an owner.
+Ticket-local knowledge need only stay useful after context loss on THIS ticket;
+promotion keeps the stronger test: useful on a future unrelated ticket,
+expressible without ticket references, and not already covered. A note is a
+compact retrieval card — **Finding**, **Evidence** (a pointer), **Use when** (the
+trigger) and **Consequence** — of roughly 150–400 words. Zero is expected; one
+topic update is normal.
 
 **Index + compaction rules (STRICT — this folder is not a landfill):**
 
@@ -451,19 +444,41 @@ when adding/moving a topic or runbook; promotion also updates the existing ticke
 index/tombstone. Keep one owner for the underlying fact. The map may be partial;
 its index declares coverage, and discovery always has the fallback above.
 
+**Maintenance duties.** Before handing off to `ticket-scribe`, the parent updates
+the impacted repo/pipeline page and the map root for any new relationship, adds up
+to three useful reverse links under Context, and updates the General AI-Knowledge
+or Human Knowledge index when a note or runbook is created, moved or renamed.
+Promotion tombstones must stay valid. After the links are closed out, run
+`python3 _harness/scripts/check-work-map.py` once. It is a read-only, warning-only
+observer (`--json` for counts and findings; `--strict` is opt-in and never wired
+into a hook) of encoded relative links, file-index and promotion links, whether
+each initialized ticket is reachable from a map entity page, and orphaned general
+notes. It does not establish that a fact is true, lineage, or cloud state. Report
+existing uninitialized tickets and references outside the estate; never force a
+fake fix. The parent hands the scribe the known links and the checker outcome as
+an ephemeral summary, not extra AI knowledge. The scribe validates the links it was
+given and asks the parent to repair gaps rather than reporting a false completion.
+`ticket-init` needs the new ticket's page entries linked before its final scribe
+step; `knowledge-curator` repairs backlinks and root indexes after a rename or
+promotion; `doc-writer` registers a new runbook in its index. See the
+[Harness Guide](General%20Human%20Knowledge/Harness%20Guide.md).
+
 ## Tools and Authentication
 
 Use available tools for task-relevant authoritative facts before asking the user
-to paste output: AWS CLI for cloud state, GitHub CLI/MCP for issues/PRs/CI,
-Snowflake CLI for warehouse metadata or approved checks, and Atlassian MCP for
-tracker/wiki context. These are optional adapters, not harness dependencies.
-Check availability and the local setup/workflow note first; never assume a tool
-or profile exists. If unavailable, state the limit and the next useful action.
+to paste output: AWS CLI (`aws`) for cloud state, GitHub CLI (`gh`) or available
+GitHub MCP for issues/PRs/CI, Snowflake CLI (`snow`) for warehouse metadata or
+approved checks, and configured Atlassian MCP capabilities for tracker/wiki
+context. These are optional adapters, not harness dependencies. Check
+availability and the indexed local setup/workflow note first; never assume a tool
+or profile exists, and a configured tool is not an authenticated one. If
+unavailable, state the limit and the next useful action.
 
 - Resolve the configured profile/connection, account, region, role and UAT/PROD
-  target before a remote operation. Keep actual profile mappings in a local
-  indexed setup note, not in public agent contracts. Never silently fall back to
-  a default account or switch environment to bypass denied access.
+  target from local setup notes and repo runbooks before a remote operation. Do
+  not infer per-environment profiles, silently fall back to a default account, or
+  switch environment to bypass denied access. Actual mappings belong in those
+  local references, not public agent contracts.
 - Default to scoped read-only operations. Request explicit approval before
   changing remote data, infrastructure or tracker state. Authentication is access,
   not permission to mutate. Do not run unrelated services on every task.
@@ -486,12 +501,33 @@ question and relevant pointers; a delegated reader returns findings, not new wor
 | Start a ticket, interview and scaffold | `ticket-init` | Direct interactive session |
 | Resume one ticket | `ticket-recall` | Read-only; parent may delegate |
 | Find related tickets or workflows | `harness-recall` | Read-only, bounded; parent may delegate |
-| Record completed ticket changes | `ticket-scribe` | One factual outcome delta |
-| Capture knowledge or evidence | `knowledge-keeper`, `check-scribe` | Follow the retention policy; never invent material |
+| Record completed ticket changes | `ticket-scribe` | One factual outcome delta; never for non-ticket work |
+| Capture knowledge | `knowledge-keeper` | Named candidate passing the Durable Knowledge Gate; default zero |
+| Capture evidence | `check-scribe` | Parent-qualified observed result passing the Durable Evidence Gate; default zero |
 | Consolidate/promote knowledge | `knowledge-curator` | User-directed maintenance; approval for promotion |
 | Draft a PR/README | `doc-writer` | Draft only; publication is separately authorized |
 | Summarize a period | `weekly-digest` | Ephemeral, read-only |
 | Write a dated review deliverable | `retrospective` | User-requested, append-only |
+
+**Automatic versus invoked.** Mechanical hooks fire without anyone asking:
+`sessionStart` runs the ticket validator and, as a separate command, the
+warning-only work-map observer; `postToolUse` auto-commits records while the hook
+is active; `sessionEnd` is a best-effort validate-and-commit. Agent contracts are
+instructions for the session that invokes them, not a scheduler or a guarantee.
+Started by the human: `ticket-init`, `knowledge-curator`, `weekly-digest`,
+`retrospective`; `ticket-recall` and `harness-recall` by the human or a parent;
+`ticket-scribe` by the parent for a completed ticket task; `knowledge-keeper` and
+`check-scribe` only for a qualified candidate; `doc-writer` on a requested PR or
+runbook. Every agent may also be called by a human. Publishing a draft is
+authorized by the parent; no agent pushes autonomously. Prose cannot guarantee
+judgement, and the objective checkers' warnings do not block style.
+
+**Model profile (optional, operator-chosen).** Routine agents (`check-scribe`,
+`doc-writer`, `harness-recall`, `knowledge-keeper`, `ticket-recall`,
+`ticket-scribe`, `weekly-digest`) suit `Claude Sonnet 5.5 (copilot)`;
+`ticket-init`, `knowledge-curator` and `retrospective` suit `Claude Opus 5.5
+(copilot)`. Public template pins stay installer-configurable; tiers are a
+capability guide, not a price guarantee.
 
 ---
 
@@ -521,7 +557,7 @@ Invoked with the Jira link; every step below is also the by-hand fallback:
 5. Locate the actual installed template (shipped default `Tickets/999912Z-PROJ-99999`, possibly customized). Run `bash _harness/scripts/init-ticket.sh --template <actual-path> --identity <BOARD-num>`; use `--dry-run` to inspect the proposed name first. The helper reads local machine time, considers all boards in that month, orders sequences by length then alphabetically, increments past Z, copies the full tree including dotfiles, and renames the primary markdown only. It refuses duplicate identities, unsafe paths and collisions. Do not reconstruct a subset or hand-edit notebooks. `--root <estate>` is available when explicitly targeting another estate.
 6. If no identity can be determined, explicitly use `--pending` instead of `--identity`. The unfinished scaffold has a non-conforming name and `.ticket-pending`. Once identity is confirmed, put it in the record's first heading and preview with `--identity <BOARD-num> --resume <pending-path> --dry-run` alongside `--template`. This excludes only that confirmed pending folder from duplicate checks; it writes nothing. Complete the confirmed folder/primary-markdown rename using the returned name, fill the record, **remove the marker**, and record/validate the real completion. Never invent a conforming tracker identity. Copying a template is not a completed or validated ticket.
 7. Fill the real header, Context links, Background and Scope. Background starts with **In my words:** plus at most five tracker-context bullets; Scope contains **Non-negotiables** and acceptance criteria once. Do not copy comment transcripts. Seed Now / Next / Blocked, retaining unknowns as TODOs. Preserve all copied scaffold files; add no invented evidence or learnings.
-8. Invoke `ticket-scribe` with the observed initialization actions and local timestamp for one real init entry. Run `bash _harness/scripts/check-ticket-log.sh`; resolve any FAIL before calling initialization complete. A copied template or successful helper exit is not validation. If blocked, report the unfinished path and actual problem; do not manufacture another log entry to make a red disappear.
+8. Link the new ticket from its repo/pipeline page entries (and the map root for a new entity). Then invoke `ticket-scribe` with the observed initialization actions, the known links and the local timestamp for one real init entry. Run `bash _harness/scripts/check-ticket-log.sh`; resolve any FAIL before calling initialization complete. Run `python3 _harness/scripts/check-work-map.py` once and report its findings. A copied template or successful helper exit is not validation. If blocked, report the unfinished path and actual problem; do not manufacture another log entry to make a red disappear. If blocked, report the unfinished path and actual problem; do not manufacture another log entry to make a red disappear.
 
 ## Session States — Operational Rules
 
@@ -531,9 +567,9 @@ boundary. Never fabricate a record to silence the gate — a gap you cannot
 reconstruct is logged honestly AS a gap. These rules bind agents and human
 alike.
 
-**S0 — Green.** Entry gate silent. Work normally; `ticket-scribe` runs once at
-the end of completed ticket work. `knowledge-keeper` runs only for a named candidate
-that passes the Durable Knowledge Gate; zero capture is expected.
+**S0 — Green.** Entry gate silent. Work normally; at the end of completed
+ticket work the parent invokes `ticket-scribe`. Non-ticket work invokes neither
+scribe nor keeper; keeper runs only for a named candidate.
 
 **S1 — FAIL at entry.** This is about the *previous* session, not the
 current one. Triage in two bins:
@@ -548,7 +584,9 @@ current one. Triage in two bins:
 Then re-run `check-ticket-log.sh` to confirm green, and start work.
 
 **S2 — WARN/NOTE nags.** Never interrupt flow for these. Fat index → run
-`knowledge-curator` at ticket close-out or end of day. Stale General
+`knowledge-curator` at ticket close-out or end of day. Zero-capture note →
+expected; ask only whether a named learning passed the Durable Knowledge Gate.
+Stale General
 AI-Knowledge → batch into a review pass.
 
 **S3 — Resumed, compacted, or abandoned sessions.** Entry validation

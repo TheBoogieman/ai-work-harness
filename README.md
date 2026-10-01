@@ -10,11 +10,10 @@ again — to anyone. MIT licensed.
 
 You work on tickets with an AI assistant. The harness makes that work leave
 **records** instead of vibes: every ticket folder keeps its own log, current
-state, and selected durable knowledge; routine verification stays ephemeral,
-while evidence that passes the constitution's durability gate lands in an
-audit-trail notebook; every file write auto-commits to a local-only git repo;
-and a dumb bash validator refuses to let a session start on top of an
-undocumented mess. Small
+state, and captured knowledge; a check worth keeping becomes a replayable
+notebook cell (routine checks stay ephemeral); every file write auto-commits to a
+local-only git repo; and a dumb bash validator refuses to let a session start on
+top of an undocumented mess. Small
 AI agents do the clerical work (logging, capturing, compacting) so the
 expensive model — and you — only do the thinking. Nothing self-heals, nothing
 phones home, and one markdown file is the law.
@@ -117,7 +116,9 @@ remote exists, nothing ever pushes.
 The dumb inspector. Runs at session START (the entry gate — it audits what the
 previous session left behind; sessionEnd is a best-effort bonus), and checks
 facts only: log appended? Current State exists? Index matches files? Fails
-loudly, judges nothing.
+loudly, judges nothing. A second, separate `sessionStart` command runs the
+warning-only, read-only work-map observer (`check-work-map.py`), so its notes
+cannot mask the validator; it never blocks work.
 
 ### L3 — Filesystem
 
@@ -134,10 +135,13 @@ The workers:
   words, non-negotiables, repos), suggests branch names, births the folder
 - `ticket-recall` (cheap, at pickup) — read-only; narrates one ticket in
   fixed sections (Done / Changed / Unresolved / Suggested next), writes nothing
-- `ticket-scribe` (cheap) — writes Session Log + Current State
-- `check-scribe` (cheap) — records selected durable evidence via the helper
-- `doc-writer` (cheap) — drafts PR descriptions and READMEs
-- `knowledge-keeper` (cheap) — captures named learnings that pass the durability gate
+- `ticket-scribe` (cheap) — writes Session Log + Current State after completed
+  ticket work
+- `check-scribe` (cheap) — records a parent-qualified, durable check (any
+  language) via the helper; zero is the normal outcome
+- `doc-writer` (cheap) — drafts PR descriptions, READMEs and runbooks on request
+- `knowledge-keeper` (cheap) — captures a named learning into `AI-Knowledge/`;
+  zero capture is expected
 - `knowledge-curator` (smart, rare) — compacts and promotes, with human
   approval; direct invocation only
 - `weekly-digest` (cheap, at a boundary) — read-only; narrates a period
@@ -165,7 +169,9 @@ The constitution's [Context Discovery](estate/CONSTITUTION.md#context-discovery)
 route points to reusable knowledge, repo workflows and the Work Map. Real
 repo/pipeline pages link to tickets and existing notes, giving Obsidian a
 navigable graph without a plugin. The shipped indexes are starting points,
-not fictional work.
+not fictional work. The [Harness Guide](estate/General%20Human%20Knowledge/Harness%20Guide.md)
+explains how the graph is maintained, what runs automatically versus what you
+start, and the optional model profile.
 
 Ticket initialization uses the actual full template and a deterministic scaffold
 helper; the agent still supplies the interview, facts and final validation.
@@ -192,11 +198,11 @@ telling lives in `CONSTITUTION.md` (Part II) or the home named inline.
 
 - **`_harness/scripts/append-notebook-cell.py`** — the single deterministic writer
   for `Checks/checks_master.ipynb`: one why-note + one **real, executable** code
-  cell per selected durable claim. The `check-scribe` agent appends the cell as a
-  captured replay definition; you open the notebook and run it, and saved output
-  turns it into verified evidence. Routine searches, probes, and validation runs
-  remain ephemeral. The selection rule lives in the constitution's *Durable
-  Evidence Gate*; the script's own commented header documents the write path.
+  cell per durable claim. The parent qualifies a result against the constitution's
+  *Durable Evidence Gate* and the `check-scribe` agent appends the cell; you open the
+  notebook and run it, and the notebook format binds the actual output to the cell
+  that produced it. An appended but unexecuted cell is a captured replay definition,
+  not proof; most checks are never captured. Detail: the script's own commented header.
 - **A session entry in a ticket `.md` you write yourself**, or ask the
   `ticket-scribe` agent to write. It is not a stamping job: an entry restates
   where the ticket now stands, which is judgement. `check-ticket-log.sh` then

@@ -36,3 +36,11 @@ Omit tool-by-tool activity, repeated repo/PR addresses, and phrases such as
 "aligned the implementation", "enhanced robustness" or "validated end to end"
 without the specific change or check. Link to detailed evidence instead of
 copying it. Exceed the budget only for facts needed to understand or resume work.
+
+The parent supplies the known repo/pipeline, runbook and knowledge links and the
+latest `check-work-map.py` outcome as an ephemeral summary. Validate that the
+links you are given resolve (relative, spaces encoded, real filenames) and place
+up to three useful ones under the header's Context. Do not rebuild the broad
+map, search for relationships, or save the checker summary as knowledge. If an
+impacted repo/pipeline page, map-root entry or index link is missing, ask the
+parent to repair it; never report the handoff complete over a known gap.

@@ -27,6 +27,21 @@ tickets, add useful reverse links under Context. No plugin is required. For a
 focused graph, filter to `path:Tickets OR path:"General AI-Knowledge/Work Map"`;
 use a repo/pipeline page's local graph for its immediate neighbours.
 
+## Maintenance
+
+The parent agent adds or updates the repo/pipeline page and this index when work
+first establishes a relationship, then hands the scribe the links. Afterwards run
+the warning-only observer once; `--json` gives counts and findings, and
+`--strict` is for manual use only, never a hook:
+
+```
+python3 _harness/scripts/check-work-map.py
+python3 _harness/scripts/check-work-map.py --json
+```
+
+It reports link, mapping and orphan gaps, not whether a fact is true. See the
+[Harness guide](../../General%20Human%20Knowledge/Harness%20Guide.md).
+
 ## Coverage
 
 This template contains no indexed work. Record coverage as links are added.

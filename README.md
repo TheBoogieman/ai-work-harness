@@ -104,7 +104,9 @@ cannot carry that and stay a front page.
 ### L1 — Git (local-only, rooted at `Work/`, whitelist-scoped)
 
 The undo button. Every write auto-commits — via the Copilot `postToolUse` hook,
-when it fires; harness-status warns if commits fall behind session activity.
+when it fires; harness-status warns if commits fall behind session activity, and
+whenever the working tree holds uncommitted changes (if the hook were firing, it
+would not).
 
 One history covers the RECORDS: tickets (minus each `Logs/` and `Dump/`), the
 constitution, `AGENTS.md`, and General AI-Knowledge — promoted knowledge never

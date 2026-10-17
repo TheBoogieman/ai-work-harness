@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# status-consolidation.case.sh — the awkward hooks path, the shipped hook schema, the zip fallback
-# and the stale-commit WARN. SOURCED by the runner; see dev/scripts/run-demo.sh.
+# status-consolidation.case.sh — the awkward hooks path, the shipped hook schema, the zip fallback,
+# the stale-commit WARN and the uncommitted-work WARN. SOURCED by the runner; see
+# dev/scripts/run-demo.sh.
 
 # [awkward-hooks-path] — the hooks-parse check must work when the path contains a character that
 # would BREAK a Python source-string literal. A single quote is the reliable case (a space or plain
@@ -11,7 +12,8 @@
 # is dormant/untested on this host.)
 sk_awkward_hooks_path() {
   local G8DIR G8 G8_OUT
-  echo "--- status consolidation (awkward hooks path, zip fallback, stale-commit WARN) ---"
+  echo "--- status consolidation (awkward hooks path, zip fallback, stale-commit and" \
+    "uncommitted WARNs) ---"
   G8DIR=$(mktemp -d); G8="$G8DIR/quote'inside hooks.json"
   cp estate/_harness/hooks/hooks.example.json "$G8"
   set +e
@@ -118,9 +120,70 @@ sk_stale_commit_warn() {
     "silent within margin"
 }
 
+# [uncommitted-warn] (#306) — status must say whether the work is COMMITTED, not only when the last
+# commit was. The defect it guards: on a fresh estate with work left uncommitted, the report said
+# only "last commit 0 seconds ago" (the installer's commit) and stayed green. Built on a REAL
+# rehearsal install, run as a user's machine runs it: HARNESS_DEMO removed (it suppresses the check)
+# and HARNESS_WARN_STATE_FILE removed, so the aging record lands at its real in-estate path and the
+# exclusion of status's own write is exercised too. The agent deploy dir points at the rehearsal's
+# own, so the clean estate exits 0 and the exit code isolates this check. Three assertions:
+#   1. dirty tree → the WARN fires, the recency line is STILL printed, and the exit stays 0 (yellow,
+#      never red — uncommitted work is not damage);
+#   2. after a hand commit → the OK coverage line prints and the WARN is gone;
+#   3. a SECOND run after that still reads clean — status wrote its own aging record on the run
+#      before, and counting that write would flip the report back to dirty after every commit.
+# REVERT-PROOF: remove check_uncommitted from main() and assertion 1 reds by name.
+uw_status() {  # run the estate's own status as a user would; stdout+stderr to stdout
+  ( cd "$UW_EST" && env -u HARNESS_DEMO -u HARNESS_WARN_STATE_FILE \
+      HARNESS_AGENT_DEPLOY_DIR="$UW_EST/_rehearsal/agents" \
+      HARNESS_STATE_DIR="$UW_EST/_rehearsal/state" \
+      bash _harness/scripts/harness-status.sh 2>&1 )
+}
+sk_uncommitted_warn() {
+  local UW_ROOT UW_EST UW_OUT UW_RC
+  UW_ROOT=$(mktemp -d); UW_EST="$UW_ROOT/Work"
+  bash estate/install.sh --yes --rehearsal "$UW_EST" >"$UW_ROOT/install.out" 2>&1 \
+    || { echo "BUG [uncommitted-warn]: could not build the rehearsal estate:"; \
+         tail -5 "$UW_ROOT/install.out"; exit 1; }
+  git -C "$UW_EST" config user.email harness@localhost
+  git -C "$UW_EST" config user.name "harness demo"
+  # A day's work by hand, uncommitted: one modified record and one whole new ticket.
+  printf '\n## 20260101000001 - hand edit\n- uncommitted\n' \
+    >> "$UW_EST/Tickets/999912Z-PROJ-99999/999912Z-PROJ-99999.md"
+  mkdir -p "$UW_EST/Tickets/202607A-PROJ-306"
+  cp "$UW_EST/Tickets/999912Z-PROJ-99999/999912Z-PROJ-99999.md" \
+     "$UW_EST/Tickets/202607A-PROJ-306/202607A-PROJ-306.md"
+  set +e; UW_OUT=$(uw_status); UW_RC=$?; set -e
+  printf '%s\n' "$UW_OUT" | grep -q "^WARN: 2 uncommitted change(s) in the estate" \
+    || { echo "BUG [uncommitted-warn]: a dirty estate (2 uncommitted changes) did NOT raise the" \
+           "uncommitted WARN — the report answered only WHEN the last commit was:"; \
+         printf '%s\n' "$UW_OUT"; exit 1; }
+  printf '%s\n' "$UW_OUT" | grep -q "^OK: work repo present; last commit" \
+    || { echo "BUG [uncommitted-warn]: the recency line was removed — it must stay beside the" \
+           "coverage line, not be replaced by it:"; printf '%s\n' "$UW_OUT"; exit 1; }
+  [ "$UW_RC" -eq 0 ] \
+    || { echo "BUG [uncommitted-warn]: uncommitted work must be yellow (exit 0), got rc=$UW_RC:"; \
+         printf '%s\n' "$UW_OUT"; exit 1; }
+  git -C "$UW_EST" add -A && git -C "$UW_EST" commit -q -m "by hand"
+  set +e; UW_OUT=$(uw_status); set -e
+  { printf '%s\n' "$UW_OUT" | grep -q "^OK: nothing uncommitted" \
+    && ! printf '%s\n' "$UW_OUT" | grep -q "uncommitted change(s)"; } \
+    || { echo "BUG [uncommitted-warn]: after a hand commit the report did not read clean:"; \
+         printf '%s\n' "$UW_OUT"; exit 1; }
+  set +e; UW_OUT=$(uw_status); set -e
+  printf '%s\n' "$UW_OUT" | grep -q "^OK: nothing uncommitted" \
+    || { echo "BUG [uncommitted-warn]: the run after a clean one reads dirty — status counted its" \
+           "own aging-record write as uncommitted work:"; printf '%s\n' "$UW_OUT"; \
+         git -C "$UW_EST" status --short; exit 1; }
+  rm -rf "$UW_ROOT"
+  echo "  ok [uncommitted-warn] — dirty estate WARNs (exit 0) beside the recency line;" \
+    "clean after a hand commit, and stays clean on the next run"
+}
+
 case_status_consolidation() {
   sk_awkward_hooks_path
   sk_hooks_schema
   sk_pack_without_zip
   sk_stale_commit_warn
+  sk_uncommitted_warn
 }

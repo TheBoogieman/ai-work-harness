@@ -137,6 +137,8 @@ r09_make() {
 # demo_order — THE ONE READABLE HOME FOR STAGE ORDER. Every unit the suite runs, in the order it
 # runs. Read it top to bottom and you have read the shape of the demo. A case file is placed by
 # its line here, never by its name, which is what keeps ordinal prefixes out of the filenames.
+# Ticket initialization has its own temporary-root guards, so it needs no shared estate setup.
+# Work-map observation also uses isolated fixtures so coverage checks never read operator records.
 demo_order() {
   printf '%s\n' \
     case:sed-portability \
@@ -148,6 +150,8 @@ demo_order() {
     case:notebook-direct-exec \
     tour:deploy \
     case:ticket-recognition \
+    case:ticket-init \
+    case:work-map \
     case:session-clock \
     case:housekeeping \
     case:worktree-store \

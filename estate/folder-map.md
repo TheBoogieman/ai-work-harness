@@ -32,8 +32,10 @@ Work/                                        [git root · local-only · whitelis
 │   └── scripts/                             THE MACHINERY (versioned)
 │       ├── check-ticket-log.sh              ← sessionStart hook │ sessionEnd (bonus)
 │       │       └── watermark →              ~/.harness/validated/<ticket>  [state · unversioned]
+│       ├── check-work-map.py                ← second sessionStart command · read-only, warning-only navigation observer (links, mapped tickets, orphan notes) · --json for counts · --strict is manual-only, never a hook · asserts no lineage or truth
 │       ├── harness-status.sh                stdout report + one primary-observation record (each WARN's first-seen, for aging #71) · roster = _agents/ · checks siblings
 │       ├── ticket-grammar.sh                recognition home: TICKET_RE + ticket predicates · validator + status both source it (edit to retarget your board)
+│       ├── init-ticket.sh                   ticket-init's full-template scaffold helper · local month/sequence, duplicate refusal, pending completion preview · never invents ticket facts
 │       ├── portability.sh                   shared GNU/BSD shims: ts14→epoch, sourced by validator + status (one home · no drift)
 │       ├── append-notebook-cell.py          ← check-scribe · THE ONE DOOR into a notebook: appends one selected evidence capsule · runs on whatever python3 is on the path, needs nbformat [user-created prereq]
 │       ├── make-context-pack.sh             → ~/Desktop/harness-pack-*.zip [disposable · outside repo] · scrub table user-owned, KEEP on upgrade
@@ -62,15 +64,21 @@ Work/                                        [git root · local-only · whitelis
 │       ├── AI-Knowledge/                    ← knowledge-keeper (capture) │ curator (compact)
 │       │   ├── _index.md                    roster · tombstones
 │       │   └── *.md                         —promotion (approved)→ General AI-Knowledge/
-│       ├── Checks/                          selected durable evidence notebook (any language) · workspace default kernel
+│       ├── Checks/                          selected durable evidence (any language) · routine checks stay ephemeral · workspace default kernel
 │       ├── Logs/                            [gitignored · regenerable bulk]
 │       └── Dump/                            [gitignored · re-droppable inputs]
 │
 ├── General AI-Knowledge/                    durable knowledge (versioned · cull-safe via history)
+│   ├── _index.md                           read-before triggers for reusable knowledge, tools and ways of working
+│   ├── Work Map/                           living repo/pipeline pages linking tickets, knowledge and runbooks · associations, not lineage
+│   │   └── _index.md                       starts empty; indexes Repos/ and Pipelines/ pages as real work establishes them
 │   ├── AI Harness/                          the sheets + build/design notes · Last reviewed: dated
 │   └── Skills/                              the worker tier's craft modules · _index.md is BOTH the convention home and the availability index (read the index, then ONE SKILL.md)
 │
-├── General Human Knowledge/                 human-facing OUTPUT the machinery writes (append-only · inside the whitelist)
+├── General Human Knowledge/                 human-facing references and dated outputs · agents may read both
+│   ├── _index.md                           living discovery index
+│   ├── Harness Guide.md                    operator guide · how links are kept, hooks vs invoked agents, optional model profile, sample prompts
+│   ├── Repo Workflows/                     living repo runbooks · _index.md routes to verified delivery and environment steps
 │   └── Retrospectives/                      ← retrospective agent · one timestamped file per run
 │
 ├── _retired/<timestamp>/                    QUARANTINE — appears only after install.sh --upgrade [gitignored · deliberately outside the record]

@@ -1,6 +1,6 @@
 ---
 name: retrospective
-description: Writes a period retrospective FOR THE HUMAN — closed-ticket accomplishments in review register, with inline citations and a dumb stats pre-pass folded in. Sonnet-tier, user-invocable, writes one timestamped file to General Human Knowledge/Retrospectives/.
+description: Writes a period retrospective FOR THE HUMAN — ranked, cited accomplishments informed by ticket-count statistics. Sonnet-tier, user-invocable, writes one timestamped file to General Human Knowledge/Retrospectives/.
 model: PICK-A-SONNET-CLASS-MODEL
 user-invocable: true
 tools: [read, edit, execute]
@@ -55,14 +55,21 @@ Log entries — never the whole log. THEN lift cross-ticket THEMES from those ro
 the context-budget failure at its most expensive, the exact waste the harness exists
 to prevent.
 
-RUN THE DUMB STATS PRE-PASS AND FOLD IT IN. Run `_harness/scripts/retro-stats.sh`
-(pass it the same window) — it counts, dumbly and offline, tickets by closing month,
-checks captured, and knowledge promoted. Those numbers ride INSIDE the final
-document, woven into the prose, not pasted beside it: arithmetic below, judgement
-above. The script counts; you interpret. Never recompute or "correct" its numbers by
-hand — if they look wrong, say so plainly rather than inventing a truer count.
+RUN THE DUMB STATS PRE-PASS. Run `_harness/scripts/retro-stats.sh` with the same
+window. Use its ticket-by-month result as arithmetic input and never recompute or
+"correct" it by hand. Ignore its raw check-cell and promotion counts: they measure
+record volume, not verified evidence, impact, or productivity, so they do not
+belong in accomplishment prose. If the ticket count looks wrong, say so plainly
+rather than inventing a truer count.
 
-WRITE SCOPE — EXACTLY ONE DOOR. Each run writes ONE new, timestamped file to
+RANKED DEFAULT. Use at most FIVE accomplishment themes, a brief still-in-flight
+section, and roughly 1,500 words for a twelve-month window. Offer a focused follow-up
+instead of appending a long tail.
+
+WRITE SCOPE — EXACTLY ONE DOOR. Record the requested date window near the top of
+every output. Before writing, inspect existing retrospective headers; when the same
+window already exists, return that path unless the user explicitly requests a new
+edition. A writing run creates ONE new, timestamped file in
 `General Human Knowledge/Retrospectives/`. You NEVER edit an existing file there, you
 NEVER write anywhere else in the estate, and you touch no ticket, note, or log. That
 single door is the whole safety story of an agent that writes human-facing prose:

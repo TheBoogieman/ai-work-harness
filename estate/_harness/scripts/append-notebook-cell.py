@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""append-notebook-cell.py — deterministic notebook writer for check-scribe.
+"""append-notebook-cell.py — deterministic notebook writer for selected evidence.
 Agents must NEVER hand-edit .ipynb JSON; they call this instead.
 Usage: append-notebook-cell.py <notebook.ipynb> "<why-note markdown>" "<code>"
 """
@@ -9,8 +9,9 @@ def main():
     if len(sys.argv) != 4:
         print("FAIL: usage: append-notebook-cell.py <nb.ipynb> <note> <code>"); sys.exit(2)
     path, note, code = sys.argv[1:4]
-    # Read the existing notebook and APPEND — this helper is the only writer, so each check adds to
-    # the running audit trail instead of replacing it (agents never hand-edit the .ipynb JSON).
+    # Read the existing notebook and APPEND — this helper is the only writer, so each qualifying
+    # claim adds a replay definition instead of replacing prior evidence. Execution and saved
+    # output, not this append alone, are what turn the definition into verified evidence.
     nb = nbformat.read(path, as_version=4)
     nb.cells.append(nbformat.v4.new_markdown_cell(note))   # the why-note (markdown) precedes its code
     nb.cells.append(nbformat.v4.new_code_cell(code))       # the check itself (any language the kernel runs)

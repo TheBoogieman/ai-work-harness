@@ -16,9 +16,10 @@ The harness was built after a month of undisciplined frontier-model use burned
 roughly 40,000 credits and left no durable record of what had been decided or
 why. The founding goals, unchanged since:
 
-- **Leave records, not vibes.** Every unit of work leaves a log, a current
-  state, and captured knowledge on disk — reconstructable later by a human who
-  was not in the room.
+- **Leave records, not vibes.** Every ticket work unit leaves a log and current
+  state; qualifying evidence and knowledge are captured once, while routine
+  activity stays ephemeral. The result is reconstructable later by a human who
+  was not in the room without preserving every command.
 - **Cheap clerks, expensive thinkers.** Small, cheap agents do the bookkeeping
   so the frontier model and the operator spend their budget on judgment.
 - **Local-first and private.** The work record lives in a local-only git repo
@@ -63,9 +64,10 @@ why. The founding goals, unchanged since:
   and retire before it does anything; it moves a replaced or superseded file
   into a quarantine folder inside the estate rather than deleting it, and
   reports each move as it happens with the command that puts it back; it carries
-  the files holding your own settings forward untouched; and it never touches a
-  record. Running it twice is safe and says so. What it may and may not reach is
-  recorded in `install.sh`'s own header, which states the exception and its bounds.
+  the customized Constitution, context-pack scrub table and other files holding your
+  own settings forward untouched; and it never replaces a present record or recreates
+  an absent one. Running it twice is safe and says so. What it may and may not reach
+  is recorded in `install.sh`'s own header, which states the exception and its bounds.
 - **One home per fact.** Each rule, pattern, or convention lives in exactly one
   file; everything else points at it. The ticket-recognition pattern, the branch
   grammar, and the ship/dev classification each have a single editable home.

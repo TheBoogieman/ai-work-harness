@@ -143,6 +143,10 @@ up_create=(); up_replace=(); up_retire=(); up_keep=()
 # read fatal rather than empty.
 up_repoint=()
 up_same=0; up_record=0; UPGRADE_PARAM=""
+# A shipped file carrying this exact self-declaration becomes user-owned after laydown. Reading the
+# marker from the file itself keeps ownership beside the content instead of adding another path
+# list that can drift; CONSTITUTION.md uses it because setup deliberately personalises that file.
+UPGRADE_USER_MARKER='harness-upgrade:'" preserve-user-content"
 
 # ---- args -------------------------------------------------------------------------------------
 # parse_args — read the command line into DRY / YES / TARGET. An unknown option, or a second
@@ -843,10 +847,23 @@ upgrade_param_set() {
   return 0
 }
 
-# upgrade_is_param <estate-relative path> — is this path class 3? The stored entries are GLOBS
-# (the agent files are one pattern, not ten paths), so the test is a glob match, not equality.
+# upgrade_has_user_marker <estate-relative path> — a source file may declare itself user-owned
+# after installation. The source marker controls classification so existing estates are protected
+# on their first upgrade; requiring the old installed copy to carry a newly-added marker would
+# expose exactly the customised file this mechanism exists to preserve.
+upgrade_has_user_marker() {
+  local src
+  src="$(src_of "$1")"
+  [ -f "$src" ] || return 1
+  grep -Fq -- "$UPGRADE_USER_MARKER" "$src"
+}
+
+# upgrade_is_param <estate-relative path> — is this path class 3? A self-marked source file is
+# user-owned; the generated entries below are GLOBS (the agent files are one pattern, not ten
+# paths), so that half uses glob matching rather than equality.
 upgrade_is_param() {
   local g
+  upgrade_has_user_marker "$1" && return 0
   while IFS= read -r g; do
     [ -n "$g" ] || continue
     # shellcheck disable=SC2254  # the unquoted $g is the point: these entries ARE glob patterns.
@@ -944,18 +961,22 @@ plan_upgrade() {
   return 0
 }
 
-# plan_upgrade_products — the shipped set, in the order the tests have to be applied: absent wins
-# over everything (it is a create, not a decision about an existing file); then the user's own
-# settings, which are carried forward whatever else is true of the path; then records; and only
-# then a byte comparison, so an estate already current is reported as such instead of being
-# rewritten with identical bytes it does not need.
+# plan_upgrade_products — the shipped set, in the order the tests have to be applied: records are
+# outside every upgrade verb WHETHER PRESENT OR ABSENT; then absent machinery is created; then the
+# user's own settings are carried forward; and only then comes the byte comparison, so an estate
+# already current is reported as such instead of being rewritten with identical bytes it does not
+# need. Record-before-absence is load-bearing: the reverse order recreates a generic template that
+# a customized estate deliberately omitted, even though upgrade promises never to touch records.
 plan_upgrade_products() {
   local rel
   while IFS= read -r rel; do
     [ -n "$rel" ] || continue
+    if ! upgrade_is_machinery "$rel";  then
+      [ ! -e "$TARGET/$rel" ] || up_record=$((up_record + 1))
+      continue
+    fi
     if [ ! -e "$TARGET/$rel" ];        then up_create+=("$rel"); continue; fi
     if upgrade_is_param "$rel";        then up_keep+=("$rel"); continue; fi
-    if ! upgrade_is_machinery "$rel";  then up_record=$((up_record + 1)); continue; fi
     if cmp -s "$(src_of "$rel")" "$TARGET/$rel"; then up_same=$((up_same + 1)); continue; fi
     up_replace+=("$rel")
   done < <(upgrade_paths)

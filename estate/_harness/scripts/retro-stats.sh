@@ -12,8 +12,8 @@
 #      the month of its LAST git commit (its concluding activity). The script does not
 #      claim which tickets are truly done vs still in flight — that is judgement the
 #      agent adds; here we only bucket by when work last landed.
-#   2. checks captured           — code cells across every ticket's Checks notebook
-#      (the notebook records one code cell per verified check).
+#   2. checks captured           — replay-definition code cells across every ticket's Checks
+#      notebook. This is record volume, not proof that cells were executed or evidence verified.
 #   3. knowledge promoted        — tombstone lines in every AI-Knowledge/_index.md
 #      (a promotion to General AI-Knowledge/ leaves a `promoted -> ...` tombstone).
 #
@@ -90,7 +90,7 @@ if [ -d "$TICKETS_DIR" ]; then
   done
 fi
 
-# --- 2. checks captured -------------------------------------------------------------
+# --- 2. recorded check definitions --------------------------------------------------
 # Sum code cells across every Checks/checks_master.ipynb under Tickets/. The notebook
 # is JSON; a code cell is the line `"cell_type": "code"`. grep -c is the dumb count.
 # Each notebook ships with exactly ONE mandatory setup code cell (template "cell 0 -

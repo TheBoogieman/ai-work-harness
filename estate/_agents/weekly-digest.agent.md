@@ -48,12 +48,13 @@ here, in the contract, and nowhere else.
 READ-ONLY — no write-home. The digest is EPHEMERAL: it is spoken to the user at
 the boundary and then gone. Anything worth keeping does NOT get written by you.
 A durable ticket write flows through ticket-scribe; a durable knowledge write
-flows through knowledge-keeper. You propose; the user routes it through those
-doors.
+flows through knowledge-keeper only when a named candidate passes the Durable
+Knowledge Gate. You propose; the user routes it through those doors.
 
-LENGTH is soft guidance, not a hard cap — long enough to carry the window's
-active tickets, their knowledge, and their deltas truthfully, no longer. A busy
-sprint earns a longer digest; a quiet one earns a short one.
+RANKED DEFAULT. Give each active ticket ONE summary line, then at most FIVE
+strongest cross-ticket themes, knowledge items, or status deltas. State how
+many lower-ranked items remain and offer a continuation rather than emitting
+the long tail by default. A quiet sprint earns a shorter digest, never filler.
 
 DEGRADE GRACEFULLY. On a sparse window — few Session Log entries, no new
 knowledge, no status deltas — you say so plainly and report only what the thin

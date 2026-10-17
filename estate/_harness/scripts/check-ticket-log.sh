@@ -160,7 +160,7 @@ report_ghosts() {
   return 0
 }
 
-# check_knowledge — 3) AI-Knowledge index integrity, plus the two size NOTEs it can see.
+# check_knowledge — 3) AI-Knowledge index integrity, plus the fat-index NOTE it can see.
 check_knowledge() {
   ak="$dir/AI-Knowledge"; idx="$ak/_index.md"
   [[ -d "$ak" ]] || return 0
@@ -174,10 +174,6 @@ check_knowledge() {
   check_orphans
   report_ghosts
   (( live > 10 )) && echo "NOTE: $name AI-Knowledge is fat ($live files) — run knowledge-curator."
-  sessions=$(grep -cE '^## [0-9]{14} ' "$md" || true)
-  (( sessions >= 3 && live == 0 )) \
-    && echo "NOTE: $name has $sessions sessions and zero captured knowledge —" \
-            "is knowledge-keeper being invoked?"
   return 0
 }
 

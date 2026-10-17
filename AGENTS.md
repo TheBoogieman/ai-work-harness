@@ -5,10 +5,12 @@
 2. Context budget: backbone PART I + the target ticket's header + Current
    State ONLY, unless pointed deeper. Never bulk-read Session Logs,
    AI-Knowledge folders, or Logs/.
-3. At the end of every completed task, invoke `ticket-scribe` and
-   `knowledge-keeper`. This is not optional.
-4. Record every query worth keeping via `check-scribe` — never as throwaway
-   one-offs.
+3. End completed TICKET work with `ticket-scribe` once. Invoke
+   `knowledge-keeper` only for a named candidate that passes the constitution's
+   Durable Knowledge Gate; zero capture is expected. Non-ticket work invokes neither.
+4. Routine checks are ephemeral. Invoke `check-scribe` only for an observed
+   result that passes the constitution's Durable Evidence Gate; most searches,
+   probes, and validation runs never enter the notebook.
 5. Never persist durable knowledge into Copilot session or repo memory.
    Files in the ticket's `AI-Knowledge/` (indexed) are the only memory store.
 6. On a FAIL from the validator: fix before new work. Red blocks, yellow

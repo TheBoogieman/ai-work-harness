@@ -3,9 +3,9 @@
 # SOURCED by the runner; see dev/scripts/run-demo.sh.
 #
 # Asserts every estate/_agents/*.agent.md declares `user-invocable: true`. The clerk agents
-# (ticket-scribe, knowledge-keeper, check-scribe) still run automatically at task end, but a human
-# must also be able to invoke any of them directly. This case FAILS on pre-flip code (where those
-# three were `user-invocable: false`), so the suite pins the flip.
+# ticket-scribe still closes completed ticket work; knowledge-keeper and check-scribe now run only
+# for qualified candidates. A human must still be able to invoke any agent directly. This case
+# FAILS on pre-flip code (where those three were `user-invocable: false`), so the suite pins the flip.
 
 case_agent_invocability() {
   local r08_total=0 r08_bad=0 a

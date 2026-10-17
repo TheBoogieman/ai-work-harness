@@ -179,8 +179,12 @@ below is unaffected.
 ## 3. Do the work, and record it
 
 You spend the morning on the staging model and find the cause: rows whose
-effective date is null are dropped. That is worth keeping, so it becomes a
-knowledge note. Then you record the session in the log the way the
+effective date is null are dropped. Searches, file reads, lint, and the ordinary
+test run stay ephemeral because code, tests, and CI already own their results.
+The null-date behavior is different: it is undocumented, verified, expensive to
+rediscover, and changes what a future editor must do, so the parent names it as a
+candidate and it passes the Durable Knowledge Gate. It becomes one compact
+retrieval card. Then you record the session in the log the way the
 `ticket-scribe` agent writes one: a block headed with the local timestamp, and a
 line saying what happened. (That agent also refreshes the record's
 `## Current State` section in the same breath. That part is prose about your own
@@ -189,7 +193,7 @@ work rather than machinery, so it is left out of this transcript.)
 Then you ask the validator again.
 
 ```console
-$ printf '%s\n' 'Rows with a null effective date are dropped by the staging model.' > Tickets/202607A-PROJ-4021/AI-Knowledge/staging-model-quirk.md
+$ printf '%s\n' '# Staging model null-date behavior' '' '## Finding' 'Rows with a null effective date are dropped by the staging model.' '' '## Evidence' 'Verified against the staging model and its focused test.' '' '## Use when' 'Read before changing effective-date handling in the staging model.' '' '## Consequence' 'Preserve or explicitly replace the null-date behavior when editing the model.' > Tickets/202607A-PROJ-4021/AI-Knowledge/staging-model-quirk.md
 $ printf '\n## %s - Traced the missing rows\n- Null effective dates are dropped by the staging model.\n' "$(date +%Y%m%d%H%M%S)" >> Tickets/202607A-PROJ-4021/202607A-PROJ-4021.md
 $ bash _harness/scripts/check-ticket-log.sh
 FAIL: 202607A-PROJ-4021 orphan file AI-Knowledge/staging-model-quirk.md not in _index.md. Fix: echo '- staging-model-quirk.md — <what it covers>' >> '<ESTATE>/Tickets/202607A-PROJ-4021/AI-Knowledge/_index.md'
@@ -316,7 +320,9 @@ up PROJ-4021, and `ticket-init` pulls the issue, asks you three questions and
 creates the folder from section 2; you work; and when the task ends
 `ticket-scribe` writes the session-log entry and rewrites Current State in one
 step, while `knowledge-keeper` writes the note and its index line in one step —
-which is why the red block in section 3 is rarer than this page makes it look.
+for the named candidate that passed the gate. An ordinary task invokes no keeper
+and adds no notebook cell, so the red block in section 3 is rarer than this page
+makes it look.
 The hook commits behind all of it. What is left for you is what only a person can
 do: decide the work is worth a ticket, say in your own words what you learned,
 and read the reds. The commands above are not the interface. They are what the

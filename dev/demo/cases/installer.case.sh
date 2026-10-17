@@ -499,19 +499,25 @@ in_upgrade_fixture() {
   in_up_advance_source
 }
 
-# in_up_customise — the three settings a user owns, moved off their shipped defaults, and a record
+# in_up_customise — the settings a user owns, moved off their shipped defaults, and a record
 # written by hand. Snapshots are taken so the assertions below are BYTE comparisons rather than
 # greps: a grep can pass on a file the upgrade rewrote around the pattern it looked for.
 # The rewrite-to-tmp+mv idiom is BSD-portable — stock macOS sed has no GNU-style in-place edit.
 in_up_customise() {
   UP_TG="$UP_EST/_harness/scripts/ticket-grammar.sh"; UP_DW="$UP_EST/_agents/doc-writer.agent.md"
-  UP_HOOK="$UP_EST/.github/hooks/harness.json"; UP_REC="$UP_EST/General AI-Knowledge/up-note.md"
+  UP_HOOK="$UP_EST/.github/hooks/harness.json"; UP_CON="$UP_EST/CONSTITUTION.md"
+  UP_PACK="$UP_EST/_harness/scripts/make-context-pack.sh"
+  UP_REC="$UP_EST/General AI-Knowledge/up-note.md"
   sed 's/\[A-Z\]\[A-Z0-9\]\*/[A-Z][A-Z0-9-]*/' "$UP_TG" > "$I39_ROOT/tg.t" \
     && mv "$I39_ROOT/tg.t" "$UP_TG"
   awk '/^model:/{print "model: UPCHEAP"; next} {print}' "$UP_DW" > "$I39_ROOT/dw.t" \
     && mv "$I39_ROOT/dw.t" "$UP_DW"
   sed 's/"timeoutSec": 60/"timeoutSec": 137/' "$UP_HOOK" > "$I39_ROOT/hk.t" \
     && mv "$I39_ROOT/hk.t" "$UP_HOOK"
+  sed 's/\*\*<Your Name>\*\*/**CUSTOM OWNER**/' "$UP_CON" > "$I39_ROOT/con.t" \
+    && mv "$I39_ROOT/con.t" "$UP_CON"
+  sed 's/<YOUR-EMPLOYEE-ID>/<CUSTOM-EMPLOYEE-ID>/' "$UP_PACK" > "$I39_ROOT/pack.t" \
+    && mv "$I39_ROOT/pack.t" "$UP_PACK"
   printf '# a hand-made note\nLast reviewed: 2026-01-01\nnobody but me put this here\n' > "$UP_REC"
   # A PRE-#298 ESTATE HOLDS A VERSION STAMP, and this line is what makes UP_EST one. The scratch
   # source stopped shipping VERSION when #298 deleted it, so an estate installed from that source
@@ -528,6 +534,12 @@ in_up_customise() {
   # the most ordinary thing in this estate.
   UP_TICK="$UP_EST/Tickets/999912Z-PROJ-99999/999912Z-PROJ-99999.md"
   printf '\n## 20260101000001 - my own note on the example ticket\n- I edited this.\n' >> "$UP_TICK"
+  # AN ABSENT RECORD IS STILL A RECORD. A customized estate may deliberately omit the generic
+  # template or replace it with its own board-specific one; upgrade must not recreate source
+  # records merely because they are absent. Removing this shipped scratch file gives the planner
+  # a concrete absent-record case whose only correct action is KEEP-ABSENT.
+  UP_ABSENT_REC="$UP_EST/Tickets/999912Z-PROJ-99999/Checks/scratch.sql"
+  rm -f "$UP_ABSENT_REC"
   # THE SOUNDNESS CHECK IS TAKEN HERE, BEFORE THE UPGRADE RUNS, and that placement is the point.
   # Asked afterwards it cannot tell "the fixture was never set up" from "the upgrade overwrote the
   # ticket with the source's copy" — the two leave identical bytes on disk, and the second is the
@@ -549,7 +561,8 @@ in_up_customise() {
          echo "    script this fixture renames, so there is no stale path for the upgrade to"; \
          echo "    re-point and the guard below would assert nothing"; exit 1; }
   cp -p "$UP_TG" "$I39_ROOT/snap.tg"; cp -p "$UP_DW" "$I39_ROOT/snap.dw"
-  cp -p "$UP_HOOK" "$I39_ROOT/snap.hk"; cp -p "$UP_REC" "$I39_ROOT/snap.rec"
+  cp -p "$UP_HOOK" "$I39_ROOT/snap.hk"; cp -p "$UP_CON" "$I39_ROOT/snap.con"
+  cp -p "$UP_PACK" "$I39_ROOT/snap.pack"; cp -p "$UP_REC" "$I39_ROOT/snap.rec"
   cp -p "$UP_TICK" "$I39_ROOT/snap.tick"; cp -p "$UP_RETRO" "$I39_ROOT/snap.retro"
   return 0
 }
@@ -579,6 +592,8 @@ in_up_advance_source() {
     >> "$UP_SRC/estate/_harness/retire-list.tsv"
   printf '# upgrade fixture: an upstream change to a plain machinery file.\n' \
     >> "$sc/harness-drill.sh"
+  printf '# upgrade fixture: the installer source itself moved forward.\n' \
+    >> "$UP_SRC/estate/install.sh"
   return 0
 }
 
@@ -590,6 +605,7 @@ in_upgrade_plan() {
   local v
   for v in 'create   _harness/scripts/retro-counts.sh' \
            'replace  _harness/scripts/harness-drill.sh' \
+           'replace  install.sh' \
            'retire   _harness/scripts/retro-stats.sh' \
            'repoint  _agents/retrospective.agent.md'; do
     grep -Fq "  $v" "$UP_OUT" \
@@ -598,6 +614,10 @@ in_upgrade_plan() {
            grep -E '^  (create|replace|retire|repoint|keep)' "$UP_OUT" | sed 's/^/      /'; \
            exit 1; }
   done
+  grep -Fq 'create   Tickets/999912Z-PROJ-99999/Checks/scratch.sql' "$UP_OUT" \
+    && { echo "BUG [upgrade-plan]: the plan would CREATE an absent record. Upgrade must leave"; \
+         echo "    records untouched whether present or absent; complete/repair owns scaffolding."; \
+         exit 1; }
   [ ! -e "$UP_EST/_retired" ] && [ -e "$UP_EST/_harness/scripts/retro-stats.sh" ] \
     || { echo "BUG [upgrade-plan]: --dry-run TOUCHED the estate — it must plan and stop"; exit 1; }
   echo "  ok [upgrade-plan] — create/replace/retire/repoint all shown before acting; --dry-run" \
@@ -719,12 +739,13 @@ in_upgrade_retires_version() {
     "and its restore command is reported"
 }
 
-# (o) upgrade-keeps-settings: the three files carrying values the USER owns come through an upgrade
-#     BYTE-IDENTICAL. The hook config is the worst one to get wrong — it governs whether the estate
-#     commits by itself — and it is the member a substitution-only derivation misses entirely.
+# (o) upgrade-keeps-settings: files carrying values the USER owns come through an upgrade
+#     BYTE-IDENTICAL. The Constitution carries owner-, workflow- and estate-specific policy, while
+#     the hook config governs whether the estate commits by itself, and the context-pack script
+#     carries the user's private scrub classes; none may be replaced by the generic source copy.
 in_upgrade_keeps_settings() {
   local n f s
-  for n in tg:"$UP_TG" dw:"$UP_DW" hk:"$UP_HOOK"; do
+  for n in tg:"$UP_TG" dw:"$UP_DW" hk:"$UP_HOOK" con:"$UP_CON" pack:"$UP_PACK"; do
     s="$I39_ROOT/snap.${n%%:*}"; f="${n#*:}"
     cmp -s "$s" "$f" \
       || { echo "BUG [upgrade-keeps-settings]: the upgrade CHANGED $f, which carries a value the"; \
@@ -734,10 +755,12 @@ in_upgrade_keeps_settings() {
   done
   grep -q '_harness/scripts/ticket-grammar.sh' "$I39_ROOT/up.first" \
     && grep -q '.github/hooks/harness.json' "$I39_ROOT/up.first" \
+    && grep -q 'CONSTITUTION.md' "$I39_ROOT/up.first" \
+    && grep -q '_harness/scripts/make-context-pack.sh' "$I39_ROOT/up.first" \
     || { echo "BUG [upgrade-keeps-settings]: the run never SAID which files it carried forward —" \
            "a silently-correct upgrade is indistinguishable from a lucky one"; exit 1; }
-  echo "  ok [upgrade-keeps-settings] — board grammar, model pin and HOOK CONFIG byte-unchanged" \
-    "and named in the run"
+  echo "  ok [upgrade-keeps-settings] — board grammar, model pin, hook config, customized" \
+    "Constitution and scrub table byte-unchanged and named in the run"
 }
 
 # (v) upgrade-repoints (#287): THE FOURTH VERB. KEEP protects a carried-forward file from being
@@ -834,8 +857,12 @@ in_upgrade_record_untouched() {
   cmp -s "$I39_ROOT/snap.rec" "$UP_REC" \
     || { echo "BUG [upgrade-record-untouched]: the upgrade TOUCHED a hand-made knowledge record"; \
          exit 1; }
+  [ ! -e "$UP_ABSENT_REC" ] \
+    || { echo "BUG [upgrade-record-untouched]: the upgrade CREATED an intentionally absent"; \
+         echo "    shipped record. A customized estate would regain the generic template it"; \
+         echo "    deliberately omitted."; exit 1; }
   echo "  ok [upgrade-record-untouched] — a user-edited shipped ticket (differing from source)" \
-    "and a hand-made record both came through byte-unchanged"
+    "and a hand-made record came through byte-unchanged; an absent record stayed absent"
 }
 
 # (q) upgrade-idempotent: the second run reports itself as having nothing to do, IN WORDS. Three

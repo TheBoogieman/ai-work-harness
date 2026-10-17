@@ -15,7 +15,7 @@ Work/                                        [git root · local-only · whitelis
 ├── .gitignore                               /* deny-all → re-include record set
 ├── .gitattributes                           pins tracked *.sh/*.py to LF on any clone (a stray CR breaks a shebang)
 ├── README.md                                THE FRONT PAGE · the tour, and the Setup that wires your assistant
-├── CONSTITUTION.md                          THE CONSTITUTION · Part I always / Part II on demand
+├── CONSTITUTION.md                          THE CONSTITUTION · Part I always / Part II on demand · user-owned after laydown, KEEP on upgrade
 ├── SPEC.md                                  what this harness guarantees TODAY · descriptive: a line untrue at HEAD is a defect
 ├── folder-map.md                            THIS PAGE · the estate's structure (the rules are CONSTITUTION.md)
 ├── WORKED-EXAMPLE.md                        one piece of work end to end — the day-in-the-life a newcomer reads first
@@ -35,8 +35,8 @@ Work/                                        [git root · local-only · whitelis
 │       ├── harness-status.sh                stdout report + one primary-observation record (each WARN's first-seen, for aging #71) · roster = _agents/ · checks siblings
 │       ├── ticket-grammar.sh                recognition home: TICKET_RE + ticket predicates · validator + status both source it (edit to retarget your board)
 │       ├── portability.sh                   shared GNU/BSD shims: ts14→epoch, sourced by validator + status (one home · no drift)
-│       ├── append-notebook-cell.py          ← check-scribe · THE ONE DOOR into a notebook: appends a real executable cell · runs on whatever python3 is on the path, needs nbformat [user-created prereq]
-│       ├── make-context-pack.sh             → ~/Desktop/harness-pack-*.zip [disposable · outside repo]
+│       ├── append-notebook-cell.py          ← check-scribe · THE ONE DOOR into a notebook: appends one selected evidence capsule · runs on whatever python3 is on the path, needs nbformat [user-created prereq]
+│       ├── make-context-pack.sh             → ~/Desktop/harness-pack-*.zip [disposable · outside repo] · scrub table user-owned, KEEP on upgrade
 │       ├── tracker-sweep.sh                 human-run · on-demand board-vs-estate drift report · pluggable fetch seam · tracker-agnostic · fails open offline
 │       ├── retro-stats.sh                    dumb counter for the retrospective agent · tickets-by-month + checks + promotions · offline · exits 0 always
 │       ├── deploy-agents.sh                 → user-level agent dir (sync source → live)
@@ -62,7 +62,7 @@ Work/                                        [git root · local-only · whitelis
 │       ├── AI-Knowledge/                    ← knowledge-keeper (capture) │ curator (compact)
 │       │   ├── _index.md                    roster · tombstones
 │       │   └── *.md                         —promotion (approved)→ General AI-Knowledge/
-│       ├── Checks/                          audit-trail notebook (any language) · workspace default kernel
+│       ├── Checks/                          selected durable evidence notebook (any language) · workspace default kernel
 │       ├── Logs/                            [gitignored · regenerable bulk]
 │       └── Dump/                            [gitignored · re-droppable inputs]
 │

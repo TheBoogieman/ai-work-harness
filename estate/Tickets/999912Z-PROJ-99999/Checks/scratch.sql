@@ -1,1 +1,1 @@
--- disposable spot-checks only; anything worth remembering goes in a notebook via check-scribe
+-- disposable spot-checks only; preserve a result via check-scribe only when it passes the Durable Evidence Gate

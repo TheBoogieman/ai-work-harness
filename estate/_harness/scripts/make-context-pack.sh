@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# harness-upgrade: preserve-user-content
 # make-context-pack.sh — scrubbed, disposable export of harness state with a stable, sorted file set.
 # Bundling the scrubbed files is the job — the .zip is NOT byte-reproducible (zip records per-run
 # file mtimes; the Python zipfile fallback differs again). What IS stable: the file SET and the

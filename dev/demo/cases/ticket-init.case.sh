@@ -54,6 +54,28 @@ ti_refuse() {
   rm -rf "$snapshot"
 }
 
+# Ask the platform once whether it can make a REAL symlink. Git Bash on stock Windows quietly
+# makes a copy instead (and native links need Developer Mode), so a "link" fixture there is an
+# ordinary file the helper rightly accepts — the guard would red on correct code. A CI runner
+# must always be able to link: there these guards are the only coverage, so failing beats skipping.
+ti_probe_links() {
+  local probe="$ti_scratch/link-probe"
+  printf 'probe\n' > "$probe.target" || return 1
+  ti_links=0
+  ln -s "$probe.target" "$probe" 2>/dev/null && [[ -L "$probe" ]] && ti_links=1
+  rm -f "$probe" "$probe.target"
+  if (( ! ti_links )) && [[ -n "${CI:-}" ]]; then
+    printf 'BUG [init-symlink-probe]: this CI runner cannot create symlinks, so the symlink guards would be skipped where they are the only coverage\n' >&2
+    return 1
+  fi
+  return 0
+}
+
+# Say out loud which guard did not run, so a green run on this platform never claims it did.
+ti_skip() {
+  printf '  SKIP [%s] — this platform cannot create symlinks; the Linux/macOS CI lanes run it\n' "$1"
+}
+
 # Build from the shipped template, then customize it: a stock allowlist would lose these files.
 ti_core() {
   mkdir -p "$ti_root/Tickets" "$ti_root/_harness/scripts" || return 1
@@ -204,16 +226,22 @@ ti_resume_safety() {
   rm "$resume/${ti_month}BA-PROJ-202.md"
   cp -R "$resume" "$ti_scratch/${resume##*/}" || return 1
   mkdir "$resume/nested" || return 1
-  ln -s "$resume" "$ti_root/Tickets/resume-link" || return 1
-  ln -s "$ti_root" "$ti_scratch/resume-root-link" || return 1
-  for invalid in "$ti_scratch/${resume##*/}" "$ti_template" "$resume/nested" \
-      "$ti_root/Tickets/missing" "$ti_root/Tickets/../Tickets/${resume##*/}" \
-      "$ti_root/Tickets/resume-link/" "$ti_scratch/resume-root-link/Tickets/${resume##*/}"; do
+  local invalids=("$ti_scratch/${resume##*/}" "$ti_template" "$resume/nested"
+    "$ti_root/Tickets/missing" "$ti_root/Tickets/../Tickets/${resume##*/}")
+  # The linked-ticket and linked-root paths need real links; without them only those two are skipped.
+  if (( ti_links )); then
+    ln -s "$resume" "$ti_root/Tickets/resume-link" || return 1
+    ln -s "$ti_root" "$ti_scratch/resume-root-link" || return 1
+    invalids+=("$ti_root/Tickets/resume-link/" "$ti_scratch/resume-root-link/Tickets/${resume##*/}")
+  else
+    ti_skip init-resume-unsafe-path-link
+  fi
+  for invalid in "${invalids[@]}"; do
     ti_refuse init-resume-unsafe-path "${common[@]}" --resume "$invalid" || return 1
   done
   rmdir "$resume/nested" || return 1
   ti_assert init-resume-outside-unchanged ti_same_tree "$resume" "$ti_scratch/${resume##*/}" || return 1
-  rm "$ti_root/Tickets/resume-link" "$ti_scratch/resume-root-link"
+  if (( ti_links )); then rm "$ti_root/Tickets/resume-link" "$ti_scratch/resume-root-link"; fi
 
   # Missing, directory, and symlink markers cannot stand in for the source's own regular file.
   mv "$resume/.ticket-pending" "$ti_scratch/resume-marker" || return 1
@@ -221,19 +249,27 @@ ti_resume_safety() {
   mkdir "$resume/.ticket-pending" || return 1
   ti_refuse init-resume-marker-directory "${common[@]}" --resume "$resume" || return 1
   rmdir "$resume/.ticket-pending" || return 1
-  ln -s "$ti_scratch/resume-marker" "$resume/.ticket-pending" || return 1
-  ti_refuse init-resume-marker-link "${common[@]}" --resume "$resume" || return 1
-  rm "$resume/.ticket-pending"
+  if (( ti_links )); then
+    ln -s "$ti_scratch/resume-marker" "$resume/.ticket-pending" || return 1
+    ti_refuse init-resume-marker-link "${common[@]}" --resume "$resume" || return 1
+    rm "$resume/.ticket-pending"
+  else
+    ti_skip init-resume-marker-link
+  fi
   mv "$ti_scratch/resume-marker" "$resume/.ticket-pending" || return 1
   mv "$record" "$ti_scratch/resume-record" || return 1
   ti_refuse init-resume-no-primary "${common[@]}" --resume "$resume" || return 1
-  ln -s "$ti_scratch/resume-record" "$record" || return 1
-  ti_refuse init-resume-primary-link "${common[@]}" --resume "$resume" || return 1
-  rm "$record"
+  if (( ti_links )); then
+    ln -s "$ti_scratch/resume-record" "$record" || return 1
+    ti_refuse init-resume-primary-link "${common[@]}" --resume "$resume" || return 1
+    rm "$record"
+  else
+    ti_skip init-resume-primary-link
+  fi
   printf '# PROJ-2020 - not the same identity\n\n# PROJ-202 - later mention\n' > "$record"
   ti_refuse init-resume-identity-mismatch "${common[@]}" --resume "$resume" || return 1
   mv "$ti_scratch/resume-record" "$record" || return 1
-  printf '  ok [init-resume-safety] preview-only mode, contained real source, regular marker and exact primary heading required\n'
+  printf '  ok [init-resume-safety] preview-only mode, contained real source, regular marker and exact primary heading required%s\n' "$ti_link_note"
 }
 
 # Reject missing inputs, unsafe sources, and existing targets before writing any scaffold.
@@ -260,24 +296,31 @@ ti_safety() {
   ti_refuse init-traversal --root "$ti_root" --template "$ti_root/Tickets/../Tickets/$ti_template_name" --pending || return 1
 
   # Test both dangling links and links to safe-looking internal directories: neither is a source.
-  ln -s "$ti_template" "$ti_root/Tickets/template-link" || return 1
-  ti_refuse init-source-link --root "$ti_root" --template "$ti_root/Tickets/template-link/" --pending || return 1
-  ln -s "$ti_scratch/outside" "$ti_template/escape" || return 1
-  ti_refuse init-nested-link "${common[@]}" --pending || return 1
-  rm "$ti_template/escape"
-  ln -s "$ti_scratch/missing" "$ti_template/dangling" || return 1
-  ti_refuse init-dangling-source "${common[@]}" --pending || return 1
-  rm "$ti_template/dangling"
-  ln -s "$ti_root" "$ti_scratch/root-link" || return 1
-  ti_refuse init-root-link --root "$ti_scratch/root-link/" --template "$ti_template" --pending || return 1
-  mkdir "$ti_scratch/linked-tickets-root" || return 1
-  ln -s "$ti_root/Tickets" "$ti_scratch/linked-tickets-root/Tickets" || return 1
-  ti_refuse init-tickets-link --root "$ti_scratch/linked-tickets-root" --template "$ti_template" --pending || return 1
+  local collision="$ti_root/Tickets/${ti_month}BA-PROJ-2" guard
+  if (( ti_links )); then
+    ln -s "$ti_template" "$ti_root/Tickets/template-link" || return 1
+    ti_refuse init-source-link --root "$ti_root" --template "$ti_root/Tickets/template-link/" --pending || return 1
+    ln -s "$ti_scratch/outside" "$ti_template/escape" || return 1
+    ti_refuse init-nested-link "${common[@]}" --pending || return 1
+    rm "$ti_template/escape"
+    ln -s "$ti_scratch/missing" "$ti_template/dangling" || return 1
+    ti_refuse init-dangling-source "${common[@]}" --pending || return 1
+    rm "$ti_template/dangling"
+    ln -s "$ti_root" "$ti_scratch/root-link" || return 1
+    ti_refuse init-root-link --root "$ti_scratch/root-link/" --template "$ti_template" --pending || return 1
+    mkdir "$ti_scratch/linked-tickets-root" || return 1
+    ln -s "$ti_root/Tickets" "$ti_scratch/linked-tickets-root/Tickets" || return 1
+    ti_refuse init-tickets-link --root "$ti_scratch/linked-tickets-root" --template "$ti_template" --pending || return 1
+    ln -s "$ti_scratch/missing" "$collision" || return 1
+    ti_refuse init-dangling-destination "${common[@]}" --identity PROJ-2 || return 1
+    rm "$collision"
+  else
+    for guard in init-source-link init-nested-link init-dangling-source init-root-link \
+        init-tickets-link init-dangling-destination; do
+      ti_skip "$guard"
+    done
+  fi
 
-  local collision="$ti_root/Tickets/${ti_month}BA-PROJ-2"
-  ln -s "$ti_scratch/missing" "$collision" || return 1
-  ti_refuse init-dangling-destination "${common[@]}" --identity PROJ-2 || return 1
-  rm "$collision"
   printf 'existing file\n' > "$collision"
   ti_refuse init-file-destination "${common[@]}" --identity PROJ-2 || return 1
   rm "$collision"
@@ -288,7 +331,7 @@ ti_safety() {
   mkdir "$ti_template/.ticket-pending" || return 1
   ti_refuse init-marker-directory "${common[@]}" --pending || return 1
   rmdir "$ti_template/.ticket-pending" || return 1
-  printf '  ok [init-safety] invalid inputs, escapes, symlinks, missing sources, and collisions refused\n'
+  printf '  ok [init-safety] invalid inputs, escapes, symlinks, missing sources, and collisions refused%s\n' "$ti_link_note"
 }
 
 # Compare the whole tree, not just the prospective ticket, to catch hidden staging leaks in preview.
@@ -347,9 +390,13 @@ ti_custom_grammar() {
 # Explicit teardown preserves the runner's sole EXIT trap, including on expected red runs.
 case_ticket_init() {
   local ti_repo="$PWD" ti_scratch ti_root ti_template ti_template_name ti_month ti_helper ti_output
+  local ti_links ti_link_note=""
   local case_result=0
   ti_scratch=$(mktemp -d) || return 1
   ti_scratch=$(cd "$ti_scratch" && pwd -P) || return 1
+  ti_probe_links || { rm -rf "$ti_scratch"; return 1; }
+  # An ok line must not claim refusals that never ran; the SKIP lines above it name them.
+  (( ti_links )) || ti_link_note=" (symlink refusals skipped: see SKIP lines)"
   ti_root="$ti_scratch/root with spaces"
   ti_month=$(date +%Y%m) || { rm -rf "$ti_scratch"; return 1; }
   ti_template_name="${ti_month}ZZZ-TPL-99999"

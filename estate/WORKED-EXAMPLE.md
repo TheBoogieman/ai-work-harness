@@ -115,6 +115,7 @@ only looks.
 ```console
 $ bash _harness/scripts/harness-status.sh
 OK: work repo present; last commit <HOW-LONG-AGO>.
+OK: nothing uncommitted — every change in the estate is in git.
 OK: record repo .git <SIZE> MiB (working tree <SIZE> MiB) — under the 50 MiB housekeeping threshold.
 OK: hooks config parses.
 OK: 999912Z-PROJ-99999 — last session 20260101000000, knowledge files: 0.
@@ -124,6 +125,14 @@ OK: estate healthy.
 The one ticket it can see is `999912Z-PROJ-99999`, the empty template every
 estate ships with. Its session-log stamp is a placeholder date. Nothing has
 happened here yet.
+
+The first two lines answer different questions, and the difference matters.
+*Last commit* says **when** git last recorded anything — on a fresh estate that
+is the installer's own commit, not yours. *Nothing uncommitted* says **whether**
+everything on disk is in git, which is what git's undo depends on. If you leave
+work uncommitted, the second line turns into a yellow `WARN` that counts the
+changes and tells you to commit them; it never turns red, because uncommitted
+work blocks nothing and loses nothing.
 
 ## 2. Pick the work up
 
@@ -237,11 +246,14 @@ $ git commit -q -m "PROJ-4021: traced the missing rows; captured the quirk"
 
 The same command as this morning, and the difference is the point: the day's
 ticket is now part of what the estate reports on, with the session stamp you
-wrote and a count of the knowledge you captured.
+wrote and a count of the knowledge you captured. *Nothing uncommitted* is true
+again because you committed in step 5; run this before that step and the same
+line is a `WARN` counting the files you had not yet committed.
 
 ```console
 $ bash _harness/scripts/harness-status.sh
 OK: work repo present; last commit <HOW-LONG-AGO>.
+OK: nothing uncommitted — every change in the estate is in git.
 OK: record repo .git <SIZE> MiB (working tree <SIZE> MiB) — under the 50 MiB housekeeping threshold.
 OK: hooks config parses.
 OK: 202607A-PROJ-4021 — last session <TIMESTAMP>, knowledge files: 1.

@@ -665,13 +665,19 @@ It reports, with `OK` / `WARN` / `FAIL` prefixes:
   status; status does not report Current State age.)
 - Naming: a `Tickets/` folder that holds a record but isn't recognised, or a
   pending ticket awaiting its name (the WARN sweep).
-- Repo size past the threshold, and session activity newer than the last
-  commit (auto-commit-lag) — both WARNs.
+- Repo size past the threshold, session activity newer than the last
+  commit (auto-commit-lag), and uncommitted changes in the working tree —
+  all WARNs. A dirty tree means the auto-commit hook does not appear to be
+  running (when it runs, the tree stays clean); the fix is a hand commit,
+  `git add -A && git commit`, and nobody has broken a rule by working by
+  hand (#306).
 - `General AI-Knowledge/`: entries whose `Last reviewed:` date is older than
   the staleness threshold (default 90 days, tunable via
   `HARNESS_KNOWLEDGE_STALE_DAYS`), and entries carrying no `Last reviewed:`
   date at all — each names the knowledge-curator as the next act (#72).
-- Liveness: last commit in the Work local git (auto-commit is alive),
+- Liveness: the age of the last commit in the Work local git (the repository
+  is alive — recency only: the installer's commit counts, so this is not
+  evidence that your work is committed; the uncommitted-changes WARN above is),
   hooks config parses, every `.agent.md` file present and registered
   (agents can fail to load *silently* after Copilot updates).
 

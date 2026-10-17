@@ -25,6 +25,28 @@ MAP = f"{GAK}/Work Map"
 TICKET = "Tickets/custom-case/custom-case.md"
 
 
+# Ask the platform once whether it can make a REAL symlink. Stock Windows refuses without
+# Developer Mode (WinError 1314), and these fixtures cannot be faked with copies. A CI runner
+# must always be able to link: there these tests are the only coverage, so failing beats skipping.
+def can_symlink():
+    with tempfile.TemporaryDirectory(prefix="harness-link-probe-") as probe:
+        target = Path(probe) / "target"
+        target.write_text("probe\n", encoding="utf-8")
+        link = Path(probe) / "link"
+        try:
+            link.symlink_to(target)
+        except (OSError, NotImplementedError):
+            return False
+        return link.is_symlink()
+
+
+CAN_SYMLINK = can_symlink()
+if not CAN_SYMLINK and os.environ.get("CI"):
+    print("BUG [work-map-symlink-probe]: this CI runner cannot create symlinks, so the symlink"
+          " tests would be skipped where they are the only coverage", file=sys.stderr)
+    sys.exit(1)
+
+
 class WorkMapTests(unittest.TestCase):
     # Each test owns its tree and cleanup; the demo runner's EXIT trap remains untouched.
     def setUp(self):
@@ -69,6 +91,12 @@ class WorkMapTests(unittest.TestCase):
 
     def codes(self, report):
         return {finding["code"] for finding in report["findings"]}
+
+    # Called after every link-free assertion has passed, so a skip never hides a real failure.
+    def skip_without_links(self, guard):
+        if not CAN_SYMLINK:
+            self.skipTest(f"SKIP [{guard}]: this platform cannot create symlinks;"
+                          " the Linux/macOS CI lanes run it")
 
     def test_healthy_encoded_link_and_reachable_report(self):
         before = {str(path): path.read_bytes() for path in self.root.rglob("*") if path.is_file()}
@@ -177,6 +205,7 @@ class WorkMapTests(unittest.TestCase):
         self.put("Tickets/custom-case/support.md", "[legacy](" +
                  (self.root / TICKET).as_posix() + ")\n[external](" + outside.as_posix() + ")\n")
         self.assertEqual(self.run_check("--strict")[0], 0)
+        self.skip_without_links("work-map-symlink-escape")
         (self.root / GAK / "escape.md").symlink_to(outside)
         self.put("Tickets/custom-case/support.md",
                  "[escape](%2e%2e/%2e%2e/%2e%2e/outside.md)\n"
@@ -229,6 +258,7 @@ class WorkMapTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0)
         self.assertIn("NOTE", result.stdout)
         self.assertIn("python3 unavailable", result.stdout)
+        self.skip_without_links("work-map-hook-tools")
         tools = self.root / "test-bin"
         tools.mkdir()
         (tools / "python3").symlink_to(sys.executable)
@@ -251,7 +281,10 @@ class WorkMapTests(unittest.TestCase):
     def test_absolute_estate_alias_and_parenthesized_destinations(self):
         # Legacy absolute routes identify the same loaded record, including a symlinked root alias.
         alias = Path(self.scratch.name) / "estate-alias"
-        alias.symlink_to(self.root, target_is_directory=True)
+        if CAN_SYMLINK:
+            alias.symlink_to(self.root, target_is_directory=True)
+        else:
+            alias = self.root
         self.put(f"{MAP}/Repos/orders.md", f"[Ticket](<{alias / TICKET}>)\n"
                  "[Knowledge](../../Topic/_index.md)\n")
         self.put(f"{GAK}/Topic/_index.md", "[Note](Note%20One.md)\n"
@@ -259,6 +292,7 @@ class WorkMapTests(unittest.TestCase):
         self.put(f"{GAK}/Topic/note(1).md", "# Parentheses\n")
         self.put(f"{GAK}/Topic/note two.md", "# Spaces\n")
         self.assertEqual(self.run_check("--strict")[0], 0)
+        self.skip_without_links("work-map-root-alias")
 
     def test_unreadable_markdown_and_symlinked_scope_are_incomplete(self):
         # Invalid UTF-8 deterministically exercises unavailable content even under privileged users.
@@ -267,13 +301,15 @@ class WorkMapTests(unittest.TestCase):
         outside = Path(self.scratch.name) / "outside"
         outside.mkdir()
         (outside / "secret.md").write_text("[do-not-read](absent.md)\n", encoding="utf-8")
-        (self.root / GAK / "linked-directory").symlink_to(outside, target_is_directory=True)
+        if CAN_SYMLINK:
+            (self.root / GAK / "linked-directory").symlink_to(outside, target_is_directory=True)
         exit_code, report = self.run_check()
         self.assertEqual(exit_code, 0)
         self.assertIn("UNAVAILABLE", self.codes(report))
-        self.assertIn("OUTSIDE_ESTATE", self.codes(report))
         self.assertNotIn("MISSING_LINK", self.codes(report))
         self.assertFalse(report["coverage"]["complete"])
+        self.skip_without_links("work-map-symlinked-scope")
+        self.assertIn("OUTSIDE_ESTATE", self.codes(report))
 
 
 unittest.main(verbosity=2)

@@ -299,45 +299,34 @@ Appending a Session Log block and refreshing **Current State** (and the Repos/Br
 
 ### Record Ownership and Brevity
 
-Every fact gets one durable owner; other surfaces point to it or summarize it in
-one line. These are writer stop conditions and review targets, not validator
-failures: load-bearing detail may exceed a target when omitting it would make the
-record misleading.
-
-| Surface | Sole job | Default budget | Excludes |
-|---|---|---:|---|
-| Header | Current repo, branch, and PR addresses | Compact lists | Narrative, commit history, check details |
-| Current State | Now, next, blocker/gotcha, essential pointers | 3–5 sentences; target 120 words | Completed chronology, command lists, copied evidence |
-| Changes Made | Settled implementation summary by component | Update only on meaningful implementation change | Session-by-session narration |
-| Session Log | Delta since the previous entry | 2–6 bullets; target 120 words | Full reasoning, repeated header state, exact check bodies |
-| Checks | Selected evidence for a durable claim or decision | Default 0; normally at most 2 capsules per task | Iteration history, duplicate CI evidence |
-| AI-Knowledge | Hidden fact costly to rediscover and likely to be retrieved | Default 0; normally at most 1 topic update per task | Session narrative, check results, facts obvious in code |
-| Logs | Bulky temporary command output | As needed; git-ignored | Durable conclusions |
-| Git, CI, PR, tracker | Canonical history already retained there | Link, do not copy | Duplicated transcripts in ticket files |
-
-### Record Writing
-
 Write for someone asking "what changed?", not "what did the agent do?" Name the
 pipeline, table, workflow or file first. List added/removed columns and explain
 changed keys, filters, joins, mappings or timing as **old -> new** when known.
 Do not invent a type, previous value, deployment or result. Investigation-only
 work names the finding and says that no implementation changed.
 
-| Surface | Keep | Leave elsewhere |
-|---|---|---|
-| Header | Repo/branch/PR addresses; relevant Context links | Narrative and command history |
-| Current State | Now, next, blocker; essential gotcha | Completed chronology |
-| Changes Made | Settled component-first change bullets | Session-by-session replay |
-| Session Log | Normally 2-5 outcome bullets, about 100 words | Copied explanations, tool lists |
-| AI-Knowledge | Finding, evidence link, use-when trigger, consequence | Facts already owned by code or a runbook |
-| General indexes / Work Map | Links and one-line retrieval cues | Duplicated facts or histories |
+Every fact gets one durable owner; other surfaces point to it or summarize it in
+one line.
+
+| Surface | Sole job | Default budget | Excludes |
+|---|---|---:|---|
+| Header | Repo, branch and PR addresses; relevant Context links | Compact lists | Narrative, commit history, check details |
+| Current State | Now, Next, Blocked; essential gotcha or pointer | Three short bullets; under 100 words | Completed chronology, command lists, copied evidence |
+| Changes Made | Settled component-first change bullets | Update only on meaningful implementation change | Session-by-session replay |
+| Session Log | Outcome delta since the previous entry | Normally 2–5 bullets; about 100 words | Copied explanations, tool lists, repeated header state, exact check bodies |
+| Checks | Selected evidence for a durable claim or decision | Default 0; normally at most 2 capsules per task | Iteration history, duplicate CI evidence |
+| AI-Knowledge | Finding, evidence link, use-when trigger and consequence for a hidden fact costly to rediscover | Default 0; normally at most 1 topic update per task | Session narrative, check results, facts already owned by code or a runbook |
+| General indexes / Work Map | Links and one-line retrieval cues | One line per entry | Duplicated facts or histories |
+| Logs | Bulky temporary command output | As needed; git-ignored | Durable conclusions |
+| Git, CI, PR, tracker | Canonical history already retained there | Link, do not copy | Duplicated transcripts in ticket files |
 
 Keep verification separate from implementation; name the check and observed
 outcome, or say "not run". Link to CI, PRs and detailed evidence instead of copying
 them. Prefer "added source_id" to "enhanced traceability" and a named test to
-"validated end to end". These are writer defaults, not validator gates. Keep
-necessary detail when a budget would hide an important distinction. Never rewrite
-old Session Log entries just to apply the new style.
+"validated end to end". These budgets are writer stop conditions and review
+targets, not validator gates: keep load-bearing detail when omitting it would make
+the record misleading. Never rewrite old Session Log entries just to apply the new
+style.
 
 ---
 
@@ -368,8 +357,9 @@ Ticket-local knowledge need only stay useful after context loss on THIS ticket;
 promotion keeps the stronger test: useful on a future unrelated ticket,
 expressible without ticket references, and not already covered. A note is a
 compact retrieval card — **Finding**, **Evidence** (a pointer), **Use when** (the
-trigger) and **Consequence** — of roughly 150–400 words. Zero is expected; one
-topic update is normal.
+trigger) and **Consequence** — of roughly 150–400 words, compressed before 500.
+Zero is expected; one topic update is normal; two independent notes require the
+parent to state why they cannot share an owner.
 
 **Index + compaction rules (STRICT — this folder is not a landfill):**
 
@@ -556,7 +546,7 @@ Invoked with the Jira link; every step below is also the by-hand fallback:
 4. For each repo, suggest 2-3 branch names following its documented workflow (fallback `feature/PROJ-XXXXX_<short-slug>`). Record the user's choice only. The init agent never creates branches or edits code repos.
 5. Locate the actual installed template (shipped default `Tickets/999912Z-PROJ-99999`, possibly customized). Run `bash _harness/scripts/init-ticket.sh --template <actual-path> --identity <BOARD-num>`; use `--dry-run` to inspect the proposed name first. The helper reads local machine time, considers all boards in that month, orders sequences by length then alphabetically, increments past Z, copies the full tree including dotfiles, and renames the primary markdown only. It refuses duplicate identities, unsafe paths and collisions. Do not reconstruct a subset or hand-edit notebooks. `--root <estate>` is available when explicitly targeting another estate.
 6. If no identity can be determined, explicitly use `--pending` instead of `--identity`. The unfinished scaffold has a non-conforming name and `.ticket-pending`. Once identity is confirmed, put it in the record's first heading and preview with `--identity <BOARD-num> --resume <pending-path> --dry-run` alongside `--template`. This excludes only that confirmed pending folder from duplicate checks; it writes nothing. Complete the confirmed folder/primary-markdown rename using the returned name, fill the record, **remove the marker**, and record/validate the real completion. Never invent a conforming tracker identity. Copying a template is not a completed or validated ticket.
-7. Fill the real header, Context links, Background and Scope. Background starts with **In my words:** plus at most five tracker-context bullets; Scope contains **Non-negotiables** and acceptance criteria once. Do not copy comment transcripts. Seed Now / Next / Blocked, retaining unknowns as TODOs. Preserve all copied scaffold files; add no invented evidence or learnings.
+7. Fill the real header, Context links, Background and Scope. Background starts with **In my words:** plus at most five tracker-context bullets; Scope contains **Non-negotiables** and acceptance criteria once. Do not copy comment transcripts. Seed Now / Next / Blocked, retaining unknowns as TODOs. Preserve all copied scaffold files; create no Checks capsule or AI-Knowledge note during initialization, and add no invented evidence or learnings.
 8. Link the new ticket from its repo/pipeline page entries (and the map root for a new entity). Then invoke `ticket-scribe` with the observed initialization actions, the known links and the local timestamp for one real init entry. Run `bash _harness/scripts/check-ticket-log.sh`; resolve any FAIL before calling initialization complete. Run `python3 _harness/scripts/check-work-map.py` once and report its findings. A copied template or successful helper exit is not validation. If blocked, report the unfinished path and actual problem; do not manufacture another log entry to make a red disappear. If blocked, report the unfinished path and actual problem; do not manufacture another log entry to make a red disappear.
 
 ## Session States — Operational Rules

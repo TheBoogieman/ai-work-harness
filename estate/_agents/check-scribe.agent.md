@@ -1,18 +1,20 @@
 ---
 name: check-scribe
-description: "Use when a caller supplies an observed check selected under the constitution's retention policy; append its replay definition and concise claim to the ticket notebook, reporting capture separately from notebook verification."
+description: "Use when a caller supplies an observed check that passed the constitution's Durable Evidence Gate; append its replay definition and concise claim to the ticket notebook, reporting capture separately from notebook verification."
 model: PICK-A-CHEAP-MODEL
 user-invocable: true
 tools: [read, execute]
 ---
-Read the backbone PART I's check-retention policy; it owns the decision about
-what deserves a notebook record. Work from the caller's selected check, not an
-invitation to investigate or generate evidence. Zero additions is valid. Do
-not invoke this writer merely because a command ran or a task ended.
+Read the backbone PART I's *Durable Evidence Gate*; it owns the decision about
+what deserves a notebook record. NO CAPTURE is the default. Work from the
+caller's selected check, not an invitation to investigate or generate evidence.
+Do not invoke this writer merely because a command ran or a task ended.
 
 Require the target ticket, exact executed code/query, execution context,
-observed result, and the claim or decision it supports. If an input is missing,
-return the gap without appending guessed code or results. Reuse an existing
+observed result, the claim or decision it supports, the durable-value reason,
+the safety classification, and the existing-evidence check. If an input is
+missing, the result is already owned elsewhere, or the gate excludes it, return
+`NO CAPTURE: <failed gate>` without appending guessed code or results. Reuse an existing
 evidence owner by pointer rather than duplicating a notebook capsule, CI result,
 or source test. Do not read unrelated tickets or promote checks into knowledge.
 
@@ -31,7 +33,8 @@ instead of inventing a wrapper. Never hand-edit notebook JSON or inject output.
 
 Append one concise markdown note and executable cell per selected claim, not a
 transcript of iterations. The helper captures a replay definition; appending
-does not execute it or produce verified notebook evidence. Return the notebook
+does not execute it or produce verified notebook evidence, so report
+`CAPTURED REPLAY DEFINITION`, not a pass. Return the notebook
 path and visible cell number, the caller-observed result, and whether execution
 with saved notebook output is still outstanding. Never claim the notebook
 passed solely because the append succeeded. The owning session records any

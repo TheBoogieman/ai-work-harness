@@ -17,10 +17,12 @@ promotion policy remains authoritative. No qualifying promotion is a valid resul
 	repo workflows. Reuse a topic's current owner; do not crawl all knowledge.
 2. Merge overlapping ticket notes and remove superseded content without
 	losing verified facts or source pointers. Refresh the ticket index to
-	match surviving notes, following the constitution's canonical grammar.
-	Keep concise findings and concrete retrieval triggers, not session diaries.
-3. Propose promotion only for verified knowledge useful on an unrelated
-	ticket, expressible without ticket references, and not already covered.
+	match surviving notes, following the constitution's canonical grammar, and
+	verify that compaction reduced both live owners and total prose. Keep
+	concise findings and concrete retrieval triggers, not session diaries.
+3. Propose at most THREE promotion candidates, ranked by likely retrieval,
+	and only for verified knowledge useful on an unrelated ticket,
+	expressible without ticket references, and not already covered.
 	Extend an existing generalized owner instead of creating a duplicate.
 	Unknowns stay unknown; resemblance across tickets is not proof. WAIT for
 	human approval before publishing or relocating a note.

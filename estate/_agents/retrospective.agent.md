@@ -51,15 +51,19 @@ Use impact language only when the sources support it; no invented savings,
 causal connections, or inflated "improvements". A reusable runbook can be
 linked as an outcome, not copied or silently promoted as new knowledge.
 
-Sparse sources mean a shorter account. State missing indexes, the searched
+Use at most FIVE accomplishment themes and roughly 1,500 words for a
+twelve-month window; offer a focused follow-up instead of a long tail. Sparse
+sources mean a shorter account. State missing indexes, the searched
 scope behind negative results, and unresolved claims. Do not confuse "no
 matching record found" with "no work happened".
 
 ## Write and discover
 
-Write ONE new file under `General Human Knowledge/Retrospectives/`, named using
-an observed local timestamp; never overwrite a prior retrospective, including
-on a same-period rerun. A later correction belongs in a new dated account that
+Record the window near the top of the account. Before writing, inspect
+existing retrospective headers: when the same window already exists, return that
+path unless the user explicitly asks for a new edition. Otherwise write ONE new
+file under `General Human Knowledge/Retrospectives/`, named using an observed
+local timestamp; never overwrite a prior retrospective. A later correction belongs in a new dated account that
 references the old one. Retrospectives stay append-only; repo workflow runbooks
 are living references maintained in place by their writer.
 

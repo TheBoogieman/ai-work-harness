@@ -163,7 +163,7 @@ honest.
 
 Ticket summaries name the component, fields and logic changed. Current State is
 short Now / Next / Blocked bullets; historical Session Logs stay unchanged.
-See the constitution's *Record Writing* convention for writer defaults.
+See the constitution's *Record Ownership and Brevity* convention for writer defaults.
 
 The constitution's [Context Discovery](estate/CONSTITUTION.md#context-discovery)
 route points to reusable knowledge, repo workflows and the Work Map. Real

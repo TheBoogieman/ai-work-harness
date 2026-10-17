@@ -40,6 +40,9 @@ Name the component, columns, or logic changed and the observed effect. State
 whether work was implemented, tested, or deployed only as the sources support.
 Avoid command diaries, repeated ticket headers, and vague activity summaries.
 Every factual claim needs a ticket heading, dated entry, note, or commit citation.
+Give each active ticket ONE line per group, then at most FIVE strongest
+cross-ticket themes; state how many lower-ranked items remain and offer a
+continuation rather than emitting the long tail.
 
 Report supplied status output with its observation date; do not generate a
 status sweep just to populate the digest or treat today's warnings as historic

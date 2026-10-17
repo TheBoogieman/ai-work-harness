@@ -181,7 +181,11 @@ check_siblings() {
   return 0
 }
 
-# check_git_liveness — is there a record repo, and is it local-only?
+# check_git_liveness — is there a record repo, and is it local-only? Its OK line answers RECENCY
+# only: WHEN git last recorded anything — which on a fresh estate is the installer's own commit.
+# It does NOT say whether today's work is in git. That is a different question, answered by
+# check_uncommitted on the line after it (#306): "last commit 0 seconds ago" and "your work is
+# committed" are separate claims, and this line must never be read as the second one.
 check_git_liveness() {
   if ! git -C "$WORK_ROOT" rev-parse --git-dir >/dev/null 2>&1; then
     echo "FAIL: no git repo at $WORK_ROOT." \
@@ -199,6 +203,54 @@ check_git_liveness() {
   echo "FAIL: work repo has a REMOTE configured — it must be local-only." \
        "Fix: git -C '$WORK_ROOT' remote remove <name>"
   fails=$((fails+1))
+  return 0
+}
+
+# check_uncommitted — COVERAGE, the question the recency line above cannot answer (#306): is the
+# estate's work actually in git? The undo story for a bad write is git, and git holds only what was
+# committed. The committer is the auto-commit hook, which fires only inside a live assistant
+# session — so when it is working the tree is always clean, and a dirty tree is the most direct
+# evidence available that it is NOT running.
+#   YELLOW, never red: uncommitted work blocks nothing and destroys nothing — the files are on
+# disk — and someone working by hand is doing nothing wrong. Red blocks, yellow schedules; this
+# schedules a commit. The message says what is happening and what to do, not that a rule was
+# broken. It routes through warn(), so the #71 aging shows how long the work has sat uncommitted.
+#   Status's OWN aging record is excluded from the count: status writes it whenever its WARN set
+# changes, so counting it would let the report raise this WARN about a write it made itself, and
+# would flip back to dirty on the run after every hand commit. It is excluded only when it sits
+# inside the estate (a redirected HARNESS_WARN_STATE_FILE elsewhere is not in this tree anyway).
+#   Untracked files are counted one by one (--untracked-files=all) so a new ticket folder counts
+# its files rather than collapsing to one line; the estate's whitelist .gitignore still keeps junk
+# out. Suppressed under HARNESS_DEMO for the same reason check_commit_lag is — the demo never runs
+# the hook, so its estate is dirty by construction — and HARNESS_LIVENESS_FORCE re-enables it,
+# since both checks guard the same thing: whether the auto-commit is keeping up.
+check_uncommitted() {
+  { [[ -z "${HARNESS_DEMO:-}" ]] || [[ -n "${HARNESS_LIVENESS_FORCE:-}" ]]; } || return 0
+  git -C "$WORK_ROOT" rev-parse --git-dir >/dev/null 2>&1 || return 0   # liveness already FAILed
+  uc_spec=(.)
+  case "$HARNESS_WARN_STATE_FILE" in
+    "$WORK_ROOT"/*) uc_spec+=(":(exclude)${HARNESS_WARN_STATE_FILE#"$WORK_ROOT"/}") ;;
+  esac
+  # A git that cannot answer is reported as unknown, never as clean: claiming coverage we did not
+  # measure is the very defect this check exists to remove.
+  if ! uc_list=$(git -C "$WORK_ROOT" status --porcelain --untracked-files=all \
+                   -- "${uc_spec[@]}" 2>/dev/null); then
+    echo "NOTE: could not ask git whether the estate's work is committed" \
+         "(git status failed) — coverage unknown this run."
+    return 0
+  fi
+  uc_n=$(printf '%s\n' "$uc_list" | sed '/^$/d' | wc -l | tr -d ' ')
+  if (( uc_n == 0 )); then
+    echo "OK: nothing uncommitted — every change in the estate is in git."
+    return 0
+  fi
+  msg="$uc_n uncommitted change(s) in the estate — the auto-commit hook does not appear to be"
+  msg="$msg running (when it is, the tree stays clean). The files are safe on disk, but git can"
+  msg="$msg only undo what it has recorded, and \"last commit\" above says WHEN git last recorded"
+  msg="$msg something, not that this work is in it. Fix: commit by hand —"
+  msg="$msg cd '$WORK_ROOT' && git add -A && git commit — and, if you meant the hook to do it,"
+  msg="$msg check it is installed (_harness/hooks/hooks.example.json)."
+  warn "uncommitted" "$msg"
   return 0
 }
 
@@ -491,6 +543,7 @@ main() {
   load_warn_state
   check_siblings
   check_git_liveness
+  check_uncommitted   # #306: coverage, printed right under the recency line it is NOT
   check_commit_lag
   check_repo_size
   check_hooks

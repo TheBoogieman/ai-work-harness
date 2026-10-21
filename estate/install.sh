@@ -546,6 +546,38 @@ src_of() {
   printf '%s' "$SOURCE/$1"
 }
 
+# ---- the one PRODUCT file laid down in a different form from its source: README.md (#323) ------
+# README.md is also this repository's front page, so its links are written for the REPOSITORY
+# layout: `estate/CONSTITUTION.md`, and the development-only CLAUDE.md. An estate lays estate/'s
+# contents down at its own root and never receives CLAUDE.md, so a byte copy left nine links
+# pointing nowhere. The estate form drops the `estate/` prefix from each link target (the `<…>`
+# spelling too) and turns a CLAUDE.md link into its plain text. Every other file is its source.
+#
+# EVERY WRITE AND EVERY COMPARISON GOES THROUGH product_form. Upgrade decides "already current"
+# by comparing an estate's copy with what it would lay down; compared with the raw source instead,
+# an untouched README would differ on every run and be quarantined and replaced each time.
+product_form() {  # $1 = estate-relative path -> the bytes it is laid down as, on stdout
+  if [ "$1" = "README.md" ]; then
+    sed -E -e 's|\]\((<?)estate/|](\1|g' \
+           -e 's|\[([^]]*)\]\(CLAUDE\.md(#[^)]*)?\)|\1|g' "$(src_of "$1")"
+  else
+    cat "$(src_of "$1")"
+  fi
+}
+
+# lay_product <estate-relative path> — write a PRODUCT file into the estate in its laid-down
+# form. `cp -p` first, as before, so the mode and timestamps are the source's; README's content is
+# then rewritten in place, which keeps that mode.
+lay_product() {
+  cp -p "$(src_of "$1")" "$TARGET/$1"
+  [ "$1" != "README.md" ] || product_form "$1" > "$TARGET/$1"
+}
+
+# product_current <estate-relative path> — does the estate's copy already hold the laid-down form?
+product_current() {
+  product_form "$1" | cmp -s - "$TARGET/$1"
+}
+
 # ---- ticket scaffolding plan (absent anatomy of existing hand-made tickets) --------------------
 # The minimal legal anatomy a ticket needs: an AI-Knowledge/ dir with a valid empty _index.md,
 # and the git-ignored Logs/ + Dump/ (kept by .gitkeep). We only CREATE absent pieces.
@@ -595,7 +627,7 @@ create_products() {
   mkdir -p "$TARGET"
   for rel in ${plan_create[@]+"${plan_create[@]}"}; do
     mkdir -p "$(dirname "$TARGET/$rel")"
-    cp -p "$(src_of "$rel")" "$TARGET/$rel"
+    lay_product "$rel"
     CREATED+=("$rel")
   done
   return 0
@@ -977,7 +1009,7 @@ plan_upgrade_products() {
     fi
     if [ ! -e "$TARGET/$rel" ];        then up_create+=("$rel"); continue; fi
     if upgrade_is_param "$rel";        then up_keep+=("$rel"); continue; fi
-    if cmp -s "$(src_of "$rel")" "$TARGET/$rel"; then up_same=$((up_same + 1)); continue; fi
+    if product_current "$rel"; then up_same=$((up_same + 1)); continue; fi
     up_replace+=("$rel")
   done < <(upgrade_paths)
   # The hook configuration is LAID DOWN but is not a shipped path — it is copied from the shipped
@@ -1152,13 +1184,13 @@ upgrade_execute() {
   local rel row
   for rel in ${up_create[@]+"${up_create[@]}"}; do
     mkdir -p "$(dirname "$TARGET/$rel")"
-    cp -p "$(src_of "$rel")" "$TARGET/$rel"
+    lay_product "$rel"
     CREATED+=("$rel")
     echo "CREATED  $rel"
   done
   for rel in ${up_replace[@]+"${up_replace[@]}"}; do
     quarantine_move "$rel"
-    cp -p "$(src_of "$rel")" "$TARGET/$rel"
+    lay_product "$rel"
     quarantine_report "REPLACED" "$rel" "your copy, superseded by this release's"
   done
   # Field one is the path, field two is what replaced it — the same shifted-left row the plan reads

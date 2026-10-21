@@ -14,7 +14,7 @@ Work/                                        [git root · local-only · whitelis
 │
 ├── .gitignore                               /* deny-all → re-include record set
 ├── .gitattributes                           pins tracked *.sh/*.py to LF on any clone (a stray CR breaks a shebang)
-├── README.md                                THE FRONT PAGE · the tour, and the Setup that wires your assistant
+├── README.md                                THE FRONT PAGE · the tour, and the Setup that wires your assistant · laid down with its links aimed at this estate, not the source repo
 ├── CONSTITUTION.md                          THE CONSTITUTION · Part I always / Part II on demand · user-owned after laydown, KEEP on upgrade
 ├── SPEC.md                                  what this harness guarantees TODAY · descriptive: a line untrue at HEAD is a defect
 ├── folder-map.md                            THIS PAGE · the estate's structure (the rules are CONSTITUTION.md)

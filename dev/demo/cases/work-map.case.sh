@@ -84,7 +84,7 @@ class WorkMapTests(unittest.TestCase):
             capture_output=True, text=True, check=False)
         self.assertEqual(result.stderr, "")
         report = json.loads(result.stdout)
-        self.assertEqual(set(report), {"files_scanned", "links_checked", "findings", "coverage"})
+        self.assertEqual(set(report), {"files_scanned", "links_checked", "history_links", "findings", "coverage"})
         for finding in report["findings"]:
             self.assertTrue({"code", "path", "line", "message"} <= set(finding))
         return result.returncode, report
@@ -109,6 +109,23 @@ class WorkMapTests(unittest.TestCase):
         self.assertEqual(report, self.run_check()[1])
         after = {str(path): path.read_bytes() for path in self.root.rglob("*") if path.is_file()}
         self.assertEqual(before, after, "[work-map-read-only] observation changed its inputs")
+
+    # [work-map-frozen-audits] Earlier estate audit reports are frozen (never edited), so a link in
+    # one whose target was later removed is counted as history, not raised as a finding; the newest
+    # report is still checked like any other note. Red on a helper without history_links.
+    def test_dead_link_in_earlier_audit_counts_as_history(self):
+        self.put(f"{GHK}/_index.md", "[Runbooks](Repo%20Workflows/_index.md)\n[Audits](Audits/_index.md)\n")
+        self.put(f"{GHK}/Audits/_index.md",
+                 "[Old](20260101-estate-audit.md)\n[New](20260201-estate-audit.md)\n")
+        self.put(f"{GHK}/Audits/20260101-estate-audit.md", "# Old\n[Gone](../../gone.md)\n")
+        self.put(f"{GHK}/Audits/20260201-estate-audit.md", "# New\n")
+        _, report = self.run_check()
+        self.assertEqual(report["history_links"], 1)
+        self.assertNotIn("MISSING_LINK", self.codes(report))
+        self.put(f"{GHK}/Audits/20260201-estate-audit.md", "# New\n[Gone](../../gone.md)\n")
+        _, report = self.run_check()
+        self.assertEqual(report["history_links"], 1)
+        self.assertIn("MISSING_LINK", self.codes(report))
 
     def test_missing_link_warning_and_strict(self):
         self.put("Tickets/custom-case/support.md", "# Support\n[Missing](absent%20note.md)\n")

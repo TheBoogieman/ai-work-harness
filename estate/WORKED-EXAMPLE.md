@@ -118,13 +118,15 @@ OK: work repo present; last commit <HOW-LONG-AGO>.
 OK: nothing uncommitted — every change in the estate is in git.
 OK: record repo .git <SIZE> MiB (working tree <SIZE> MiB) — under the 50 MiB housekeeping threshold.
 OK: hooks config parses.
+NOTE: no estate audit report yet — run the estate-auditor agent when the estate has grown (CONSTITUTION.md §15).
 OK: 999912Z-PROJ-99999 — last session 20260101000000, knowledge files: 0.
 OK: estate healthy.
 ```
 
 The one ticket it can see is `999912Z-PROJ-99999`, the empty template every
 estate ships with. Its session-log stamp is a placeholder date. Nothing has
-happened here yet.
+happened here yet. The `NOTE` is the audit clock: there is no estate audit yet,
+and once there is one this line dates it and turns yellow when it grows old.
 
 The first two lines answer different questions, and the difference matters.
 *Last commit* says **when** git last recorded anything — on a fresh estate that
@@ -256,6 +258,7 @@ OK: work repo present; last commit <HOW-LONG-AGO>.
 OK: nothing uncommitted — every change in the estate is in git.
 OK: record repo .git <SIZE> MiB (working tree <SIZE> MiB) — under the 50 MiB housekeeping threshold.
 OK: hooks config parses.
+NOTE: no estate audit report yet — run the estate-auditor agent when the estate has grown (CONSTITUTION.md §15).
 OK: 202607A-PROJ-4021 — last session <TIMESTAMP>, knowledge files: 1.
 OK: 999912Z-PROJ-99999 — last session 20260101000000, knowledge files: 0.
 OK: estate healthy.

@@ -181,9 +181,10 @@ jobs:
         if: steps.scope.outputs.run == 'true'
         with:
           python-version: '3.12'
-      - name: Install nbformat (the notebook helper's only dependency)
+      # openpyxl is the workbook parser's dependency; the [workbook-parse] case reds without it.
+      - name: Install nbformat (the notebook helper) and openpyxl (the workbook parser)
         if: steps.scope.outputs.run == 'true'
-        run: python3 -m pip install nbformat
+        run: python3 -m pip install nbformat openpyxl
       - name: Verify zip + unzip are present (context-pack build + stage 6 read)
         if: steps.scope.outputs.run == 'true'
         run: command -v zip >/dev/null && command -v unzip >/dev/null

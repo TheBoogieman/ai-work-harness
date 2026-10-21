@@ -2,8 +2,9 @@
 # tracker-sweep.sh — on-demand board-vs-estate drift report. A dumb M-lane sibling of
 # harness-status: HUMAN-RUN and ON-DEMAND, NEVER wired to a hook. It reads each local
 # ticket's upstream status through a PLUGGABLE FETCH SEAM, compares it against the local
-# fact (the ticket folder is present, so the ticket is ACTIVE locally), and WARNs per
-# divergence with the fix named. It only reports; it never edits an estate.
+# fact (the ticket is CLOSED locally when its Current State reads "- Now: Closed", otherwise
+# ACTIVE), and WARNs per divergence, in either direction, with the fix named. It only
+# reports; it never edits an estate.
 #
 # FAILS OPEN (the load-bearing property): if the tracker is unreachable — or no fetcher is
 # configured at all — this prints ONE quiet NOTE and exits 0. It NEVER reds. An estate with
@@ -48,6 +49,11 @@ tracker_fetch_status() {  # $1 = ticket id -> prints upstream status, rc 0; rc!=
   "$HARNESS_TRACKER_FETCH_CMD" "$1"
 }
 
+# The local fact: the primary record's Current State "Now" line reads "Closed …" (CONSTITUTION §14 step 8).
+ticket_closed_locally() {  # $1 = <folder>/<folder>.md
+  [ -f "$1" ] && awk '/^## Current State/{s=1;next} s&&/^## /{exit} s&&tolower($0)~/^- now:[ \t]*closed/{f=1;exit} END{exit !f}' "$1"
+}
+
 # No fetcher configured at all → fail open with ONE quiet NOTE. This is the DEFAULT product
 # state (the harness ships tracker-agnostic), and it is normal offline — never an error.
 if [ -z "${HARNESS_TRACKER_FETCH_CMD:-}" ]; then
@@ -55,12 +61,13 @@ if [ -z "${HARNESS_TRACKER_FETCH_CMD:-}" ]; then
   exit 0
 fi
 
-# Enumerate locally-active tickets: folders under Tickets/ whose name conforms and that the user
-# hasn't silenced. Presence in Tickets/ IS the local fact — an existing ticket is ACTIVE locally.
+# Enumerate ticket folders under Tickets/ whose name conforms and that the user hasn't silenced;
+# year-9999 example templates are skipped, as the other observers skip them.
 divergences=0
 while IFS= read -r name; do
   d="$WORK_ROOT/Tickets/$name"
   ticket_silenced "$d" && continue          # user opted this folder out via .not-a-ticket
+  case "$name" in 9999*) continue ;; esac
   # Fetch the upstream status through the seam. A non-zero exit = unreachable → FAIL OPEN: print
   # ONE quiet NOTE and stop. We never partially red and never guess — this is the load-bearing
   # branch that keeps a dropped VPN from turning into a red.
@@ -71,16 +78,21 @@ while IFS= read -r name; do
   # Normalise for comparison: lower-case and strip surrounding whitespace so "Closed", "closed ",
   # etc. all compare alike against the closed vocabulary above.
   status_norm="$(printf '%s' "$status" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')"
-  # BY FACT: the ticket is present locally (active). If the board says it is closed, that is the
-  # drift the issue names — closed upstream, active locally. WARN with the fix named.
-  if printf '%s\n' "$status_norm" | grep -qiE "$HARNESS_TRACKER_CLOSED_RE"; then
+  # Drift in either direction: closed upstream but still active locally, or closed locally while
+  # the board still shows it open. WARN with the fix named; a fixed record is a human act.
+  closed_upstream=0; printf '%s\n' "$status_norm" | grep -qiE "$HARNESS_TRACKER_CLOSED_RE" && closed_upstream=1
+  closed_locally=0; ticket_closed_locally "$d/$name.md" && closed_locally=1
+  if [ "$closed_upstream" -eq 1 ] && [ "$closed_locally" -eq 0 ]; then
     echo "WARN: $name is '$status' on the board but still active locally — reconcile: record the closure in the ticket's Current State and archive/close it locally (a fixed record is a human act)."
+    divergences=$((divergences+1))
+  elif [ "$closed_upstream" -eq 0 ] && [ "$closed_locally" -eq 1 ]; then
+    echo "WARN: $name is closed locally but '$status' on the board — reconcile: confirm the board status, or reopen the local record."
     divergences=$((divergences+1))
   fi
 done < <(for dd in "$WORK_ROOT/Tickets"/*/; do [ -d "$dd" ] && basename "$dd"; done 2>/dev/null | grep -E "$TICKET_RE" || true)
 
 # No divergence found → say so plainly. This is still just a report; the exit code stays 0.
 if [ "$divergences" -eq 0 ]; then
-  echo "OK: no board-vs-estate drift — every active ticket matches its upstream status."
+  echo "OK: no board-vs-estate drift — every ticket's local state matches its upstream status."
 fi
 exit 0   # advisory only: every finding is a yellow WARN or a NOTE; the sweep never reds

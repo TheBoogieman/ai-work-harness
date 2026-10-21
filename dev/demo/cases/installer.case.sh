@@ -192,7 +192,8 @@ in_product_only() {
 #      copied as-is into an estate, where estate/'s contents sit at the root and CLAUDE.md never
 #      ships, nine of them pointed nowhere. Links are pulled out of the installed copy itself, so a
 #      link added to README later is checked the day it lands. The count is asserted non-zero first,
-#      so a README with no links found cannot pass as "no dead links".
+#      so a README with no links found cannot pass as "no dead links". A link whose TEXT still reads
+#      `estate/…` fails too: its target resolves, but it shows the reader a folder the estate lacks.
 in_readme_links() {
   local readme="$I39_EST/README.md" link target n=0 dead=0
   [ -f "$readme" ] \
@@ -212,7 +213,14 @@ in_readme_links() {
   [ "$dead" -eq 0 ] \
     || { echo "BUG [readme-links]: $dead of the installed README's $n local links, named above," \
            "point at nothing inside the estate"; exit 1; }
-  echo "  ok [readme-links] — all $n local links in the installed README resolve inside the estate"
+  # Link text is what the reader sees, so a repository path left in it is wrong even when the
+  # target resolves; grep prints the offending lines before the BUG line names them.
+  if grep -nE '\[`?estate/' "$readme"; then
+    echo "BUG [readme-links]: the installed README's link text above still starts with estate/," \
+         "a folder the estate does not have"; exit 1
+  fi
+  echo "  ok [readme-links] — all $n local links in the installed README resolve inside the estate" \
+       "and none is labelled with the repository's estate/ prefix"
 }
 
 # (b2) estate-root-tracked (#140): every ROOT-PINNED product file the installer lays down must be

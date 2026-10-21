@@ -363,8 +363,9 @@ machine is, and how a day moves through it. *Referenced by:* the folder map,
 
 ### The development rules
 
-**[`CLAUDE.md`](CLAUDE.md)** — the four standing rules, the branch/PR loop, the
-environment. *Referenced by:* this page (Developing this harness).
+**[`CLAUDE.md`](CLAUDE.md)** (source repository only; never shipped to an estate)
+— the four standing rules, the branch/PR loop, the environment. *Referenced by:*
+this page (Developing this harness).
 
 ---
 

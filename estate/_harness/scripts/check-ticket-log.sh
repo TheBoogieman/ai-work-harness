@@ -140,7 +140,7 @@ scan_index() {
 check_orphans() {
   while IFS= read -r f; do
     base=$(basename "$f"); [[ "$base" == "_index.md" ]] && continue
-    live=$((live+1))                        # count real files (drives the fat/empty NOTEs below)
+    live=$((live+1))                        # count real files (drives the fat NOTE below)
     printf '%s' "$entry_files" | grep -Fxq -- "$base" && continue
     echo "FAIL: $name orphan file AI-Knowledge/$base not in _index.md." \
          "Fix: echo '- $base — <what it covers>' >> '$idx'"

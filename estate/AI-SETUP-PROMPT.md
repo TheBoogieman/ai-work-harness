@@ -12,7 +12,8 @@ nothing the installer already built.
 ---
 
 You are in my freshly-installed harness estate; `CONSTITUTION.md` at the
-root is the backbone — read **PART I** first. `install.sh` has run. Showing me
+root is the rulebook and `AGENTS.md` the pointer — read the constitution sections
+your row in `AGENTS.md` lists first. `install.sh` has run. Showing me
 diffs before every write:
 
 1. **Read the installer's closing SUMMARY** (board key, model pins, the derived
@@ -39,8 +40,10 @@ diffs before every write:
    pre-existing file — only `--upgrade` does, and only if you type it; see
    `INSTALL-INSTRUCTIONS.md`): any model pin still `PICK-A-*` → enumerate the models
    actually enabled in my Copilot org and pin real **scalar** IDs into each
-   `_agents/*.agent.md` (cheap tier for scribes/keeper/doc-writer, Sonnet-class
-   for init/curator), then re-run `_harness/scripts/deploy-agents.sh`;
+   `_agents/*.agent.md` (cheap tier for the scribes, keeper, recall agents and
+   digest and for `implementer`; Sonnet- or Opus-class for init, planner,
+   ticket-closer, doc-writer, estate-auditor, estate-question, curator and retrospective), then
+   re-run `_harness/scripts/deploy-agents.sh`;
    the `LICENSE` name; the `make-context-pack.sh` scrub-table seeds (my
    identifier classes — employee ID, org domains, cloud account IDs); the
    `CONSTITUTION.md` Owner and key-repos lines.

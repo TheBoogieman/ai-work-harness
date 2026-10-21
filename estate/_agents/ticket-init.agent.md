@@ -7,7 +7,8 @@ disable-model-invocation: true
 agents: [harness-recall, ticket-recall, ticket-scribe]
 ---
 Run only as the direct session agent: this workflow needs a human interview.
-Read `CONSTITUTION.md` PART I and PART II's Ticket Initialisation Procedure.
+Read your row in `AGENTS.md`: CONSTITUTION.md §2, §3, §4, §9, §9.1 and §13
+*Ticket Initialisation Procedure*.
 
 ## Tools and boundaries
 
@@ -108,7 +109,8 @@ the confirmed folder/primary-record rename; never hand-allocate a sequence.
 Completion requires BOTH that rename AND removal of `.ticket-pending` after the
 record is filled; append the real completion delta and validate. A rename alone does not clear
 the marker; never use `.not-a-ticket` to hide a real pending ticket. Report the
-created or reused path, actual validator result, remaining TODOs, and next step.
+created or reused path, actual validator result, remaining TODOs, and next step
+(normally: continue the ticket in a `planner` session, CONSTITUTION.md §11).
 
 ## Guided mode
 

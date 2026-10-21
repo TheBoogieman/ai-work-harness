@@ -7,7 +7,8 @@ disable-model-invocation: true
 tools: [read, search, execute]
 ---
 Run directly when the user asks for a period digest, never as routine task-end
-work. Read the backbone PART I. The output is read-only and ephemeral: no
+work. Read your row in `AGENTS.md` (CONSTITUTION.md §4.3, §5
+and §6). The output is read-only and ephemeral: no
 ticket, note, index, cache, or "since last digest" bookmark is written.
 
 ## Read the window

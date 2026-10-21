@@ -312,15 +312,17 @@ in_board_default() {
 }
 
 # (h) re-run-models: an established model pin is OFFERED as the default on a re-run. Set the cheap
-#     tier's reference agent (doc-writer) to a marker, re-run, assert the cheap-model prompt (the
+#     tier's reference agent (ticket-scribe) to a marker, re-run, assert the cheap-model prompt (the
 #     2nd ACCEPT DEFAULT) offers it. The awk-rewrite-to-tmp+mv is BSD-portable (no in-place edit).
+#     This is also the guard for the reference moving off doc-writer, which now ships on the sonnet
+#     tier: an installer still reading doc-writer offers doc-writer's pin here, not the marker.
 in_model_pin_offered() {
-  local i39_m i39_dw i39_mhint
+  local i39_m i39_ts i39_mhint
   i39_m="$I39_ROOT/mest"
   in_install model-pin-offered --yes "$i39_m"
-  i39_dw="$i39_m/_agents/doc-writer.agent.md"
-  awk '/^model:/{print "model: MZAP"; next} {print}' "$i39_dw" > "$I39_ROOT/dw.tmp" \
-    && mv "$I39_ROOT/dw.tmp" "$i39_dw"
+  i39_ts="$i39_m/_agents/ticket-scribe.agent.md"
+  awk '/^model:/{print "model: MZAP"; next} {print}' "$i39_ts" > "$I39_ROOT/ts.tmp" \
+    && mv "$I39_ROOT/ts.tmp" "$i39_ts"
   printf '\n\n\n' | HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash estate/install.sh "$i39_m" \
     2>"$I39_ROOT/m.err" >/dev/null || true
   i39_mhint=$(grep -oE 'ACCEPT DEFAULT: [A-Za-z0-9-]+' "$I39_ROOT/m.err" | sed -n '2p' \
@@ -412,7 +414,7 @@ in_missing_value_audible() {
   i39_mvti="$i39_mv/_agents/ticket-init.agent.md"
   awk '/^model:/{print "model: MVSONNET"; next} {print}' "$i39_mvti" > "$I39_ROOT/mvti.tmp" \
     && mv "$I39_ROOT/mvti.tmp" "$i39_mvti"
-  rm -f "$i39_mv/_agents/doc-writer.agent.md"   # THE FIXTURE: one agent file absent
+  rm -f "$i39_mv/_agents/ticket-scribe.agent.md"   # THE FIXTURE: the cheap reference agent absent
   [ -e "$i39_mv/_harness/scripts/ticket-grammar.sh" ] \
     || { echo "BUG [missing-value-audible]: fixture is not an ESTABLISHED estate — the" \
            "guard would"; \
@@ -436,7 +438,7 @@ in_missing_value_audible() {
            "not"; \
          echo "    take the established branch, so the cheap placeholder proves nothing"; exit 1; }
   # The separate, weaker claim: the run SAID which value it could not read.
-  grep -q 'doc-writer.agent.md' "$I39_ROOT/mv.err" \
+  grep -q 'ticket-scribe.agent.md' "$I39_ROOT/mv.err" \
     || { echo "BUG [missing-value-audible]: the run never named the unreadable agent file"; \
          exit 1; }
   echo "  ok [missing-value-audible] — missing value: fallback REACHED (value reaches the summary)"
@@ -504,14 +506,14 @@ in_upgrade_fixture() {
 # greps: a grep can pass on a file the upgrade rewrote around the pattern it looked for.
 # The rewrite-to-tmp+mv idiom is BSD-portable — stock macOS sed has no GNU-style in-place edit.
 in_up_customise() {
-  UP_TG="$UP_EST/_harness/scripts/ticket-grammar.sh"; UP_DW="$UP_EST/_agents/doc-writer.agent.md"
+  UP_TG="$UP_EST/_harness/scripts/ticket-grammar.sh"; UP_CR="$UP_EST/_agents/ticket-scribe.agent.md"
   UP_HOOK="$UP_EST/.github/hooks/harness.json"; UP_CON="$UP_EST/CONSTITUTION.md"
   UP_PACK="$UP_EST/_harness/scripts/make-context-pack.sh"
   UP_REC="$UP_EST/General AI-Knowledge/up-note.md"
   sed 's/\[A-Z\]\[A-Z0-9\]\*/[A-Z][A-Z0-9-]*/' "$UP_TG" > "$I39_ROOT/tg.t" \
     && mv "$I39_ROOT/tg.t" "$UP_TG"
-  awk '/^model:/{print "model: UPCHEAP"; next} {print}' "$UP_DW" > "$I39_ROOT/dw.t" \
-    && mv "$I39_ROOT/dw.t" "$UP_DW"
+  awk '/^model:/{print "model: UPCHEAP"; next} {print}' "$UP_CR" > "$I39_ROOT/cr.t" \
+    && mv "$I39_ROOT/cr.t" "$UP_CR"
   sed 's/"timeoutSec": 60/"timeoutSec": 137/' "$UP_HOOK" > "$I39_ROOT/hk.t" \
     && mv "$I39_ROOT/hk.t" "$UP_HOOK"
   sed 's/\*\*<Your Name>\*\*/**CUSTOM OWNER**/' "$UP_CON" > "$I39_ROOT/con.t" \
@@ -560,7 +562,7 @@ in_up_customise() {
     || { echo "BUG [upgrade-repoints]: fixture unsound — the agent contract does not name the"; \
          echo "    script this fixture renames, so there is no stale path for the upgrade to"; \
          echo "    re-point and the guard below would assert nothing"; exit 1; }
-  cp -p "$UP_TG" "$I39_ROOT/snap.tg"; cp -p "$UP_DW" "$I39_ROOT/snap.dw"
+  cp -p "$UP_TG" "$I39_ROOT/snap.tg"; cp -p "$UP_CR" "$I39_ROOT/snap.cr"
   cp -p "$UP_HOOK" "$I39_ROOT/snap.hk"; cp -p "$UP_CON" "$I39_ROOT/snap.con"
   cp -p "$UP_PACK" "$I39_ROOT/snap.pack"; cp -p "$UP_REC" "$I39_ROOT/snap.rec"
   cp -p "$UP_TICK" "$I39_ROOT/snap.tick"; cp -p "$UP_RETRO" "$I39_ROOT/snap.retro"
@@ -745,7 +747,7 @@ in_upgrade_retires_version() {
 #     carries the user's private scrub classes; none may be replaced by the generic source copy.
 in_upgrade_keeps_settings() {
   local n f s
-  for n in tg:"$UP_TG" dw:"$UP_DW" hk:"$UP_HOOK" con:"$UP_CON" pack:"$UP_PACK"; do
+  for n in tg:"$UP_TG" cr:"$UP_CR" hk:"$UP_HOOK" con:"$UP_CON" pack:"$UP_PACK"; do
     s="$I39_ROOT/snap.${n%%:*}"; f="${n#*:}"
     cmp -s "$s" "$f" \
       || { echo "BUG [upgrade-keeps-settings]: the upgrade CHANGED $f, which carries a value the"; \

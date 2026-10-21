@@ -18,6 +18,16 @@
 #    the folder name.
 #
 # LINE FORMAT (one per skill): `- <Skill-Name> — triggers: <keywords> — tools: <tool[, tool...] | none>`
+# Doc-* skills are doc-writer's documentation targets (CONSTITUTION §19): each names its destination,
+# kind (living, append-only or draft-only), section template, sources and indexes.
 - SQL-Writing — triggers: sql, query, select, join, cte, window, aggregation, dbt model, warehouse query — tools: sqlfluff, dbt
+- Doc-Pipeline-Home — triggers: pipeline doc, pipeline home, pipeline page, identity card, refresh pipeline page, schedule, DAG, tables populated — tools: git, parse-workbook.py, check-work-map.py
+- Doc-Ticket-Walkthrough — triggers: walkthrough, handover, implementation walkthrough, close-out document, explain the ticket — tools: gh, git
+- Doc-Repo-Workflow — triggers: repo workflow, runbook, delivery guide, how to deploy this repo, correct the runbook — tools: git, gh
+- Doc-Knowledge-Topic — triggers: general knowledge note, topic note, how-to, tool setup note, technique note — tools: check-work-map.py
+- Doc-AI-Knowledge-Note — triggers: ticket knowledge note, AI-Knowledge note (user-requested only) — tools: check-ticket-log.sh
+- Doc-PR-Description — triggers: PR description, pull request body, PR summary — tools: git, gh
+- Doc-Readme — triggers: README, module readme, getting started — tools: git
+- Doc-Tracker-Update — triggers: tracker comment, tracker update, status summary, verification script — tools: gh
 
-[SQL-Writing module](SQL-Writing/SKILL.md) | [Skill template](SKILL-TEMPLATE.md)
+[SQL-Writing module](SQL-Writing/SKILL.md) | [Skill template](SKILL-TEMPLATE.md) | Documentation targets: [Doc-Pipeline-Home](Doc-Pipeline-Home/SKILL.md) · [Doc-Ticket-Walkthrough](Doc-Ticket-Walkthrough/SKILL.md) · [Doc-Repo-Workflow](Doc-Repo-Workflow/SKILL.md) · [Doc-Knowledge-Topic](Doc-Knowledge-Topic/SKILL.md) · [Doc-AI-Knowledge-Note](Doc-AI-Knowledge-Note/SKILL.md) · [Doc-PR-Description](Doc-PR-Description/SKILL.md) · [Doc-Readme](Doc-Readme/SKILL.md) · [Doc-Tracker-Update](Doc-Tracker-Update/SKILL.md)

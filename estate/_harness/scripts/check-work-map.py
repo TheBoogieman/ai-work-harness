@@ -19,6 +19,10 @@ additional routes; the existing validator still owns index grammar validation.
 Directory routes resolve to _index.md or the same-named topic Markdown, never
 to every descendant. Coverage means reachability in this supported local graph,
 not verified facts, lineage, aliases, or complete Markdown interpretation.
+
+Earlier estate audit reports are frozen (never edited), so a dead link inside one
+is counted as history_links rather than raised as a finding; the newest report
+is checked like any other note.
 """
 
 from __future__ import annotations
@@ -35,6 +39,7 @@ from urllib.parse import unquote, urlsplit
 GAK = "General AI-Knowledge"
 GHK = "General Human Knowledge"
 EXCLUDED = {"Logs", "Dump", ".git", "_retired"}
+AUDIT_RE = re.compile(r"^\d{8}-estate-audit.*\.md$")
 
 
 def blank(text: str) -> str:
@@ -142,7 +147,10 @@ class Observer:
         self.links_checked = 0
         self.uninitialized = 0
         self.templates_skipped = 0
+        self.history_links = 0
         self.map_dir = root / GAK / "Work Map"
+        audits = sorted(path for path in (root / GHK / "Audits").glob("*.md") if AUDIT_RE.match(path.name))
+        self.frozen_audits = set(audits[:-1])
 
     def label(self, path: Path) -> str:
         return path.relative_to(self.root).as_posix() if path.is_relative_to(self.root) else path.as_posix()
@@ -281,6 +289,9 @@ class Observer:
                 self.note("OUTSIDE_ESTATE", source, "Symlink target escapes the estate; not followed.", line, candidate)
                 return None
             if not target.exists():
+                if source in self.frozen_audits:
+                    self.history_links += 1
+                    return None
                 self.note("MISSING_ENTITY" if self.entity(candidate) else "MISSING_LINK", source,
                           "Local target does not exist.", line, candidate)
                 return None
@@ -340,6 +351,7 @@ class Observer:
             self.note("MAP_UNAVAILABLE", map_index, "Map index unavailable; ticket mapping checks skipped.")
         self.findings.sort(key=lambda finding: (finding["path"], finding["line"], finding["code"], finding.get("target", "")))
         return {"files_scanned": len(self.documents), "links_checked": self.links_checked,
+                "history_links": self.history_links,
                 "findings": self.findings,
                 "coverage": {"tickets": len(self.tickets), "mapped": len(mapped),
                              "uninitialized": self.uninitialized, "templates_skipped": self.templates_skipped,
@@ -368,9 +380,10 @@ def main() -> int:
             target = " -> " + json.dumps(finding["target"], ensure_ascii=True) if "target" in finding else ""
             print(f"NOTE [work-map:{finding['code']}] {location}:{finding['line']}: {finding['message']}{target}")
         coverage = report["coverage"]
+        history = f"; {report['history_links']} dead links in earlier audits counted as history" if report["history_links"] else ""
         print(f"NOTE [work-map] {report['files_scanned']} Markdown files, {report['links_checked']} local links; "
               f"{coverage['mapped']}/{coverage['tickets']} initialized tickets mapped; "
-              f"{len(report['findings'])} findings.")
+              f"{len(report['findings'])} findings{history}.")
     return int(arguments.strict and bool(report["findings"]))
 
 

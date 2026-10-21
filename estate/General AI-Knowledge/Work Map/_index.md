@@ -1,25 +1,43 @@
 # Work Map
-Last reviewed: 2026-09-30
+Last reviewed: 2026-10-21
 
-Find tickets and knowledge by repo or pipeline. This is a living link directory,
-not data lineage, a deployment inventory or a replacement for ticket records.
+The estate's hub from repository or pipeline names to their pages, delivery
+runbooks and ticket records. This is a living link directory, not data lineage,
+a deployment inventory or a replacement for ticket records. Pipeline pages are
+the one home of each pipeline's facts (CONSTITUTION §9.2): read a page's
+Identity card first, then one section. Repo cards are routing.
+
+[Reusable knowledge](../_index.md) | [Repo workflows](../../General%20Human%20Knowledge/Repo%20Workflows/_index.md) | [Pipeline page template](../Skills/Doc-Pipeline-Home/SKILL.md)
 
 ## Repositories
 
-No operator repositories indexed yet. Add links to `Repos/<repo>.md` as real
-ticket work establishes them.
+No operator repositories indexed yet. Add one row per repo card as real ticket
+work establishes it:
+
+| Repo card | Delivery runbook | Pipelines it hosts |
+|---|---|---|
+| `Repos/<repo>.md` | `General Human Knowledge/Repo Workflows/<runbook>.md` | one line |
 
 ## Pipelines
 
-No operator pipelines indexed yet. Add links to `Pipelines/<stable-name>.md` as
-real ticket work establishes them. Record only observed aliases, not guesses.
+No operator pipelines indexed yet. Add one row per pipeline page as real ticket
+work establishes it. Record only observed aliases, not guesses:
+
+| Pipeline page | Runtime | Repos | Design workbook |
+|---|---|---|---|
+| `Pipelines/<stable-name>.md` | scheduler DAG or job name | repos | workbook in `Mappings/`, or — |
 
 ## Page Shape
 
-- Exact component name and observed aliases.
-- Related repo/pipeline links, only when backed by a source.
-- Links to the existing runbook and reusable knowledge notes.
-- Ticket links with one-line context; keep status and change detail in the ticket.
+- **Pipeline page** (`Pipelines/<stable-name>.md`): an Identity card, then fixed
+  sections (How it works, Scheduling and triggers, Change recipes, Deploy,
+  Validate, Behaviour and traps, Read before, Ticket history), each ending with a
+  `Sources:` line. `doc-writer` creates and refreshes it with the
+  [Doc-Pipeline-Home](../Skills/Doc-Pipeline-Home/SKILL.md) skill.
+- **Repo card** (`Repos/<repo>.md`): local path, code-host repo, default branch,
+  its delivery runbook, the pipelines it hosts, and ticket history.
+- Related repo/pipeline links only when backed by a source; ticket links with
+  one-line context; status and change detail stay in the ticket.
 
 Use relative Markdown links and encode spaces. A page linking to a ticket creates
 the Obsidian graph connection without changing historical logs. On new/active
@@ -48,5 +66,3 @@ This template contains no indexed work. Record coverage as links are added.
 Absence here is not evidence of no related ticket: fall back to scoped searches
 of ticket headers, Current States and knowledge indexes. Follow at most three
 relevant pointers by default. Do not bulk-read logs or notebooks.
-
-[Reusable knowledge](../_index.md) | [Repo workflows](../../General%20Human%20Knowledge/Repo%20Workflows/_index.md)

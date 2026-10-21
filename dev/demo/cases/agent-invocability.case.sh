@@ -19,4 +19,23 @@ case_agent_invocability() {
   [ "$r08_bad" -eq 0 ] \
     || { echo "BUG [agents-invocable]: $r08_bad agent(s) not invocable"; exit 1; }
   echo "  ok [agents-invocable] — all $r08_total agents are user-invocable: true"
+  ac_core_roster
+}
+
+# [agents-core] the agents a daily workflow cannot run without — the planner/implementer loop,
+# close-out and the audit among them — are on harness-status's CORE list, so a missing contract is
+# a red with its fix, not a silently shorter roster. Each is moved aside in turn and restored.
+ac_core_roster() {
+  local a out
+  echo "--- [agents-core]: a missing core agent contract is a status FAIL that names it ---"
+  for a in planner implementer ticket-closer estate-auditor; do
+    mv "estate/_agents/$a.agent.md" "estate/_agents/$a.agent.md.aside"
+    set +e; out=$(bash estate/_harness/scripts/harness-status.sh 2>&1); set -e
+    mv "estate/_agents/$a.agent.md.aside" "estate/_agents/$a.agent.md"
+    printf '%s\n' "$out" | grep -q "^FAIL: core agent $a.agent.md missing" \
+      || { echo "BUG [agents-core]: with $a.agent.md missing, status did not FAIL naming it:"; \
+           printf '%s\n' "$out" | grep -E '^(FAIL|WARN)'; exit 1; }
+  done
+  echo "  ok [agents-core] — planner, implementer, ticket-closer and estate-auditor are core:" \
+    "each missing contract is a FAIL with its fix"
 }

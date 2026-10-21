@@ -44,7 +44,7 @@ stage_one() { # $1 = path relative to WORK_ROOT
   for rule in "${SCRUB[@]}"; do sed -E "$rule" "$dst" > "$dst.tmp" && mv "$dst.tmp" "$dst"; done
 }
 
-# Harness state per the backbone's Context Pack Convention
+# Harness state per CONSTITUTION §21 (Context Pack Convention)
 stage_one CONSTITUTION.md
 stage_one AGENTS.md
 stage_one README.md

@@ -92,7 +92,7 @@ check_recency() {
 check_current_state() {
   grep -q '^## Current State' "$md" && return 0
   echo "FAIL: $name missing '## Current State'." \
-       "Fix: add the section per backbone PART I and have ticket-scribe fill it."
+       "Fix: add the section per CONSTITUTION §5 (Current State) and have ticket-scribe fill it."
   ok=0
   return 0
 }

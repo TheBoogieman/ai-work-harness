@@ -145,7 +145,8 @@ up_repoint=()
 up_same=0; up_record=0; UPGRADE_PARAM=""
 # A shipped file carrying this exact self-declaration becomes user-owned after laydown. Reading the
 # marker from the file itself keeps ownership beside the content instead of adding another path
-# list that can drift; CONSTITUTION.md uses it because setup deliberately personalises that file.
+# list that can drift; CONSTITUTION.md and AGENTS.md use it because setup deliberately personalises
+# them, and AGENTS.md points at the constitution's own section numbers, budgets and tools.
 UPGRADE_USER_MARKER='harness-upgrade:'" preserve-user-content"
 
 # ---- args -------------------------------------------------------------------------------------
@@ -553,7 +554,9 @@ src_of() {
 # layout: `estate/CONSTITUTION.md`, and the development-only CLAUDE.md. An estate lays estate/'s
 # contents down at its own root and never receives CLAUDE.md, so a byte copy left nine links
 # pointing nowhere. The estate form drops the `estate/` prefix from each link target (the `<…>`
-# spelling too) and turns a CLAUDE.md link into its plain text. Every other file is its source.
+# spelling too) and from link text that starts with it, so the reader is not shown a folder the
+# estate does not have, and turns a CLAUDE.md link into its plain text. Every other file is its
+# source.
 #
 # EVERY WRITE AND EVERY COMPARISON GOES THROUGH product_form. Upgrade decides "already current"
 # by comparing an estate's copy with what it would lay down; compared with the raw source instead,
@@ -561,6 +564,7 @@ src_of() {
 product_form() {  # $1 = estate-relative path -> the bytes it is laid down as, on stdout
   if [ "$1" = "README.md" ]; then
     sed -E -e 's|\]\((<?)estate/|](\1|g' \
+           -e 's|\[(`?)estate/|[\1|g' \
            -e 's|\[([^]]*)\]\(CLAUDE\.md(#[^)]*)?\)|\1|g' "$(src_of "$1")"
   else
     cat "$(src_of "$1")"

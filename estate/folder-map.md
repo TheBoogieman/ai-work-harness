@@ -19,7 +19,7 @@ Work/                                        [git root · local-only · whitelis
 ├── SPEC.md                                  what this harness guarantees TODAY · descriptive: a line untrue at HEAD is a defect
 ├── folder-map.md                            THIS PAGE · the estate's structure (the rules are CONSTITUTION.md)
 ├── WORKED-EXAMPLE.md                        one piece of work end to end — the day-in-the-life a newcomer reads first
-├── AGENTS.md                                THE POINTER · navigation, tools/auth, six rules, per-agent reading list → numbered CONSTITUTION.md sections
+├── AGENTS.md                                THE POINTER · navigation, tools/auth, six rules, per-agent reading list → numbered CONSTITUTION.md sections · user-owned after laydown, KEEP on upgrade
 ├── INSTALL-INSTRUCTIONS.md                  the ONE home for every install command, prerequisite and caveat
 ├── install.sh                               the dumb creator that laid this estate down · manual: INSTALL-INSTRUCTIONS.md
 ├── AI-SETUP-PROMPT.md                       the AI-assistant final gate, pasted in after the install

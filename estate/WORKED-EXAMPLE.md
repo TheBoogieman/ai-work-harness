@@ -118,13 +118,15 @@ OK: work repo present; last commit <HOW-LONG-AGO>.
 OK: nothing uncommitted — every change in the estate is in git.
 OK: record repo .git <SIZE> MiB (working tree <SIZE> MiB) — under the 50 MiB housekeeping threshold.
 OK: hooks config parses.
+NOTE: no estate audit report yet — run the estate-auditor agent when the estate has grown (CONSTITUTION.md §15).
 OK: 999912Z-PROJ-99999 — last session 20260101000000, knowledge files: 0.
 OK: estate healthy.
 ```
 
 The one ticket it can see is `999912Z-PROJ-99999`, the empty template every
 estate ships with. Its session-log stamp is a placeholder date. Nothing has
-happened here yet.
+happened here yet. The `NOTE` is the audit clock: there is no estate audit yet,
+and once there is one this line dates it and turns yellow when it grows old.
 
 The first two lines answer different questions, and the difference matters.
 *Last commit* says **when** git last recorded anything — on a fresh estate that
@@ -256,6 +258,7 @@ OK: work repo present; last commit <HOW-LONG-AGO>.
 OK: nothing uncommitted — every change in the estate is in git.
 OK: record repo .git <SIZE> MiB (working tree <SIZE> MiB) — under the 50 MiB housekeeping threshold.
 OK: hooks config parses.
+NOTE: no estate audit report yet — run the estate-auditor agent when the estate has grown (CONSTITUTION.md §15).
 OK: 202607A-PROJ-4021 — last session <TIMESTAMP>, knowledge files: 1.
 OK: 999912Z-PROJ-99999 — last session 20260101000000, knowledge files: 0.
 OK: estate healthy.
@@ -281,12 +284,15 @@ the machine.
 
 ## 8. What is on disk at the end of the day
 
-Five things, and you can read all of them without any tool.
+Seven things, and you can read all of them without any tool. (`LC_ALL=C` only fixes
+the sort order, so the listing reads the same on every machine.)
 
 ```console
-$ ls -1 Tickets/202607A-PROJ-4021
+$ LC_ALL=C ls -1 Tickets/202607A-PROJ-4021
 202607A-PROJ-4021.md
 AI-Knowledge
+Agent-Output
+Agent-Prompts
 Checks
 Dump
 Logs
@@ -318,6 +324,9 @@ validator insists every record has; the session log with the day's entry appende
 under the template's; and a commit history in which the day is one line.
 `Checks/`, `Dump/` and `Logs/` came from the template: `Checks/` holds a notebook
 and scratch queries, and the other two are for bulk that git deliberately ignores.
+`Agent-Prompts/` and `Agent-Output/` also came from the template and stay empty
+today; they hold planner prompts and implementer handbacks when you use the build
+loop (CONSTITUTION §11), and git keeps them.
 
 Current State above still carries the template's words, and that is the one place
 this transcript falls short of a real day. Rewriting it is the other half of the
@@ -336,6 +345,9 @@ step, while `knowledge-keeper` writes the note and its index line in one step �
 for the named candidate that passed the gate. An ordinary task invokes no keeper
 and adds no notebook cell, so the red block in section 3 is rarer than this page
 makes it look.
+For larger work you start a `planner` session, which writes numbered prompts that
+an `implementer` session runs one at a time, and you finish with `ticket-closer`,
+which verifies the status you state, updates the map and writes the walkthrough.
 The hook commits behind all of it. What is left for you is what only a person can
 do: decide the work is worth a ticket, say in your own words what you learned,
 and read the reds. The commands above are not the interface. They are what the

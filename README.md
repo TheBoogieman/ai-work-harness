@@ -57,7 +57,8 @@ Anything marked *swappable* degrades gracefully if you differ.
   environment's name. Create it yourself (the harness never creates one) and
   set it as the workspace default interpreter so notebooks pick up its kernel.
   The documentation's examples use Python 3.12 in a venv called `venv_global`
-  — a convention worth keeping, not a requirement.
+  — a convention worth keeping, not a requirement. (`openpyxl` is needed only
+  if you parse design workbooks with `parse-workbook.py`.)
 - **An issue tracker** — Jira assumed, any works (*swappable*). Replace the
   `PROJ` board key with yours; `ticket-init` degrades to template-with-TODOs
   when the tracker is unreachable.
@@ -126,22 +127,41 @@ cannot mask the validator; it never blocks work.
 
 Single source of truth. `CONSTITUTION.md` holds every rule; each ticket folder
 holds its own log, state, and knowledge; `General AI-Knowledge/` holds the
-durable stuff; `AGENTS.md` is the entry contract Copilot loads on every
-surface.
+durable stuff; `AGENTS.md` is the pointer Copilot loads on every surface —
+navigation, tools and authentication, six rules, and a per-agent reading list
+into the constitution's numbered sections.
 
 ### L4 — The agents
 
-The workers:
+The workers (who reads which constitution sections: the reading list in
+`AGENTS.md`; who starts which agent: the Harness Guide):
 
 - `ticket-init` (smart, at pickup) — pulls Jira, interviews you (your
   words, non-negotiables, repos), suggests branch names, births the folder
+- `planner` (smart, started by hand) — plans the ticket, writes numbered
+  prompts to `Agent-Prompts/`, reviews each `Agent-Output/` handback, may fold
+  small corrections into the next prompt, and owns the ticket record
+- `implementer` (worker tier, started by hand) — runs one planner prompt and
+  writes its handback to `Agent-Output/`; never touches the ticket log or
+  invokes other agents
+- `ticket-closer` (smart, started by hand) — validates the estate, checks Work
+  Map links, verifies status against your statement, links the work everywhere,
+  and has `doc-writer` write the walkthrough next to the ticket log
+- `estate-auditor` (smart, started by hand) — dated estate audit from
+  `audit-inventory.py`, walkthrough coverage per ticket, then batch-by-batch
+  fixes you approve, including retrospective walkthroughs five tickets at a time
+- `estate-question` (smart, started by hand) — answers a general question
+  ("how do I check X", "what is table Y in pipeline Z") from the estate, the repos
+  and read-only live tools, with at most three citations; writes nothing
 - `ticket-recall` (cheap, at pickup) — read-only; narrates one ticket in
   fixed sections (Done / Changed / Unresolved / Suggested next), writes nothing
 - `ticket-scribe` (cheap) — writes Session Log + Current State after completed
   ticket work
 - `check-scribe` (cheap) — records a parent-qualified, durable check (any
   language) via the helper; zero is the normal outcome
-- `doc-writer` (cheap) — drafts PR descriptions, READMEs and runbooks on request
+- `doc-writer` (smart) — creates, refreshes or checks any estate document
+  against a `Doc-*` skill target: pipeline pages, walkthroughs, runbooks,
+  knowledge notes, PR/README/tracker drafts
 - `knowledge-keeper` (cheap) — captures a named learning into `AI-Knowledge/`;
   zero capture is expected
 - `knowledge-curator` (smart, rare) — compacts and promotes, with human
@@ -167,7 +187,7 @@ Ticket summaries name the component, fields and logic changed. Current State is
 short Now / Next / Blocked bullets; historical Session Logs stay unchanged.
 See the constitution's *Record Ownership and Brevity* convention for writer defaults.
 
-The constitution's [Context Discovery](estate/CONSTITUTION.md#context-discovery)
+The constitution's [Context Discovery](estate/CONSTITUTION.md#9-context-discovery)
 route points to reusable knowledge, repo workflows and the Work Map. Real
 repo/pipeline pages link to tickets and existing notes, giving Obsidian a
 navigable graph without a plugin. The shipped indexes are starting points,
@@ -182,10 +202,16 @@ defaults and human authentication. The constitution owns these procedures.
 
 ## The maintenance port (offline, on demand)
 
-Five human-run tools; each has a one-line purpose in the folder map, and its full
+Seven human-run tools; each has a one-line purpose in the folder map, and its full
 telling lives in `CONSTITUTION.md` (Part II) or the home named inline.
 
 - `harness-status.sh` — estate-wide health report; every FAIL line ends with its fix.
+- `audit-inventory.py` — read-only estate inventory (stale tickets, open PRs,
+  missing walkthroughs, broken `#anchors`, dead links in the root documents,
+  pipeline-page gaps) that feeds the `estate-auditor`; CONSTITUTION §15.
+- `anchor-style.py` — rewrites section links between GitHub slugs
+  (`#42-durable-evidence-gate`) and Obsidian heading text
+  (`#4.2%20Durable%20Evidence%20Gate`); `--check` reports unresolved links.
 - `tracker-sweep.sh` — board-vs-estate drift through a pluggable, tracker-agnostic
   fetch seam that fails open offline; the seam is documented in the script's header.
 - `make-context-pack.sh` — scrubbed, disposable zip of the harness for external
@@ -214,6 +240,10 @@ Three earlier tools sat here — a record appender, a shell-output transcriber a
 block-transport helper (#280). Nothing called any of them, and none had a job the
 two routes above do not do better; they were removed rather than kept for symmetry.
 
+**Design workbooks** are an input, not a record: they sit in `Mappings/`
+(untracked), and `parse-workbook.py` turns one into CSVs, a version history and
+per-version change lists in the ticket's `Dump/workbooks/` (CONSTITUTION §10).
+
 ## The one pattern, repeated everywhere
 
 file states the rule → agent does the work → hook catches the miss →
@@ -228,8 +258,8 @@ itself.** A fixed record is always a human act.
 working — apply the printed fix, or reconstruct the record from the Work
 git history; never fabricate one. `WARN`/`NOTE` = keep working, handle the
 chore at the next natural boundary. Machinery itself misbehaving =
-`harness-status.sh` prescribes. Full state table: backbone, *Session
-States — Operational Rules*.
+`harness-status.sh` prescribes. Full state table: `CONSTITUTION.md` §16,
+*Session States and Operational Rules*.
 
 ## Developing this harness with an AI assistant
 
@@ -311,12 +341,12 @@ harness** above is not repeated here, and `folder-map.md` owns estate
 **[`estate/SPEC.md`](estate/SPEC.md)** — what the harness guarantees today, and
 the vocabulary those guarantees are written in. *Referenced by:* this page.
 
-### Skills — the worker-tier craft modules
+### Skills — craft modules and documentation targets
 
 **[`estate/General AI-Knowledge/Skills/`](<estate/General AI-Knowledge/Skills/>)**
-— `_index.md`, `SKILL-TEMPLATE.md` and `SQL-Writing/SKILL.md`, discovered
-index-first. *Referenced by:* `AGENTS.md` (rule 7), constitution (Skills
-Convention).
+— `_index.md`, `SKILL-TEMPLATE.md`, `SQL-Writing/SKILL.md` and the eight `Doc-*`
+documentation targets `doc-writer` writes to, discovered index-first. *Referenced
+by:* `AGENTS.md` (rule 4), constitution (§19 Skills Convention).
 
 ### Design notes and the diagram-currency ledger
 

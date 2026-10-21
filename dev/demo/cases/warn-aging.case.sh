@@ -168,9 +168,47 @@ wa_fails_open() {
     "code unchanged vs control"
 }
 
+# [audit-age] the estate audit (CONSTITUTION §15) is human-started, so status keeps its clock: no
+# report yet is a NOTE; the newest YYYYMMDD-estate-audit*.md past HARNESS_AUDIT_STALE_DAYS is a WARN
+# naming estate-auditor; a fresh one is OK. A dated note in Audits/ that is NOT an estate audit (a
+# handoff, say) must not reset the clock. Fixtures sit beside the shipped Audits/_index.md and are
+# removed one by one; the index itself is never touched. BUG on miss.
+wa_audit_age() {
+  local AA_DIR aa_old aa_fresh aa_today AA_OUT AA_RC
+  AA_DIR="$DEMO_ROOT/estate/General Human Knowledge/Audits"; mkdir -p "$AA_DIR"
+  aa_old=$(date -d "40 days ago" +%Y%m%d 2>/dev/null || date -v-40d +%Y%m%d)   # GNU || BSD
+  aa_fresh=$(date -d "3 days ago" +%Y%m%d 2>/dev/null || date -v-3d +%Y%m%d)
+  aa_today=$(date +%Y%m%d)
+  set +e; AA_OUT=$(bash estate/_harness/scripts/harness-status.sh 2>&1); set -e
+  printf '%s\n' "$AA_OUT" | grep -q '^NOTE: no estate audit report yet' \
+    || { echo "BUG [audit-age-none]: an estate with no audit report did not say so:"; \
+         printf '%s\n' "$AA_OUT" | grep -i audit; exit 1; }
+  printf '# old audit\n' > "$AA_DIR/${aa_old}-estate-audit.md"
+  printf '# handoff\n' > "$AA_DIR/${aa_today}-harness-handoff.md"
+  set +e; AA_OUT=$(bash estate/_harness/scripts/harness-status.sh 2>&1); AA_RC=$?; set -e
+  printf '%s\n' "$AA_OUT" | grep -E '^WARN: last estate audit is [0-9]+ days old' \
+    | grep -q 'estate-auditor' \
+    || { rm -f "$AA_DIR/${aa_old}-estate-audit.md" "$AA_DIR/${aa_today}-harness-handoff.md"; \
+         echo "BUG [audit-age-stale]: a 40-day-old audit (with a newer non-audit note beside it)" \
+              "did not WARN naming estate-auditor:"; printf '%s\n' "$AA_OUT" | grep -i audit; exit 1; }
+  [ "$AA_RC" -eq 0 ] \
+    || { rm -f "$AA_DIR/${aa_old}-estate-audit.md" "$AA_DIR/${aa_today}-harness-handoff.md"; \
+         echo "BUG [audit-age-stale]: an old audit must be yellow (exit 0), got rc=$AA_RC"; exit 1; }
+  printf '# fresh audit\n' > "$AA_DIR/${aa_fresh}-estate-audit.md"
+  set +e; AA_OUT=$(bash estate/_harness/scripts/harness-status.sh 2>&1); set -e
+  rm -f "$AA_DIR/${aa_old}-estate-audit.md" "$AA_DIR/${aa_today}-harness-handoff.md" \
+    "$AA_DIR/${aa_fresh}-estate-audit.md"
+  printf '%s\n' "$AA_OUT" | grep -q "^OK: last estate audit ${aa_fresh} " \
+    || { echo "BUG [audit-age-fresh]: a 3-day-old audit was not reported OK:"; \
+         printf '%s\n' "$AA_OUT" | grep -i audit; exit 1; }
+  echo "  ok [audit-age] — no report is a NOTE, a stale audit WARNs naming estate-auditor (a newer" \
+    "non-audit note does not reset it), a fresh one is OK"
+}
+
 case_warn_aging() {
   wa_render
   wa_knowledge_staleness
+  wa_audit_age
   wa_porcelain_fixture
   wa_porcelain_real_tree
   wa_fails_open

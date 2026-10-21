@@ -143,6 +143,26 @@ md_slugs() {
     | sed -E 's/[^a-z0-9 _-]//g; s/ /-/g'
 }
 
+# THE SHIPPED LAYOUT. install.sh lays estate/'s contents AND the repo-root AGENTS.md, README.md and
+# LICENSE down side by side at one estate root. So a link written for the installed estate resolves
+# differently in this checkout in two places, and both are mapped here rather than written wrong:
+#   * root AGENTS.md is read only inside an estate, so its relative links resolve against estate/;
+#   * a file under estate/ that links the estate-root AGENTS.md, README.md or LICENSE finds it at the
+#     repository root. README.md stays repo-relative: it is also this repository's front page.
+DC_ESTATE_ABS=$(cd estate 2>/dev/null && pwd -P)
+
+# dc_shipped_target <candidate> — print the path to check for a resolved link candidate: the
+# candidate itself, or the repo-root file when the candidate names a shipped root file inside estate/.
+dc_shipped_target() {
+  local c=$1 d b
+  [ -e "$c" ] && { printf '%s\n' "$c"; return 0; }
+  d=$(dirname "$c"); b=$(basename "$c")
+  if [ -n "$DC_ESTATE_ABS" ] && [ -d "$d" ] && [ "$(cd "$d" && pwd -P)" = "$DC_ESTATE_ABS" ]; then
+    case "$b" in AGENTS.md|README.md|LICENSE) [ -e "$b" ] && { printf '%s\n' "$b"; return 0; } ;; esac
+  fi
+  printf '%s\n' "$c"
+}
+
 # dc_link_target — one link target from one markdown file: resolve or skip per scope, then check the
 # path exists and the anchor resolves. It is a function so each per-target skip is a `return` — the
 # same control flow the inline `continue`s had, one nesting level shallower.
@@ -164,6 +184,8 @@ dc_link_target() {
   target_file="$f"
   if [ -n "$path" ]; then
     cand="$dir/$path"; [ "$dir" = "." ] && cand="$path"   # resolve relative to the linking file
+    [ "$f" = AGENTS.md ] && cand="estate/$path"         # an estate-root document (see above)
+    cand=$(dc_shipped_target "$cand")
     if [ ! -e "$cand" ]; then
       dc_fail link-target "$f links to '$tgt' but '$cand' does not exist — fix or remove the link."
       return 0

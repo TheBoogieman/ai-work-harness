@@ -345,8 +345,10 @@ detect_board() {
   return 0
 }
 # detect_model <estate> <reference-agent> — the model pin already set on a reference agent's
-# frontmatter (greppable `model: <x>`). Cheap tier reads doc-writer, sonnet tier reads ticket-init
+# frontmatter (greppable `model: <x>`). Cheap tier reads ticket-scribe, sonnet tier reads ticket-init
 # (fixed per the template's placeholder assignment). Echoes empty if the agent isn't present.
+# The cheap reference is ticket-scribe because doc-writer, the old reference, now ships on the
+# sonnet tier: reading it would offer the strong model as the cheap default on every re-run.
 # A value this CANNOT FIND is MISSING, not an ERROR (#200). Both "no such agent file" and "that file
 # carries no `model:` line" now echo nothing and return 0, leaving the caller to decide what a
 # missing value means. Returning non-zero was the defect: the caller assigns this inside a command
@@ -463,16 +465,16 @@ offer_board_widening() {
 # a prompted value could only mislabel. The summary derives it from the real install TARGET instead.
 #
 # interview_models — offered defaults are the established pins on a re-run (cheap tier read from
-# doc-writer, sonnet tier from ticket-init — the template's fixed placeholder assignment), else the
+# ticket-scribe, sonnet tier from ticket-init — the template's fixed placeholder assignment), else the
 # PICK-A-* placeholders (honest "not yet set"). A changed pin on a re-run is ROUTED, never applied.
 interview_models() {
   if [ "$ESTABLISHED" -eq 1 ]; then
     # These two fallbacks are the ones #200 made unreachable: detect_model's non-zero return aborted
     # the run one line above each of them. They are reached now, and each says so out loud.
-    cheap_default="$(detect_model "$TARGET" doc-writer.agent.md)"
+    cheap_default="$(detect_model "$TARGET" ticket-scribe.agent.md)"
     [ -n "$cheap_default" ] || {
       cheap_default="PICK-A-CHEAP-MODEL"
-      note_missing_pin doc-writer.agent.md "$cheap_default"
+      note_missing_pin ticket-scribe.agent.md "$cheap_default"
     }
     sonnet_default="$(detect_model "$TARGET" ticket-init.agent.md)"
     [ -n "$sonnet_default" ] || {

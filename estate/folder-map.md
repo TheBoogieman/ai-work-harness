@@ -15,11 +15,11 @@ Work/                                        [git root · local-only · whitelis
 ├── .gitignore                               /* deny-all → re-include record set
 ├── .gitattributes                           pins tracked *.sh/*.py to LF on any clone (a stray CR breaks a shebang)
 ├── README.md                                THE FRONT PAGE · the tour, and the Setup that wires your assistant · laid down with its links aimed at this estate, not the source repo
-├── CONSTITUTION.md                          THE CONSTITUTION · Part I always / Part II on demand · user-owned after laydown, KEEP on upgrade
+├── CONSTITUTION.md                          THE CONSTITUTION (the rulebook) · numbered, linked Contents · Part I: read the sections your AGENTS.md row lists / Part II on demand · user-owned after laydown, KEEP on upgrade
 ├── SPEC.md                                  what this harness guarantees TODAY · descriptive: a line untrue at HEAD is a defect
 ├── folder-map.md                            THIS PAGE · the estate's structure (the rules are CONSTITUTION.md)
 ├── WORKED-EXAMPLE.md                        one piece of work end to end — the day-in-the-life a newcomer reads first
-├── AGENTS.md                                door-note → CONSTITUTION.md
+├── AGENTS.md                                THE POINTER · navigation, tools/auth, six rules, per-agent reading list → numbered CONSTITUTION.md sections
 ├── INSTALL-INSTRUCTIONS.md                  the ONE home for every install command, prerequisite and caveat
 ├── install.sh                               the dumb creator that laid this estate down · manual: INSTALL-INSTRUCTIONS.md
 ├── AI-SETUP-PROMPT.md                       the AI-assistant final gate, pasted in after the install
@@ -42,11 +42,21 @@ Work/                                        [git root · local-only · whitelis
 │       ├── tracker-sweep.sh                 human-run · on-demand board-vs-estate drift report · pluggable fetch seam · tracker-agnostic · fails open offline
 │       ├── retro-stats.sh                    dumb counter for the retrospective agent · tickets-by-month + checks + promotions · offline · exits 0 always
 │       ├── deploy-agents.sh                 → user-level agent dir (sync source → live)
+│       ├── init-ticket.sh                   ← ticket-init · allocates the folder and copies the template; the agent owns every fact
+│       ├── check-work-map.py                ← SessionStart hook │ human-run · read-only Work Map link observer · warnings only
+│       ├── parse-workbook.py                human-run · Mappings/ workbook → ticket Dump/workbooks/ (INDEX, version history, sheet CSVs, changes-<V>) · needs openpyxl · CONSTITUTION §10
+│       ├── audit-inventory.py               ← estate-auditor │ human-run · read-only inventory: ticket staleness, PRs, walkthroughs, broken #anchors, pipeline-page sections · CONSTITUTION §15
+│       ├── anchor-style.py                  human-run · rewrites section links between GitHub slugs and Obsidian heading text · --check reports unresolved links
 │       ├── harness-housekeeping.sh          human-run · git gc + size report · never touches records
 │       └── harness-drill.sh                 human-run · rehearse restore/bundle/undo · read-only toward the estate
 │
-├── _agents/                                 SOURCE OF TRUTH (versioned)
+├── _agents/                                 SOURCE OF TRUTH (versioned) · 15 agents · who reads what: AGENTS.md reading list
 │   ├── ticket-init.agent.md                 ┐
+│   ├── planner.agent.md                     │ hand-started · plans, writes Agent-Prompts/, reviews Agent-Output/
+│   ├── implementer.agent.md                 │ hand-started · runs ONE prompt · no ticket log, no agents
+│   ├── ticket-closer.agent.md               │ hand-started · close-out + walkthrough (CONSTITUTION §14)
+│   ├── estate-auditor.agent.md              │ hand-started · dated audit + batch fixes + walkthrough backfill (CONSTITUTION §15)
+│   ├── estate-question.agent.md             │ hand-started · answers one general question with citations · writes nothing
 │   ├── ticket-scribe.agent.md               │ deploy-agents.sh → user-level dir
 │   ├── ticket-recall.agent.md               │
 │   ├── check-scribe.agent.md                │   [live · derived · unversioned]
@@ -61,24 +71,29 @@ Work/                                        [git root · local-only · whitelis
 │   ├── README.md                            thin pointer (the map lives at the Work root)
 │   └── YYYYMM<seq>-<BOARD>-<num>/            one per ticket (recommended name; template: 999912Z-PROJ-99999)
 │       ├── YYYYMM<seq>-<BOARD>-<num>.md       source of truth ← ticket-scribe (log + state, atomic)
+│       ├── <BOARD>-<num>-walkthrough.md       ← ticket-closer via doc-writer · one human-facing walkthrough at close-out (CONSTITUTION §14.1)
+│       ├── Agent-Prompts/NN-<slug>.md         ← planner · one prompt per implementer run (CONSTITUTION §11.1) [tracked]
+│       ├── Agent-Output/NN-<slug>.md          ← implementer · its handback for the matching prompt [tracked]
 │       ├── AI-Knowledge/                    ← knowledge-keeper (capture) │ curator (compact)
 │       │   ├── _index.md                    roster · tombstones
 │       │   └── *.md                         —promotion (approved)→ General AI-Knowledge/
 │       ├── Checks/                          selected durable evidence (any language) · routine checks stay ephemeral · workspace default kernel
 │       ├── Logs/                            [gitignored · regenerable bulk]
-│       └── Dump/                            [gitignored · re-droppable inputs]
+│       └── Dump/                            [gitignored · re-droppable inputs · workbooks/ = parse-workbook.py output]
 │
 ├── General AI-Knowledge/                    durable knowledge (versioned · cull-safe via history)
 │   ├── _index.md                           read-before triggers for reusable knowledge, tools and ways of working
-│   ├── Work Map/                           living repo/pipeline pages linking tickets, knowledge and runbooks · associations, not lineage
-│   │   └── _index.md                       starts empty; indexes Repos/ and Pipelines/ pages as real work establishes them
 │   ├── AI Harness/                          the sheets + build/design notes · Last reviewed: dated
-│   └── Skills/                              the worker tier's craft modules · _index.md is BOTH the convention home and the availability index (read the index, then ONE SKILL.md)
+│   ├── Work Map/                            THE HUB · associations, not lineage · _index.md starts empty and links every repo card, runbook and pipeline page as real work establishes them (CONSTITUTION §9.1–9.2)
+│   │   ├── Pipelines/                       one page per pipeline · the one home of its facts (identity card, deploy, validate UAT/PROD)
+│   │   └── Repos/                           one card per repo · routing: path, code-host repo, default branch, runbook, pipelines hosted
+│   └── Skills/                              the worker tier's craft modules + Doc-* documentation targets · _index.md is BOTH the convention home and the availability index (read the index, then ONE SKILL.md)
 │
 ├── General Human Knowledge/                 human-facing references and dated outputs · agents may read both
 │   ├── _index.md                           living discovery index
-│   ├── Harness Guide.md                    operator guide · how links are kept, hooks vs invoked agents, optional model profile, sample prompts
+│   ├── Harness Guide.md                    operator guide · what runs by itself, who starts which agent, model pins, sample prompts
 │   ├── Repo Workflows/                     living repo runbooks · _index.md routes to verified delivery and environment steps
+│   ├── Audits/                             ← estate-auditor · one dated report per audit, "Work commit audited: <sha>" · _index.md is living
 │   └── Retrospectives/                      ← retrospective agent · one timestamped file per run
 │
 ├── _retired/<timestamp>/                    QUARANTINE — appears only after install.sh --upgrade [gitignored · deliberately outside the record]
@@ -88,7 +103,7 @@ Work/                                        [git root · local-only · whitelis
 │   ├── agents/                              where a PRACTICE run deploys, instead of your live assistant directory
 │   └── state/                               where a PRACTICE run stamps, instead of ~/.harness/validated
 │
-└── [GitHub/ · Diagrams/ · Mappings/ · …]    [never enter history — whitelist excludes them]
+└── [GitHub/ · Diagrams/ · Mappings/ · …]    [never enter history — whitelist excludes them] · Mappings/ = design workbooks, parsed into a ticket's Dump/ (CONSTITUTION §10)
 ```
 
 **On ticket-folder names:** nothing requires a specific ticket-folder name —

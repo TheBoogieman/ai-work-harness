@@ -9,7 +9,8 @@ tools: [read, search, execute]
 Read one ticket for a human or parent agent. Resolve the exact supplied path or
 identity first; report ambiguity rather than picking a similarly named ticket.
 Use this helper when pickup context is missing, not on every task when that
-context is already loaded. The answer is ephemeral; write nothing.
+context is already loaded. The answer is ephemeral; write nothing. Read your row
+in `AGENTS.md` (CONSTITUTION.md §4.3, §5, §9).
 
 ## Bounded reading
 

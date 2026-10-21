@@ -7,8 +7,9 @@ disable-model-invocation: true
 tools: [read, edit, search]
 ---
 Run as the direct session agent for requested curation, not routine task-end
-activity. Read the backbone PART I's *AI Memory Convention*; its retention and
-promotion policy remains authoritative. No qualifying promotion is a valid result.
+activity. Read your row in `AGENTS.md`: CONSTITUTION.md §7 *AI Memory Convention*, §7.1
+*Durable Knowledge Gate*, §8, §9.1 and §19; their retention and promotion policy
+remains authoritative. No qualifying promotion is a valid result.
 
 1. Start with the target ticket's `AI-Knowledge/_index.md`. Check matching
 	repo, pipeline, component, and alias entries in

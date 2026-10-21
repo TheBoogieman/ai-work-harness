@@ -1,0 +1,86 @@
+# Doc-Pipeline-Home — SKILL.md
+
+## WHEN TO USE
+Creating or refreshing a pipeline's home page under `General AI-Knowledge/Work Map/Pipelines/<pipeline>.md`
+(one file per pipeline, no folders): documenting where a pipeline lives, its schedule, DAG / data-pipeline /
+cluster names, tables it populates, egress destination, configuration, and how to deploy and validate it in
+UAT and PROD. Triggers: pipeline doc, pipeline home, pipeline page, document pipeline, refresh pipeline page,
+identity card, after a ticket changes a pipeline, close-out refresh, audit refresh.
+
+## CRAFT GUIDANCE
+**Kind:** living reference, edited in place; git history is the record. **Destination:** the page named by the
+pipeline's exact runtime name in kebab-case (e.g. `Pipelines/orders-daily-load.md`); register a new page
+in `Work Map/_index.md` (Pipelines table) and link it from each hosting repo card in `Work Map/Repos/`.
+
+**Template (keep the headings verbatim so agents can open one section at a time):**
+
+```markdown
+# <Pipeline display name>
+
+Last reviewed: YYYY-MM-DD (<what was checked against what: repo ref, environment, date>)
+
+Aliases: `<runtime name>`, `<names seen in tickets>`. Read the Identity card first; open one section at a time.
+
+## Identity card
+
+| Item | UAT | PROD |
+|---|---|---|
+| Repos and source paths | <repo>: `<path>` (both) | |
+| Runtime (DAG / data pipeline / job) | | |
+| Compute (cluster / warehouse) | | |
+| Schedule and trigger | | |
+| Sources | | |
+| Tables populated | | |
+| Egress destination | | |
+| Configuration (event handlers, tenant vars) | | |
+| Design workbook | `Mappings/<file>.xlsx`, sheets <...> | |
+| Delivery runbook | [<repo> workflow](<relative link>) | |
+
+Sources: <path:line, ticket, or command + date>
+
+## How it works
+## Scheduling and triggers
+## Change recipes
+## Deploy
+### UAT
+### PROD
+## Validate
+### UAT
+### PROD
+## Behaviour and traps
+## Read before
+## Ticket history
+```
+
+**Rules.**
+- One owner per fact: delivery mechanics (branching, build, generic deploy commands) belong to the repo's
+  runbook in `General Human Knowledge/Repo Workflows/`; this page holds the pipeline-specific VALUES plugged
+  into them (app name, definition names, YAML patterns, DAG ids, buckets) and the validation recipe. Link, never copy.
+- Every section ends with `Sources:`. A fact is either verified (say against what and when), recorded (cite the
+  ticket or note), or `TODO (unverified) — verify with: <exact read-only command>`. Never fill a cell by analogy
+  with a sibling pipeline.
+- Mutable runtime facts (schedules, last run, deployed version) carry their observation date.
+- Ticket history: one line per ticket, newest last, `[<ID>](<relative link to the primary record>) — <final
+  outcome in one line>`; link the walkthrough when one exists.
+- Keep the Identity card under about 25 lines; push detail into sections.
+- Refresh mode: show the user each changed fact as **old → new** with its source before writing.
+
+**Sources to mine, in order (stop when the fact is settled):** the existing page; the repo card and runbook;
+linked tickets' header, Current State and Changes Made (not Session Logs); ticket `AI-Knowledge/_index.md`
+then the selected note; `Agent-Output/` files for verified observations; the repo's default branch
+(`git show origin/<default>:<path>`, never a working tree on another branch); the design workbook via
+`parse-workbook.py`; live read-only metadata when the request authorises it.
+
+## NAMED TOOLS
+Check each named tool exists before relying on it; if it is absent, degrade gracefully to guidance-only
+(residual constraints declared, never assumed). The harness adds no craft-quality gate; repository-required
+tests, CI, security and release checks still apply. Tool absence is not a passing check.
+Resolve and approve remote targets before use (CONSTITUTION §2):
+
+- `git -C <repo> fetch origin && git -C <repo> show origin/<default>:<path>` — read source facts from the remote default branch.
+- `python3 _harness/scripts/parse-workbook.py "<Mappings/file.xlsx>" --out "<Dump dir>" --version <V>` — design rows (needs openpyxl).
+- Your cloud CLI's read-only job or pipeline listing, with an explicit profile (for example `aws ... --profile '<profile>'`) — runtime names, state and schedule (human MFA).
+- The scheduler's CLI or UI — DAG ids and schedules (read-only; human SSO).
+- `python3 _harness/scripts/check-work-map.py` — confirm links after writing.
+
+Last reviewed: 2026-10-20

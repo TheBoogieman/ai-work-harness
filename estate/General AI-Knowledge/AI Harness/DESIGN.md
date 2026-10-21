@@ -1,5 +1,5 @@
 # Design notes — why the harness is shaped like this
-Last reviewed: 2026-08-28
+Last reviewed: 2026-10-21
 
 **Additional diagram divergence (#311):** the sheets do not show the ticket
 scaffold helper, linked Work Map, or general knowledge/workflow indexes. The
@@ -55,13 +55,29 @@ NO WAVE EDITS AN SVG — the remaining divergences are named rather than drawn, 
 label corrections, not the layout. For current enforcement/status/naming behaviour,
 `CONSTITUTION.md` (the constitution) remains the source of truth.
 
+**Diagram currency (2026-10-21, #319):** the SVG sheets do not draw this round's
+machinery: the numbered constitution with the `AGENTS.md` reading list, the
+planner/implementer loop and its `Agent-Prompts/`/`Agent-Output/` folders, the
+hand-started `ticket-closer`, `estate-auditor` and `estate-question`, `doc-writer`'s `Doc-*` skill
+targets, `parse-workbook.py`, `audit-inventory.py`, `check-work-map.py`,
+`anchor-style.py`, the Part III split of the constitution, and the
+Work Map pipeline pages. The sheets are hand-maintained and lag on purpose; the
+constitution is the source of truth.
+
 **The pattern (every layer):** file states the rule → agent does the work →
 hook catches the miss → git undoes the damage. Corollary: status observes,
 failures prescribe, nothing heals itself — a fixed record is a human act.
 
 **Key decisions**
-- One constitution, two parts: PART I loads every session; PART II on demand.
-  The rulebook obeys its own context budget.
+- One constitution, three parts, numbered and linked: each agent reads only the
+  sections its `AGENTS.md` reading-list row names; PART II on demand; PART III
+  (rarely used) only when the task names it. The rulebook obeys its own context
+  budget.
+- Planning and doing are separate sessions: the planner (strong model) writes
+  numbered prompts and owns the ticket record; the implementer (worker model)
+  runs one prompt and hands back a file, never touching the ticket log or
+  invoking agents. The handoff is files, not agent calls, so every step is
+  reviewable and resumable.
 - Session semantics are unreliable (idle chats fire nothing; sessionEnd may
   never fire, or fire per-turn) → commits anchor to WRITES (postToolUse),
   validation anchors to ENTRY (sessionStart), sessionEnd is a bonus.
@@ -93,4 +109,4 @@ failures prescribe, nothing heals itself — a fixed record is a human act.
   standards gate for shared code.
 
 **Operational doctrine:** red blocks, yellow schedules, never fabricate,
-late-but-true beats fiction. Full state table: backbone PART II.
+late-but-true beats fiction. Full state table: CONSTITUTION §16.

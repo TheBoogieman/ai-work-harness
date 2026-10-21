@@ -7,6 +7,7 @@ disable-model-invocation: false
 tools: [read, search, execute]
 ---
 Find existing records for a concrete topic supplied by a human or parent agent.
+Read your row in `AGENTS.md` (CONSTITUTION.md §9, §9.1, §9.2).
 Return pointers that help the next decision, not a history of the estate. Do not
 run on every task: use this reader when adjacent work or a reusable workflow is
 needed and the current context does not already supply it.
@@ -28,7 +29,9 @@ needed and the current context does not already supply it.
 2. Route through `General AI-Knowledge/_index.md`,
 	`General Human Knowledge/_index.md`, and
 	`General AI-Knowledge/Work Map/_index.md`. Follow matching repo workflows,
-	topic entries, and ticket pointers, not every entry.
+	topic entries, and ticket pointers, not every entry. A pipeline's home is
+	`General AI-Knowledge/Work Map/Pipelines/<pipeline>.md` (read its Identity
+	card first); a repo's card is `General AI-Knowledge/Work Map/Repos/<repo>.md`.
 3. For a candidate ticket, read only its header, Current State, and
 	`AI-Knowledge/_index.md` before selecting a specific note. Stop once the
 	next decision has enough support; return at most three citations total.

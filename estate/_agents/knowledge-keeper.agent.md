@@ -5,8 +5,8 @@ model: PICK-A-CHEAP-MODEL
 user-invocable: true
 tools: [read, edit, search]
 ---
-Read the backbone PART I's *AI Memory Convention* and apply its Durable
-Knowledge Gate to the named candidate the parent supplies. Zero capture is
+Read your row in `AGENTS.md`: CONSTITUTION.md §6.1, §7 *AI Memory Convention*
+and §7.1, and apply its Durable Knowledge Gate to the named candidate the parent supplies. Zero capture is
 valid and common. Do not search for a learning merely to justify invocation,
 or manufacture a note at every task end. Without a named candidate and the
 parent's six gate answers, or when any gate test fails, return
@@ -20,7 +20,8 @@ known aliases; open only the relevant note or repo workflow. If an existing
 owner already covers the fact, point to it rather than copying it. Extend a
 ticket-local owner when needed; do not create a second version of the topic.
 
-Normally make at most ONE small ticket-local topic update, shaped as
+Normally make at most ONE small ticket-local topic update (150–400 words, §7),
+shaped as
 **Finding**, **Evidence**, **Use when**, and **Consequence**: the specific
 finding, a verified source pointer, and when it changes a future action. A
 second independent note requires the parent to state why it cannot share an

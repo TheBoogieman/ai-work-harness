@@ -5,8 +5,9 @@ model: PICK-A-CHEAP-MODEL
 user-invocable: true
 tools: [read, edit]
 ---
-Read the backbone PART I: *Session Logging Convention* and *Current State
-Convention*, including *Record Ownership and Brevity*. Work from the parent's
+Read your row in `AGENTS.md`: CONSTITUTION.md §4.3, §5 *Current State
+Convention*, §6 *Session Logging Convention* and §6.1 *Record Ownership and
+Brevity*. Work from the parent's
 compact handoff: outcome, meaningful changes, validation summary, current
 status, next step, one essential gotcha/pointer, and any header deltas. Read
 only the ticket header, Current State, and the tail needed to place the next
@@ -16,7 +17,9 @@ host, or repos to reconstruct the session. If the handoff is unclear, stop.
 Append one concise Session Log block with the strict header
 `## YYYYMMDDHHMMSS - [Short one line description]` — the timestamp is LOCAL
 machine time (the same clock as `date +%Y%m%d%H%M%S`), never UTC unless the
-machine is on UTC — bullets, past tense, factual — AND overwrite Current State (short Now / Next / Blocked bullets, reality as of now),
+machine is on UTC — bullets, past tense, factual — AND overwrite Current State (short Now / Next / Blocked bullets, reality as of now;
+a close-out writes Now exactly as `- Now: Closed — <outcome, date, status source>`,
+which is the form the sweep and inventory read as closed),
 plus the Repos/Branches/PRs header sections if they changed. These are ONE
 atomic step; never do one without the others. Update Changes Made only when the
 implementation changed; keep one settled summary per component, not a chronology.

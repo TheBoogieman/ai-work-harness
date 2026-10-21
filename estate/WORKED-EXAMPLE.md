@@ -281,12 +281,15 @@ the machine.
 
 ## 8. What is on disk at the end of the day
 
-Five things, and you can read all of them without any tool.
+Seven things, and you can read all of them without any tool. (`LC_ALL=C` only fixes
+the sort order, so the listing reads the same on every machine.)
 
 ```console
-$ ls -1 Tickets/202607A-PROJ-4021
+$ LC_ALL=C ls -1 Tickets/202607A-PROJ-4021
 202607A-PROJ-4021.md
 AI-Knowledge
+Agent-Output
+Agent-Prompts
 Checks
 Dump
 Logs
@@ -318,6 +321,9 @@ validator insists every record has; the session log with the day's entry appende
 under the template's; and a commit history in which the day is one line.
 `Checks/`, `Dump/` and `Logs/` came from the template: `Checks/` holds a notebook
 and scratch queries, and the other two are for bulk that git deliberately ignores.
+`Agent-Prompts/` and `Agent-Output/` also came from the template and stay empty
+today; they hold planner prompts and implementer handbacks when you use the build
+loop (CONSTITUTION ยง11), and git keeps them.
 
 Current State above still carries the template's words, and that is the one place
 this transcript falls short of a real day. Rewriting it is the other half of the
@@ -336,6 +342,9 @@ step, while `knowledge-keeper` writes the note and its index line in one step โ€
 for the named candidate that passed the gate. An ordinary task invokes no keeper
 and adds no notebook cell, so the red block in section 3 is rarer than this page
 makes it look.
+For larger work you start a `planner` session, which writes numbered prompts that
+an `implementer` session runs one at a time, and you finish with `ticket-closer`,
+which verifies the status you state, updates the map and writes the walkthrough.
 The hook commits behind all of it. What is left for you is what only a person can
 do: decide the work is worth a ticket, say in your own words what you learned,
 and read the reds. The commands above are not the interface. They are what the

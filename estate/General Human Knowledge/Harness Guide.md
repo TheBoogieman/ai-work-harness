@@ -13,7 +13,9 @@ The graph is plain relative Markdown links. No plugin, database or agent holds
 it; the files do.
 
 - A repo or pipeline page under `Work Map/Repos/` or `Work Map/Pipelines/` links
-  its tickets, runbooks and reusable notes. The map root links each page.
+  its tickets, runbooks and reusable notes. The map root links each page in its
+  Repositories and Pipelines tables. A pipeline page is the one home of that
+  pipeline's facts (CONSTITUTION §9.2); a repo card is routing only.
 - The parent agent (the session you are talking to) updates the affected page
   and the map root when work first establishes a relationship, and adds up to
   three useful reverse links under the ticket's Context header.
@@ -24,7 +26,8 @@ it; the files do.
   gaps; it does not rebuild the broad map. `ticket-init` needs the new ticket's
   page entries linked before its final scribe step. `knowledge-curator` repairs
   backlinks and root indexes after renames and promotion. `doc-writer` registers a
-  new runbook in its index.
+  new runbook in its index. `ticket-closer` updates the affected Work Map pages
+  at close-out, and `estate-auditor` repairs drift in approved batches.
 
 The map is partial by design. A missing entry is not evidence of no related
 work: fall back to a scoped search of ticket headers and knowledge indexes.
@@ -65,12 +68,22 @@ depends on the assistant following the contract, not a guaranteed background job
 
 | Start it | Agent |
 |---|---|
-| You, directly | `ticket-init`, `knowledge-curator`, `weekly-digest`, `retrospective` |
+| You, directly | `ticket-init`, `planner`, `implementer`, `ticket-closer`, `estate-auditor`, `estate-question`, `knowledge-curator`, `weekly-digest`, `retrospective` |
 | You or the parent agent | `ticket-recall`, `harness-recall` (read-only) |
 | The parent, when ticket work completes | `ticket-scribe` |
 | The parent, for a named valuable learning only | `knowledge-keeper` |
 | The parent, for qualified evidence only | `check-scribe` |
-| You or the parent, on a requested PR or runbook | `doc-writer` |
+| You, the parent, `planner`, `ticket-closer` or `estate-auditor`, on a requested document | `doc-writer` (targets: the `Doc-*` skills) |
+
+The build loop (CONSTITUTION §11): start a `planner` session on the ticket; it
+writes `Agent-Prompts/NN-<slug>.md`. Start an `implementer` session on that one
+prompt; it writes `Agent-Output/NN-<slug>.md` and stops. Return to the planner to
+review and write the next prompt. The implementer never writes the ticket log or
+invokes agents; the planner owns the record. Finish with `ticket-closer`
+(CONSTITUTION §14), which asks before writing outside the ticket folder.
+
+Which constitution sections each agent reads: the reading list in
+[AGENTS.md](../AGENTS.md#your-reading-list).
 
 All of them can be called by a human. Retention is gated: non-ticket work
 invokes neither scribe nor keeper, and zero capture is the expected result.
@@ -86,11 +99,16 @@ an Opus profile too.
 
 | Agents | Profile |
 |---|---|
-| `check-scribe`, `doc-writer`, `harness-recall`, `knowledge-keeper`, `ticket-recall`, `ticket-scribe`, `weekly-digest` | `Claude Sonnet 5.5 (copilot)` |
-| `ticket-init`, `knowledge-curator`, `retrospective` | `Claude Opus 5.5 (copilot)` |
+| `check-scribe`, `harness-recall`, `knowledge-keeper`, `ticket-recall`, `ticket-scribe`, `weekly-digest` | `Claude Sonnet 5.5 (copilot)` |
+| `ticket-init`, `planner`, `ticket-closer`, `doc-writer`, `estate-auditor`, `estate-question`, `knowledge-curator`, `retrospective` | `Claude Opus 5.5 (copilot)` |
+| `implementer` | the cheapest long-context model that follows a prompt exactly (it judges nothing) |
 
-This profile was applied on the maintainer's live setup and confirmed with two
-tool-free probes. That does not guarantee the names exist on other accounts.
+Pin the model picker's display name exactly. Lowercase model IDs were tried and
+fell back silently to the session model; display names were confirmed with
+tool-free probe agents.
+
+This profile was applied on the maintainer's live setup. That does not guarantee
+the names exist on other accounts.
 
 ## Tool adapters
 
@@ -105,8 +123,17 @@ chat.
 ## Sample prompts
 
 - Init: "Start ticket `<tracker link>`; reuse related work."
+- Plan (`planner`): "Plan `<ticket>`; write the first implementer prompt."
+- Implement (`implementer`): "Run `Tickets/<ticket>/Agent-Prompts/01-<slug>.md`."
+- Review (`planner`): "Review `Agent-Output/01-<slug>.md` and write the next prompt."
 - Recall: "What do we already know about `<repo or pipeline>`? Cite at most three."
-- Closeout: "Record this ticket's completed change, update the map links, run the checker."
+- Record: "Record this ticket's completed change, update the map links, run the checker."
+- Close (`ticket-closer`): "Close `<ticket>`: it is merged and deployed to PROD."
+- Audit (`estate-auditor`): "Audit the estate; propose the first batch of fixes."
+- Backfill (`estate-auditor`): "Propose the next five tickets for retrospective walkthroughs."
+- Ask (`estate-question`): "How can I check when a table was last recreated?" or "Which warehouse table does the `<pipeline>` pipeline write?"
+- Document (`doc-writer`): "Refresh the `<pipeline>` pipeline page; verify live."
+- Workbook: "Parse `Mappings/<workbook>.xlsx` version `<V>` into `<ticket>`."
 - Curate: "Compact and promote knowledge for `<ticket>`; show me before publishing."
 
 ## Graph view
@@ -117,8 +144,16 @@ page and use its local graph for immediate neighbours.
 
 ## Auditing
 
-To audit the estate's Markdown, run the checker and read its full report one
-finding at a time. Label each claim as observed from a source (code, CI, a
-tracker) or only recorded in a note, and fix the owner rather than copying the
-fact. Preserve history: leave dated logs and retrospectives as written, add a
-new dated entry for corrections, and edit only living references in place.
+Start an `estate-auditor` session (CONSTITUTION §15). It runs
+`_harness/scripts/audit-inventory.py` (read-only: stale tickets, open PRs, missing
+walkthroughs, broken `#anchors`, pipeline-page gaps) and the map checker, writes a
+dated report under `General Human Knowledge/Audits/` recording `Work commit audited: <sha>`, then
+proposes fixes batch by batch — each stating what is fixed, added, changed or
+removed — and applies only what you approve. `harness-status.sh` warns when the
+latest audit is older than `HARNESS_AUDIT_STALE_DAYS` (default 30).
+
+The same rules bind a hand audit: label each claim as observed from a source
+(code, CI, a tracker) or only recorded in a note, and fix the owner rather than
+copying the fact. Preserve history: leave dated logs and retrospectives as
+written, add a new dated entry for corrections, and edit only living references
+in place.

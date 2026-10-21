@@ -186,6 +186,35 @@ in_product_only() {
   echo "  ok [product-only] — installed estate holds $i39_n PRODUCT files and zero DEV files"
 }
 
+# (b1) readme-links (#323): every local link in the README an install lays down resolves inside
+#      the estate it lands in. The source README is the repository's front page, so its links are
+#      written for the repository layout (`estate/CONSTITUTION.md`, the development-only CLAUDE.md);
+#      copied as-is into an estate, where estate/'s contents sit at the root and CLAUDE.md never
+#      ships, nine of them pointed nowhere. Links are pulled out of the installed copy itself, so a
+#      link added to README later is checked the day it lands. The count is asserted non-zero first,
+#      so a README with no links found cannot pass as "no dead links".
+in_readme_links() {
+  local readme="$I39_EST/README.md" link target n=0 dead=0
+  [ -f "$readme" ] \
+    || { echo "BUG [readme-links]: the installed estate holds no README.md to check"; exit 1; }
+  while IFS= read -r link; do
+    # `](target)` or `](<target with spaces>)` -> target; web links and same-page anchors are not
+    # files, and a #fragment is not part of the path.
+    link=${link#']('}; link=${link%')'}; link=${link#<}; link=${link%>}
+    case "$link" in ''|'#'*|*://*|mailto:*) continue ;; esac
+    target=$(printf '%s' "${link%%#*}" | sed 's/%20/ /g')
+    n=$((n + 1))
+    [ -e "$I39_EST/$target" ] || { echo "  dead in the installed README: $link"; dead=$((dead + 1)); }
+  done < <(grep -oE '\]\(<[^>]*>\)|\]\([^)[:space:]]*\)' "$readme")
+  [ "$n" -gt 0 ] \
+    || { echo "BUG [readme-links]: found no local links in the installed README, so 'none is" \
+           "dead' would be vacuously true"; exit 1; }
+  [ "$dead" -eq 0 ] \
+    || { echo "BUG [readme-links]: $dead of the installed README's $n local links, named above," \
+           "point at nothing inside the estate"; exit 1; }
+  echo "  ok [readme-links] — all $n local links in the installed README resolve inside the estate"
+}
+
 # (b2) estate-root-tracked (#140): every ROOT-PINNED product file the installer lays down must be
 #      TRACKABLE in the estate it lands in. This is the failure that ships silently and looks fine.
 #      The shipped `.gitignore` denies everything at the root and re-admits named files, so the
@@ -1012,6 +1041,7 @@ case_installer() {
   in_installer_ran
   in_no_version_claim
   in_product_only
+  in_readme_links
   in_estate_root_tracked
   in_dumb_creator
   in_idempotent_rerun

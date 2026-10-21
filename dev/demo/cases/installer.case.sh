@@ -537,7 +537,7 @@ in_upgrade_fixture() {
 in_up_customise() {
   UP_TG="$UP_EST/_harness/scripts/ticket-grammar.sh"; UP_CR="$UP_EST/_agents/ticket-scribe.agent.md"
   UP_HOOK="$UP_EST/.github/hooks/harness.json"; UP_CON="$UP_EST/CONSTITUTION.md"
-  UP_PACK="$UP_EST/_harness/scripts/make-context-pack.sh"
+  UP_PACK="$UP_EST/_harness/scripts/make-context-pack.sh"; UP_AG="$UP_EST/AGENTS.md"
   UP_REC="$UP_EST/General AI-Knowledge/up-note.md"
   sed 's/\[A-Z\]\[A-Z0-9\]\*/[A-Z][A-Z0-9-]*/' "$UP_TG" > "$I39_ROOT/tg.t" \
     && mv "$I39_ROOT/tg.t" "$UP_TG"
@@ -549,6 +549,9 @@ in_up_customise() {
     && mv "$I39_ROOT/con.t" "$UP_CON"
   sed 's/<YOUR-EMPLOYEE-ID>/<CUSTOM-EMPLOYEE-ID>/' "$UP_PACK" > "$I39_ROOT/pack.t" \
     && mv "$I39_ROOT/pack.t" "$UP_PACK"
+  # AGENTS.md cites the user's own constitution (section numbers, budgets, tools), so an estate
+  # tailors it; an upgrade that swapped in the generic copy would contradict the kept constitution.
+  printf '\nLocal note: our tracker CLI is the first stop for issue facts.\n' >> "$UP_AG"
   printf '# a hand-made note\nLast reviewed: 2026-01-01\nnobody but me put this here\n' > "$UP_REC"
   # A PRE-#298 ESTATE HOLDS A VERSION STAMP, and this line is what makes UP_EST one. The scratch
   # source stopped shipping VERSION when #298 deleted it, so an estate installed from that source
@@ -594,6 +597,7 @@ in_up_customise() {
   cp -p "$UP_TG" "$I39_ROOT/snap.tg"; cp -p "$UP_CR" "$I39_ROOT/snap.cr"
   cp -p "$UP_HOOK" "$I39_ROOT/snap.hk"; cp -p "$UP_CON" "$I39_ROOT/snap.con"
   cp -p "$UP_PACK" "$I39_ROOT/snap.pack"; cp -p "$UP_REC" "$I39_ROOT/snap.rec"
+  cp -p "$UP_AG" "$I39_ROOT/snap.ag"
   cp -p "$UP_TICK" "$I39_ROOT/snap.tick"; cp -p "$UP_RETRO" "$I39_ROOT/snap.retro"
   return 0
 }
@@ -776,7 +780,7 @@ in_upgrade_retires_version() {
 #     carries the user's private scrub classes; none may be replaced by the generic source copy.
 in_upgrade_keeps_settings() {
   local n f s
-  for n in tg:"$UP_TG" cr:"$UP_CR" hk:"$UP_HOOK" con:"$UP_CON" pack:"$UP_PACK"; do
+  for n in tg:"$UP_TG" cr:"$UP_CR" hk:"$UP_HOOK" con:"$UP_CON" pack:"$UP_PACK" ag:"$UP_AG"; do
     s="$I39_ROOT/snap.${n%%:*}"; f="${n#*:}"
     cmp -s "$s" "$f" \
       || { echo "BUG [upgrade-keeps-settings]: the upgrade CHANGED $f, which carries a value the"; \
@@ -787,11 +791,12 @@ in_upgrade_keeps_settings() {
   grep -q '_harness/scripts/ticket-grammar.sh' "$I39_ROOT/up.first" \
     && grep -q '.github/hooks/harness.json' "$I39_ROOT/up.first" \
     && grep -q 'CONSTITUTION.md' "$I39_ROOT/up.first" \
+    && grep -q '^ *AGENTS.md$' "$I39_ROOT/up.first" \
     && grep -q '_harness/scripts/make-context-pack.sh' "$I39_ROOT/up.first" \
     || { echo "BUG [upgrade-keeps-settings]: the run never SAID which files it carried forward —" \
            "a silently-correct upgrade is indistinguishable from a lucky one"; exit 1; }
   echo "  ok [upgrade-keeps-settings] — board grammar, model pin, hook config, customized" \
-    "Constitution and scrub table byte-unchanged and named in the run"
+    "Constitution and AGENTS.md and scrub table byte-unchanged and named in the run"
 }
 
 # (v) upgrade-repoints (#287): THE FOURTH VERB. KEEP protects a carried-forward file from being

@@ -1,5 +1,7 @@
 # Agent contract — read before acting
 
+<!-- harness-upgrade: preserve-user-content -->
+
 > **[CONSTITUTION.md](CONSTITUTION.md) is the rulebook; this file is the pointer.**
 > Find your row in [Your reading list](#your-reading-list) and read only the
 > numbered sections it lists — each number is a link. Overlap between rows is

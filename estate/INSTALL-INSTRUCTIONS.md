@@ -181,8 +181,8 @@ Re-running `install.sh` serves three different intents, each with its own home:
   deleted, and the run prints the exact `mv` that puts it back **at the moment it moves
   it**. That printed line matters: `_retired/` is deliberately outside the record, so
   nothing else anywhere will ever remind you. It carries your settings forward — your
-  customized Constitution, context-pack scrub table, board grammar, model pins and
-  hook configuration all keep the values you gave them — and it **never touches a
+  customized Constitution and `AGENTS.md`, context-pack scrub table, board grammar, model
+  pins and hook configuration all keep the values you gave them — and it **never touches a
   record**: no ticket, log or knowledge file is replaced when present OR recreated
   when absent. User-owned shipped files declare that ownership in their own source
   marker, so even an estate installed before the marker existed is protected on its

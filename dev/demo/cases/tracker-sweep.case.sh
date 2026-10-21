@@ -87,10 +87,55 @@ ts_zero_network() {
     "through the injected fetch seam"
 }
 
+# 4. LOCAL STATE — a ticket is closed locally when its Current State reads "- Now: Closed", so the
+#    sweep compares both sides: closed/closed is silent, closed upstream but open locally WARNs (as
+#    above), closed locally but open upstream WARNs the other way, a stale "- Now: Closed" line that
+#    sits in the Session Log (not Current State) is not a closure, and the year-9999 template is
+#    never fetched. The stub fails for the template id, so fetching it would fail the run open with
+#    a NOTE before any WARN — which is exactly how the pre-fix sweep behaved on a real estate.
+ts_local_state() {
+  local G9_ROOT G9_OUT
+  G9_ROOT=$(mktemp -d)
+  mkdir -p "$G9_ROOT/Tickets/202607C-PROJ-3" "$G9_ROOT/Tickets/202607D-PROJ-4" \
+    "$G9_ROOT/Tickets/202607E-PROJ-5" "$G9_ROOT/Tickets/999912Z-PROJ-99999"
+  printf '# PROJ-3\n\n## Current State\n- Now: Closed — merged, 2026-07-30, board\n' \
+    > "$G9_ROOT/Tickets/202607C-PROJ-3/202607C-PROJ-3.md"
+  printf '# PROJ-4\n\n## Current State\n- Now: Closed — abandoned, 2026-07-30, user\n' \
+    > "$G9_ROOT/Tickets/202607D-PROJ-4/202607D-PROJ-4.md"
+  printf '# PROJ-5\n\n## Current State\n- Now: in review\n\n## Session Log\n- Now: Closed (old note)\n' \
+    > "$G9_ROOT/Tickets/202607E-PROJ-5/202607E-PROJ-5.md"
+  printf '# PROJ-99999\n\n## Current State\n- Now: template only\n' \
+    > "$G9_ROOT/Tickets/999912Z-PROJ-99999/999912Z-PROJ-99999.md"
+  cat > "$G9_ROOT/stub.sh" <<'G9_STUB'
+#!/usr/bin/env bash
+case "$1" in
+  999912Z-*)      exit 1 ;;
+  202607C-PROJ-3) echo Done ;;
+  *)              echo open ;;
+esac
+G9_STUB
+  chmod +x "$G9_ROOT/stub.sh"
+  G9_OUT=$(HARNESS_WORK_ROOT="$G9_ROOT" HARNESS_TRACKER_FETCH_CMD="$G9_ROOT/stub.sh" \
+    bash estate/_harness/scripts/tracker-sweep.sh 2>&1)
+  rm -rf "$G9_ROOT"
+  printf '%s\n' "$G9_OUT" | grep -q '^NOTE:' \
+    && { echo "BUG [tracker-template-skipped]: the sweep fetched the year-9999 template and failed" \
+           "open before checking a single real ticket:"; echo "$G9_OUT"; exit 1; }
+  printf '%s\n' "$G9_OUT" | grep -qE '^WARN: 202607D-PROJ-4 is closed locally' \
+    || { echo "BUG [tracker-closed-locally]: a ticket closed locally but open on the board was not" \
+           "WARNed:"; echo "$G9_OUT"; exit 1; }
+  printf '%s\n' "$G9_OUT" | grep -qE '202607C-PROJ-3|202607E-PROJ-5' \
+    && { echo "BUG [tracker-local-state]: closed/closed, or a stale Session Log line, was flagged" \
+           "as drift:"; echo "$G9_OUT"; exit 1; }
+  echo "  ok [tracker-local-state] — closed/closed silent, closed-locally-open-upstream WARNed," \
+    "stale Session Log line ignored, template never fetched"
+}
+
 case_tracker_sweep() {
   ts_fixture
   ts_divergence
   ts_fails_open
   ts_zero_network
+  ts_local_state
   rm -rf "$G81_ROOT"
 }

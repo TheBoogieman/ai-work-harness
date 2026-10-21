@@ -152,6 +152,10 @@ demo_order() {
     case:ticket-recognition \
     case:ticket-init \
     case:work-map \
+    case:audit-inventory \
+    case:anchor-style \
+    case:workbook-parse \
+    case:section-pointers \
     case:session-clock \
     case:housekeeping \
     case:worktree-store \

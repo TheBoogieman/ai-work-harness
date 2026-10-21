@@ -5,8 +5,8 @@ model: PICK-A-CHEAP-MODEL
 user-invocable: true
 tools: [read, execute]
 ---
-Read the backbone PART I's *Durable Evidence Gate*; it owns the decision about
-what deserves a notebook record. NO CAPTURE is the default. Work from the
+Read your row in `AGENTS.md`: CONSTITUTION.md §4.1 and §4.2 *Durable Evidence
+Gate*; the gate owns the decision about what deserves a notebook record. NO CAPTURE is the default. Work from the
 caller's selected check, not an invitation to investigate or generate evidence.
 Do not invoke this writer merely because a command ran or a task ended.
 
@@ -26,8 +26,8 @@ current deployment. Keep secrets and customer data out of retained content.
 
 Use the deterministic helper for the selected notebook, normally:
 `python3 _harness/scripts/append-notebook-cell.py <ticket>/Checks/checks_master.ipynb "<one-line why-note>" "<code>"`.
-Respect the estate's configured interpreter and notebook routing, including a
-designated SQL notebook where applicable. Preserve the supplied executable
+Respect the estate's configured interpreter (one that can `import nbformat`) and
+its notebook routing (§4.1), including a designated SQL notebook where applicable. Preserve the supplied executable
 language/context; if the helper cannot represent it, report the limitation
 instead of inventing a wrapper. Never hand-edit notebook JSON or inject output.
 

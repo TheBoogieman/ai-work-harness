@@ -31,7 +31,10 @@ epoch_from_date() {  # YYYY-MM-DD -> epoch
   else date -j -f "%Y-%m-%d" "$1" +%s 2>/dev/null || echo 0; fi
 }
 fails=0
-CORE=(ticket-init ticket-scribe check-scribe doc-writer knowledge-keeper knowledge-curator)
+# Agents whose absence breaks a daily workflow: init, the planner/implementer loop, close-out,
+# the recorders, documentation, curation and the audit.
+CORE=(ticket-init planner implementer ticket-closer ticket-scribe check-scribe doc-writer
+  knowledge-keeper knowledge-curator estate-auditor)
 
 # ---- #71 WARN aging: one primary-observation state file + tunable tiers + the WARN chokepoint ----
 # Doctrine says yellow SCHEDULES, but nothing aged a yellow, so a months-old WARN silently read as
@@ -56,6 +59,9 @@ HARNESS_WARN_AGE_ALARM_DAYS="${HARNESS_WARN_AGE_ALARM_DAYS:-90}"
 # this many days draws a WARN. Default 90 (a quarter); replaces the old hardcoded 183-day sweep that
 # only nagged at half a year (see the GAK block below).
 HARNESS_KNOWLEDGE_STALE_DAYS="${HARNESS_KNOWLEDGE_STALE_DAYS:-90}"
+# Audit staleness threshold — the newest dated report in General Human Knowledge/Audits/ older
+# than this many days draws a WARN naming estate-auditor. Default 30: an estate drifts monthly.
+HARNESS_AUDIT_STALE_DAYS="${HARNESS_AUDIT_STALE_DAYS:-30}"
 
 WARN_STATE_OLD=""     # in-memory snapshot of the prior first-seen records ("<epoch>\t<key>" lines)
 WARN_STATE_NOTE=""    # a one-line NOTE if the record degraded this run; printed near the verdict
@@ -169,7 +175,8 @@ ticket_names() {
 # so a missing/inert grammar lib must itself be caught here, not silently tolerated.
 check_siblings() {
   for f in check-ticket-log.sh harness-status.sh ticket-grammar.sh portability.sh \
-    append-notebook-cell.py make-context-pack.sh deploy-agents.sh harness-housekeeping.sh; do
+    append-notebook-cell.py make-context-pack.sh deploy-agents.sh harness-housekeeping.sh \
+    parse-workbook.py audit-inventory.py; do
     p="$SCRIPT_DIR/$f"
     [[ -f "$p" ]] || {
       echo "FAIL: missing script $f. Fix: restore from git:" \
@@ -426,6 +433,33 @@ sweep_knowledge() {
   return 0
 }
 
+# check_audit_age — the estate audit (CONSTITUTION §15) is human-started, so nothing reminds anyone
+# to run it. The newest YYYYMMDD-estate-audit*.md report (the §15 name; other dated notes in
+# General Human Knowledge/Audits/ are not audits) dates the last
+# audit; past HARNESS_AUDIT_STALE_DAYS it is a WARN that names estate-auditor as the next act. Like
+# the knowledge sweep this is derived from the report's own dated name, so it prints directly and
+# never touches the #71 aging state. No report yet is only a NOTE: a fresh estate has nothing to audit.
+check_audit_age() {
+  local dir="$WORK_ROOT/General Human Knowledge/Audits" newest="" f base d age
+  for f in "$dir"/[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-estate-audit*.md; do
+    [[ -f "$f" ]] || continue
+    base=$(basename "$f"); d="${base:0:8}"
+    [[ -z "$newest" || "$d" > "$newest" ]] && newest="$d"
+  done
+  if [[ -z "$newest" ]]; then
+    echo "NOTE: no estate audit report yet — run the estate-auditor agent when the estate has grown (CONSTITUTION.md §15)."
+    return 0
+  fi
+  age=$(( ($(date +%s) - $(epoch_from_date "${newest:0:4}-${newest:4:2}-${newest:6:2}")) / 86400 ))
+  if (( age > HARNESS_AUDIT_STALE_DAYS )); then
+    echo "WARN: last estate audit is $age days old ($newest) —" \
+         "estate-auditor: run an audit (CONSTITUTION.md §15; threshold HARNESS_AUDIT_STALE_DAYS=$HARNESS_AUDIT_STALE_DAYS)."
+  else
+    echo "OK: last estate audit $newest ($age days ago)."
+  fi
+  return 0
+}
+
 # report_tickets — per-ticket summary, matched against the SHARED $TICKET_RE so the summary and the
 # validator recognise the exact same set (a name valid under the expanded grammar must appear here,
 # not fall through into the WARN sweep below).
@@ -549,6 +583,7 @@ main() {
   check_hooks
   check_agents
   sweep_knowledge
+  check_audit_age
   report_tickets
   sweep_unrecognised
   [[ -n "$WARN_STATE_NOTE" ]] && echo "$WARN_STATE_NOTE"

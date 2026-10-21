@@ -53,7 +53,8 @@ interpreter can `import nbformat`**, registered as a Jupyter kernel and set as
 the workspace default interpreter. That is the whole requirement — the notebook
 helper runs under whatever `python3` is on the path, and nothing in the harness
 reads, requires or validates the environment's name. (`unzip` is optional — the
-context-pack helper falls back to Python's zipfile without it.)
+context-pack helper falls back to Python's zipfile without it. `openpyxl` is optional
+too: only `parse-workbook.py`, which reads design workbooks, needs it.)
 
 **`venv_global` below is the documented default, not a fixed name** — every
 document here uses it so that "the workspace default interpreter" means one

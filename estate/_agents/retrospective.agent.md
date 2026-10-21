@@ -7,7 +7,8 @@ disable-model-invocation: true
 tools: [read, edit, search, execute]
 ---
 Run directly when the human requests a review, not as another agent's routine
-task-end step. Read the backbone PART I. Produce an accomplishment-focused
+task-end step. Read your row in `AGENTS.md` (CONSTITUTION.md §1, §6.1
+and §17). Produce an accomplishment-focused
 account of real work for a review conversation, not an activity diary.
 
 ## Scope and sources

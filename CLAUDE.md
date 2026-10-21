@@ -202,7 +202,8 @@ bash, where the demo runs fully. Line endings come FIRST: set
 working tree; `.gitattributes` pins `*.sh`/`*.py` to LF as the permanent backstop,
 and the demo's CRLF tripwire reds if any tracked script ever carries a carriage
 return. Requirements: node/npm, claude-code (or your agent tool), `python3` with
-`nbformat` (the notebook helper needs it: `pip install nbformat`), and `unzip`
+`nbformat` and `openpyxl` (the notebook helper needs the first, the workbook parser and its
+demo case the second: `pip install nbformat openpyxl`), and `unzip`
 (`zip` optional — `make-context-pack` falls back to Python's zipfile). Git push
 works over HTTPS via `gh auth`. `gh` is a **development** convenience only — used
 for pushing and issue management while working on the harness. NO shipped harness
@@ -257,7 +258,8 @@ the issue board is clear and the project is self-contained.
 
 ## Where to look
 - estate/CONSTITUTION.md — the constitution (harness rules for the user's work;
-  Part I always-load, Part II on-demand).
+  numbered sections, each agent reading the ones its AGENTS.md row lists; Part II and
+  Part III on demand).
 - estate/_harness/scripts/ — the machinery (validator, status, context-pack, demo,
   deploy, notebook helper, and the ticket-grammar home).
 - estate/_agents/ — the Copilot agent contracts.

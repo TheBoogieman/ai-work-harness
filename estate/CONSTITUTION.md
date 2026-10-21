@@ -903,9 +903,7 @@ current one. Triage in two bins:
 Then re-run `check-ticket-log.sh` to confirm green, and start work.
 
 **S2 — WARN/NOTE nags.** Never interrupt flow for these. Fat index → run
-`knowledge-curator` at ticket close-out or end of day. Zero-capture note →
-expected; ask only whether a named learning passed the Durable Knowledge Gate.
-Stale General
+`knowledge-curator` at ticket close-out or end of day. Stale General
 AI-Knowledge → batch into a review pass.
 
 **S3 — Resumed, compacted, or abandoned sessions.** Entry validation
@@ -950,8 +948,8 @@ report? Redirect it yourself, deliberately.
 It reports, with `OK` / `WARN` / `FAIL` prefixes:
 
 - Per active ticket: last Session Log timestamp and `AI-Knowledge/` file count.
-  (The fat-index and sessions-without-capture NAGs are the *validator*'s, not
-  status; status does not report Current State age.)
+  (The fat-index NOTE is the *validator*'s, not status; status does not report
+  Current State age.)
 - Naming: a `Tickets/` folder that holds a record but isn't recognised, or a
   pending ticket awaiting its name (the WARN sweep).
 - Repo size past the threshold, session activity newer than the last

@@ -71,7 +71,12 @@ def resolve(fragment: str, headings: list[str]) -> str | None:
 
 def convert(path: Path, style: str, cache: dict, write: bool) -> tuple[int, list[str]]:
     changed, unresolved, fenced, out = 0, [], False, []
-    for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(keepends=True), start=1):
+    # newline="" on both the read and the write keeps each line's own ending byte for byte. The
+    # default translation read CRLF as LF and, on Windows, wrote every LF back as CRLF, so a single
+    # conversion rewrote the line endings of the whole document.
+    with path.open(encoding="utf-8", newline="") as handle:
+        text = handle.read()
+    for number, line in enumerate(text.splitlines(keepends=True), start=1):
         if FENCE_RE.match(line):
             fenced = not fenced
         if fenced or FENCE_RE.match(line):
@@ -104,7 +109,7 @@ def convert(path: Path, style: str, cache: dict, write: bool) -> tuple[int, list
             parts[i] = LINK_RE.sub(rewrite, part)
         out.append("".join(parts))
     if write and changed:
-        path.write_text("".join(out), encoding="utf-8")
+        path.write_text("".join(out), encoding="utf-8", newline="")
     return changed, unresolved
 
 

@@ -17,8 +17,9 @@ nothing: no ticket, note, index, notebook, memory or file of any kind.
 | How-to | "How do I verify when a table was last recreated?" | `General AI-Knowledge/_index.md` topic notes; `General AI-Knowledge/Skills/_index.md`; `General Human Knowledge/Repo Workflows/_index.md` | Ticket `AI-Knowledge/_index.md` files that name the tool or table (`rg -l '<term>' Tickets/*/AI-Knowledge/_index.md`) | Run the command only when the user asks you to |
 | What-is | "Which warehouse table does the orders pipeline write?" | `General AI-Knowledge/Work Map/_index.md` → the pipeline page's **Identity card**, then **How it works** | The model or job code in `GitHub/<repo>/` on the default branch | Warehouse CLI metadata (`SHOW`, `DESCRIBE`, `INFORMATION_SCHEMA`); the data catalog's asset search |
 | Where / which / who | "Which repo writes X?", "Who owns the mapping?" | The repo card `General AI-Knowledge/Work Map/Repos/<repo>.md`; the pipeline page Identity card; a team or stakeholder topic note if the estate keeps one | DAG or job definitions in the repo | The cloud CLI's or scheduler's read-only listing |
-| Lineage | "What feeds `<TABLE>`?" | The pipeline page **How it works** | The data catalog's lineage search, if configured | — |
+| Lineage | "What feeds `<TABLE>`?" | The pipeline page **Dependency Chain**, then **How it works** | The data catalog's lineage search, if configured | — |
 | Status now | "Did last night's run succeed?" | The pipeline page **Validate** section (it holds the exact commands) | — | The Validate commands, for the environment asked |
+| Blocked | "Why didn't it run today?", "What is it waiting on?" | The pipeline page **Dependency Chain** — walk up from this pipeline's trigger, hop by hop | Each upstream hop's linked page | Each hop's Check, in order, until the first one that has not passed |
 
 Stop reading as soon as the answer is settled by a cited source.
 

@@ -556,8 +556,11 @@ One file per entity, no folders:
   schedule and trigger; sources; tables populated per environment; egress
   destination; trigger or tenant configuration; design workbook in `Mappings/`;
   delivery runbook). Fixed sections follow: How it works ·
-  Scheduling and triggers · Change recipes · Deploy (UAT, PROD) · Validate (UAT,
-  PROD) · Behaviour and traps · Read before · Ticket history. **Read the card
+  Scheduling and triggers · Dependency Chain · Change recipes · Deploy (UAT, PROD) · Validate (UAT,
+  PROD) · Behaviour and traps · Read before · Ticket history. The **Dependency Chain**
+  lists every upstream hop that must finish before the pipeline's own trigger fires —
+  runtime, what it waits on, what it produces, dated normal timing and the read-only
+  check that proves it — linking hops another page owns. **Read the card
   first; open one section at a time.**
 - **Repo card** — `General AI-Knowledge/Work Map/Repos/<repo>.md` is thin: local path,
   GitHub repo, default branch, its living delivery runbook, the pipelines it hosts,

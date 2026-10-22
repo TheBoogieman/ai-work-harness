@@ -21,6 +21,7 @@ ai_manifest() {
 #                   walkthrough that lives in 202601C (a shared walkthrough)
 #   202601C-PROJ-3  owns PROJ-3-walkthrough.md
 #   202601D-PROJ-4  links a walkthrough file that does not exist
+# plus two pipeline pages that differ only in the Dependency Chain section (#333).
 ai_fixture() {
   echo "--- [audit-inventory]: read-only inventory — sessions, PRs, notebooks, walkthroughs," \
     "root links, audits ---"
@@ -83,6 +84,12 @@ AIMD
   printf '# Audit\nWork commit audited: `abc1234`\n' \
     > "$AI_ROOT/General Human Knowledge/Audits/20260101-estate-audit.md"
   printf '# Handoff\n' > "$AI_ROOT/General Human Knowledge/Audits/20260301-harness-handoff.md"
+  # Pipeline pages: identical except that only one carries the Dependency Chain section (#333).
+  local ai_pipes="$AI_ROOT/General AI-Knowledge/Work Map/Pipelines" ai_base
+  mkdir -p "$ai_pipes"
+  ai_base='# P\n\n## Identity card\n\n## How it works\n\n## Deploy\n\n## Validate\n\n## Behaviour and traps\n\n## Ticket history\n'
+  printf "$ai_base" > "$ai_pipes/no-chain.md"
+  printf "$ai_base"'\n## Dependency Chain\n' > "$ai_pipes/with-chain.md"
   AI_BEFORE=$(ai_manifest)
 }
 
@@ -142,6 +149,13 @@ check("inventory-root-links-live", agents.get("broken_links", ["?"]) == [],
 latest = inv.get("audits", {}).get("latest_report") or ""
 check("inventory-audit-name", latest.endswith("20260101-estate-audit.md"),
       "a later dated note that is not an estate audit was taken as the latest audit (%s)" % latest)
+pipes = "General AI-Knowledge/Work Map/Pipelines/"
+no_chain = docs.get(pipes + "no-chain.md", {}).get("missing_pipeline_sections")
+with_chain = docs.get(pipes + "with-chain.md", {}).get("missing_pipeline_sections")
+check("inventory-dependency-chain", no_chain == ["Dependency Chain"],
+      "a pipeline page without a Dependency Chain section was not reported (missing=%r)" % no_chain)
+check("inventory-dependency-chain-present", with_chain == [],
+      "a pipeline page with every fixed section was reported as missing one (%r)" % with_chain)
 if bad:
     print("\n".join(bad))
 sys.exit(1 if bad else 0)
@@ -153,7 +167,8 @@ AIPY
          exit 1; }
   echo "  ok [audit-inventory] — untitled session counted, PR None honoured, error-only notebook" \
     "not evidence, shared walkthrough counted (missing one not), root dead link listed, only" \
-    "estate-audit reports date the audit, nothing written"
+    "estate-audit reports date the audit, pipeline page without Dependency Chain reported," \
+    "nothing written"
 }
 
 case_audit_inventory() {

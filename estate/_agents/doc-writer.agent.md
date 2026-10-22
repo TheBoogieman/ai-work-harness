@@ -33,7 +33,10 @@ the `Agent-Output/` sections you cite. A **retrospective walkthrough** (§14.1,
 requested by `estate-auditor`) may read the whole Session Log and must write
 `Not recorded — <missing source>` for any section the record cannot support, and
 return the list of those sections. Lineage for a pipeline page comes from the data catalog's lineage search when
-one is configured (§2), cited with the asset link; otherwise from code, labelled so. Read code from the remote default branch
+one is configured (§2), cited with the asset link; otherwise from code, labelled so. A pipeline page's
+Dependency Chain comes from the pipeline's trigger or sensor configuration, followed upstream through each
+producer's configuration, with timings and gates confirmed from run history and logs; a hop another page
+owns is linked, not copied. Read code from the remote default branch
 (`git show origin/<default>:<path>`), never a working tree on another branch.
 Design workbooks come from `Mappings/` through `_harness/scripts/parse-workbook.py`
 into a ticket's `Dump/workbooks/` (or a temporary folder outside the estate for

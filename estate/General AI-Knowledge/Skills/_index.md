@@ -21,7 +21,7 @@
 # Doc-* skills are doc-writer's documentation targets (CONSTITUTION §19): each names its destination,
 # kind (living, append-only or draft-only), section template, sources and indexes.
 - SQL-Writing — triggers: sql, query, select, join, cte, window, aggregation, dbt model, warehouse query — tools: sqlfluff, dbt
-- Doc-Pipeline-Home — triggers: pipeline doc, pipeline home, pipeline page, identity card, refresh pipeline page, schedule, DAG, tables populated — tools: git, parse-workbook.py, check-work-map.py
+- Doc-Pipeline-Home — triggers: pipeline doc, pipeline home, pipeline page, identity card, refresh pipeline page, schedule, DAG, tables populated, dependency chain, why didn't it run — tools: git, parse-workbook.py, check-work-map.py
 - Doc-Ticket-Walkthrough — triggers: walkthrough, handover, implementation walkthrough, close-out document, explain the ticket — tools: gh, git
 - Doc-Repo-Workflow — triggers: repo workflow, runbook, delivery guide, how to deploy this repo, correct the runbook — tools: git, gh
 - Doc-Knowledge-Topic — triggers: general knowledge note, topic note, how-to, tool setup note, technique note — tools: check-work-map.py

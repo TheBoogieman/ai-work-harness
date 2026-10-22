@@ -559,8 +559,10 @@ One file per entity, no folders:
   Scheduling and triggers · Dependency Chain · Change recipes · Deploy (UAT, PROD) · Validate (UAT,
   PROD) · Behaviour and traps · Read before · Ticket history. The **Dependency Chain**
   lists every upstream hop that must finish before the pipeline's own trigger fires —
-  runtime, what it waits on, what it produces, dated normal timing and the read-only
-  check that proves it — linking hops another page owns. **Read the card
+  runtime, what it waits on, what it produces, dated PROD and UAT timing and the
+  read-only check that proves it — linking hops another page owns. PROD is the
+  primary environment: the hops are written once, and differences are listed
+  as UAT differences. **Read the card
   first; open one section at a time.**
 - **Repo card** — `General AI-Knowledge/Work Map/Repos/<repo>.md` is thin: local path,
   GitHub repo, default branch, its living delivery runbook, the pipelines it hosts,
@@ -865,7 +867,11 @@ newest `YYYYMMDD-estate-audit*.md` report in `General Human Knowledge/Audits/` i
    change, guard), and what was not checked.
 6. **Fix batch by batch, with approval.** Present one batch at a time stating exactly
    what will be added, changed or removed and why; apply it only after the user
-   approves, then append the batch outcome to the report's Fix log. The auditor
+   approves, then append the batch outcome to the report's Fix log. **Incidental
+   findings:** a stale or wrong fact found while working an approved batch is fixed
+   in that batch, on a page the batch already edits and by the same owner, and
+   reported old → new with its source in the batch outcome. A finding on another
+   page or for another owner becomes a new row. The auditor
    fixes links, indexes and ticket headers itself; content refreshes go to
    `doc-writer`; compaction and promotion to `knowledge-curator`; close-outs are
    listed for the user to run `ticket-closer`. **Walkthrough backfill:** tickets

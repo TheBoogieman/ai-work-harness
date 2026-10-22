@@ -55,7 +55,10 @@ work identifiers.
 Before writing outside a ticket folder, show the user a change summary: sections
 added, changed and removed, and each changed fact as **old → new** with its source.
 Write after approval (ticket-folder targets requested by a parent agent need no
-second approval). Draft-only targets (PR description, README, tracker update) go to
+second approval). A stale or wrong fact you find while writing an approved change,
+on a page that change already edits, is fixed in the same write and reported
+**old → new** with its source in your return (§15 step 6); a finding on any other
+page is returned as a proposal, not written. Draft-only targets (PR description, README, tracker update) go to
 chat unless the user asks for a file. After writing, update the indexes the skill
 names, keep Work Map links valid, and run `python3 _harness/scripts/check-work-map.py`.
 

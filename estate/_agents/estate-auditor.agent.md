@@ -78,6 +78,9 @@ backfill 5 tickets, oldest folder first) at a time, in the style of
 a planner prompt: for each row say exactly what will be **added, changed or
 removed**, in which file, and why. Apply only after the user approves that batch;
 then append the outcome to the report's Fix log and re-run the relevant script.
+A stale or wrong fact found while working an approved batch, on a page that batch
+already edits, is fixed in the same batch by the same owner and reported **old →
+new** in its outcome (§15 step 6); anything else becomes a new row.
 For each backfilled walkthrough, pass `doc-writer` the ticket folder, "retrospective
 mode (§14.1)" and the ticket's `walkthrough_gaps`; copy every `Not recorded` section
 it reports into Walkthrough coverage.

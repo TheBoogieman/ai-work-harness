@@ -103,6 +103,12 @@ still compares the number itself exactly.
   this page at the top of your estate; this document starts the morning after.
 * Every command is run from the top of the estate (`cd ~/Work`).
 * Git knows who you are — the usual `user.name` and `user.email` settings.
+* The knowledge notes the estate shipped with are inside their review window.
+  Each carries a `Last reviewed:` date, and status flags a note more than 90
+  days past it. If your release is older than that, the morning report also
+  prints one `WARN: stale knowledge …` line per such note, before
+  `OK: estate healthy.` That is the knowledge sweep working: re-verify the
+  note, or cull it.
 
 ---
 

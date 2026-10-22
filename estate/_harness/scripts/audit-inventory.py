@@ -59,7 +59,8 @@ WALKTHROUGH_RE = re.compile(r"^.+-\d+-walkthrough\.md$")
 SHARED_WALKTHROUGH_RE = re.compile(r"\]\(<?\.\./([^/()<>\s]+)/([^/()<>\s]+-\d+-walkthrough\.md)>?\)")
 LEGACY_DOC_RE = re.compile(r"(explainer-source|walkthrough-QA|implementation-walkthrough)\.md$", re.I)
 LEDGER_RE = re.compile(r"^(\d{2})-.+\.md$")
-PIPELINE_SECTIONS = ["Identity card", "How it works", "Deploy", "Validate", "Behaviour and traps", "Ticket history"]
+# Fixed pipeline-page sections the audit reports when absent; Dependency Chain added by #333.
+PIPELINE_SECTIONS = ["Identity card", "How it works", "Dependency Chain", "Deploy", "Validate", "Behaviour and traps", "Ticket history"]
 ROOT_DOCS = ["AGENTS.md", "CONSTITUTION.md", "README.md", "folder-map.md"]
 SKIP_DIRS = {"Logs", "Dump", ".git", "_retired", ".ipynb_checkpoints"}
 

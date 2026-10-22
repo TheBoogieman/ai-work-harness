@@ -43,10 +43,16 @@ Sources: <path:line, ticket, or command + date>
 ## Scheduling and triggers
 ## Dependency Chain
 
-| Hop | Runtime | Waits on | Produces | Normal timing (observed YYYY-MM-DD) | Check |
-|---|---|---|---|---|---|
-| 1 | <first upstream job / DAG / load> | <its own gate> | <table, file or event> | <start → end> | <read-only command, log or query> |
-| N | this pipeline's trigger | <file, table and sensor dependencies> | <run / activation> | | <trigger log or run listing> |
+Hops and gates apply to both environments (config read on <production branch/ref>; UAT differences below).
+
+| Hop | Runtime | Waits on | Produces | PROD timing (observed YYYY-MM-DD) | UAT timing (observed YYYY-MM-DD) | Check |
+|---|---|---|---|---|---|---|
+| 1 | <first upstream job / DAG / load>, `<ENV>_name` where names differ | <its own gate> | <table, file or event> | <start → end> or Pending | <start → end> | <read-only command, log or query; PROD and UAT target> |
+| N | this pipeline's trigger | <file, table and sensor dependencies> | <run / activation> | | | <trigger log or run listing> |
+
+TODO (unverified): PROD timings marked Pending — verify with: <checks, PROD target>
+
+UAT differences: <config or behaviour that differs from PROD for a hop this page owns, with path:line>
 
 ## Change recipes
 ## Deploy
@@ -77,6 +83,13 @@ Sources: <path:line, ticket, or command + date>
   another pipeline page owns gets one row with a link to that page, not a copy of its internals. Timings are
   dated observations. A diagram is optional; the table is the record. Where the chain splits (for example
   per portfolio or region), say which branch holds which output.
+- Dependency Chain environments: PROD is the primary environment. Write the hops and gates once for both
+  environments, read from the production branch or config, and keep one table with a dated `PROD timing` and
+  `UAT timing` column. Prefer a normal day's timing and say which business date it is. Runtime names that
+  differ by environment are written once as `<ENV>_name`. A PROD cell not yet observed reads `Pending`, with one
+  `TODO (unverified)` line under the table naming the checks. Config or behaviour that differs between
+  environments goes in a short **UAT differences** list on the page that owns the hop. Do not add a second
+  table or diagram per environment; a diagram that shows one environment's names says so in a caption.
 - Refresh mode: show the user each changed fact as **old → new** with its source before writing.
 
 **Sources to mine, in order (stop when the fact is settled):** the existing page; the repo card and runbook;

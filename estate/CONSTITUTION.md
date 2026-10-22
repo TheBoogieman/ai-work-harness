@@ -559,8 +559,10 @@ One file per entity, no folders:
   Scheduling and triggers · Dependency Chain · Change recipes · Deploy (UAT, PROD) · Validate (UAT,
   PROD) · Behaviour and traps · Read before · Ticket history. The **Dependency Chain**
   lists every upstream hop that must finish before the pipeline's own trigger fires —
-  runtime, what it waits on, what it produces, dated normal timing and the read-only
-  check that proves it — linking hops another page owns. **Read the card
+  runtime, what it waits on, what it produces, dated PROD and UAT timing and the
+  read-only check that proves it — linking hops another page owns. PROD is the
+  primary environment: the hops are written once, and differences are listed
+  as UAT differences. **Read the card
   first; open one section at a time.**
 - **Repo card** — `General AI-Knowledge/Work Map/Repos/<repo>.md` is thin: local path,
   GitHub repo, default branch, its living delivery runbook, the pipelines it hosts,

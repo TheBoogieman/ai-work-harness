@@ -40,6 +40,10 @@
 # user's machine would, and a document checked under it would promise output no user ever sees.
 # The four path overrides are the reverse: they keep this case's estate, agent deploy directory,
 # validation stamps and context pack inside throwaway directories, so nothing here touches $HOME.
+# ONE VALUE IS PINNED, and the document states it as an assumption (#335): the knowledge-staleness
+# threshold. Every shipped note carries a dated "Last reviewed:", so on a wall clock alone a release
+# grows a stale-knowledge WARN 90 days after its oldest note was reviewed, and this comparison went
+# red on a date with no code change. The sweep itself is guarded by [knowledge-staleness].
 #
 # WHAT THIS CASE DOES NOT PROVE, said plainly so a green is not over-read: that the document makes
 # SENSE. It proves every command works and every printed line is true. Whether the prose around
@@ -61,9 +65,11 @@ we_line() { awk -v n="$2" 'NR==n' "$1"; }
 we_count() { local n; n=$(wc -l < "$1"); printf '%s' "${n// /}"; }
 
 # we_env — run a command as a USER's machine would run it: no HARNESS_DEMO, and every path the
-# harness may write to pointed at this case's own throwaway directories.
+# harness may write to pointed at this case's own throwaway directories. The staleness threshold is
+# pinned at 100 years so the shipped notes are always inside their review window, as the document's
+# "What the day assumes" section says; without it the output depends on the release's age.
 we_env() {
-  env -u HARNESS_DEMO \
+  env -u HARNESS_DEMO HARNESS_KNOWLEDGE_STALE_DAYS=36500 \
     HARNESS_AGENT_DEPLOY_DIR="$WE_DEPLOY" HARNESS_STATE_DIR="$WE_STATE" \
     PACK_OUT_DIR="$WE_PACK" HARNESS_WARN_STATE_FILE="$WE_ROOT/warn-aging.tsv" "$@"
 }

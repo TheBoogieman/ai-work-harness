@@ -90,7 +90,9 @@ UAT differences: <config or behaviour that differs from PROD for a hop this page
   `TODO (unverified)` line under the table naming the checks. Config or behaviour that differs between
   environments goes in a short **UAT differences** list on the page that owns the hop. Do not add a second
   table or diagram per environment; a diagram that shows one environment's names says so in a caption.
-- Refresh mode: show the user each changed fact as **old → new** with its source before writing.
+- Refresh mode: show the user each changed fact as **old → new** with its source before writing. A stale fact
+  found while writing an approved change, on a page that change already edits, is fixed in the same write and
+  reported old → new afterwards (CONSTITUTION §15 step 6).
 
 **Sources to mine, in order (stop when the fact is settled):** the existing page; the repo card and runbook;
 linked tickets' header, Current State and Changes Made (not Session Logs); ticket `AI-Knowledge/_index.md`

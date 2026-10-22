@@ -867,7 +867,11 @@ newest `YYYYMMDD-estate-audit*.md` report in `General Human Knowledge/Audits/` i
    change, guard), and what was not checked.
 6. **Fix batch by batch, with approval.** Present one batch at a time stating exactly
    what will be added, changed or removed and why; apply it only after the user
-   approves, then append the batch outcome to the report's Fix log. The auditor
+   approves, then append the batch outcome to the report's Fix log. **Incidental
+   findings:** a stale or wrong fact found while working an approved batch is fixed
+   in that batch, on a page the batch already edits and by the same owner, and
+   reported old → new with its source in the batch outcome. A finding on another
+   page or for another owner becomes a new row. The auditor
    fixes links, indexes and ticket headers itself; content refreshes go to
    `doc-writer`; compaction and promotion to `knowledge-curator`; close-outs are
    listed for the user to run `ticket-closer`. **Walkthrough backfill:** tickets

@@ -3,9 +3,10 @@
 ## WHEN TO USE
 Creating or refreshing a pipeline's home page under `General AI-Knowledge/Work Map/Pipelines/<pipeline>.md`
 (one file per pipeline, no folders): documenting where a pipeline lives, its schedule, DAG / data-pipeline /
-cluster names, tables it populates, egress destination, configuration, and how to deploy and validate it in
-UAT and PROD. Triggers: pipeline doc, pipeline home, pipeline page, document pipeline, refresh pipeline page,
-identity card, after a ticket changes a pipeline, close-out refresh, audit refresh.
+cluster names, tables it populates, egress destination, configuration, the upstream dependency chain, and how
+to deploy and validate it in UAT and PROD. Triggers: pipeline doc, pipeline home, pipeline page, document
+pipeline, refresh pipeline page, identity card, dependency chain, why didn't it run, after a ticket changes a
+pipeline, close-out refresh, audit refresh.
 
 ## CRAFT GUIDANCE
 **Kind:** living reference, edited in place; git history is the record. **Destination:** the page named by the
@@ -40,6 +41,13 @@ Sources: <path:line, ticket, or command + date>
 
 ## How it works
 ## Scheduling and triggers
+## Dependency Chain
+
+| Hop | Runtime | Waits on | Produces | Normal timing (observed YYYY-MM-DD) | Check |
+|---|---|---|---|---|---|
+| 1 | <first upstream job / DAG / load> | <its own gate> | <table, file or event> | <start → end> | <read-only command, log or query> |
+| N | this pipeline's trigger | <file, table and sensor dependencies> | <run / activation> | | <trigger log or run listing> |
+
 ## Change recipes
 ## Deploy
 ### UAT
@@ -63,13 +71,22 @@ Sources: <path:line, ticket, or command + date>
 - Ticket history: one line per ticket, newest last, `[<ID>](<relative link to the primary record>) — <final
   outcome in one line>`; link the walkthrough when one exists.
 - Keep the Identity card under about 25 lines; push detail into sections.
+- Dependency Chain: one row per hop, ordered from the first upstream producer to this pipeline's own trigger,
+  so a reader can walk up from whatever is missing. Name each hop's gate exactly as it is configured (file
+  type, table and date column, sensor and metric row) and give the check that proves it passed. A hop that
+  another pipeline page owns gets one row with a link to that page, not a copy of its internals. Timings are
+  dated observations. A diagram is optional; the table is the record. Where the chain splits (for example
+  per portfolio or region), say which branch holds which output.
 - Refresh mode: show the user each changed fact as **old → new** with its source before writing.
 
 **Sources to mine, in order (stop when the fact is settled):** the existing page; the repo card and runbook;
 linked tickets' header, Current State and Changes Made (not Session Logs); ticket `AI-Knowledge/_index.md`
 then the selected note; `Agent-Output/` files for verified observations; the repo's default branch
 (`git show origin/<default>:<path>`, never a working tree on another branch); the design workbook via
-`parse-workbook.py`; live read-only metadata when the request authorises it.
+`parse-workbook.py`; live read-only metadata when the request authorises it. For the Dependency Chain, start
+from this pipeline's trigger or sensor configuration on the default branch, follow each dependency to the
+configuration of the job that produces it, and stop at a hop another page already owns; confirm timings and
+gates from the scheduler's run history and the trigger's own logs.
 
 ## NAMED TOOLS
 Check each named tool exists before relying on it; if it is absent, degrade gracefully to guidance-only
@@ -81,6 +98,7 @@ Resolve and approve remote targets before use (CONSTITUTION §2):
 - `python3 _harness/scripts/parse-workbook.py "<Mappings/file.xlsx>" --out "<Dump dir>" --version <V>` — design rows (needs openpyxl).
 - Your cloud CLI's read-only job or pipeline listing, with an explicit profile (for example `aws ... --profile '<profile>'`) — runtime names, state and schedule (human MFA).
 - The scheduler's CLI or UI — DAG ids and schedules (read-only; human SSO).
+- The trigger's or scheduler's run and task logs — which dependency a run waited on and when it passed (read-only).
 - `python3 _harness/scripts/check-work-map.py` — confirm links after writing.
 
-Last reviewed: 2026-10-20
+Last reviewed: 2026-10-22

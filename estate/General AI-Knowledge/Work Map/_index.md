@@ -30,7 +30,7 @@ work establishes it. Record only observed aliases, not guesses:
 ## Page Shape
 
 - **Pipeline page** (`Pipelines/<stable-name>.md`): an Identity card, then fixed
-  sections (How it works, Scheduling and triggers, Change recipes, Deploy,
+  sections (How it works, Scheduling and triggers, Dependency Chain, Change recipes, Deploy,
   Validate, Behaviour and traps, Read before, Ticket history), each ending with a
   `Sources:` line. `doc-writer` creates and refreshes it with the
   [Doc-Pipeline-Home](../Skills/Doc-Pipeline-Home/SKILL.md) skill.

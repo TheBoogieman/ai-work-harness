@@ -225,3 +225,56 @@ under `Github/`). Estates created before this version, or migrated via `git clon
 (clone does not copy local config), arrive with auto-commit **disarmed**; run
 `git -C <estate> config harness.estate true` to arm it. A plain folder copy or move
 keeps the key and needs nothing.
+
+## Running the estate with Claude Code
+
+The harness ships wired to Copilot (CONSTITUTION §22 names the three coupling
+points). Claude Code can run the same estate, beside Copilot or instead of it, with
+files you add to the estate and **nothing in the installed harness edited**. What
+follows was observed on one Windows seat with the Claude Code VS Code extension
+2.1.312 and VS Code 1.143.1 (#342); these products change monthly, so check each
+point against their current documentation.
+
+- **Instructions.** Claude Code reads `AGENTS.md` by itself (v2.1.277 and later),
+  but only while no `CLAUDE.md` exists at or above the working directory. If you add
+  an estate `CLAUDE.md` for notes of your own, put `@AGENTS.md` near its top: the
+  import keeps `AGENTS.md` in force, also for older CLIs.
+- **The three hook jobs** go in `.claude/settings.json`: `SessionStart` runs the
+  validator and the work-map check (Claude Code adds their output to the session),
+  `PostToolUse` and `SessionEnd` auto-commit. Three differences from the Copilot
+  config matter:
+  - a hook runs in the session's *current* directory, which can be inside
+    `GitHub/`: take the estate root from the hook script's own location, not the
+    working directory, and keep the `harness.estate` guard;
+  - `SessionEnd` hooks share a 1.5-second budget unless their `timeout` raises it;
+  - `PostToolUse` fires for parallel tool calls in parallel, so the commit needs a
+    lock of its own.
+- **Copilot reads Claude Code's files.** VS Code's defaults also load hooks from
+  `.claude/settings.json`, `.claude/settings.local.json` and
+  `~/.claude/settings.json` (`chat.hookFilesLocations`) and agents from
+  `.claude/agents` (`chat.agentFilesLocations`). Turning those locations off in the
+  workspace settings kept the agents out of Copilot's picker, but Copilot's own
+  harness still ran the `.claude/settings.json` hooks, logged as "repo settings". So
+  a Claude-format hook must check that Claude Code is running it: Claude Code sets
+  `CLAUDECODE=1`. `CLAUDE_PROJECT_DIR` is no test — Copilot's harness sets it too.
+- **Agents.** Each `_agents/*.agent.md` translates mechanically into a Claude Code
+  subagent, `.claude/agents/<name>.md`: tools `read` → `Read, Glob, Grep`, `edit` →
+  `Edit, Write, NotebookEdit`, `search` → `Glob, Grep`, `execute` → `Bash`, `web` →
+  `WebFetch, WebSearch`, and `agent` with an `agents:` list → `Agent(<that list>)`;
+  the body is copied unchanged. `user-invocable` and `disable-model-invocation` have
+  no Claude Code equivalent. Treat the copies like the deployed Copilot agents:
+  derived, regenerated after every change to `_agents/`, and picked up by a session
+  that starts after the folder exists. The interactive agents (`ticket-init`,
+  `planner`, `ticket-closer`, `estate-auditor`) need the human in the loop: run them
+  as the session (`claude --agent <name>`), not as subagents. `ticket-scribe` has no
+  shell, so it can't read the clock its header needs: pass it the local timestamp
+  (`date +%Y%m%d%H%M%S`).
+- **Model pins** in the agent files are Copilot picker names. Give the Claude Code
+  copies their own models by the Harness Guide's tiers. On a Copilot plan whose
+  picker offers only Auto, pin `Auto`: every Copilot agent then runs on that one
+  model.
+- **Keeping the adapter on the record.** The estate's whitelist `.gitignore` ignores
+  every adapter file (`CLAUDE.md`, `.claude/`). To version the ones you write, add
+  them once with `git add -f <path>`: an ignore rule never untracks a tracked file,
+  the auto-commits keep them current, and the whitelist stays as shipped. Leave the
+  generated agent copies and `.claude/settings.local.json` untracked.

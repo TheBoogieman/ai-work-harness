@@ -1126,7 +1126,10 @@ The harness is coupled to GitHub Copilot at only three thin, isolated points —
 the `_agents/*.agent.md` format, the `hooks.example.json` hook shape, and
 `deploy-agents.sh`'s deploy target; everything else is assistant-agnostic.
 Porting means translating those three — mechanical work, not redesign. There is
-no adapter layer to select: the three points are edited in place.
+no adapter layer to select: the three points are edited in place. To run Claude
+Code beside Copilot (or instead of it) without editing them, add its own files to
+the estate as [INSTALL-INSTRUCTIONS.md](INSTALL-INSTRUCTIONS.md#running-the-estate-with-claude-code)
+describes.
 
 ---
 

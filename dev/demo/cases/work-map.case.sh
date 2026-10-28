@@ -259,10 +259,15 @@ class WorkMapTests(unittest.TestCase):
         hooks = config["hooks"]
         starts = hooks["sessionStart"]
         self.assertEqual(len(starts), 2)
-        original = '      { "type": "command", "bash": "bash _harness/scripts/check-ticket-log.sh", "cwd": ".", "timeoutSec": 60 }\n'
+        # The validator entry's own line keeps its original text up to the timeoutSec; since #339 the
+        # entry continues onto a second line with its Windows ('powershell') variant, which
+        # [hooks-windows] checks. Every original field is still asserted exactly.
+        original = '      { "type": "command", "bash": "bash _harness/scripts/check-ticket-log.sh", "cwd": ".", "timeoutSec": 60,\n'
         self.assertIn(original, hook_text)
-        self.assertEqual(starts[0], {"type": "command", "bash": "bash _harness/scripts/check-ticket-log.sh",
-                                    "cwd": ".", "timeoutSec": 60})
+        self.assertEqual({k: v for k, v in starts[0].items() if k != "powershell"},
+                         {"type": "command", "bash": "bash _harness/scripts/check-ticket-log.sh",
+                          "cwd": ".", "timeoutSec": 60})
+        self.assertEqual(set(starts[0]), {"type", "bash", "cwd", "timeoutSec", "powershell"})
         self.assertNotIn("--strict", starts[1]["bash"])
         self.assertEqual(starts[1]["cwd"], ".")
         bash = shutil.which("bash")

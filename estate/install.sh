@@ -384,10 +384,23 @@ note_missing_pin() {
 # established value is ROUTED, never applied: the installer edits NOTHING pre-existing (#39).
 # It warns, names the exact file to edit, and offers the AI-assistant handoff (AI-SETUP-PROMPT.md).
 route_change() {
-  echo "WARN: you asked to change the $1 from '$2' (established) to '$3'." \
-       "Changing established config"
-  echo "  can break the harness, so the installer changes NOTHING." \
-       "To apply it, edit $4 yourself, or"
+  # A PICK-A-* value is the template's placeholder: that pin was never set, so calling it
+  # "established" and warning that a change "can break the harness" misdescribes it (#349). Only
+  # the wording differs; the route does not: the installer still edits nothing and names the file.
+  case "$2" in
+    PICK-A-*)
+      echo "WARN: you asked to set the $1 to '$3'; it is not set yet (still the placeholder" \
+           "'$2')."
+      echo "  The installer changes NOTHING in an existing estate." \
+           "To set it, edit $4 yourself, or"
+      ;;
+    *)
+      echo "WARN: you asked to change the $1 from '$2' (established) to '$3'." \
+           "Changing established config"
+      echo "  can break the harness, so the installer changes NOTHING." \
+           "To apply it, edit $4 yourself, or"
+      ;;
+  esac
   echo "  hand it to your AI assistant (see AI-SETUP-PROMPT.md):" \
        "\"Change the $1 from $2 to $3 in $4, re-validate.\""
 }

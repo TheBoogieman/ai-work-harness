@@ -218,6 +218,19 @@ wasn't auto-committed, commit it by hand; nothing in the record depends on the
 hook firing. (CLI and cloud Copilot surfaces are UNVERIFIED — their schema may
 differ.) The hook config design ships as `_harness/hooks/hooks.example.json`.
 
+**Windows.** Copilot runs each hook's `powershell` command on Windows, and a bare
+`bash` there is System32's WSL launcher, which fails whenever WSL is off; so every
+hook entry also carries a `powershell` variant that runs the same `bash` text
+through Git Bash (#339). Those variants were witnessed by hand from Windows
+PowerShell 5.1; a live Copilot fire on Windows is still to be witnessed. An estate
+installed before that change keeps its old `.github/hooks/harness.json` through
+`--upgrade`, which carries the hook config forward unchanged: after upgrading, copy
+the new one over it once, from the estate root (it holds no per-estate values):
+
+```bash
+cp _harness/hooks/hooks.example.json .github/hooks/harness.json
+```
+
 **Arming on migration.** The auto-commit hooks commit only where the estate's
 `.git/config` carries `harness.estate=true` — a positive-identity key `install.sh`
 sets, so the hooks can never auto-commit into a nested foreign project repo (e.g.

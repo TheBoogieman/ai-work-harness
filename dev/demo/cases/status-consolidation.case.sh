@@ -63,6 +63,39 @@ PY
     "command/toolFilter"
 }
 
+# [hooks-windows] (#339) — every shipped hook entry also carries a 'powershell' command, which is
+# what Copilot runs on Windows. Without one, Copilot runs the 'bash' text as bare `bash`, and on
+# Windows that resolves to System32's WSL launcher: with WSL disabled every hook exits 1, so the
+# estate never validates at session start and never auto-commits. The variant must (1) find Git
+# Bash by location rather than call bare `bash`, and (2) run THAT entry's own 'bash' text, read back
+# from the laid-down config by event and position, so each command still has one home. STRUCTURE
+# ONLY: CI has no Windows lane, so the variant's run is witnessed by hand on a Windows seat.
+# REVERT-PROOF: drop any entry's 'powershell' key, or point it at another entry, and this reds.
+sk_hooks_windows() {
+  local HW339_OUT
+  if ! HW339_OUT=$(python3 - "estate/_harness/hooks/hooks.example.json" <<'PY' 2>&1
+import json, sys
+hooks = json.load(open(sys.argv[1]))["hooks"]
+for event, entries in hooks.items():
+    for i, entry in enumerate(entries):
+        where = f"hooks.{event}[{i}]"
+        ps = entry.get("powershell")
+        assert ps, f"{where}: no 'powershell' command, so Copilot on Windows runs bare bash"
+        assert not ps.lstrip().startswith("bash"), f"{where}: 'powershell' calls bare bash"
+        assert "bin\\bash.exe" in ps, f"{where}: 'powershell' does not find Git Bash's bin\\bash.exe"
+        own = f".hooks.{event}[{i}].bash"
+        assert own in ps, f"{where}: 'powershell' does not run its own entry's bash text ({own})"
+        assert ".github/hooks/harness.json" in ps, f"{where}: 'powershell' does not read the laid-down config"
+PY
+  ); then
+    echo "BUG [hooks-windows]: a shipped hook entry cannot run on Windows:"
+    printf '%s\n' "$HW339_OUT"
+    exit 1
+  fi
+  echo "  ok [hooks-windows] — every hook entry carries a 'powershell' variant that finds Git Bash" \
+    "and runs its own entry's 'bash' text"
+}
+
 # [pack-without-zip] — with the zip CLI unavailable the context pack must still build via the
 # Python zipfile fallback (python3 is already required). HARNESS_PACK_NO_ZIP=1 forces the fallback
 # deterministically (cleaner than PATH surgery, and it exercises the exact fallback path). Assert
@@ -183,6 +216,7 @@ sk_uncommitted_warn() {
 case_status_consolidation() {
   sk_awkward_hooks_path
   sk_hooks_schema
+  sk_hooks_windows
   sk_pack_without_zip
   sk_stale_commit_warn
   sk_uncommitted_warn

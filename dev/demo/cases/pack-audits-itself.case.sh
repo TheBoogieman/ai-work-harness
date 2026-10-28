@@ -26,12 +26,15 @@ case_pack_audits_itself() {
   cp -R estate/_harness "$P340/_harness"
   P340_SCRIPT="$P340/_harness/scripts/make-context-pack.sh"
   # A pattern seed (the [a-z] keeps it from matching, and so scrubbing, its own text) and the audit
-  # term that matches its literal part, as an operator seeding a home path would write them.
-  sed -E -i.bak \
-    -e "s#^SCRUB=\(#SCRUB=(\n  's|/[a-z]/Users/$P340_SEED|<home>|gI'#" \
-    -e "s#^AUDIT_TERMS=.*#AUDIT_TERMS='Users[\\\\\\\\/]+$P340_SEED'#" \
-    "$P340_SCRIPT"
-  rm -f "$P340_SCRIPT.bak"
+  # term that matches its literal part, as an operator seeding a home path would write them. awk to
+  # a temp file (portable on GNU and BSD); the two lines reach it through ENVIRON, which, unlike -v,
+  # leaves their backslashes alone.
+  P340_ROW="  's|/[a-z]/Users/$P340_SEED|<home>|gI'" \
+  P340_AUDIT="AUDIT_TERMS='Users[\\\\/]+$P340_SEED'" \
+  awk '/^SCRUB=\(/     { print; print ENVIRON["P340_ROW"]; next }
+       /^AUDIT_TERMS=/ { print ENVIRON["P340_AUDIT"]; next }
+                       { print }' "$P340_SCRIPT" > "$P340_SCRIPT.tmp" \
+    && mv "$P340_SCRIPT.tmp" "$P340_SCRIPT"
   grep -q "Users/$P340_SEED" "$P340_SCRIPT" \
     || { echo "BUG [pack-audits-itself]: the fixture failed to seed its own scrub table"; exit 1; }
   printf '# fixture note\nThe checkout lives at /c/Users/%s/work.\n' "$P340_SEED" \

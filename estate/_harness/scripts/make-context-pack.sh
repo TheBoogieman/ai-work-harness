@@ -45,7 +45,7 @@ stage_one() { # $1 = path relative to WORK_ROOT
   # terms it removes. A literal row happens to scrub itself; a row written as a pattern does not, so
   # its literal parts used to ship in every pack while the audit below skipped this file by name
   # (#340). The copy's table is replaced by a marker BEFORE scrubbing, and the audit now reads every
-  # staged file. awk, not sed -i, for GNU/BSD portability; the quote reaches awk through -v.
+  # staged file. awk writing to a temp file keeps it GNU/BSD portable; the quote reaches awk via -v.
   if [[ "$1" == "_harness/scripts/make-context-pack.sh" ]]; then
     awk -v q="'" '
       /^SCRUB=\(/            { print "SCRUB=(  # the seeds are not shipped in a context pack (#340)"; skip = 1; next }

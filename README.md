@@ -57,8 +57,9 @@ Anything marked *swappable* degrades gracefully if you differ.
   environment's name. Create it yourself (the harness never creates one) and
   set it as the workspace default interpreter so notebooks pick up its kernel.
   The documentation's examples use Python 3.12 in a venv called `venv_global`
-  — a convention worth keeping, not a requirement. (`openpyxl` is needed only
-  if you parse design workbooks with `parse-workbook.py`.)
+  — a convention worth keeping, not a requirement. (`openpyxl` is needed to run
+  the acceptance demo, and afterwards only if you parse design workbooks with
+  `parse-workbook.py`.)
 - **An issue tracker** — Jira assumed, any works (*swappable*). Replace the
   `PROJ` board key with yours; `ticket-init` degrades to template-with-TODOs
   when the tracker is unreachable.

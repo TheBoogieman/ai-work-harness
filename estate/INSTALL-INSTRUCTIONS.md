@@ -14,7 +14,10 @@ wire your assistant.
 
 **1 · Prove the machinery — `run-demo.sh`.** Clone the repo to a **source**
 location and run the demo from that checkout — the demo needs no estate, so
-running it in place is correct:
+running it in place is correct. It does need Python: **create the environment
+described under step 2 (*Prerequisite you create*) first**, with both `nbformat`
+and `openpyxl` installed, and activate it in the terminal you run the demo from —
+the demo calls `python3` and exercises the notebook helper and the workbook parser:
 
 - **macOS / Linux** — your terminal's bash (stock macOS works as-is; the scripts
   auto-detect GNU vs BSD userland):
@@ -28,6 +31,14 @@ running it in place is correct:
   ```bash
   git clone https://github.com/TheBoogieman/ai-work-harness.git ~/ai-work-harness
   cd ~/ai-work-harness && bash dev/scripts/run-demo.sh
+  ```
+  **A Windows venv has no `python3`.** It keeps its interpreter in `Scripts\` as
+  `python.exe`, and the `python3` that answers on `PATH` is usually the Microsoft
+  Store stub, which installs nothing and runs nothing. The scripts call `python3`,
+  so give the venv one before the first run (and activate it with
+  `source ~/venvs/venv_global/Scripts/activate` — `Scripts/`, not `bin/`):
+  ```bash
+  cp ~/venvs/venv_global/Scripts/python.exe ~/venvs/venv_global/Scripts/python3.exe
   ```
 
 **How long it takes is not a number this page will quote.** The first run on a
@@ -53,8 +64,9 @@ interpreter can `import nbformat`**, registered as a Jupyter kernel and set as
 the workspace default interpreter. That is the whole requirement — the notebook
 helper runs under whatever `python3` is on the path, and nothing in the harness
 reads, requires or validates the environment's name. (`unzip` is optional — the
-context-pack helper falls back to Python's zipfile without it. `openpyxl` is optional
-too: only `parse-workbook.py`, which reads design workbooks, needs it.)
+context-pack helper falls back to Python's zipfile without it. `openpyxl` is needed
+to run the demo, whose workbook-parser case fails without it; after that only
+`parse-workbook.py`, which reads design workbooks, needs it.)
 
 **`venv_global` below is the documented default, not a fixed name** — every
 document here uses it so that "the workspace default interpreter" means one
@@ -62,7 +74,7 @@ thing across tickets and assistants. Substitute your own and nothing notices.
 
 ```bash
 python3.12 -m venv ~/venvs/venv_global   # 3.12 assumed; a newer python3 also works
-source ~/venvs/venv_global/bin/activate && pip install nbformat   # + your toolchain (dbt etc.)
+source ~/venvs/venv_global/bin/activate && pip install nbformat openpyxl   # + your toolchain (dbt etc.)
 ```
 
 `pip install` works directly inside the activated venv; installing `nbformat`
@@ -79,8 +91,10 @@ bash estate/install.sh ~/Work
 `install.sh` is a non-destructive **dumb creator** — it lays down PRODUCT files
 only, scaffolds any absent ticket anatomy, initialises a whitelist-scoped
 **local-only** git repo with a day-zero commit, copies the verified hook config
-to `.github/hooks/harness.json`, deploys the agents, and runs the validator +
-status; it **never edits an existing file**, so a re-run finds nothing absent.
+to `.github/hooks/harness.json`, deploys the agents, and runs the validator
+(`_harness/scripts/check-ticket-log.sh`) and status
+(`_harness/scripts/harness-status.sh`); it **never edits an existing file**, so a
+re-run finds nothing absent.
 (One flag changes that, and only if you type it: `--upgrade`, below. Every run
 that does not carry it behaves exactly as this paragraph describes.) It
 asks for your board key and model pins (Enter accepts each suggested default;

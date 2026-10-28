@@ -230,7 +230,11 @@ activation trigger is not fully characterised, so expect a first real session or
 a Copilot restart may be needed. The git safety net is the backstop — if a write
 wasn't auto-committed, commit it by hand; nothing in the record depends on the
 hook firing. (CLI and cloud Copilot surfaces are UNVERIFIED — their schema may
-differ.) The hook config design ships as `_harness/hooks/hooks.example.json`.
+differ.) The hook config design ships as `_harness/hooks/hooks.example.json`. When
+another git process holds the estate's index lock (VS Code's Git extension refreshes
+right after each write), the commit hooks wait up to 2 seconds and otherwise leave
+the change to the next hook with a `NOTE [auto-commit]` line, rather than failing
+with git's "Another git process seems to be running" message (#343).
 
 **Windows.** Copilot runs each hook's `powershell` command on Windows, and a bare
 `bash` there is System32's WSL launcher, which fails whenever WSL is off; so every

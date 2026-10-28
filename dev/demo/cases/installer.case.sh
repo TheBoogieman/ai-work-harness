@@ -391,6 +391,41 @@ in_change_routed() {
   echo "  ok [change-routed] — a changed answer WARNs + names the file, edits nothing"
 }
 
+# (i2) placeholder-pin-routed (#349): a pin still at its PICK-A-* placeholder was never set, so the
+#      route for answering a real model there must not call it "established" or warn that changing
+#      it "can break the harness". It must still route (the installer edits nothing pre-existing)
+#      and still name the file to edit. A --yes install leaves both pins at their placeholders; the
+#      re-run accepts the board, answers Auto for the cheap pin and accepts the sonnet pin.
+#      Revert-provable: the pre-#349 wording says "(established)" for the placeholder and reds here.
+in_placeholder_pin_routed() {
+  local i39_pp i39_ppout i39_ppwarn
+  i39_pp="$I39_ROOT/ppest"
+  in_install placeholder-pin-routed --yes "$i39_pp"
+  cp "$i39_pp/_agents/ticket-scribe.agent.md" "$I39_ROOT/pp.snap"
+  i39_ppout=$(printf '\nAuto\n\n' | HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" \
+    bash estate/install.sh "$i39_pp" 2>&1 || true)
+  cmp -s "$I39_ROOT/pp.snap" "$i39_pp/_agents/ticket-scribe.agent.md" \
+    || { echo "BUG [placeholder-pin-routed]: install EDITED ticket-scribe.agent.md when a placeholder" \
+           "pin was answered — it must route, not apply"; exit 1; }
+  # The WARN line and the line after it carry the route's own words; read just those two lines.
+  i39_ppwarn=$(printf '%s\n' "$i39_ppout" | grep -A1 'WARN.*cheap model pin' || true)
+  [ -n "$i39_ppwarn" ] \
+    || { echo "BUG [placeholder-pin-routed]: answering a placeholder pin did not WARN + route"; \
+         exit 1; }
+  if printf '%s\n' "$i39_ppwarn" | grep -qiE 'established|can break the harness'; then
+    echo "BUG [placeholder-pin-routed]: the route calls a never-set placeholder pin established:"
+    printf '%s\n' "$i39_ppwarn" | sed 's/^/      /'
+    exit 1
+  fi
+  printf '%s\n' "$i39_ppwarn" | grep -q 'not set yet' \
+    || { echo "BUG [placeholder-pin-routed]: the route does not say the pin is not set yet"; \
+         exit 1; }
+  printf '%s\n' "$i39_ppout" | grep -q '_agents/\*.agent.md (cheap-tier agents)' \
+    || { echo "BUG [placeholder-pin-routed]: the route did not name the file to edit"; exit 1; }
+  echo "  ok [placeholder-pin-routed] — a placeholder pin answered with a model is routed as not" \
+    "set yet, names the file, edits nothing"
+}
+
 # (j) workspace-derived: the workspace-root QUESTION is gone; the summary line is derived from the
 #     real install target, always true by construction.
 in_workspace_derived() {
@@ -1062,6 +1097,7 @@ case_installer() {
   in_board_default
   in_model_pin_offered
   in_change_routed
+  in_placeholder_pin_routed
   in_workspace_derived
   in_prompt_default
   in_missing_value_audible

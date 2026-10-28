@@ -8,7 +8,7 @@ Triggers: repo workflow, runbook, delivery guide, how to deploy this repo, corre
 ## CRAFT GUIDANCE
 **Kind:** living, human-facing reference under `General Human Knowledge/Repo Workflows/`, corrected in place.
 **Destination:** the existing owner for the repo (`Repo Workflows/<date>-<repo>.md`); create one only when no
-file owns the repo. Register a new runbook in `Repo Workflows/20260830-infrastructure-guide-index.md` and
+file owns the repo. Register a new runbook in `Repo Workflows/_index.md` and
 note every correction there so it is visible, then make sure the repo card in `Work Map/Repos/<repo>.md` links it.
 
 **Shape (match the existing runbooks):** what the repo does · why it is separate · what "finished" looks like ·

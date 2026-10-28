@@ -183,7 +183,8 @@ demo_order() {
     case:rehearsal-declared \
     tour:context-pack \
     case:one-pack-per-run \
-    case:scrub-case-agree
+    case:scrub-case-agree \
+    case:pack-audits-itself
 }
 
 # demo_cases_dir / demo_case_names — where case files live and what they are called. Both the

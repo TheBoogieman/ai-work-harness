@@ -1111,7 +1111,8 @@ Output rules:
 Rules:
 - The scrub table lives at the top of the script — extend it there whenever a
   new identifier class appears; the script is the single source of scrubbing
-  truth.
+  truth. The pack carries the script itself with that table blanked, and the
+  self-audit reads every packed file, so a seed written as a pattern never ships.
 - The script prints a final reminder to **manually skim the zip before it
   leaves the machine**. Automation reduces redaction errors; it does not
   replace the human check.

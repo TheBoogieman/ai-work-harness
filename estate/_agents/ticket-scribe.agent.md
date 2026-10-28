@@ -8,11 +8,15 @@ tools: [read, edit]
 Read your row in `AGENTS.md`: CONSTITUTION.md §4.3, §5 *Current State
 Convention*, §6 *Session Logging Convention* and §6.1 *Record Ownership and
 Brevity*. Work from the parent's
-compact handoff: outcome, meaningful changes, validation summary, current
-status, next step, one essential gotcha/pointer, and any header deltas. Read
+compact handoff: the entry's timestamp, outcome, meaningful changes, validation
+summary, current status, next step, one essential gotcha/pointer, and any header
+deltas. Read
 only the ticket header, Current State, and the tail needed to place the next
 entry. Do not inspect the full Session Log, Checks, AI-Knowledge, tracker, code
 host, or repos to reconstruct the session. If the handoff is unclear, stop.
+The timestamp comes in the handoff because you have no shell to read the clock:
+the parent runs `date +%Y%m%d%H%M%S` and passes the result. If it is missing, ask
+for it rather than taking a time from a commit or a file.
 
 Append one concise Session Log block with the strict header
 `## YYYYMMDDHHMMSS - [Short one line description]` — the timestamp is LOCAL

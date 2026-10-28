@@ -77,6 +77,10 @@ python3.12 -m venv ~/venvs/venv_global   # 3.12 assumed; a newer python3 also wo
 source ~/venvs/venv_global/bin/activate && pip install nbformat openpyxl   # + your toolchain (dbt etc.)
 ```
 
+On Windows, a per-user python.org install puts only the `py` launcher on `PATH`, not
+`python3.12`, so make the venv with `py -3.12 -m venv ~/venvs/venv_global` and
+activate it from `Scripts/` (step 1) (#349).
+
 `pip install` works directly inside the activated venv; installing `nbformat`
 into a **system** Python instead needs `pip install nbformat --break-system-packages`
 on PEP 668 distros. Then run the installer, giving it an estate directory
@@ -240,7 +244,11 @@ with git's "Another git process seems to be running" message (#343).
 `bash` there is System32's WSL launcher, which fails whenever WSL is off; so every
 hook entry also carries a `powershell` variant that runs the same `bash` text
 through Git Bash (#339). Those variants were witnessed by hand from Windows
-PowerShell 5.1; a live Copilot fire on Windows is still to be witnessed. An estate
+PowerShell 5.1, and live in VS Code's Copilot chat on its Copilot CLI harness
+(VS Code 1.143.1, Copilot Chat 0.71.0): `sessionStart` ran the validator and
+`postToolUse` committed each edit. `sessionEnd` has not been seen live yet: a window
+reload doesn't end an open chat. A chat keeps the hook config it started with, so a
+changed `harness.json` takes effect in new chats only (#349). An estate
 installed before that change keeps its old `.github/hooks/harness.json` through
 `--upgrade`, which carries the hook config forward unchanged: after upgrading, copy
 the new one over it once, from the estate root (it holds no per-estate values):

@@ -178,6 +178,7 @@ demo_order() {
     case:worked-example \
     case:tracker-sweep \
     case:estate-key \
+    case:hook-index-lock \
     case:source-refusal \
     case:in-estate-reconfigure \
     case:rehearsal-declared \

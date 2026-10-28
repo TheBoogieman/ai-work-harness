@@ -41,6 +41,20 @@ stage_one() { # $1 = path relative to WORK_ROOT
   local src="$WORK_ROOT/$1" dst="$STAGE/$1"
   [[ -f "$src" ]] || return 0
   mkdir -p "$(dirname "$dst")"; cp "$src" "$dst"
+  # This script's own copy carries the scrub table, and the table by construction names the very
+  # terms it removes. A literal row happens to scrub itself; a row written as a pattern does not, so
+  # its literal parts used to ship in every pack while the audit below skipped this file by name
+  # (#340). The copy's table is replaced by a marker BEFORE scrubbing, and the audit now reads every
+  # staged file. awk, not sed -i, for GNU/BSD portability; the quote reaches awk through -v.
+  if [[ "$1" == "_harness/scripts/make-context-pack.sh" ]]; then
+    awk -v q="'" '
+      /^SCRUB=\(/            { print "SCRUB=(  # the seeds are not shipped in a context pack (#340)"; skip = 1; next }
+      skip && /^\)/          { print ")"; skip = 0; next }
+      skip                   { next }
+      /^AUDIT_TERMS=/        { print "AUDIT_TERMS=" q "<not shipped in a context pack>" q; next }
+                             { print }
+    ' "$dst" > "$dst.tmp" && mv "$dst.tmp" "$dst"
+  fi
   for rule in "${SCRUB[@]}"; do sed -E "$rule" "$dst" > "$dst.tmp" && mv "$dst.tmp" "$dst"; done
 }
 
@@ -61,7 +75,8 @@ fi
 # Deterministic MANIFEST + self-audit
 ( cd "$STAGE"
   find . -type f ! -name MANIFEST.txt | sort | sed 's|^\./||' > MANIFEST.txt
-  if grep -RqiE "$AUDIT_TERMS" . --exclude=MANIFEST.txt --exclude='make-context-pack.sh' 2>/dev/null; then
+  # Every staged file, this script's copy included: its table was blanked in stage_one (#340).
+  if grep -RqiE "$AUDIT_TERMS" . --exclude=MANIFEST.txt 2>/dev/null; then
     echo "self-audit: FAILED — scrub-table terms found" >> MANIFEST.txt
     echo "FAIL: scrub-table terms survived staging. Fix the SCRUB table in make-context-pack.sh and re-run." >&2
     exit 1

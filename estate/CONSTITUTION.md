@@ -49,7 +49,7 @@
 
 | § | Section | Read it when |
 |---|---|---|
-| 20 | [Using Your Own Ticket Naming Scheme](#20-using-your-own-ticket-naming-scheme) | Changing the board key or folder-name pattern |
+| 20 | [Using Your Own Ticket Naming Scheme](#20-using-your-own-ticket-naming-scheme) | Changing the folder-name pattern (a new board needs no change) |
 | 21 | [Context Pack Convention](#21-context-pack-convention) | Building a harness review pack for an outside design review |
 | 22 | [Porting to Another AI Assistant](#22-porting-to-another-ai-assistant) | Moving the harness to another assistant |
 
@@ -69,9 +69,9 @@ Estate root: the `Work/` directory holding this file.
 Work/
 ├── AGENTS.md       THE POINTER — which sections of this file each agent reads, plus navigation links
 ├── CONSTITUTION.md ← this file (THE RULEBOOK)
-├── Tickets/        Active and completed Jira ticket working folders (tree in §4.1; the validator only validates recognised names; harness-status surfaces the rest)
+├── Tickets/        Active and completed ticket working folders, from one board or several (tree in §4.1; the validator only validates recognised names; harness-status surfaces the rest)
 ├── Mappings/       Design workbooks (.xlsx) — the canonical copies the user names per task; read through parse-workbook.py (§10); never edited by agents
-├── GitHub/         Local checkouts of your code repos (primary dev work; never touched by the harness)
+├── GitHub/         Local checkouts of your code repos (primary dev work; never touched by the harness). Work in any of them goes through a ticket on the board that tracks it (GitHub Repos, at the end of this file)
 ├── General AI-Knowledge/  Non-ticket knowledge base — what the machinery READS: Work Map/ (Pipelines/ and Repos/ pages, §9.2), Skills/ (craft and Doc-* documentation targets, §19), one subfolder per other topic (tooling, setup, how-to)
 ├── General Human Knowledge/  Human-facing OUTPUTS (Harness Guide.md, Repo Workflows/, Audits/, Retrospectives/) — what the machinery WRITES for you; agents may read these references too (versioned; history append-only, references living — see below)
 ├── _harness/scripts/   THE MACHINERY — validator, status, notebook helper, context pack, agent deploy (versioned: the enforcement layer has undo + history)
@@ -108,6 +108,18 @@ tool by the question, in this order:
 | Scheduler deployments and runs | the scheduler's CLI | its web UI |
 | Tracker issue fields, status, search | your tracker CLI or MCP server | the tracker's web UI |
 | Wiki pages and search | your wiki MCP server or CLI | — |
+
+**Boards.** An estate may hold tickets from one board or several, each on its own tracker. List
+them in the tools note's **Boards** table, one row per board:
+
+| Board | Tracker: where its issues live | Identity rule: issue → `<BOARD>-<num>` | Repos it delivers into | Closed words |
+|---|---|---|---|---|
+| `<BOARD>` | the tracker and its project or repo | for example the issue number as is, or a number carried in the issue title | `GitHub/<repo>`, … | only if they differ from `tracker-sweep.sh`'s default |
+
+This section owns the shape; the tools note owns the rows. The ticket grammar (§3) accepts any
+board key, so a new board needs a row and no machinery change. `ticket-init` takes the board and
+its identity rule from this table ([§13](#13-ticket-initialisation-procedure)). A one-board
+estate may keep one row, or none.
 
 Check availability and the local tools note first; never assume a tool or profile
 exists, and a configured tool is not an authenticated one. Catalog, tracker and
@@ -150,12 +162,12 @@ YYYYMM<seq>-<BOARD>-<num>
 |-----------|-----------------------------------------------------------------------------------|
 | `YYYYMM`  | Year+month the ticket was picked up — exactly 6 digits (the only fixed-width part) |
 | `<seq>`   | Chronological order within the month — one or more letters (A, B, … Z, AA, AB, …; unbounded, so a month is never capped) |
-| `<BOARD>` | Your issue-tracker board key (set your own)                                        |
-| `<num>`   | The tracker's ticket number — digits, any length                                  |
+| `<BOARD>` | The key of the board the ticket comes from; an estate may hold several ([§2](#2-tools-and-authentication), Boards) |
+| `<num>`   | The ticket's number on that board, by the board's identity rule — digits, any length |
 
 **Example:** the first ticket picked up in May 2026, ticket number
 PROJ-65474 → `202605A-PROJ-65474`. A busy month past `Z` rolls to `AA`,
-`AB`, … automatically. The primary record inside it has the same name plus `.md`.
+`AB`, … automatically. The primary record inside it has the same name plus `.md`. Tickets from several boards sit side by side under the same pattern (`202605B-XRAY-812` beside `202605A-PROJ-65474`), and the month sequence runs across all of them.
 
 Never pick the letter by hand: `init-ticket.sh` allocates the name from the local
 machine month and existing names, not from the chat date or folder count ([§13](#13-ticket-initialisation-procedure)
@@ -288,7 +300,7 @@ The primary file is `YYYYMM<seq>-<BOARD>-<num>.md`. This is the **source of trut
 ```markdown
 # <BOARD>-<num> — <Short Ticket Description>
 
-**Ticket:** <Jira URL>
+**Ticket:** <the issue's URL on its board's tracker>
 **Local path:** Work/Tickets/YYYYMM<seq>-<BOARD>-<num>
 
 Repos:
@@ -733,11 +745,11 @@ capability guide, not a price guarantee. See the
 
 Run by `ticket-init`; every step below is also the by-hand fallback. Invoked with the tracker link:
 
-1. Pull the full tracker issue — summary, description, acceptance criteria, comments, and the epic/parent one level up. Follow [§2](#2-tools-and-authentication). If the tracker is unreachable, fill Background/Scope with `TODO` markers from the interview instead of failing — a content fallback; identity and naming are handled separately below.
+1. Resolve the link's board from the tools note's Boards table ([§2](#2-tools-and-authentication)): its row names the tracker to read and the identity rule. An estate with no table has one board, which applies as before; a link from a board with no row is asked about, never guessed. Then pull the full tracker issue — summary, description, acceptance criteria, comments, and the epic/parent one level up. Follow [§2](#2-tools-and-authentication). If the tracker is unreachable, fill Background/Scope with `TODO` markers from the interview instead of failing — a content fallback; identity and naming are handled separately below.
 2. Before creating anything, search for that exact tracker identity across existing ticket names, including earlier months. Resume an existing ticket; do not allocate a second folder. Present a short digest and ask the three kickoff questions: (a) the ticket **in the user's own words**, (b) **non-negotiables**, (c) repo(s). Reuse answers already provided; do not ask the user to repeat them.
 3. Follow [§9 Context Discovery](#9-context-discovery): inspect matching workflow/knowledge indexes, pipeline pages and related tickets before proposing work. Keep at most three directly relevant links and one-line reasons; report a bounded negative search honestly.
-4. For each repo, suggest 2-3 branch names following its documented workflow (fallback `feature/PROJ-XXXXX_<short-slug>`). Record the user's choice only. The init agent never creates branches or edits code repos.
-5. Locate the actual installed template (shipped default `Tickets/999912Z-PROJ-99999`, possibly customized). Run `bash _harness/scripts/init-ticket.sh --template <actual-path> --identity <BOARD-num>`; use `--dry-run` to inspect the proposed name first. The helper reads local machine time, considers all boards in that month, orders sequences by length then alphabetically, increments past Z, copies the full tree including dotfiles, and renames the primary markdown only. It refuses duplicate identities, unsafe paths and collisions. Do not reconstruct a subset or hand-edit notebooks. `--root <estate>` is available when explicitly targeting another estate.
+4. For each repo, suggest 2-3 branch names following its documented workflow (fallback `feature/<BOARD>-<num>_<short-slug>`). Record the user's choice only. The init agent never creates branches or edits code repos.
+5. Take `<BOARD-num>` from the board's identity rule (step 1), never from the link's shape alone. Locate the actual installed template (shipped default `Tickets/999912Z-PROJ-99999`, possibly customized). Run `bash _harness/scripts/init-ticket.sh --template <actual-path> --identity <BOARD-num>`; use `--dry-run` to inspect the proposed name first. The helper reads local machine time, considers all boards in that month, orders sequences by length then alphabetically, increments past Z, copies the full tree including dotfiles, and renames the primary markdown only. It refuses duplicate identities, unsafe paths and collisions. Do not reconstruct a subset or hand-edit notebooks. `--root <estate>` is available when explicitly targeting another estate.
 6. If no identity can be determined, explicitly use `--pending` instead of `--identity`. The unfinished scaffold has a non-conforming name and `.ticket-pending`. Once identity is confirmed, put it in the record's first heading and preview with `--identity <BOARD-num> --resume <pending-path> --dry-run` alongside `--template`. This excludes only that confirmed pending folder from duplicate checks; it writes nothing. Complete the confirmed folder/primary-markdown rename using the returned name, fill the record, **remove the marker**, and record/validate the real completion. Never invent a conforming tracker identity. Copying a template is not a completed or validated ticket.
 7. Fill the real header, Context links, Background and Scope. Background starts with **In my words:** plus at most five tracker-context bullets; Scope contains **Non-negotiables** and acceptance criteria once. Do not copy comment transcripts. Seed Now / Next / Blocked, retaining unknowns as TODOs. Preserve all copied scaffold files; create no Checks capsule or AI-Knowledge note during initialization, and add no invented evidence or learnings.
 8. Link the new ticket from its repo/pipeline page entries (and the map root for a new entity), and add up to three useful Context links to the ticket header. Then invoke `ticket-scribe` with the observed initialization actions, the known links and the local timestamp for one real init entry. Run `bash _harness/scripts/check-ticket-log.sh`; resolve any FAIL before calling initialization complete. Run `python3 _harness/scripts/check-work-map.py` once and report its warning-only findings. A copied template or successful helper exit is not validation. If blocked, report the unfinished path and actual problem; do not manufacture another log entry to make a red disappear.
@@ -1068,8 +1080,12 @@ one skill folder and its index line; `doc-writer` needs no change.
 board schemes the default can't anticipate; adapting is a one-line change. The recognition pattern lives in
 exactly one place: the `TICKET_RE` line in `_harness/scripts/ticket-grammar.sh`,
 sourced by both the validator and `harness-status`, so editing that one line moves
-both tools together. Then update the template ticket name, the example in §3 and
-the fallback branch name in §13.
+both tools together. Then update the template ticket name and the example in §3.
+
+**A second board is not a new scheme.** The default pattern already accepts any board key
+without a hyphen, so adding a board changes nothing here: give it a row in the tools note's
+Boards table ([§2](#2-tools-and-authentication)) and start its first ticket. Edit the pattern
+only for a name the default cannot parse, such as the hyphenated key below.
 
 **Worked example — a hyphenated board key.** A board key containing a hyphen
 (e.g. `DATA-ENG`, so tickets read like `202607A-DATA-ENG-42`) is **unrecognised by
@@ -1145,7 +1161,7 @@ two sections are yours.
 
 ## GitHub Repos
 
-All repos live under `Work/GitHub/` (relative to this workspace root). Each mapped repo has a card under [Work Map/Repos](General%20AI-Knowledge/Work%20Map/_index.md) linking its delivery runbook. List YOUR key repos here so agents can map ticket components to code — for example:
+All repos live under `Work/GitHub/` (relative to this workspace root). Each mapped repo has a card under [Work Map/Repos](General%20AI-Knowledge/Work%20Map/_index.md) linking its delivery runbook. Every repo under `GitHub/` is worked the same way: through a ticket on the board that tracks it ([§2](#2-tools-and-authentication), Boards), with its own repo card and delivery runbook. The repo's own instructions govern its code; this estate governs the records. List YOUR key repos here so agents can map ticket components to code — for example:
 
 - `<org>/<dbt-models-repo>` — analytics models
 - `<org>/<etl-repo>` — pipeline code

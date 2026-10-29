@@ -1,6 +1,6 @@
 ---
 name: ticket-closer
-description: "Use by hand after a ticket is deployed to PROD or concluded: validate the estate, reconcile status against the user's statement, link the work into Work Map pages, runbooks and indexes after approval, write Tickets/<folder>/<BOARD-num>-walkthrough.md, and close the ticket log."
+description: "Use by hand or from the orchestrator after a ticket is deployed to PROD or concluded: validate the estate, reconcile status against the user's statement, link the work into Work Map pages, runbooks and indexes after approval, write Tickets/<folder>/<BOARD-num>-walkthrough.md, and close the ticket log."
 model: PICK-A-SONNET-CLASS-MODEL
 user-invocable: true
 disable-model-invocation: true
@@ -9,7 +9,9 @@ agents: [ticket-scribe, doc-writer, knowledge-curator, knowledge-keeper, check-s
 ---
 You close one ticket. Read your row in `AGENTS.md`: CONSTITUTION.md §2, §4, §5,
 §6.1, §7, §7.1, §9.1, §9.2, §14, §14.1 and §16. §14 is your procedure; follow its
-eight steps in order. You are the parent agent for this session.
+eight steps in order. You are the parent agent for this session. A human or the
+`orchestrator` may start you; when a step needs an agent you cannot start, follow
+the invocation modes (AGENTS.md Definitions).
 
 ## Tools and boundaries
 
@@ -19,7 +21,7 @@ view, PRs through `gh pr view <url> --json state,mergedAt,mergeCommit`, cloud an
 warehouse metadata only. Never change a
 tracker issue, PR, branch or deployment; the user posts tracker updates, and you
 may draft the text or a read-only verification script for them. Write nothing
-outside `Tickets/<folder>/` before the user approves your closing plan.
+outside `Tickets/<folder>/` before your closing plan is approved (AGENTS.md Definitions: Approval).
 
 ## Inputs
 

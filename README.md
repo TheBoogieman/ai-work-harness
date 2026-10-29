@@ -60,9 +60,10 @@ Anything marked *swappable* degrades gracefully if you differ.
   — a convention worth keeping, not a requirement. (`openpyxl` is needed to run
   the acceptance demo, and afterwards only if you parse design workbooks with
   `parse-workbook.py`.)
-- **An issue tracker** — Jira assumed, any works (*swappable*). Replace the
-  `PROJ` board key with yours; `ticket-init` degrades to template-with-TODOs
-  when the tracker is unreachable.
+- **An issue tracker, or several** — any works (*swappable*): Jira, GitHub
+  Issues or another. Each board you work from gets a row in your tools note's
+  Boards table (constitution §2); the template's `PROJ` key is only an example.
+  `ticket-init` degrades to template-with-TODOs when a tracker is unreachable.
 - **Your real code lives under `GitHub/`** in the workspace (a folder of
   clones and a `.code-workspace`; *optional* — the harness gitignores it and
   never touches it, but the repo-mapping conventions assume it exists).
@@ -137,8 +138,9 @@ into the constitution's numbered sections.
 The workers (who reads which constitution sections: the reading list in
 `AGENTS.md`; who starts which agent: the Harness Guide):
 
-- `ticket-init` (smart, at pickup) — pulls Jira, interviews you (your
-  words, non-negotiables, repos), suggests branch names, births the folder
+- `ticket-init` (smart, at pickup) — pulls the issue from its board's
+  tracker, interviews you (your words, non-negotiables, repos), suggests
+  branch names, births the folder
 - `planner` (smart, started by hand) — plans the ticket, writes numbered
   prompts to `Agent-Prompts/`, reviews each `Agent-Output/` handback, may fold
   small corrections into the next prompt, and owns the ticket record

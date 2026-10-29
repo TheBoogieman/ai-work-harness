@@ -16,7 +16,7 @@ root is the rulebook and `AGENTS.md` the pointer — read the constitution secti
 your row in `AGENTS.md` lists first. `install.sh` has run. Showing me
 diffs before every write:
 
-1. **Read the installer's closing SUMMARY** (board key, model pins, the derived
+1. **Read the installer's closing SUMMARY** (board key or keys, model pins, the derived
    workspace root, and the tunable knobs with their defaults). Confirm the git
    repo is whitelist-scoped and has **no remote** (estates are local-only).
 2. **Shipping audit:** confirm the estate contains **zero DEV files** — nothing

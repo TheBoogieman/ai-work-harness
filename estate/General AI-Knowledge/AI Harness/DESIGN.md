@@ -64,6 +64,13 @@ targets, `parse-workbook.py`, `audit-inventory.py`, `check-work-map.py`,
 Work Map pipeline pages. The sheets are hand-maintained and lag on purpose; the
 constitution is the source of truth.
 
+**Diagram currency (2026-10-29, #352):** the session-flow sheet still says "paste the Jira link"
+and "pulls Jira", and the architecture sheet still says "edit here to retarget your board" beside
+`ticket-grammar.sh`. An estate may now hold several boards: the grammar accepts any board key, a
+new board needs only its row in the tools note's Boards table (constitution §2), and
+`ticket-grammar.sh` is edited only to change the naming pattern. No SVG was edited; this note
+names the lag.
+
 **The pattern (every layer):** file states the rule → agent does the work →
 hook catches the miss → git undoes the damage. Corollary: status observes,
 failures prescribe, nothing heals itself — a fixed record is a human act.

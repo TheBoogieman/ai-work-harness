@@ -178,6 +178,10 @@ Re-running `install.sh` serves three different intents, each with its own home:
   established values as defaults. A changed answer is **WARNed** with the file to edit
   and an AI-assistant handoff — the installer never edits your config for you; that
   stays your (or your assistant's) deliberate act via `AI-SETUP-PROMPT.md`, on the record.
+  A board key the estate does not hold yet is not a change: an estate may hold several
+  boards and the grammar already accepts it, so the re-run prints a NOTE pointing at your
+  tools note's Boards table (CONSTITUTION §2) instead, and the summary lists every board
+  the estate's tickets carry.
 - **Complete or repair** (add or fix estate files): run `install.sh` from your
   **source checkout**, targeting the estate (`bash estate/install.sh ~/Work`). The estate's
   own copy cannot create files — there is no source tree inside an estate to copy from —

@@ -34,7 +34,7 @@ Work/                                        [git root · local-only · whitelis
 │       │       └── watermark →              ~/.harness/validated/<ticket>  [state · unversioned]
 │       ├── check-work-map.py                ← second sessionStart command · read-only, warning-only navigation observer (links, mapped tickets, orphan notes) · --json for counts · --strict is manual-only, never a hook · asserts no lineage or truth
 │       ├── harness-status.sh                stdout report + one primary-observation record (each WARN's first-seen, for aging #71) · roster = _agents/ · checks siblings
-│       ├── ticket-grammar.sh                recognition home: TICKET_RE + ticket predicates · validator + status both source it (edit to retarget your board)
+│       ├── ticket-grammar.sh                recognition home: TICKET_RE + ticket predicates · validator + status both source it (edit only to change the naming pattern; any board key already matches)
 │       ├── init-ticket.sh                   ticket-init's full-template scaffold helper · local month/sequence, duplicate refusal, pending completion preview · never invents ticket facts
 │       ├── portability.sh                   shared GNU/BSD shims: ts14→epoch, sourced by validator + status (one home · no drift)
 │       ├── append-notebook-cell.py          ← check-scribe · THE ONE DOOR into a notebook: appends one selected evidence capsule · runs on whatever python3 is on the path, needs nbformat [user-created prereq]

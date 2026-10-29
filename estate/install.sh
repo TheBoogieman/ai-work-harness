@@ -122,7 +122,9 @@ plan_create=(); plan_exists=()
 # NEED_GIT (#64) default: reconfigure-only skips the create block that computes this, so define it
 # here (an existing estate needs no init) for the deploy-agents gate in audit_estate.
 NEED_GIT=0
-DETECTED_BOARD="PROJ"; DETECTED_BOARD_REAL=0
+# DETECTED_BOARDS (#352): every board the estate's tickets carry, set by detect_board; empty until
+# then, and defined here because the summary reads it under `set -u`.
+DETECTED_BOARD="PROJ"; DETECTED_BOARD_REAL=0; DETECTED_BOARDS=""
 # ---- upgrade-mode state (#134). All of it is defined HERE, unconditionally, because three
 # functions that run in EVERY mode read it — audit_estate's deploy gate and the two summary
 # lines — and under `set -u` an unset array read is a fatal error rather than an empty answer.
@@ -318,31 +320,43 @@ ask() {  # ask <prompt> <default> ; echoes the answer (default under --dry-run/-
 # Portable in-place sed: GNU sed wants `-i`, BSD/macOS sed wants `-i ''`. Detect via --version
 # (GNU prints it, BSD errors). Project rule: no GNU-only flag without a BSD fallback.
 sedi() { if sed --version >/dev/null 2>&1; then sed -i "$@"; else sed -i '' "$@"; fi; }
-# detect_board <estate> — the board key ALREADY established in an estate, read from the estate's
-# OWN tickets (its source of truth). Sets DETECTED_BOARD to a real (non-template) conforming
-# ticket's board segment when one exists (DETECTED_BOARD_REAL=1), else to the template default
-# PROJ (DETECTED_BOARD_REAL=0 — honest: no established ticket yet). The board is the segment
-# between the date+sequence prefix and the trailing number, extracted so a widened hyphenated
-# board (DATA-ENG) survives.
+# detect_board <estate> — the board keys ALREADY established in an estate, read from the estate's
+# OWN tickets (its source of truth). An estate may hold tickets from several boards, one per
+# tracker (#352), so this collects EVERY board its conforming tickets carry, not only the first.
+# DETECTED_BOARDS is that list, de-duplicated and sorted in byte order (LC_ALL=C) so it reads the
+# same on every machine; the old "first ticket in glob order" was a hidden tie-break a locale could
+# change. DETECTED_BOARD is the first board in the list: the default the interview offers, and on
+# a one-board estate that one board, exactly as before. With at least one real (non-template)
+# conforming ticket DETECTED_BOARD_REAL=1; with none, DETECTED_BOARD keeps the template default
+# PROJ and DETECTED_BOARD_REAL stays 0 (honest: no established ticket yet). The board is the
+# segment between the date+sequence prefix and the trailing number, extracted so a widened
+# hyphenated board (DATA-ENG) survives.
 detect_board() {
-  local root="$1" d base
-  DETECTED_BOARD="PROJ"; DETECTED_BOARD_REAL=0
+  local root="$1" d base found=""
+  DETECTED_BOARD="PROJ"; DETECTED_BOARD_REAL=0; DETECTED_BOARDS=""
   for d in "$root"/Tickets/*/; do
     [ -d "$d" ] || continue
     base="$(basename "$d")"
     [ "$base" = "999912Z-PROJ-99999" ] && continue
     if printf '%s' "$base" | grep -qE '^[0-9]{6}[A-Z]+-[A-Z][A-Z0-9-]*-[0-9]+$'; then
-      DETECTED_BOARD="$(printf '%s' "$base" | sed -E 's/^[^-]*-(.*)-[^-]*$/\1/')"
-      DETECTED_BOARD_REAL=1
-      return 0
+      # Collect this ticket's board; repeats are removed once, after the loop.
+      found="$found $(printf '%s' "$base" | sed -E 's/^[^-]*-(.*)-[^-]*$/\1/')"
     fi
   done
-  # Nothing conforming found: DETECTED_BOARD keeps the template default set above and
-  # DETECTED_BOARD_REAL stays 0, which is how the caller tells a real board from a default. The
-  # zero is now SAID rather than inherited from whichever branch the loop last took. This is a
-  # helper, and the SHAPE note's convention at the top of this file now covers helpers too (#261)
-  # for exactly the hazard met here: interview_board calls this bare under `set -e`, so a non-zero
-  # tail would end the run with no output, as detect_model's once did.
+  if [ -n "$found" ]; then
+    # One board per line, sorted and de-duplicated in byte order, joined back with single spaces.
+    # $found is split on purpose: each word is a board key the regex above limited to A-Z, 0-9 and
+    # hyphens, so the split can yield nothing but board keys.
+    DETECTED_BOARDS="$(printf '%s\n' $found | LC_ALL=C sort -u | tr '\n' ' ' | sed 's/ $//')"
+    DETECTED_BOARD="${DETECTED_BOARDS%% *}"
+    DETECTED_BOARD_REAL=1
+  fi
+  # When nothing conforming was found, DETECTED_BOARD keeps the template default set above,
+  # DETECTED_BOARDS stays empty and DETECTED_BOARD_REAL stays 0, which is how the caller tells a
+  # real board from a default. The zero is SAID rather than inherited from whichever branch ran
+  # last. This is a helper, and the SHAPE note's convention at the top of this file covers helpers
+  # too (#261) for exactly the hazard met here: interview_board calls this bare under `set -e`, so
+  # a non-zero tail would end the run with no output, as detect_model's once did.
   return 0
 }
 # detect_model <estate> <reference-agent> — the model pin already set on a reference agent's
@@ -430,6 +444,8 @@ banner_reconfigure() {
 # installer still edits NOTHING pre-existing — a changed answer is ROUTED (route_change: warn +
 # name the file + assistant handoff), never applied; the dumb-creator law at the top of this file
 # stands. A first run has no established values, so it falls back to today's defaults.
+# A new BOARD is not a change of config (#352): an estate may hold several boards, so a board its
+# grammar already accepts draws a NOTE (record it in the tools note's Boards table), not the warn.
 interview_board() {
   DEF_BOARD="PROJ"
   BOARD_WIDEN=0
@@ -443,10 +459,31 @@ interview_board() {
     board_default="$DEF_BOARD"
   fi
   BOARD="$(ask "Ticket-naming board key (uppercase; single-segment)" "$board_default")"
-  # Established estate: a changed board is ROUTED to ticket-grammar.sh, never applied here.
+  # Established estate: whatever the answer, the installer applies NOTHING here (#39).
   if [ "$ESTABLISHED" -eq 1 ]; then
     [ "$BOARD" = "$board_default" ] && return 0
-    route_change "board key" "$board_default" "$BOARD" "_harness/scripts/ticket-grammar.sh"
+    # An estate may hold several boards (#352). Answering one it already holds tickets for is a
+    # review, not a change, so there is nothing to say.
+    case " $DETECTED_BOARDS " in
+      *" $BOARD "*) BOARD="$board_default"; return 0 ;;
+    esac
+    # A board it does not hold yet is not a change of config either, when the estate's OWN ticket
+    # grammar already parses it: ask ticket-grammar.sh (the one home of the pattern) about a
+    # sample ticket folder under this board. Sourced in a subshell, so nothing it sets leaks here.
+    if ( . "$TARGET/_harness/scripts/ticket-grammar.sh" \
+         && printf '%s\n' "202601A-$BOARD-1" | grep -qE "$TICKET_RE" ); then
+      held="holds no ticket yet"
+      [ -z "$DETECTED_BOARDS" ] || held="holds: $DETECTED_BOARDS"
+      echo "NOTE: board key '$BOARD' is not one this estate holds yet (the estate $held)."
+      echo "  The ticket grammar already accepts it, so nothing needs changing and the" \
+           "installer changes NOTHING."
+      echo "  Record the board in your tools note's Boards table (CONSTITUTION.md §2): its" \
+           "tracker, identity rule and repos. Then open its first ticket with ticket-init."
+    else
+      # The grammar cannot parse it (a hyphen in an unwidened grammar, say). That board does need
+      # ticket-grammar.sh edited, so it is ROUTED there with the WARN, exactly as before.
+      route_change "board key" "$board_default" "$BOARD" "_harness/scripts/ticket-grammar.sh"
+    fi
     BOARD="$board_default"
     return 0
   fi
@@ -1441,6 +1478,15 @@ print_summary_board() {
     return 0
   fi
   if [ "$DETECTED_BOARD_REAL" -eq 1 ]; then
+    # Several boards (#352): list every one on a "board keys" line and say where each one's facts
+    # belong. A space in the list means more than one board; one board keeps its line below.
+    case "$DETECTED_BOARDS" in
+      *" "*)
+        echo "  board keys        = $DETECTED_BOARDS (established, read from Tickets/; record" \
+             "each in the tools note's Boards table, CONSTITUTION.md §2). Left untouched."
+        return 0
+        ;;
+    esac
     echo "  board key         = $BOARD (established; to change it, edit ticket-grammar.sh —" \
          "see AI-SETUP-PROMPT.md). Left untouched."
     return 0

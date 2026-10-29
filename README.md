@@ -138,19 +138,23 @@ into the constitution's numbered sections.
 The workers (who reads which constitution sections: the reading list in
 `AGENTS.md`; who starts which agent: the Harness Guide):
 
+- `orchestrator` (strongest tier, started by hand) — runs a ticket end to end:
+  starts `ticket-init`, the `planner` and the `implementer`, carries each
+  hand-off, waits on CI, then starts `ticket-closer`; approves, merges or
+  pushes only under the standing delegation you write in your tools note
 - `ticket-init` (smart, at pickup) — pulls the issue from its board's
   tracker, interviews you (your words, non-negotiables, repos), suggests
   branch names, births the folder
-- `planner` (smart, started by hand) — plans the ticket, writes numbered
+- `planner` (smart, started by hand or by the orchestrator) — plans the ticket, writes numbered
   prompts to `Agent-Prompts/`, reviews each `Agent-Output/` handback, may fold
   small corrections into the next prompt, and owns the ticket record
-- `implementer` (worker tier, started by hand) — runs one planner prompt and
+- `implementer` (worker tier, started by hand or by the orchestrator) — runs one planner prompt and
   writes its handback to `Agent-Output/`; never touches the ticket log or
   invokes other agents
-- `ticket-closer` (smart, started by hand) — validates the estate, checks Work
+- `ticket-closer` (smart, started by hand or by the orchestrator) — validates the estate, checks Work
   Map links, verifies status against your statement, links the work everywhere,
   and has `doc-writer` write the walkthrough next to the ticket log
-- `estate-auditor` (smart, started by hand) — dated estate audit from
+- `estate-auditor` (smart, started by hand or by the orchestrator) — dated estate audit from
   `audit-inventory.py`, walkthrough coverage per ticket, then batch-by-batch
   fixes you approve, including retrospective walkthroughs five tickets at a time
 - `estate-question` (smart, started by hand) — answers a general question

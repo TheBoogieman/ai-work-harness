@@ -6,7 +6,8 @@ user-invocable: true
 disable-model-invocation: true
 agents: [harness-recall, ticket-recall, ticket-scribe]
 ---
-Run only as the direct session agent: this workflow needs a human interview.
+Run as the session agent, started by the human or by the `orchestrator`, which
+relays the interview to the human: this workflow needs a human interview.
 Read your row in `AGENTS.md`: CONSTITUTION.md §2, §3, §4, §9, §9.1 and §13
 *Ticket Initialisation Procedure*.
 
@@ -19,7 +20,9 @@ workflow needs `read`, `edit`, `search`, `execute`, `vscode/askQuestions`, and
 `agent` for `ticket-scribe`; check actual availability before promising a step.
 If the question tool is unavailable, ask the same interview in chat. If a
 required creation or scribe capability is missing, report the blocker, not a
-completed init.
+completed init. When a step needs an agent you cannot start, follow the
+invocation modes (AGENTS.md Definitions): name it for the human and offer its
+prompt, or hand it back to the `orchestrator` that runs you.
 
 Remote access is READ-ONLY. Never change tracker issues, comments, or status.
 Write only local ticket artifacts; never change source repos, create branches,

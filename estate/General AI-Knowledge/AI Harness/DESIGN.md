@@ -1,6 +1,11 @@
 # Design notes — why the harness is shaped like this
 Last reviewed: 2026-10-21
 
+**Diagram currency (#354):** the sheets do not draw the `orchestrator` agent,
+which can start every other agent and carry the planner/implementer hand-offs,
+or the standing delegation it acts under. No SVG was edited; this note names the
+lag.
+
 **Additional diagram divergence (#311):** the sheets do not show the ticket
 scaffold helper, linked Work Map, or general knowledge/workflow indexes. The
 entry contract also has additional retrieval/tooling routes. No SVG was edited;

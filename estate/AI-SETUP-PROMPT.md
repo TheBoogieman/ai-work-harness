@@ -41,7 +41,7 @@ diffs before every write:
    `INSTALL-INSTRUCTIONS.md`): any model pin still `PICK-A-*` → enumerate the models
    actually enabled in my Copilot org and pin real **scalar** IDs into each
    `_agents/*.agent.md` (cheap tier for the scribes, keeper, recall agents and
-   digest and for `implementer`; Sonnet- or Opus-class for init, planner,
+   digest and for `implementer`; Sonnet- or Opus-class for orchestrator, init, planner,
    ticket-closer, doc-writer, estate-auditor, estate-question, curator and retrospective), then
    re-run `_harness/scripts/deploy-agents.sh`;
    the `LICENSE` name; the `make-context-pack.sh` scrub-table seeds (my

@@ -26,7 +26,7 @@ remains authoritative. No qualifying promotion is a valid result.
 	expressible without ticket references, and not already covered.
 	Extend an existing generalized owner instead of creating a duplicate.
 	Unknowns stay unknown; resemblance across tickets is not proof. WAIT for
-	human approval before publishing or relocating a note.
+	approval (AGENTS.md Definitions) before publishing or relocating a note.
 4. On approval, write or update
 	`General AI-Knowledge/<Topic>/<Topic>.md` generically with an observed
 	`Last reviewed: YYYY-MM-DD` date. Update its topic index and the route from

@@ -9,7 +9,8 @@
 #    capped at 26 tickets) + a board key + a numeric identifier of any
 #    length. Only the date width is fixed; sequence, board, and number are
 #    all unbounded. Example: 202607AAZ-NEXLKMPROJECTMAX-989812366178163
-#    Edit THIS line (and only this line) to retarget the tools to your board.
+#    Edit THIS line (and only this line) to change the naming pattern. Any
+#    board key it already parses needs no edit, so adding a board needs none.
 export TICKET_RE='^[0-9]{6}[A-Z]+-[A-Z][A-Z0-9]*-[0-9]+$'
 
 # 2. TICKET-BEARING — does a folder hold a ticket record? (the WARN trigger)

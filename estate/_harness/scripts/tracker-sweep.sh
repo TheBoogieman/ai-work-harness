@@ -14,7 +14,7 @@
 #
 # GENERIC / TRACKER-AGNOSTIC: the public product names no real tracker and makes no network
 # call of its own. The only tracker coupling is two seams, both user-supplied at the fork
-# layer: (1) the fetch command (env HARNESS_TRACKER_FETCH_CMD) that maps a ticket id to its
+# layer: (1) the fetch command (env HARNESS_TRACKER_FETCH_CMD) that maps a ticket folder name to its
 # upstream status, and (2) the ONE editable line below naming which upstream status words mean
 # "closed". Tracker-specific fetchers are FORK-LAYER material and must never land in this repo.
 # This mirrors the ticket-grammar precedent: the board coupling lives in ONE editable home,
@@ -37,14 +37,22 @@ source "$SCRIPT_DIR/ticket-grammar.sh"
 # Which upstream status words mean a ticket is CLOSED/DONE on your board. Edit THIS line (and
 # only this line) to match your tracker's closed vocabulary. Generic defaults; matched
 # case-insensitively against the fetched status after whitespace is stripped.
+# ONE line serves every board in the estate. If one board's tracker uses other closed words, add
+# them to the alternation here (or set HARNESS_TRACKER_CLOSED_RE in the environment) and note them
+# in that board's row of the tools note's Boards table (CONSTITUTION §2).
 HARNESS_TRACKER_CLOSED_RE="${HARNESS_TRACKER_CLOSED_RE:-^(closed|done|resolved|cancelled|complete|completed)$}"
 
 # --- THE FETCH SEAM — pluggable, fork-layer, tracker-agnostic ---------------------------------
-# HARNESS_TRACKER_FETCH_CMD names a command that, given ONE ticket id as its argument, prints
+# HARNESS_TRACKER_FETCH_CMD names a command that, given ONE ticket's full folder name (for
+# example 202607A-PROJ-1) as its argument, prints
 # that ticket's upstream status to stdout and exits 0; a non-zero exit means "could not reach
 # the tracker". The public product ships with NO fetcher (this is empty) — write one at your
 # fork layer. tracker_fetch_status is the single call site, and in this repo it reaches nothing.
-tracker_fetch_status() {  # $1 = ticket id -> prints upstream status, rc 0; rc!=0 = unreachable
+# SEVERAL BOARDS, ONE FETCHER: an estate may hold tickets from several boards on different
+# trackers (CONSTITUTION §2, Boards). The fetcher is handed the whole folder name, so it reads the
+# board segment (between the month sequence and the number) and dispatches to that board's
+# tracker. Nothing in this script changes per board.
+tracker_fetch_status() {  # $1 = ticket folder name -> prints upstream status, rc 0; rc!=0 = unreachable
   [ -n "${HARNESS_TRACKER_FETCH_CMD:-}" ] || return 127   # no fetcher configured (defensive)
   "$HARNESS_TRACKER_FETCH_CMD" "$1"
 }

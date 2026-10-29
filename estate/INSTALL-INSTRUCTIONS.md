@@ -309,7 +309,8 @@ point against their current documentation.
   derived, regenerated after every change to `_agents/`, and picked up by a session
   that starts after the folder exists. The interactive agents (`ticket-init`,
   `planner`, `ticket-closer`, `estate-auditor`) need the human in the loop: run them
-  as the session (`claude --agent <name>`), not as subagents. `ticket-scribe` has no
+  as the session (`claude --agent <name>`), or as subagents of an `orchestrator`
+  session, which relays their questions to you. `ticket-scribe` has no
   shell, so it can't read the clock its header needs: pass it the local timestamp
   (`date +%Y%m%d%H%M%S`).
 - **Model pins** in the agent files are Copilot picker names. Give the Claude Code

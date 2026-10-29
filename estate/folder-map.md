@@ -50,8 +50,9 @@ Work/                                        [git root · local-only · whitelis
 │       ├── harness-housekeeping.sh          human-run · git gc + size report · never touches records
 │       └── harness-drill.sh                 human-run · rehearse restore/bundle/undo · read-only toward the estate
 │
-├── _agents/                                 SOURCE OF TRUTH (versioned) · 15 agents · who reads what: AGENTS.md reading list
+├── _agents/                                 SOURCE OF TRUTH (versioned) · 16 agents · who reads what: AGENTS.md reading list
 │   ├── ticket-init.agent.md                 ┐
+│   ├── orchestrator.agent.md                │ hand-started · runs a ticket end to end · approves only under the operator's standing delegation
 │   ├── planner.agent.md                     │ hand-started · plans, writes Agent-Prompts/, reviews Agent-Output/
 │   ├── implementer.agent.md                 │ hand-started · runs ONE prompt · no ticket log, no agents
 │   ├── ticket-closer.agent.md               │ hand-started · close-out + walkthrough (CONSTITUTION §14)

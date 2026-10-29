@@ -121,6 +121,13 @@ board key, so a new board needs a row and no machinery change. `ticket-init` tak
 its identity rule from this table ([§13](#13-ticket-initialisation-procedure)). A one-board
 estate may keep one row, or none.
 
+**Standing delegation.** An operator who runs the `orchestrator` ([§12](#12-agent-routing)) may
+let it approve, merge, push or act on audit findings for them. Only the operator writes that grant,
+in the tools note's **Standing delegation** section: their own words, quoted, with the date and
+what they cover. No agent writes, widens or relays it. An agent asked to accept the orchestrator's
+yes finds the quoted words there ([AGENTS.md](AGENTS.md) Definitions: Approval). With no section,
+the operator approves everything, exactly as before.
+
 Check availability and the local tools note first; never assume a tool or profile
 exists, and a configured tool is not an authenticated one. Catalog, tracker and
 wiki writes (tags, descriptions, comments, links, transitions) are remote
@@ -625,8 +632,8 @@ version for each task; an agent never silently picks "the latest".
 
 ## 11. Planner and Implementer Loop
 
-Delivery runs as two agents in two chats; the human couriers each hand-off and
-watches both.
+Delivery runs as two agents in two chats. The courier who carries each hand-off and
+watches both is the human, or the `orchestrator` when the human runs one ([§12](#12-agent-routing)).
 
 | Role | Agent | Job |
 |---|---|---|
@@ -690,12 +697,13 @@ Each agent's reading list is its row in [AGENTS.md](AGENTS.md).
 
 | Need | Agent | Boundary |
 |---|---|---|
+| Run a ticket end to end: start each agent, carry the hand-offs, wait on CI | `orchestrator` | Human-started; approves, merges and pushes only under the operator's standing delegation (§2), otherwise a courier |
 | Start a ticket, interview and scaffold | `ticket-init` | Direct interactive session (§13) |
 | Plan, explain and verify a ticket iteration | `planner` | Parent agent; writes prompts, verifies output, owns records (§11) |
 | Execute one planner prompt | `implementer` | Worker; writes its output, logs and authorised repo files only; invokes nothing (§11.3) |
-| Close a deployed or concluded ticket | `ticket-closer` | Human-started; approval before writing outside the ticket; tracker read-only (§14) |
+| Close a deployed or concluded ticket | `ticket-closer` | Started by the human or the `orchestrator`; approval before writing outside the ticket; tracker read-only (§14) |
 | Create or refresh a document | `doc-writer` | Target from a `Doc-*` skill; approval before writing outside a ticket; remote publication stays human |
-| Audit and tidy the estate | `estate-auditor` | Human-started; dated report; fixes batch by batch with approval (§15) |
+| Audit and tidy the estate | `estate-auditor` | Started by the human or the `orchestrator`; dated report; fixes batch by batch with approval (§15) |
 | Answer a general question from the estate, repos and read-only live tools | `estate-question` | Human-started; writes nothing; may propose a knowledge note for the user to route to `knowledge-curator` |
 | Resume one ticket | `ticket-recall` | Read-only; parent may delegate |
 | Find related tickets or workflows | `harness-recall` | Read-only, bounded; parent may delegate |
@@ -713,14 +721,18 @@ is active; `sessionEnd` is a best-effort validate-and-commit. Agent contracts ar
 instructions for the session that invokes them, not a scheduler or a guarantee:
 hooks do not launch custom agents, and the parent assistant is instructed to
 invoke the specialists when their conditions apply, which depends on it following
-the contract rather than any background job. Started by the human: `ticket-init`,
-`planner`, `implementer`, `ticket-closer`, `estate-auditor`, `estate-question`,
-`knowledge-curator`, `weekly-digest`, `retrospective`; `ticket-recall`, `harness-recall` and `doc-writer`
+the contract rather than any background job. Started by the human: `orchestrator`,
+`estate-question`, `knowledge-curator`, `weekly-digest`, `retrospective`; by the human
+or the `orchestrator`: `ticket-init`, `planner`, `implementer`, `ticket-closer`,
+`estate-auditor`; `ticket-recall`, `harness-recall` and `doc-writer`
 by the human or a parent; `ticket-scribe` by the parent for a completed ticket task;
 `knowledge-keeper` and `check-scribe` only for a qualified candidate. The
 `implementer` is never a parent: it invokes nothing. Every agent may also be called
-by a human. Publishing a draft is authorized by the parent; no agent pushes
-autonomously. Prose cannot guarantee judgement, and the objective checkers'
+by a human. A step that needs an agent the running one cannot start follows the
+invocation modes in [AGENTS.md](AGENTS.md) Definitions. Publishing a draft is
+authorized by the parent; no agent pushes autonomously, and the `orchestrator`
+pushes only under the operator's standing delegation (§2). Prose cannot guarantee
+judgement, and the objective checkers'
 warnings do not block style.
 
 **Model profile (optional, operator-chosen).** The `model:` pin in each agent's
@@ -730,6 +742,8 @@ lowercase model ID silently falls back to the session model). Routine agents
 `ticket-scribe`, `weekly-digest`) suit `Claude Sonnet 5.5 (copilot)`; `ticket-init`,
 `planner`, `ticket-closer`, `doc-writer`, `estate-auditor`, `estate-question`,
 `knowledge-curator` and `retrospective` suit `Claude Opus 5.5 (copilot)`;
+`orchestrator` suits the strongest model available, an Opus- or Fable-class profile,
+and shares the installer's second pin with that group;
 `implementer` judges nothing and suits the cheapest long-context model that follows
 a prompt exactly. Public template pins stay installer-configurable; tiers are a
 capability guide, not a price guarantee. See the
@@ -757,7 +771,8 @@ Run by `ticket-init`; every step below is also the by-hand fallback. Invoked wit
 
 ## 14. Ticket Close-out Procedure
 
-Run by `ticket-closer`, started by the human once the ticket is deployed to PROD or
+Run by `ticket-closer`, started by the human or the `orchestrator` once the ticket is
+deployed to PROD or
 the work has otherwise concluded. Every step is also the by-hand fallback.
 
 1. **Take the user's status.** Record the user's stated final status (for example
@@ -782,7 +797,7 @@ the work has otherwise concluded. Every step is also the by-hand fallback.
    Context, Changes Made, Current State, Work Map pipeline and repo pages, the
    pipeline-page sections whose facts changed, any Repo Workflow correction, root
    indexes, knowledge actions and the walkthrough path. Nothing outside the ticket
-   folder is written before the user approves.
+   folder is written before approval ([AGENTS.md](AGENTS.md) Definitions).
 5. **Link the work everywhere.** Header PR states and Context links (pipeline page,
    repo card, runbook, walkthrough); the ticket's line on each Work Map pipeline and
    repo page becomes its final one-line outcome; the pipeline page's affected
@@ -852,7 +867,8 @@ close-out.` A retrospective walkthrough does not close the ticket.
 
 ## 15. Estate Audit Procedure
 
-Run by `estate-auditor`, started by the human. `harness-status` warns when the
+Run by `estate-auditor`, started by the human or the `orchestrator`. `harness-status`
+warns when the
 newest `YYYYMMDD-estate-audit*.md` report in `General Human Knowledge/Audits/` is older than
 `HARNESS_AUDIT_STALE_DAYS` (default 30); hooks never start the audit.
 
@@ -878,8 +894,8 @@ newest `YYYYMMDD-estate-audit*.md` report in `General Human Knowledge/Audits/` i
    improvement proposals written as issue drafts (problem, evidence, proposed
    change, guard), and what was not checked.
 6. **Fix batch by batch, with approval.** Present one batch at a time stating exactly
-   what will be added, changed or removed and why; apply it only after the user
-   approves, then append the batch outcome to the report's Fix log. **Incidental
+   what will be added, changed or removed and why; apply it only after approval
+   ([AGENTS.md](AGENTS.md) Definitions), then append the batch outcome to the report's Fix log. **Incidental
    findings:** a stale or wrong fact found while working an approved batch is fixed
    in that batch, on a page the batch already edits and by the same owner, and
    reported old → new with its source in the batch outcome. A finding on another

@@ -68,7 +68,8 @@ depends on the assistant following the contract, not a guaranteed background job
 
 | Start it | Agent |
 |---|---|
-| You, directly | `ticket-init`, `planner`, `implementer`, `ticket-closer`, `estate-auditor`, `estate-question`, `knowledge-curator`, `weekly-digest`, `retrospective` |
+| You, directly | `orchestrator`, `ticket-init`, `planner`, `implementer`, `ticket-closer`, `estate-auditor`, `estate-question`, `knowledge-curator`, `weekly-digest`, `retrospective` |
+| The `orchestrator`, when you run one | Every other agent; it starts `ticket-init`, `planner`, `implementer`, `ticket-closer` and `estate-auditor` in your place |
 | You or the parent agent | `ticket-recall`, `harness-recall` (read-only) |
 | The parent, when ticket work completes | `ticket-scribe` |
 | The parent, for a named valuable learning only | `knowledge-keeper` |
@@ -80,7 +81,11 @@ writes `Agent-Prompts/NN-<slug>.md`. Start an `implementer` session on that one
 prompt; it writes `Agent-Output/NN-<slug>.md` and stops. Return to the planner to
 review and write the next prompt. The implementer never writes the ticket log or
 invokes agents; the planner owns the record. Finish with `ticket-closer`
-(CONSTITUTION §14), which asks before writing outside the ticket folder.
+(CONSTITUTION §14), which asks before writing outside the ticket folder. An
+`orchestrator` session can run this whole loop for you: it starts each agent,
+carries every hand-off, waits on CI through your host's PR notifications, and
+brings you only what needs you. It approves, merges or pushes only under the
+standing delegation you write yourself (below); without one, it asks you.
 
 Which constitution sections each agent reads: the reading list in
 [AGENTS.md](../AGENTS.md#your-reading-list).
@@ -101,6 +106,7 @@ an Opus profile too.
 |---|---|
 | `check-scribe`, `harness-recall`, `knowledge-keeper`, `ticket-recall`, `ticket-scribe`, `weekly-digest` | `Claude Sonnet 5.5 (copilot)` |
 | `ticket-init`, `planner`, `ticket-closer`, `doc-writer`, `estate-auditor`, `estate-question`, `knowledge-curator`, `retrospective` | `Claude Opus 5.5 (copilot)` |
+| `orchestrator` | the strongest model available: an Opus- or Fable-class profile such as `Claude Opus 5.5 (copilot)` |
 | `implementer` | the cheapest long-context model that follows a prompt exactly (it judges nothing) |
 
 Pin the model picker's display name exactly. Lowercase model IDs were tried and
@@ -109,6 +115,24 @@ tool-free probe agents.
 
 This profile was applied on the maintainer's live setup. That does not guarantee
 the names exist on other accounts.
+
+## Orchestrator and standing delegation
+
+The `orchestrator` (CONSTITUTION §12) runs a ticket end to end. What it may
+approve, merge, push or act on for you comes from one place: a **Standing
+delegation** section you write in your local tools note (CONSTITUTION §2), with
+your words quoted, the date, and what they cover. No agent writes or widens it.
+Without it the orchestrator is a courier, and you approve everything as before.
+
+Hosts differ in whether one agent can start another. An agent that cannot start
+the agent a step needs hands that step back (`AGENTS.md` Definitions: Invocation
+modes).
+
+| Host | What was found |
+|---|---|
+| VS Code agents | Naming an agent in another agent's `agents:` list overrides its `disable-model-invocation: true`; the listing agent needs the `agent` tool. A subagent cannot start further subagents unless `chat.subagents.allowInvocationsFromSubagents` is on (off by default; nesting depth at most 5). Read in the VS Code docs on 2026-10-29: [subagents](https://code.visualstudio.com/docs/agents/run/subagents), [custom agent file reference](https://code.visualstudio.com/docs/agents/reference/custom-agent-file-reference). |
+| Copilot CLI and cloud agent | They do not accept the `agents:` field and delegate through their own task tool. How they treat `disable-model-invocation` and nested agents is not verified. |
+| Claude Code | `user-invocable` and `disable-model-invocation` have no equivalent (`INSTALL-INSTRUCTIONS.md`, "Running the estate with Claude Code"). On one seat, a subagent started a further subagent of its own (2026-10-29). |
 
 ## Tool adapters
 

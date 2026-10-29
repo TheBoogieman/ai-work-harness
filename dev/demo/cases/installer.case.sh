@@ -348,6 +348,60 @@ in_board_default() {
   echo "  ok [board-default] — established board offered as the default and reported (XRAY)"
 }
 
+# (f2) multi-board (#352): an estate may hold tickets from several boards, one per tracker, and the
+#      ticket grammar already accepts any board key it can parse. Seed real tickets on two boards
+#      (PROJ and XRAY), re-run accepting every default, and assert the summary lists BOTH. Then
+#      re-run answering a third board the estate does not hold yet (ZED) and assert it draws a
+#      NOTE that names the tools note's Boards table, NOT the board-key WARN, and that
+#      ticket-grammar.sh is byte-unchanged. Every failed assertion is reported before the guard
+#      reds, so one run against the pre-#352 installer (which reports only the first board it
+#      finds and WARNs on the third) shows each failure by name.
+in_multi_board() {
+  local i39_mb i39_mbout i39_mbbad=0
+  i39_mb="$I39_ROOT/mbest"
+  in_install multi-board --yes "$i39_mb"
+  # Two real tickets on two boards; the shipped template ticket (999912Z-PROJ-99999) is ignored.
+  mkdir -p "$i39_mb/Tickets/202607A-PROJ-1" "$i39_mb/Tickets/202607B-XRAY-2"
+  : > "$i39_mb/Tickets/202607A-PROJ-1/202607A-PROJ-1.md"
+  : > "$i39_mb/Tickets/202607B-XRAY-2/202607B-XRAY-2.md"
+  # Re-run accepting every default (board, cheap pin, sonnet pin): the summary must list both.
+  printf '\n\n\n' | HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" bash estate/install.sh "$i39_mb" \
+    >"$I39_ROOT/mb.out" 2>"$I39_ROOT/mb.err" || true
+  if ! grep -qE 'board keys += +PROJ XRAY' "$I39_ROOT/mb.out"; then
+    echo "BUG [multi-board]: the re-run summary did not list both boards (want 'board keys =" \
+         "PROJ XRAY'); it said:"
+    grep -i 'board key' "$I39_ROOT/mb.out" | sed 's/^/      /' || true
+    i39_mbbad=1
+  fi
+  # Re-run answering a third board: a NOTE, not the WARN, and nothing edited.
+  cp "$i39_mb/_harness/scripts/ticket-grammar.sh" "$I39_ROOT/mb.tg.snap"
+  i39_mbout=$(printf 'ZED\n\n\n' | HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" \
+    bash estate/install.sh "$i39_mb" 2>&1 || true)
+  if ! cmp -s "$I39_ROOT/mb.tg.snap" "$i39_mb/_harness/scripts/ticket-grammar.sh"; then
+    echo "BUG [multi-board]: install EDITED ticket-grammar.sh when a new board was answered —" \
+         "it must change nothing"
+    i39_mbbad=1
+  fi
+  if printf '%s\n' "$i39_mbout" | grep -qE 'WARN.*board key'; then
+    echo "BUG [multi-board]: a board the estate does not hold yet (ZED) still drew the board-key" \
+         "WARN, although the grammar already accepts it"
+    i39_mbbad=1
+  fi
+  if ! printf '%s\n' "$i39_mbout" \
+       | grep -q "NOTE: board key 'ZED' is not one this estate holds yet"; then
+    echo "BUG [multi-board]: a board the estate does not hold yet (ZED) drew no NOTE"
+    i39_mbbad=1
+  fi
+  if ! printf '%s\n' "$i39_mbout" \
+       | grep -q "Record the board in your tools note's Boards table"; then
+    echo "BUG [multi-board]: the new-board NOTE does not name the tools note's Boards table"
+    i39_mbbad=1
+  fi
+  [ "$i39_mbbad" -eq 0 ] || exit 1
+  echo "  ok [multi-board] — both boards listed (PROJ XRAY); a third (ZED) draws the NOTE, not" \
+    "the WARN, and edits nothing"
+}
+
 # (h) re-run-models: an established model pin is OFFERED as the default on a re-run. Set the cheap
 #     tier's reference agent (ticket-scribe) to a marker, re-run, assert the cheap-model prompt (the
 #     2nd ACCEPT DEFAULT) offers it. The awk-rewrite-to-tmp+mv is BSD-portable (no in-place edit).
@@ -371,14 +425,17 @@ in_model_pin_offered() {
 }
 
 # (i) change-routing: a re-run answer that DIFFERS from established is ROUTED, never applied. Re-run
-#     answering a different board; assert ticket-grammar.sh is BYTE-UNCHANGED and the warn names the
-#     file to edit. Revert-provable: a version that edits the file (or omits the warn) reds.
+#     answering a board the default grammar cannot parse (NEW-B: a hyphen, grammar unwidened), so
+#     the answer really does need ticket-grammar.sh edited; assert that file is BYTE-UNCHANGED and
+#     the warn names it. A board the grammar CAN parse draws a NOTE instead of this warn (#352,
+#     guarded by [multi-board]). Revert-provable: a version that edits the file (or omits the
+#     warn) reds.
 in_change_routed() {
   local i39_cr i39_crout
   i39_cr="$I39_ROOT/crest"
   in_install change-routed --yes "$i39_cr"
   cp "$i39_cr/_harness/scripts/ticket-grammar.sh" "$I39_ROOT/tg.snap"
-  i39_crout=$(printf 'NEWB\n\n\n' | HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" \
+  i39_crout=$(printf 'NEW-B\n\n\n' | HARNESS_AGENT_DEPLOY_DIR="$I39_DEPLOY" \
     bash estate/install.sh "$i39_cr" 2>&1 || true)
   cmp -s "$I39_ROOT/tg.snap" "$i39_cr/_harness/scripts/ticket-grammar.sh" \
     || { echo "BUG [change-routed]: install EDITED ticket-grammar.sh on a re-run change — it must" \
@@ -1095,6 +1152,7 @@ case_installer() {
   in_idempotent_rerun
   in_dry_run
   in_board_default
+  in_multi_board
   in_model_pin_offered
   in_change_routed
   in_placeholder_pin_routed

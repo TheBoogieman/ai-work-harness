@@ -29,5 +29,6 @@
 - Doc-PR-Description — triggers: PR description, pull request body, PR summary — tools: git, gh
 - Doc-Readme — triggers: README, module readme, getting started — tools: git
 - Doc-Tracker-Update — triggers: tracker comment, tracker update, status summary, verification script — tools: gh
+- i-have-adhd — triggers: reply to the user, status report, next action, approval request, handback; loaded at run start by the operator-facing agents — tools: none
 
 [SQL-Writing module](SQL-Writing/SKILL.md) | [Skill template](SKILL-TEMPLATE.md) | Documentation targets: [Doc-Pipeline-Home](Doc-Pipeline-Home/SKILL.md) · [Doc-Ticket-Walkthrough](Doc-Ticket-Walkthrough/SKILL.md) · [Doc-Repo-Workflow](Doc-Repo-Workflow/SKILL.md) · [Doc-Knowledge-Topic](Doc-Knowledge-Topic/SKILL.md) · [Doc-AI-Knowledge-Note](Doc-AI-Knowledge-Note/SKILL.md) · [Doc-PR-Description](Doc-PR-Description/SKILL.md) · [Doc-Readme](Doc-Readme/SKILL.md) · [Doc-Tracker-Update](Doc-Tracker-Update/SKILL.md)

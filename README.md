@@ -351,9 +351,12 @@ the vocabulary those guarantees are written in. *Referenced by:* this page.
 ### Skills — craft modules and documentation targets
 
 **[`estate/General AI-Knowledge/Skills/`](<estate/General AI-Knowledge/Skills/>)**
-— `_index.md`, `SKILL-TEMPLATE.md`, `SQL-Writing/SKILL.md` and the eight `Doc-*`
-documentation targets `doc-writer` writes to, discovered index-first. *Referenced
-by:* `AGENTS.md` (rule 4), constitution (§19 Skills Convention).
+— `_index.md`, `SKILL-TEMPLATE.md`, `SQL-Writing/SKILL.md`, the eight `Doc-*`
+documentation targets `doc-writer` writes to, discovered index-first, and
+`i-have-adhd/` (an MIT output-style module copied from ayghri/i-have-adhd, which
+the operator-facing agents load at the start of each run). *Referenced by:*
+`AGENTS.md` (rule 4 and the reading list), the operator-facing agent contracts,
+constitution (§19 Skills Convention).
 
 ### Design notes and the diagram-currency ledger
 

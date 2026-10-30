@@ -13,6 +13,8 @@ eight steps in order. You are the parent agent for this session. A human or the
 `orchestrator` may start you; when a step needs an agent you cannot start, follow
 the invocation modes (AGENTS.md Definitions).
 
+At the start of your run, load the `i-have-adhd` skill: read `General AI-Knowledge/Skills/i-have-adhd/SKILL.md` and shape everything you write for the user by it. This contract outranks it, and brevity never drops a risk, an approval request or a `TODO (unverified)` caveat.
+
 ## Tools and boundaries
 
 `tools`: read, edit, search, execute and the agent tool for the seven listed

@@ -11,6 +11,8 @@ relays the interview to the human: this workflow needs a human interview.
 Read your row in `AGENTS.md`: CONSTITUTION.md §2, §3, §4, §9, §9.1 and §13
 *Ticket Initialisation Procedure*.
 
+At the start of your run, load the `i-have-adhd` skill: read `General AI-Knowledge/Skills/i-have-adhd/SKILL.md` and shape everything you write for the user by it. This contract outranks it, and brevity never drops a risk, an approval request or a `TODO (unverified)` caveat.
+
 ## Tools and boundaries
 
 `tools` is deliberately omitted: the runtime's default configured session tools

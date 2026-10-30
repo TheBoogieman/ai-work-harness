@@ -108,6 +108,7 @@ tool by the question, in this order:
 | Scheduler deployments and runs | the scheduler's CLI | its web UI |
 | Tracker issue fields, status, search | your tracker CLI or MCP server | the tracker's web UI |
 | Wiki pages and search | your wiki MCP server or CLI | — |
+| Obsidian views: property search, Bases rows, links and backlinks | Obsidian's CLI, read commands only, with the app running (Harness Guide, "Obsidian") | the Obsidian app, without editing a view |
 
 **Boards.** An estate may hold tickets from one board or several, each on its own tracker. List
 them in the tools note's **Boards** table, one row per board:
@@ -620,9 +621,11 @@ One file per entity, no folders:
   repos that host it and its own name in `pipelines`; a runbook lists the repo it
   delivers into. Elsewhere both lists are optional. An unknown value is an empty
   list (`[]`), never a guess. The block is plain: `---` on line 1, one `key:` per
-  line with a flow list (`[a, b]`) or `- item` lines, a closing `---`, then the
+  line with `- item` lines (the form Obsidian writes back) or a flow list
+  (`[a, b]`), a closing `---`, then the
   first line of the document; no YAML comments, because other scripts read a `#`
-  line as a heading. There is no `type`, `status` or `reviewed` property: the path
+  line as a heading; a value containing `: ` is quoted, or Obsidian ignores the
+  whole block. There is no `type`, `status` or `reviewed` property: the path
   already says what a document is, and Obsidian writes view edits back into the
   file, which would change a ticket without a Session Log entry. `check-work-map.py`
   reports a missing, unknown, mismatched or malformed block as a NOTE, so files

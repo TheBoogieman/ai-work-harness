@@ -40,6 +40,12 @@ python3 _harness/scripts/check-work-map.py --json     # counts and findings
 python3 _harness/scripts/check-work-map.py --strict   # exit 1 on findings; manual use only
 ```
 
+Its notes also cover the `repos` / `pipelines` frontmatter (CONSTITUTION §9.2): a document of a kind that
+should carry `repos` but does not (`FRONTMATTER_MISSING`), a value with no repo card or pipeline page
+(`UNKNOWN_REPO`, `UNKNOWN_PIPELINE`), a ticket whose `repos` differs from its Repos list or a page that does
+not list itself (`FRONTMATTER_MISMATCH`), and a block it cannot read or a YAML comment
+(`FRONTMATTER_MALFORMED`, `FRONTMATTER_COMMENT`). All are warnings.
+
 The helper is warning-only and read-only; the default root is its own estate.
 It observes encoded relative links, reference definitions, file-index entries
 and promotion links, which initialized tickets are reachable from a map entity
@@ -160,9 +166,33 @@ chat.
 - Workbook: "Parse `Mappings/<workbook>.xlsx` version `<V>` into `<ticket>`."
 - Curate: "Compact and promote knowledge for `<ticket>`; show me before publishing."
 
-## Graph view
+## Obsidian
 
-In Obsidian, filter the graph with
+Nothing in the harness needs Obsidian; this recipe makes an estate easier to browse in it. Obsidian keeps its
+settings in the estate's `.obsidian/` folder, which the estate does not track, so set these once per machine.
+
+1. **Excluded files** (Settings → Files and links → Excluded files): `GitHub/`, `_retired/`, the Python
+   environment folder (for example `venv_global/`) and your assistant's settings folder (for example
+   `.claude/`). Code checkouts otherwise fill the graph with notes that are not records.
+2. **Graph colour groups** (Graph view → Groups). The first matching group colours a note, so keep this order:
+   `file:walkthrough`, `path:Tickets`, `path:"General AI-Knowledge/Work Map"`,
+   `path:"General AI-Knowledge/Skills"`, `path:"General AI-Knowledge"`, `path:"General Human Knowledge"`.
+3. **Properties.** Documents with `repos` / `pipelines` frontmatter (CONSTITUTION §9.2) show both in the
+   Properties panel. Property types are vault-wide settings in `.obsidian/`; set both to *List* if Obsidian
+   picks another type.
+4. **Bases.** With the Bases core plugin on, open `General Human Knowledge/Estate.base`. Its views list
+   tickets, tickets in one repo, walkthroughs, Work Map pages, runbooks and knowledge notes. For each repo,
+   duplicate the "Tickets in one repo" view and change the name in its `repos.contains("...")` filter: Obsidian
+   does not document grouping a view by a list property, so each repo gets its own filtered view.
+5. **Views are read-only by convention.** Editing a cell or dragging a card writes straight into the file's
+   frontmatter, and a ticket file that changes without a Session Log entry fails the validator at the next
+   session start. Change `repos` / `pipelines` through the agents (`ticket-scribe` for a ticket).
+
+Not checked in Obsidian yet: a graph group matching one value of a list property (for example
+`[repos:<repo>]`), grouping a Base by a list property, graph edges from links inside properties, and whether
+the Properties editor rewrites the YAML layout (`check-work-map.py` reads both list forms it may write).
+
+For a focused graph, filter with
 `path:Tickets OR path:"General AI-Knowledge/Work Map"`. Open a repo or pipeline
 page and use its local graph for immediate neighbours.
 

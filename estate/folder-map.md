@@ -32,7 +32,7 @@ Work/                                        [git root · local-only · whitelis
 │   └── scripts/                             THE MACHINERY (versioned)
 │       ├── check-ticket-log.sh              ← sessionStart hook │ sessionEnd (bonus)
 │       │       └── watermark →              ~/.harness/validated/<ticket>  [state · unversioned]
-│       ├── check-work-map.py                ← second sessionStart command · read-only, warning-only navigation observer (links, mapped tickets, orphan notes) · --json for counts · --strict is manual-only, never a hook · asserts no lineage or truth
+│       ├── check-work-map.py                ← second sessionStart command · read-only, warning-only navigation observer (links, mapped tickets, orphan notes, repos/pipelines frontmatter) · --json for counts · --strict is manual-only, never a hook · asserts no lineage or truth
 │       ├── harness-status.sh                stdout report + one primary-observation record (each WARN's first-seen, for aging #71) · roster = _agents/ · checks siblings
 │       ├── ticket-grammar.sh                recognition home: TICKET_RE + ticket predicates · validator + status both source it (edit only to change the naming pattern; any board key already matches)
 │       ├── init-ticket.sh                   ticket-init's full-template scaffold helper · local month/sequence, duplicate refusal, pending completion preview · never invents ticket facts
@@ -92,6 +92,7 @@ Work/                                        [git root · local-only · whitelis
 │
 ├── General Human Knowledge/                 human-facing references and dated outputs · agents may read both
 │   ├── _index.md                           living discovery index
+│   ├── Estate.base                         optional Obsidian Bases views · tickets per repo, walkthroughs, knowledge · read-only by convention
 │   ├── Harness Guide.md                    operator guide · what runs by itself, who starts which agent, model pins, sample prompts
 │   ├── Repo Workflows/                     living repo runbooks · _index.md routes to verified delivery and environment steps
 │   ├── Audits/                             ← estate-auditor · one dated report per audit, "Work commit audited: <sha>" · _index.md is living

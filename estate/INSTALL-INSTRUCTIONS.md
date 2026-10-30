@@ -228,6 +228,23 @@ Re-running `install.sh` serves three different intents, each with its own home:
   the whole span. Run from **inside** the estate, `--upgrade` refuses — there is no
   source in there to upgrade from, and it prints the command that works.
 
+  **Upgrading to `repos` / `pipelines` frontmatter (#331).** The upgrade brings the new
+  `check-work-map.py`, `init-ticket.sh` and agent contracts. The files below are records or
+  carry your settings, so it keeps your copies: merge each by hand from the source checkout,
+  comparing it with your copy line by line (and with anything this upgrade moved to
+  `_retired/`), keeping your own content. `CONSTITUTION.md` (§4.3, §6.1, §8, §9.1, §9.2, §14.1,
+  §15); your template ticket (add the frontmatter block above its first line); the five skills
+  `Doc-Ticket-Walkthrough`, `Doc-Pipeline-Home`, `Doc-Repo-Workflow`, `Doc-Knowledge-Topic` and
+  `Doc-AI-Knowledge-Note` under `General AI-Knowledge/Skills/`; `General AI-Knowledge/Work Map/_index.md`
+  (Page Shape); `General Human Knowledge/Harness Guide.md` (the Obsidian section) and
+  `General Human Knowledge/_index.md` (the Estate views line). Copy
+  `General Human Knowledge/Estate.base` in if you have none. Then backfill:
+  `python3 _harness/scripts/check-work-map.py` lists every document without `repos`
+  (`FRONTMATTER_MISSING`), including pipeline pages; fill them in batches with `estate-auditor`
+  (CONSTITUTION §15). Take each value from the record (a ticket's Repos list, a page's own file
+  name), never a guess, and `[]` when unknown. A ticket file changes only through
+  `ticket-scribe`, with its own Session Log entry, or the validator fails it.
+
 ## Hook activation caveat
 
 The auto-commit hook is *witnessed firing* on the VS Code Copilot IDE agent

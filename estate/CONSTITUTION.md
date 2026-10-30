@@ -305,6 +305,11 @@ The primary file is `YYYYMM<seq>-<BOARD>-<num>.md`. This is the **source of trut
 
 **Top-level structure (strict order):**
 ```markdown
+---
+repos:
+  - <repo>
+pipelines: []
+---
 # <BOARD>-<num> — <Short Ticket Description>
 
 **Ticket:** <the issue's URL on its board's tracker>
@@ -343,7 +348,7 @@ Context:
 ## Session Log
 ```
 
-Every ticket markdown file must include the **Repos**, **Branches**, and **Pull Requests** sections directly after the header, listing the repos worked in, the branches, and every PR (draft, in review, merged or closed) with links, repo, and state. Keep them current as repos, branches, or PRs change. At close-out `ticket-closer` adds the walkthrough to **Context** (§14).
+Every ticket markdown file must include the **Repos**, **Branches**, and **Pull Requests** sections directly after the header, listing the repos worked in, the branches, and every PR (draft, in review, merged or closed) with links, repo, and state. Keep them current as repos, branches, or PRs change. At close-out `ticket-closer` adds the walkthrough to **Context** (§14). The file opens with a frontmatter block whose `repos` list names the same repos as the **Repos** section's `GitHub/<repo>` entries (`[]` while none is known) and whose optional `pipelines` list names the pipeline pages it touches ([§9.2](#92-pipeline-and-repo-pages) owns the grammar); `ticket-scribe` changes the section and the list together.
 
 ---
 
@@ -407,6 +412,7 @@ one line.
 | Surface | Sole job | Default budget | Excludes |
 |---|---|---:|---|
 | Header | Repo, branch and PR addresses; relevant Context links | Compact lists | Narrative, commit history, check details |
+| Frontmatter (`repos`, `pipelines`) | Which repos and pipelines a document touches, as lists Obsidian views and `check-work-map.py` read (§9.2) | Two short lists | Status, type, dates, narrative |
 | Current State | Now, Next, Blocked; essential gotcha or pointer | Three short bullets; under 100 words | Completed chronology, command lists, copied evidence |
 | Changes Made | Settled component-first change bullets | Update only on meaningful implementation change | Session-by-session replay |
 | Session Log | Outcome delta since the previous entry | Normally 2–5 bullets; about 100 words | Copied explanations, tool lists, repeated header state, exact check bodies |
@@ -489,6 +495,7 @@ Conventions:
 - **One subfolder per topic**; the folder name *is* the topic (e.g. `AWS CLI Setup`).
 - The markdown file mirrors the folder name and should stand alone: what was done, why, the exact commands, and a worked **Example** section.
 - **Never commit secrets** (access keys, tokens). Use placeholders and reference the discovery commands instead.
+- **Frontmatter (optional):** a topic about specific repos or pipelines may open with `repos` / `pipelines` lists ([§9.2](#92-pipeline-and-repo-pages)); they are checked when present and kept when a note is promoted.
 - **Exceptions with their own homes:** pipelines and repos are one file each under `Work Map/Pipelines/` and `Work Map/Repos/` ([§9.2](#92-pipeline-and-repo-pages)); craft and documentation targets are `Skills/` modules ([§19](#19-skills-convention)).
 
 ---
@@ -549,8 +556,9 @@ renamed. Promotion tombstones must stay valid. After the links are closed out,
 run `python3 _harness/scripts/check-work-map.py` once. It is a read-only,
 warning-only observer (`--json` for counts and findings; `--strict` is opt-in and
 never wired into a hook) of encoded relative links, file-index and promotion
-links, whether each initialized ticket is reachable from a map entity page, and
-orphaned general notes. It reads only the Markdown syntax it supports (its
+links, whether each initialized ticket is reachable from a map entity page,
+orphaned general notes, and the `repos` / `pipelines` frontmatter (§9.2). It
+reads only the Markdown syntax it supports (its
 docstring lists the limits); it does not establish that a fact is true, lineage,
 or cloud state. Report existing uninitialized tickets and references outside the
 estate; never force a fake fix and do not update old tickets to silence it. The
@@ -591,6 +599,34 @@ One file per entity, no folders:
   **pipeline-specific values** plugged into those steps and the validation recipe.
   Reusable cross-pipeline techniques stay as General AI-Knowledge topic notes and
   are linked from a page's Read before section. Link between owners; never copy.
+- **Frontmatter.** Tickets, walkthroughs, repo cards, pipeline pages and Repo
+  Workflows runbooks open with a YAML block (Obsidian calls it properties) that
+  lists what they touch, so views can filter by repo or pipeline:
+
+  ```yaml
+  ---
+  repos:
+    - <repo>
+  pipelines:
+    - <pipeline>
+  ---
+  ```
+
+  `repos` holds repo card names (`Work Map/Repos/<repo>.md` without `.md`) and
+  `pipelines` pipeline page names (`Work Map/Pipelines/<pipeline>.md` without
+  `.md`); a value is never a path or a wiki-link. A ticket's `repos` equals the
+  `GitHub/<repo>` entries of its header **Repos** list; a walkthrough carries at
+  least its ticket's repos; a repo card lists itself; a pipeline page lists the
+  repos that host it and its own name in `pipelines`; a runbook lists the repo it
+  delivers into. Elsewhere both lists are optional. An unknown value is an empty
+  list (`[]`), never a guess. The block is plain: `---` on line 1, one `key:` per
+  line with a flow list (`[a, b]`) or `- item` lines, a closing `---`, then the
+  first line of the document; no YAML comments, because other scripts read a `#`
+  line as a heading. There is no `type`, `status` or `reviewed` property: the path
+  already says what a document is, and Obsidian writes view edits back into the
+  file, which would change a ticket without a Session Log entry. `check-work-map.py`
+  reports a missing, unknown, mismatched or malformed block as a NOTE, so files
+  written before this rule stay valid until a backfill (§15).
 - **Provenance.** Each section ends with a `Sources:` line (path:line, ticket, or
   command and date). Unknowns stay `TODO (unverified)` with the command that would
   verify them; a dated observation says so. `doc-writer` creates and refreshes pages
@@ -822,7 +858,8 @@ the work has otherwise concluded. Every step is also the by-hand fallback.
 example `PROJ-65474-walkthrough.md`). One document per ticket, or per chain, written for a technical
 reader who was not in the room: plain language, every term explained, nothing
 pasted from machine logs, and any commit hash, run ID or path given with what it
-is and why it matters.
+is and why it matters. It opens with the ticket's `repos` / `pipelines`
+frontmatter ([§9.2](#92-pipeline-and-repo-pages)), above its first line.
 
 **Shared walkthrough.** When tickets are layered on one change (each builds on the
 last, and the last carries all of it), one walkthrough in the last ticket's folder
@@ -900,7 +937,8 @@ newest `YYYYMMDD-estate-audit*.md` report in `General Human Knowledge/Audits/` i
    in that batch, on a page the batch already edits and by the same owner, and
    reported old → new with its source in the batch outcome. A finding on another
    page or for another owner becomes a new row. The auditor
-   fixes links, indexes and ticket headers itself; content refreshes go to
+   fixes links, indexes, ticket headers and frontmatter itself (a ticket `.md`
+   only through `ticket-scribe`, which writes its Session Log entry); content refreshes go to
    `doc-writer`; compaction and promotion to `knowledge-curator`; close-outs are
    listed for the user to run `ticket-closer`. **Walkthrough backfill:** tickets
    with no walkthrough are proposed in batches of five, oldest folder first; for each

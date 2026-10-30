@@ -452,10 +452,16 @@ class WorkMapTests(unittest.TestCase):
         for broken in ("---\nrepos:\n  - orders\n",                      # never closed
                        "---\nrepos: orders\n---\n",                      # a single value, not a list
                        "---\nrepos: [orders\n---\n",                     # flow list never closed
-                       "---\nrepos: [orders]\nrepos: [orders]\n---\n"):  # repeated key
+                       "---\nrepos: [orders]\nrepos: [orders]\n---\n",  # repeated key
+                       # An unquoted ": " inside any value makes Obsidian drop the whole block.
+                       "---\nrepos: [orders]\nsummary: Orders: nightly load\n---\n"):
             self.put(card, broken + CARD_BODY)
             _, report = self.run_check()
             self.assertEqual(self.findings_for(report, "FRONTMATTER_MALFORMED"), {card}, broken)
+        # The same value quoted is plain YAML that Obsidian reads, so it is not a finding.
+        self.put(card, "---\nrepos: [orders]\nsummary: \"Orders: nightly load\"\n---\n" + CARD_BODY)
+        _, report = self.run_check()
+        self.assertNotIn("FRONTMATTER_MALFORMED", self.codes(report))
         self.put(card, FM_ORDERS + CARD_BODY)
         self.put("Tickets/custom-case/support.md",
                  "# Support\n\n---\n\nrepos: [ghost]\n[Primary](custom-case.md)\n")

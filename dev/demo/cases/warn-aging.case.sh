@@ -194,6 +194,15 @@ wa_audit_age() {
   [ "$AA_RC" -eq 0 ] \
     || { rm -f "$AA_DIR/${aa_old}-estate-audit.md" "$AA_DIR/${aa_today}-harness-handoff.md"; \
          echo "BUG [audit-age-stale]: an old audit must be yellow (exit 0), got rc=$AA_RC"; exit 1; }
+  # A run limited to some buckets still writes the §15 report name, but its title says so; it is not
+  # a full audit, so a newer one must leave the clock on the old full audit and the WARN standing.
+  printf '# Estate audit today — Frontmatter bucket only\n' > "$AA_DIR/${aa_today}-estate-audit.md"
+  set +e; AA_OUT=$(bash estate/_harness/scripts/harness-status.sh 2>&1); set -e
+  rm -f "$AA_DIR/${aa_today}-estate-audit.md"
+  printf '%s\n' "$AA_OUT" | grep -qE "^WARN: last estate audit is [0-9]+ days old \(${aa_old}\)" \
+    || { rm -f "$AA_DIR/${aa_old}-estate-audit.md" "$AA_DIR/${aa_today}-harness-handoff.md"; \
+         echo "BUG [audit-age-bucket-only]: a newer bucket-only report reset the audit clock:"; \
+         printf '%s\n' "$AA_OUT" | grep -i audit; exit 1; }
   printf '# fresh audit\n' > "$AA_DIR/${aa_fresh}-estate-audit.md"
   set +e; AA_OUT=$(bash estate/_harness/scripts/harness-status.sh 2>&1); set -e
   rm -f "$AA_DIR/${aa_old}-estate-audit.md" "$AA_DIR/${aa_today}-harness-handoff.md" \
@@ -202,7 +211,7 @@ wa_audit_age() {
     || { echo "BUG [audit-age-fresh]: a 3-day-old audit was not reported OK:"; \
          printf '%s\n' "$AA_OUT" | grep -i audit; exit 1; }
   echo "  ok [audit-age] — no report is a NOTE, a stale audit WARNs naming estate-auditor (a newer" \
-    "non-audit note does not reset it), a fresh one is OK"
+    "non-audit note or bucket-only report does not reset it), a fresh one is OK"
 }
 
 case_warn_aging() {

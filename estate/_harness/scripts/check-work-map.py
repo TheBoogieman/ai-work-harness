@@ -23,6 +23,17 @@ not verified facts, lineage, aliases, or complete Markdown interpretation.
 Earlier estate audit reports are frozen (never edited), so a dead link inside one
 is counted as history_links rather than raised as a finding; the newest report
 is checked like any other note.
+
+Frontmatter: a leading YAML block (Obsidian properties) is read in the plain
+subset Obsidian writes, block or flow lists. repos (repo card file names) is
+expected on ticket primaries, walkthroughs, repo cards, pipeline pages and Repo
+Workflows runbooks; pipelines (pipeline page slugs) is optional except on a
+pipeline page, which lists its own slug. Every value must name an existing Work
+Map page; a ticket's repos equals the GitHub/<repo> entries of its header Repos
+list; a walkthrough includes its ticket's repos; a repo card lists itself. A
+missing property is a NOTE like every finding here, so legacy records stay
+grandfathered until a backfill. YAML comments are refused because other scripts
+read a "#" line as a Markdown heading.
 """
 
 from __future__ import annotations
@@ -40,6 +51,19 @@ GAK = "General AI-Knowledge"
 GHK = "General Human Knowledge"
 EXCLUDED = {"Logs", "Dump", ".git", "_retired"}
 AUDIT_RE = re.compile(r"^\d{8}-estate-audit.*\.md$")
+# The two frontmatter list properties this helper reads, and the plain page name a value must be:
+# a repo card's or pipeline page's file name without .md, so never a path, a wiki-link or a dotfile.
+FRONTMATTER_KEYS = ("repos", "pipelines")
+PLAIN_NAME_RE = re.compile(r"^(?!\.)[^/\\\[\]|#^<>:\x00]+$")
+FRONTMATTER_MESSAGES = {
+    "FRONTMATTER_COMMENT": "YAML comment in frontmatter; other scripts read a # line as a Markdown heading.",
+    "FRONTMATTER_MALFORMED": "Frontmatter is not the plain block Obsidian writes; its properties were not read.",
+    "FRONTMATTER_MISSING": "No repos property in frontmatter; an empty list is allowed when unknown.",
+    "UNKNOWN_REPO": "A repos value names no repo card.",
+    "UNKNOWN_REPO_NAME": "A repos value is not a repo card file name (no path or wiki-link).",
+    "UNKNOWN_PIPELINE": "A pipelines value names no pipeline page.",
+    "UNKNOWN_PIPELINE_NAME": "A pipelines value is not a pipeline page file name (no path or wiki-link).",
+}
 
 
 def blank(text: str) -> str:
@@ -135,6 +159,91 @@ def routes(text: str, index: bool) -> list[tuple[int, str, bool]]:
     return sorted(set(found))
 
 
+def plain_item(text: str) -> str:
+    """One list item as written, with one pair of surrounding quotes removed."""
+    text = text.strip()
+    if len(text) >= 2 and text[0] == text[-1] and text[0] in "\"'":
+        text = text[1:-1]
+    return text
+
+
+def frontmatter(raw: str) -> tuple[dict | None, list[tuple[str, int]]]:
+    """Read a leading frontmatter block (Obsidian properties) in the plain subset Obsidian writes.
+
+    Returns (properties, problems). properties is None when line 1 is not "---" or the block is
+    malformed, so no value check ever runs on a guess. repos and pipelines are read as lists of
+    strings in either form Obsidian may write: a block list ("key:" then "  - item" lines) or a
+    flow list ("key: [a, b]"); one pair of quotes around an item is removed. Any other key is
+    recorded as present but not read, together with its indented or "- " continuation lines.
+    problems holds (code, line) pairs: FRONTMATTER_COMMENT for a "#" comment line, and
+    FRONTMATTER_MALFORMED for an unclosed block, a repeated key, a repos or pipelines value that
+    is not a list, or any other line.
+    """
+    lines = raw.lstrip("﻿").split("\n")
+    if lines[0].rstrip("\r") != "---":
+        return None, []
+    end = next((index for index in range(1, len(lines)) if lines[index].rstrip("\r") == "---"), None)
+    if end is None:
+        return None, [("FRONTMATTER_MALFORMED", 1)]
+    properties: dict[str, list[str] | None] = {}
+    problems: list[tuple[str, int]] = []
+    current, block = None, False
+    for index in range(1, end):
+        line, number = lines[index].rstrip("\r"), index + 1
+        if not line.strip():
+            continue
+        if line.strip().startswith("#"):
+            problems.append(("FRONTMATTER_COMMENT", number))
+            continue
+        # A key starts in column 0 and is not a list item; its value is the rest of the line.
+        key = re.match(r"([^\s#:-][^:]*?):(?:[ \t]+(.*?))?[ \t]*$", line)
+        if key:
+            name, value = key.group(1), key.group(2) or ""
+            if name in properties:
+                return None, problems + [("FRONTMATTER_MALFORMED", number)]
+            current, block = name, False
+            if name not in FRONTMATTER_KEYS:
+                properties[name] = None
+            elif not value:
+                properties[name], block = [], True
+            elif value.startswith("[") and value.endswith("]"):
+                inner = value[1:-1].strip()
+                properties[name] = [plain_item(item) for item in inner.split(",")] if inner else []
+            else:
+                return None, problems + [("FRONTMATTER_MALFORMED", number)]
+            continue
+        item = re.match(r"[ \t]*-(?:[ \t]+(.*))?$", line)
+        if item and block:
+            properties[current].append(plain_item(item.group(1) or ""))
+            continue
+        if current is not None and current not in FRONTMATTER_KEYS and (item or line[0] in " \t"):
+            continue
+        return None, problems + [("FRONTMATTER_MALFORMED", number)]
+    return properties, problems
+
+
+def without_frontmatter(text: str) -> str:
+    """Blank a closed leading frontmatter block, keeping its line count, so no YAML line reads as Markdown."""
+    match = re.match(r"﻿?---\r?\n(?:[^\n]*\n)*?---\r?(?:\n|\Z)", text)
+    return blank(text[:match.end()]) + text[match.end():] if match else text
+
+
+def header_repos(raw: str) -> set[str]:
+    """Repo names a ticket header's "Repos:" list gives as GitHub/<repo>, from the raw text so a
+    backticked entry counts. An entry without GitHub/ (the estate itself, say) is prose."""
+    lines = raw.split("\n")
+    for index, line in enumerate(lines):
+        if re.fullmatch(r"Repos:[ \t]*\r?", line):
+            names: set[str] = set()
+            for entry in lines[index + 1:]:
+                if not entry.startswith("- "):
+                    break
+                names.update(name.rstrip(".") for name in
+                             re.findall(r"(?<![A-Za-z0-9])GitHub/([A-Za-z0-9._-]+)", entry))
+            return names
+    return set()
+
+
 class Observer:
     """Build a temporary graph of scoped files, with no persistent cache or repairs."""
 
@@ -148,6 +257,10 @@ class Observer:
         self.uninitialized = 0
         self.templates_skipped = 0
         self.history_links = 0
+        # Raw file text, for the checks that must see what prose() blanks (frontmatter, header lists).
+        self.raw: dict[Path, str] = {}
+        self.frontmatter_expected = 0
+        self.frontmatter_present = 0
         self.map_dir = root / GAK / "Work Map"
         audits = sorted(path for path in (root / GHK / "Audits").glob("*.md") if AUDIT_RE.match(path.name))
         self.frozen_audits = set(audits[:-1])
@@ -205,7 +318,9 @@ class Observer:
             if not stat.S_ISREG(path.stat().st_mode):
                 self.note("UNAVAILABLE", path, "Not a regular Markdown file; not read.")
                 return None
-            return prose(path.read_text(encoding="utf-8"))
+            raw = path.read_text(encoding="utf-8")
+            self.raw[path] = raw
+            return prose(raw)
         except (OSError, UnicodeError):
             self.note("UNAVAILABLE", path, "Markdown unavailable or not UTF-8; coverage is incomplete.")
             return None
@@ -233,7 +348,8 @@ class Observer:
             text = self.read(primary)
             if text is None or not re.search(r"^##[ \t]*Current[ \t]*State[ \t]*#*[ \t]*$", text, re.M):
                 continue
-            heading = re.search(r"^#\s+(.+)$", text, re.M)
+            # The title is the first heading after any frontmatter, so a YAML line is never read as it.
+            heading = re.search(r"^#\s+(.+)$", without_frontmatter(text), re.M)
             if (heading is None or re.search(r"<[^>]+>|\bTODO\b|\b[A-Z]+-XXXXX\b", heading.group(1)) or
                     (folder / ".ticket-pending").exists() or "Now: template only" in text):
                 self.uninitialized += 1
@@ -253,6 +369,64 @@ class Observer:
 
     def entity(self, path: Path) -> bool:
         return any(path.is_relative_to(self.map_dir / kind) for kind in ("Repos", "Pipelines"))
+
+    def kind(self, path: Path) -> str | None:
+        """The document kind that must carry repos, from its path alone (why there is no type property)."""
+        if path.name == "_index.md":
+            return None
+        if path in self.tickets:
+            return "ticket"
+        if path.name.endswith("-walkthrough.md") and path.parent / (path.parent.name + ".md") in self.tickets:
+            return "walkthrough"
+        for folder, name in ((self.map_dir / "Repos", "repo"), (self.map_dir / "Pipelines", "pipeline"),
+                             (self.root / GHK / "Repo Workflows", "runbook")):
+            if path.parent == folder:
+                return name
+        return None
+
+    def check_frontmatter(self):
+        """Check repos and pipelines frontmatter on every scanned document; NOTE findings only."""
+        found: dict[Path, dict | None] = {}
+        for path in sorted(self.documents):
+            properties, problems = frontmatter(self.raw.get(path, ""))
+            found[path] = properties
+            for code, line in problems:
+                self.note(code, path, FRONTMATTER_MESSAGES[code], line)
+            kind = self.kind(path)
+            if kind is not None:
+                self.frontmatter_expected += 1
+                if properties is not None and "repos" in properties:
+                    self.frontmatter_present += 1
+                elif properties is not None or not problems:
+                    # A malformed block already has its own finding; only an absent property is missing.
+                    self.note("FRONTMATTER_MISSING", path, FRONTMATTER_MESSAGES["FRONTMATTER_MISSING"], 1)
+            if properties is None:
+                continue
+            for key, folder, code in (("repos", "Repos", "UNKNOWN_REPO"),
+                                      ("pipelines", "Pipelines", "UNKNOWN_PIPELINE")):
+                for value in properties.get(key) or []:
+                    if not PLAIN_NAME_RE.match(value):
+                        self.note(code, path, FRONTMATTER_MESSAGES[code + "_NAME"], 1)
+                        continue
+                    page = self.map_dir / folder / (value + ".md")
+                    if not page.is_file():
+                        self.note(code, path, FRONTMATTER_MESSAGES[code], 1, page)
+            repos = set(properties.get("repos") or [])
+            if kind == "ticket" and "repos" in properties and repos != header_repos(self.raw[path]):
+                self.note("FRONTMATTER_MISMATCH", path,
+                          "repos differs from the GitHub/<repo> entries of the header Repos list.", 1)
+            elif kind == "repo" and "repos" in properties and path.stem not in repos:
+                self.note("FRONTMATTER_MISMATCH", path, "repos does not list this repo card's own name.", 1)
+            elif kind == "pipeline" and path.stem not in (properties.get("pipelines") or []):
+                self.note("FRONTMATTER_MISMATCH", path, "pipelines does not list this pipeline page's own slug.", 1)
+        # A walkthrough is compared with its ticket's frontmatter, so it runs once every file is read.
+        for path in sorted(self.documents):
+            mine = found.get(path)
+            if self.kind(path) != "walkthrough" or not mine or "repos" not in mine:
+                continue
+            ticket = found.get(path.parent / (path.parent.name + ".md"))
+            if ticket and "repos" in ticket and not set(ticket["repos"]) <= set(mine["repos"]):
+                self.note("FRONTMATTER_MISMATCH", path, "repos lacks a repo that its ticket's repos lists.", 1)
 
     def resolve(self, source: Path, line: int, raw: str, estate_relative: bool) -> Path | None:
         if not raw or raw.startswith("#") or re.search(r"<[^>]+>", raw):
@@ -308,6 +482,7 @@ class Observer:
 
     def report(self) -> dict:
         self.collect()
+        self.check_frontmatter()
         for path, text in sorted(self.documents.items()):
             self.edges[path] = set()
             for line, target, estate_relative in routes(text, path.name == "_index.md"):
@@ -356,7 +531,10 @@ class Observer:
                 "coverage": {"tickets": len(self.tickets), "mapped": len(mapped),
                              "uninitialized": self.uninitialized, "templates_skipped": self.templates_skipped,
                              "notes": len(notes), "reachable_notes": len(notes & reachable),
-                             "map_available": map_available, "complete": not self.findings}}
+                             "map_available": map_available,
+                             "frontmatter_expected": self.frontmatter_expected,
+                             "frontmatter_present": self.frontmatter_present,
+                             "complete": not self.findings}}
 
 
 def main() -> int:
@@ -383,6 +561,7 @@ def main() -> int:
         history = f"; {report['history_links']} dead links in earlier audits counted as history" if report["history_links"] else ""
         print(f"NOTE [work-map] {report['files_scanned']} Markdown files, {report['links_checked']} local links; "
               f"{coverage['mapped']}/{coverage['tickets']} initialized tickets mapped; "
+              f"{coverage['frontmatter_present']}/{coverage['frontmatter_expected']} documents carry repos frontmatter; "
               f"{len(report['findings'])} findings{history}.")
     return int(arguments.strict and bool(report["findings"]))
 

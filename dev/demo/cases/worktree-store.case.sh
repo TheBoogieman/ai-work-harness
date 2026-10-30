@@ -18,6 +18,10 @@ ws_fixture() {
   W86=$(mktemp -d)
   mkdir -p "$W86/repo"
   git -C "$W86/repo" init -q
+  # Newer git (seen on Apple Git 2.54) repacks in a detached background job after a commit or
+  # worktree add, so the store shrank while this case measured it. Only housekeeping may repack.
+  git -C "$W86/repo" config gc.auto 0
+  git -C "$W86/repo" config maintenance.auto false
   cp -R estate/_harness "$W86/repo/_harness"
   git -C "$W86/repo" -c user.email=demo@local -c user.name=demo add -A
   git -C "$W86/repo" -c user.email=demo@local -c user.name=demo commit -q -m "seed"

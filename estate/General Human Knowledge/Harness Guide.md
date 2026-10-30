@@ -195,9 +195,13 @@ settings in the estate's `.obsidian/` folder, which the estate does not track, s
    frontmatter, and a ticket file that changes without a Session Log entry fails the validator at the next
    session start. Change `repos` / `pipelines` through the agents (`ticket-scribe` for a ticket).
 6. **Obsidian CLI (optional).** Obsidian ships a command-line interface that talks to the running app (checked
-   on 1.14.5; on Windows the binary is `Obsidian.com` in the install folder). To enable it, close Obsidian,
-   back up the app's `obsidian.json` (on Windows `%APPDATA%\obsidian\obsidian.json`), add `"cli": true` to it,
-   and start Obsidian again; `Obsidian.com help` lists the commands. Record it in your tools note (binary path,
+   on 1.14.5; on Windows the binary is `Obsidian.com` in the install folder, on macOS
+   `/Applications/Obsidian.app/Contents/MacOS/obsidian-cli`). To enable it, close Obsidian,
+   back up the app's `obsidian.json` (on Windows `%APPDATA%\obsidian\obsidian.json`, on macOS
+   `~/Library/Application Support/obsidian/obsidian.json`), add `"cli": true` to it,
+   and start Obsidian again; `Obsidian.com help` (macOS: `obsidian-cli help`) lists the commands. On macOS 1.14.5
+   the `version` command answers "not found", so read the version from the app bundle
+   (`defaults read /Applications/Obsidian.app/Contents/Info.plist CFBundleShortVersionString`). Record it in your tools note (binary path,
    version, date enabled). Agents use only its read commands, for example
    `search query="[repos:<repo>]" total`, `properties name=repos counts`, `property:read`,
    `base:query path="General Human Knowledge/Estate.base" view="Tickets" format=paths`, `links`, `backlinks`

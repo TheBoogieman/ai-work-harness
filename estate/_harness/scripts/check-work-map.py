@@ -238,7 +238,9 @@ def header_repos(raw: str) -> set[str]:
     backticked entry counts. An entry without GitHub/ (the estate itself, say) is prose."""
     lines = raw.split("\n")
     for index, line in enumerate(lines):
-        if re.fullmatch(r"Repos:[ \t]*\r?", line):
+        # Hand-written headers also bold the label or annotate it ("**Repos:**", "Repos (confirmed
+        # by discovery):"); reading only the bare form saw no repos there and passed a wrong [] (#331).
+        if re.fullmatch(r"(?:\*\*)?Repos(?:[ \t]*\([^)\n]*\))?(?:\*\*)?:(?:\*\*)?[ \t]*\r?", line):
             names: set[str] = set()
             for entry in lines[index + 1:]:
                 if not entry.startswith("- "):

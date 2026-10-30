@@ -418,6 +418,22 @@ class WorkMapTests(unittest.TestCase):
         exit_code, report = self.run_check("--strict")
         self.assertEqual(exit_code, 0, report["findings"])
 
+    # [work-map-frontmatter-header-label-forms] The header's Repos label is read when it is bold or
+    # annotated, as hand-written headers often are: a ticket listing a repo under "**Repos:**" with
+    # repos: [] is a mismatch, and one listing it under "Repos (confirmed by discovery):" with that
+    # repo matches. Red on a helper that reads only the bare "Repos:" line (#331).
+    def test_frontmatter_header_repos_label_forms(self):
+        def ticket(label):
+            return (f"# TASK-1 - Orders\n\n{label}\n- Work/GitHub/orders\n\n"
+                    "## Current State\n- Now: active.\n")
+        for label in ("**Repos:**", "**Repos**:", "Repos (confirmed by discovery):"):
+            self.put(TICKET, "---\nrepos: []\n---\n" + ticket(label))
+            _, report = self.run_check()
+            self.assertEqual(self.findings_for(report, "FRONTMATTER_MISMATCH"), {TICKET}, label)
+            self.put(TICKET, FM_ORDERS + ticket(label))
+            exit_code, report = self.run_check("--strict")
+            self.assertEqual(exit_code, 0, (label, report["findings"]))
+
     # [work-map-frontmatter-entity-self] A repo card lists its own name in repos; a pipeline page lists
     # its own slug in pipelines (it is that value's owner) beside the repos that host it.
     # Red on a helper without FRONTMATTER_MISMATCH for entity pages.

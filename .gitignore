@@ -118,3 +118,7 @@ estate/Tickets/*/Dump/*
 *.swp
 *.swo
 Thumbs.db
+# Python bytecode: importing a helper (python3 -c / a test) writes _harness/scripts/__pycache__/,
+# and the auto-commit hook would record it, because _harness/ is re-included above (#331).
+__pycache__/
+*.py[co]

@@ -135,7 +135,8 @@ The dumb inspector. Runs at session START (the entry gate — it audits what the
 previous session left behind; sessionEnd is a best-effort bonus), and checks
 facts only: log appended? Current State exists? Index matches files? Fails
 loudly, judges nothing. A second, separate `sessionStart` command runs the
-warning-only, read-only work-map observer (`check-work-map.py`), so its notes
+warning-only, read-only work-map observer (`check-work-map.py`: links, and the
+`repos` / `pipelines` frontmatter), so its notes
 cannot mask the validator; it never blocks work.
 
 ### L3 — Filesystem
@@ -210,7 +211,8 @@ See the constitution's *Record Ownership and Brevity* convention for writer defa
 The constitution's [Context Discovery](estate/CONSTITUTION.md#9-context-discovery)
 route points to reusable knowledge, repo workflows and the Work Map. Real
 repo/pipeline pages link to tickets and existing notes, giving Obsidian a
-navigable graph without a plugin. The shipped indexes are starting points,
+navigable graph without a plugin; `repos` / `pipelines` frontmatter lets it
+group and filter documents by repo or pipeline. The shipped indexes are starting points,
 not fictional work. The [Harness Guide](estate/General%20Human%20Knowledge/Harness%20Guide.md)
 explains how the graph is maintained, what runs automatically versus what you
 start, and the optional model profile.

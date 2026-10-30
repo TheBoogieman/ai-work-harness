@@ -40,6 +40,12 @@ python3 _harness/scripts/check-work-map.py --json     # counts and findings
 python3 _harness/scripts/check-work-map.py --strict   # exit 1 on findings; manual use only
 ```
 
+Its notes also cover the `repos` / `pipelines` frontmatter (CONSTITUTION §9.2): a document of a kind that
+should carry `repos` but does not (`FRONTMATTER_MISSING`), a value with no repo card or pipeline page
+(`UNKNOWN_REPO`, `UNKNOWN_PIPELINE`), a ticket whose `repos` differs from its Repos list or a page that does
+not list itself (`FRONTMATTER_MISMATCH`), and a block it cannot read or a YAML comment
+(`FRONTMATTER_MALFORMED`, `FRONTMATTER_COMMENT`). All are warnings.
+
 The helper is warning-only and read-only; the default root is its own estate.
 It observes encoded relative links, reference definitions, file-index entries
 and promotion links, which initialized tickets are reachable from a map entity
@@ -136,7 +142,8 @@ modes).
 
 ## Tool adapters
 
-Optional, never harness dependencies: `aws`, `gh`, `snow`, `astro`, `dbt` and
+Optional, never harness dependencies: `aws`, `gh`, `snow`, `astro`, `dbt`, Obsidian's CLI (read commands only,
+see "Obsidian" below) and
 any configured MCP server. Keep the real profile, account, role and
 environment mappings in an indexed local `Tools and Environments` note under
 General AI-Knowledge (recommended), never in public files. A configured tool is
@@ -160,9 +167,52 @@ chat.
 - Workbook: "Parse `Mappings/<workbook>.xlsx` version `<V>` into `<ticket>`."
 - Curate: "Compact and promote knowledge for `<ticket>`; show me before publishing."
 
-## Graph view
+## Obsidian
 
-In Obsidian, filter the graph with
+Nothing in the harness needs Obsidian; this recipe makes an estate easier to browse in it. Obsidian keeps its
+settings in the estate's `.obsidian/` folder, which the estate does not track, so set these once per machine.
+
+1. **Excluded files** (Settings → Files and links → Excluded files): `GitHub/`, `_retired/`, the Python
+   environment folder (for example `venv_global/`) and your assistant's settings folder (for example
+   `.claude/`). Code checkouts otherwise fill the graph with notes that are not records.
+2. **Graph colour groups** (Graph view → Groups). The first matching group colours a note, so keep this order:
+   `file:walkthrough`, `path:Tickets`, `path:"General AI-Knowledge/Work Map"`,
+   `path:"General AI-Knowledge/Skills"`, `path:"General AI-Knowledge"`, `path:"General Human Knowledge"`.
+   To colour by repo instead, put one group `[repos:<repo>]` per repo above these; it matches the name in
+   block and flow lists alike (`[pipelines:<pipeline>]` works the same way).
+3. **Properties.** Documents with `repos` / `pipelines` frontmatter (CONSTITUTION §9.2) show both in the
+   Properties panel. Property types are vault-wide settings in `.obsidian/`; set both to *List* if Obsidian
+   picks another type. Write lists in block form (one `- item` line each): any edit in Obsidian rewrites a
+   flow list (`[a, b]`) to block form, keeping the key order, so block form keeps diffs quiet. Quote any
+   value that contains `: ` (for example `title: "Orders: daily load"`); unquoted, Obsidian ignores the whole
+   block and the note shows no properties at all.
+4. **Bases.** With the Bases core plugin on, open `General Human Knowledge/Estate.base`. Its views list
+   tickets, tickets in one repo, walkthroughs, Work Map pages, runbooks and knowledge notes. For each repo,
+   duplicate the "Tickets in one repo" view and change the name in its `repos.contains("...")` filter.
+   Grouping a view by a list property makes one group per exact list (a note listing two repos sits only
+   under the group for that pair), so each repo gets its own filtered view instead.
+5. **Views are read-only by convention.** Editing a cell or dragging a card writes straight into the file's
+   frontmatter, and a ticket file that changes without a Session Log entry fails the validator at the next
+   session start. Change `repos` / `pipelines` through the agents (`ticket-scribe` for a ticket).
+6. **Obsidian CLI (optional).** Obsidian ships a command-line interface that talks to the running app (checked
+   on 1.14.5; on Windows the binary is `Obsidian.com` in the install folder). To enable it, close Obsidian,
+   back up the app's `obsidian.json` (on Windows `%APPDATA%\obsidian\obsidian.json`), add `"cli": true` to it,
+   and start Obsidian again; `Obsidian.com help` lists the commands. Record it in your tools note (binary path,
+   version, date enabled). Agents use only its read commands, for example
+   `search query="[repos:<repo>]" total`, `properties name=repos counts`, `property:read`,
+   `base:query path="General Human Knowledge/Estate.base" view="Tickets" format=paths`, `links`, `backlinks`
+   and `unresolved`. They never run its write commands on records (`create`, `append`, `prepend`, `delete`,
+   `move`, `rename`, `property:set`, `property:remove`, `base:create`, `template:insert`, `history:restore`,
+   `plugin:*`, `eval`, `dev:*`): a write changes a file without its owner, and a ticket file changed without a
+   Session Log entry fails the validator.
+
+Checked in Obsidian 1.14.5 (2026-10-30): a `[repos:<repo>]` search or graph group matches block and flow
+lists; grouping a Base by a list gives one group per exact list; a quoted wiki-link in a property
+(`"[[page]]"`) draws a graph edge and a backlink, but `repos` and `pipelines` hold plain names, which is what
+`check-work-map.py` checks; an edit in the Properties panel rewrites flow lists to block form
+(`check-work-map.py` reads both); an unquoted `: ` in any value hides the whole block from Obsidian.
+
+For a focused graph, filter with
 `path:Tickets OR path:"General AI-Knowledge/Work Map"`. Open a repo or pipeline
 page and use its local graph for immediate neighbours.
 

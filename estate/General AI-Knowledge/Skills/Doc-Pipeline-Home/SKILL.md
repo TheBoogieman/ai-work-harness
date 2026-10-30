@@ -16,6 +16,12 @@ in `Work Map/_index.md` (Pipelines table) and link it from each hosting repo car
 **Template (keep the headings verbatim so agents can open one section at a time):**
 
 ```markdown
+---
+repos:
+  - <repo>
+pipelines:
+  - <pipeline-file-name>
+---
 # <Pipeline display name>
 
 Last reviewed: YYYY-MM-DD (<what was checked against what: repo ref, environment, date>)
@@ -77,6 +83,9 @@ UAT differences: <config or behaviour that differs from PROD for a hop this page
 - Ticket history: one line per ticket, newest last, `[<ID>](<relative link to the primary record>) — <final
   outcome in one line>`; link the walkthrough when one exists.
 - Keep the Identity card under about 25 lines; push detail into sections.
+- Frontmatter (CONSTITUTION §9.2): `repos` lists every hosting repo by its repo card file name (the same repos
+  as the Identity card's "Repos and source paths" row); `pipelines` lists this page's own file name without
+  `.md`. No YAML comments; `check-work-map.py` reports a page whose block is missing or wrong.
 - Dependency Chain: one row per hop, ordered from the first upstream producer to this pipeline's own trigger,
   so a reader can walk up from whatever is missing. Name each hop's gate exactly as it is configured (file
   type, table and date column, sensor and metric row) and give the check that proves it passed. A hop that
@@ -116,4 +125,4 @@ Resolve and approve remote targets before use (CONSTITUTION §2):
 - The trigger's or scheduler's run and task logs — which dependency a run waited on and when it passed (read-only).
 - `python3 _harness/scripts/check-work-map.py` — confirm links after writing.
 
-Last reviewed: 2026-10-22
+Last reviewed: 2026-10-30

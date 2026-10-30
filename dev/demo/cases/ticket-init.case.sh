@@ -387,6 +387,38 @@ ti_custom_grammar() {
   printf '  ok [init-shared-grammar-root] custom hyphenated boards and script-relative default root\n'
 }
 
+# [init-frontmatter-heading] A record may open with a YAML frontmatter block (Obsidian properties: a
+# "---" line, the properties, a closing "---"); its "# KEY" heading is then the first line after the
+# block. Both heading reads must look past it: the pending duplicate scan and the resume preview.
+# Each half runs even when the other fails, so a helper that reads line 1 shows both guards red.
+ti_frontmatter() {
+  local common=(--root "$ti_root" --template "$ti_template")
+  local other="$ti_root/Tickets/pending-frontmatter-other"
+  local resume="$ti_root/Tickets/pending-frontmatter"
+  local result=0
+  mkdir "$other" || return 1
+  printf -- '---\nrepos: []\n---\n# PROJ-301 - another owner\n' > "$other/${other##*/}.md"
+  touch "$other/.ticket-pending" || return 1
+  if ti_refuse init-frontmatter-duplicate "${common[@]}" --identity PROJ-301 --dry-run; then
+    ti_assert init-frontmatter-duplicate-path grep -Fqx "$other" <<< "$ti_output" || result=1
+  else
+    result=1
+  fi
+  rm -rf "$other"
+  mkdir "$resume" || return 1
+  printf -- '---\nrepos:\n  - example-repo\npipelines: []\n---\n# PROJ-301 - supplied identity\n' \
+    > "$resume/${resume##*/}.md"
+  touch "$resume/.ticket-pending" || return 1
+  if ti_assert init-frontmatter-resume ti_run --identity PROJ-301 --resume "$resume" --dry-run; then
+    ti_assert init-frontmatter-resume-status grep -q '^PREVIEW:' <<< "$ti_output" || result=1
+  else
+    result=1
+  fi
+  rm -rf "$resume"
+  if (( result )); then return 1; fi
+  printf '  ok [init-frontmatter-heading] the duplicate scan and resume preview read the heading after frontmatter\n'
+}
+
 # Explicit teardown preserves the runner's sole EXIT trap, including on expected red runs.
 case_ticket_init() {
   local ti_repo="$PWD" ti_scratch ti_root ti_template ti_template_name ti_month ti_helper ti_output
@@ -402,7 +434,7 @@ case_ticket_init() {
   ti_template_name="${ti_month}ZZZ-TPL-99999"
   ti_template="$ti_root/Tickets/$ti_template_name"
   ti_helper="${TICKET_INIT_TEST_HELPER:-$ti_repo/estate/_harness/scripts/init-ticket.sh}"
-  ti_core && ti_identities && ti_resume && ti_resume_safety && ti_safety && ti_preview && ti_atomic_copy && ti_custom_grammar || case_result=$?
+  ti_core && ti_identities && ti_resume && ti_resume_safety && ti_safety && ti_preview && ti_atomic_copy && ti_custom_grammar && ti_frontmatter || case_result=$?
   rm -rf "$ti_scratch"
   return "$case_result"
 }

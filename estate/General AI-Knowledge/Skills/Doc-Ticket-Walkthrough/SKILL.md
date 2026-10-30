@@ -10,6 +10,18 @@ summary for PM or lead.
 **Destination:** `Tickets/<folder>/<BOARD-num>-walkthrough.md`, beside the primary ticket file; add it to the
 ticket header's Context and to the ticket's line on its Work Map pages.
 
+**Frontmatter (CONSTITUTION §9.2):** the file opens with a properties block above its first line. `repos`
+holds every repo the ticket's frontmatter lists (a shared walkthrough: every chain ticket's repos); `pipelines`
+the same for pipeline pages, or `[]`. Copy the values from the ticket; never guess one. No YAML comments.
+
+```yaml
+---
+repos:
+  - <repo>
+pipelines: []
+---
+```
+
 **Reader:** a technical person who was not in the room. Hand-hold: explain every term, every command and every
 flag; say why each step was needed. No machine logs, no pasted transcripts, no bare commit hashes — a hash, run
 ID or path appears only with what it is and why it matters.
@@ -42,7 +54,7 @@ VERIFIED statements from outputs; mark anything else as recorded or not verified
 and any contradiction you found side by side.
 
 **Retrospective mode (audit backfill, CONSTITUTION §14.1 and §15 step 6).** Requested by `estate-auditor` for a
-ticket that never got a walkthrough. First line: `Written retrospectively on <YYYY-MM-DD> from the record; not a
+ticket that never got a walkthrough. First line after the frontmatter block: `Written retrospectively on <YYYY-MM-DD> from the record; not a
 close-out.` Same twelve sections. Sources in this order: the ticket `.md` in full (header, Background, Scope,
 Changes Made, Current State, Session Log); `AI-Knowledge/` notes; `Agent-Prompts/` and `Agent-Output/`; saved
 outputs of `Checks/` notebooks; the Work Map pipeline pages and repo cards that name the ticket
@@ -70,4 +82,4 @@ tests, CI, security and release checks still apply. Tool absence is not a passin
 - `gh run view <id> --repo <owner/repo>` — CI or deploy run outcome (read-only).
 - `git -C <repo> log --oneline <base>..<branch>` — commit list to explain, not to paste.
 
-Last reviewed: 2026-10-21
+Last reviewed: 2026-10-30

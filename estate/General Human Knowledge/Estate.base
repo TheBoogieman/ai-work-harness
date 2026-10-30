@@ -1,0 +1,80 @@
+# Starter views for Obsidian Bases. Treat every view as read-only: an edit in a
+# view writes into the file's frontmatter, and a ticket file changed without a
+# Session Log entry fails the validator. See the Harness Guide, Obsidian section.
+filters:
+  and:
+    - file.ext == "md"
+views:
+  - type: table
+    name: Tickets
+    filters:
+      and:
+        - file.inFolder("Tickets")
+        - file.hasProperty("repos")
+        - not:
+            - file.name.contains("walkthrough")
+            - file.name.startsWith("9999")
+    order:
+      - file.name
+      - repos
+      - pipelines
+      - file.mtime
+  - type: table
+    name: Tickets in one repo
+    filters:
+      and:
+        - file.inFolder("Tickets")
+        - repos.contains("example-repo")
+        - not:
+            - file.name.contains("walkthrough")
+    order:
+      - file.name
+      - pipelines
+      - file.mtime
+  - type: table
+    name: Walkthroughs
+    filters:
+      and:
+        - file.inFolder("Tickets")
+        - file.name.contains("-walkthrough")
+    order:
+      - file.name
+      - repos
+      - pipelines
+  - type: table
+    name: Work Map pages
+    filters:
+      and:
+        - file.inFolder("General AI-Knowledge/Work Map")
+        - not:
+            - file.name.startsWith("_index")
+    order:
+      - file.folder
+      - file.name
+      - repos
+      - pipelines
+  - type: table
+    name: Runbooks
+    filters:
+      and:
+        - file.inFolder("General Human Knowledge/Repo Workflows")
+        - not:
+            - file.name.startsWith("_index")
+    order:
+      - file.name
+      - repos
+  - type: table
+    name: Knowledge notes
+    filters:
+      or:
+        - file.path.contains("/AI-Knowledge/")
+        - and:
+            - file.inFolder("General AI-Knowledge")
+            - not:
+                - file.inFolder("General AI-Knowledge/Work Map")
+                - file.inFolder("General AI-Knowledge/Skills")
+    order:
+      - file.folder
+      - file.name
+      - repos
+      - pipelines

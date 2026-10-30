@@ -56,6 +56,7 @@ text; a pipeline page's Identity card. Classify each finding:
 |---|---|---|
 | Links | broken link or `#anchor`, orphan note, unmapped ticket, missing index line | you |
 | Ticket header | stale PR state, missing Context link, missing walkthrough link | you |
+| Frontmatter | `check-work-map.py` `FRONTMATTER_*`, `UNKNOWN_REPO`, `UNKNOWN_PIPELINE`: no `repos`, a value with no page, a ticket whose `repos` differs from its Repos list (§9.2) | you for walkthroughs, repo cards, pipeline pages and runbooks; a ticket `.md` through `ticket-scribe`, which the user or orchestrator runs per ticket (each change needs its own Session Log entry). Values come from the record (header Repos list, a page's own file name), never a guess |
 | Close-out | merged/deployed but Current State not closed | the user runs `ticket-closer` |
 | Stale fact | `Last reviewed` past its age, a contradicted or `TODO` fact | `doc-writer` (check, then refresh) |
 | Duplicate owner | two documents owning one fact | `doc-writer` (merge + "Moved →" stub) |

@@ -35,7 +35,7 @@ remains authoritative. No qualifying promotion is a valid result.
 	leave the ticket-index tombstone in canonical form:
 	`- <file>.md (promoted -> General AI-Knowledge/<Topic>)`. After a rename or
 	promotion, repair backlinks (Work Map entity pages, other notes, ticket
-	Context links) and the root indexes so no link or tombstone dangles.
+	Context links) and the root indexes so no link or tombstone dangles. A promoted note keeps its `repos` / `pipelines` frontmatter unchanged (CONSTITUTION §8).
 5. Keep Work Map entries as source-backed associations, not copied notes or
 	inferred data lineage. If the approved artifact is a human repo workflow,
 	route it through `doc-writer` to its living reference under

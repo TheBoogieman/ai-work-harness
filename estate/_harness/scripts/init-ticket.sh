@@ -9,6 +9,28 @@ init_fail() {
   exit 1
 }
 
+# ticket_heading — print a ticket record's "# KEY" heading line: its first line or, when the record
+# opens with a YAML frontmatter block (Obsidian properties: a "---" line, the properties, a closing
+# "---"), the first line after that block. Without the skip, a record with frontmatter shows "---"
+# as its heading, so the resume preview refuses it and the pending duplicate scan misses it. Only
+# the "---" lines are compared with a trailing carriage return removed; the heading itself is
+# printed exactly as the old single-line read returned it. An unclosed block prints nothing.
+ticket_heading() {  # $1 = record path
+  local line first=1 inside=0
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    if (( first )); then
+      first=0
+      if [[ "${line%$'\r'}" == '---' ]]; then inside=1; continue; fi
+    elif (( inside )); then
+      if [[ "${line%$'\r'}" == '---' ]]; then inside=0; fi
+      continue
+    fi
+    printf '%s' "$line"
+    return 0
+  done < "$1"
+  return 0
+}
+
 init_usage() {
   printf '%s\n' 'Usage: bash init-ticket.sh [--root PATH] --template PATH (--identity BOARD-123 | --pending) [--dry-run] [--resume PATH]' \
     '--resume requires --identity and --dry-run; it only previews pending completion.'
@@ -118,7 +140,7 @@ if [[ -n "$resume_arg" ]]; then
   [[ -f "$resume/$resume_primary" && ! -L "$resume/$resume_primary" ]] \
     || init_fail "Missing or symlink primary pending markdown: $resume/$resume_primary"
   heading=''
-  IFS= read -r heading < "$resume/$resume_primary" || true
+  heading=$(ticket_heading "$resume/$resume_primary") || heading=''
   [[ "$heading" == "# $identity" || "$heading" == "# $identity "* || "$heading" == "# $identity"$'\t'* ]] \
     || init_fail "Primary pending heading must match exact identity: $identity"
 fi
@@ -149,7 +171,7 @@ for existing in "$tickets"/*; do
     record="$existing/$existing_name.md"
     if [[ -f "$record" && ! -L "$record" ]]; then
       heading=''
-      IFS= read -r heading < "$record" || true
+      heading=$(ticket_heading "$record") || heading=''
       if [[ "$heading" == "# $identity" || "$heading" == "# $identity "* || "$heading" == "# $identity"$'\t'* ]]; then
         duplicates+=("$existing")
       fi

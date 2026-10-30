@@ -81,7 +81,9 @@ deploy runs, multi-file edits — goes in an implementer prompt.
 - Invoke `ticket-scribe` at each completed milestone (a merged change, a
   deployment, a settled finding) with the component, columns and logic changed,
   validation outcome, links and local timestamp; it refreshes Current State with
-  the entry. Header Repos/Branches/PRs stay current.
+  the entry. Header Repos/Branches/PRs stay current, and the frontmatter `repos` /
+  `pipelines` with them (§4.3): hand the scribe the new values when a repo or
+  pipeline joins the ticket, or the whole block when the ticket has none.
 - `check-scribe` only for a result that passes §4.2; `knowledge-keeper` only for
   a named candidate with its six §7.1 answers. Zero capture is normal.
 - Maintain the ticket's lines on its Work Map pipeline and repo pages (§9.1). Ask

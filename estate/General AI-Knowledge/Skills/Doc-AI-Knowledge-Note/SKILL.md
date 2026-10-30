@@ -12,6 +12,9 @@ the Durable Knowledge Gate (CONSTITUTION §7.1).
 
 **Before writing:** read the index. If a note owns the topic, update it; never create `topic-2.md`.
 
+**Frontmatter (optional, CONSTITUTION §9.2):** a note about specific repos or pipelines may open with `repos` /
+`pipelines` lists above its `# <Topic>` line; they are checked when present and kept on promotion.
+
 **Shape — a retrieval card, 150–400 words, compress before 500:**
 
 ```markdown
@@ -33,4 +36,4 @@ Check each named tool exists before relying on it; if it is absent, degrade grac
 
 - `bash _harness/scripts/check-ticket-log.sh` — confirms the index and folder still agree after the write.
 
-Last reviewed: 2026-10-20
+Last reviewed: 2026-10-30

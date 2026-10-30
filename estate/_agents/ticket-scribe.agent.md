@@ -24,7 +24,10 @@ machine time (the same clock as `date +%Y%m%d%H%M%S`), never UTC unless the
 machine is on UTC — bullets, past tense, factual — AND overwrite Current State (short Now / Next / Blocked bullets, reality as of now;
 a close-out writes Now exactly as `- Now: Closed — <outcome, date, status source>`,
 which is the form the sweep and inventory read as closed),
-plus the Repos/Branches/PRs header sections if they changed. These are ONE
+plus the Repos/Branches/PRs header sections if they changed, and the frontmatter
+`repos` / `pipelines` lists with them (CONSTITUTION §4.3: `repos` names the same
+repos as the Repos section; use only values the parent gives or the header shows,
+`[]` when unknown; add the block if the file has none). These are ONE
 atomic step; never do one without the others. Update Changes Made only when the
 implementation changed; keep one settled summary per component, not a chronology.
 Never rewrite older Session Log entries. Never

@@ -10,6 +10,8 @@ Triggers: repo workflow, runbook, delivery guide, how to deploy this repo, corre
 **Destination:** the existing owner for the repo (`Repo Workflows/<date>-<repo>.md`); create one only when no
 file owns the repo. Register a new runbook in `Repo Workflows/_index.md` and
 note every correction there so it is visible, then make sure the repo card in `Work Map/Repos/<repo>.md` links it.
+**Frontmatter (CONSTITUTION §9.2):** the runbook opens with `repos` naming the repo card it delivers into, in a
+block above its first line (`---`, `repos:`, `  - <repo>`, `---`). No YAML comments.
 
 **Shape (match the existing runbooks):** what the repo does · why it is separate · what "finished" looks like ·
 how a change travels (diagram) · Step 1 pick up the work · Step 2 build and test locally · Step 3 build the
@@ -36,4 +38,4 @@ tests, CI, security and release checks still apply. Tool absence is not a passin
 - `git -C <repo> show origin/<default>:.github/workflows/<file>` — the real CI and deploy entry points.
 - `gh workflow list --repo <owner/repo>` / `gh workflow view <name>` — workflow names and inputs (read-only).
 
-Last reviewed: 2026-10-20
+Last reviewed: 2026-10-30

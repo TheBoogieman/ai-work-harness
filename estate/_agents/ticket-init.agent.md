@@ -87,7 +87,9 @@ or retain credentials in chat; let the user complete authentication privately.
   template copy, not new evidence or learning content.
 7. **Fill known content.** Use the helper's returned path. Fill the header,
   Background beginning with **In my words:**, Scope beginning with the
-  **Non-negotiables** checklist, repos, and proposed branches. Seed short
+  **Non-negotiables** checklist, repos (the header Repos list and the same repo
+  card names in the frontmatter `repos` list, CONSTITUTION §4.3; `pipelines` only
+  for pipeline pages a source names, else `[]`), and proposed branches. Seed short
   Now / Next / Blocked bullets with only an essential gotcha or related-work
   pointer. Keep unknowns as `TODO`; do not create findings,
   notebook evidence, or learning notes to make the new folder look complete.

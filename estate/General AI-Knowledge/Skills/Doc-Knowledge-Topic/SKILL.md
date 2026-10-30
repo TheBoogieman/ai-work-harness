@@ -8,7 +8,9 @@ Triggers: GAK note, general knowledge, topic note, how-to, tool setup note, tech
 ## CRAFT GUIDANCE
 **Kind:** living reference. **Destination:** `General AI-Knowledge/<Topic>/<Topic>.md` (one folder per topic,
 file named after the folder), with one line in `General AI-Knowledge/_index.md` written as a read-before
-trigger. Pipelines and repos are NOT topics: use Doc-Pipeline-Home or the repo card instead.
+trigger. Pipelines and repos are NOT topics: use Doc-Pipeline-Home or the repo card instead. A topic about
+specific repos or pipelines may open with `repos` / `pipelines` frontmatter (CONSTITUTION §8, §9.2); it is
+checked when present. No YAML comments.
 
 **Shape:** `Last reviewed: YYYY-MM-DD (<what was checked>)` · Purpose (one paragraph; read-before trigger) ·
 the technique or facts in short sections · exact commands with placeholders · a worked **Example** · Gotchas ·
@@ -28,4 +30,4 @@ Check each named tool exists before relying on it; if it is absent, degrade grac
 
 - `python3 _harness/scripts/check-work-map.py` — confirms the new note is reachable from its root index.
 
-Last reviewed: 2026-10-20
+Last reviewed: 2026-10-30

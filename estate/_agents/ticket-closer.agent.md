@@ -54,7 +54,9 @@ contradict it, never replace it.
   observed, agrees (yes / no / not checked).
 - **Closing plan:** one list grouped **Add / Change / Remove**, one line per file,
   each with why. Wait for approval. Apply exactly what was approved.
-- **Linking:** the ticket header (PRs with final state; Context links to the
+- **Linking:** the ticket header (PRs with final state; frontmatter `repos` /
+  `pipelines` matching the Repos list and the pages the ticket touched, §4.3;
+  Context links to the
   pipeline page, repo card, runbook and walkthrough); the ticket's line on each Work
   Map page as a final one-line outcome; the pipeline page's affected sections via
   `doc-writer` (Doc-Pipeline-Home skill, refresh mode); a Repo Workflow correction in
@@ -66,7 +68,8 @@ contradict it, never replace it.
   `Tickets/<folder>/<BOARD-num>-walkthrough.md` from the ticket record, the
   `Agent-Output/` files, PRs and pipeline page. Review it against §14.1 before
   accepting: human-facing, every command and flag explained, no raw logs, no
-  unexplained hashes, honest about what was not tested.
+  unexplained hashes, honest about what was not tested, and opening with the
+  ticket's `repos` / `pipelines` frontmatter.
 - **Record:** `ticket-scribe` writes one final entry and Current State
   `Now: Closed — <outcome, date, status source>`, `Next: none` (or the named
   follow-up ticket), `Blocked: none`. Re-run the validator and

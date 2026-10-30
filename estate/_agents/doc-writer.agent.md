@@ -62,7 +62,9 @@ on a page that change already edits, is fixed in the same write and reported
 **old → new** with its source in your return (§15 step 6); a finding on any other
 page is returned as a proposal, not written. Draft-only targets (PR description, README, tracker update) go to
 chat unless the user asks for a file. After writing, update the indexes the skill
-names, keep Work Map links valid, and run `python3 _harness/scripts/check-work-map.py`.
+names, keep Work Map links valid and the target's `repos` / `pipelines`
+frontmatter filled as its skill says (CONSTITUTION §9.2; never guess a value, use
+`[]` when unknown), and run `python3 _harness/scripts/check-work-map.py`.
 
 Retrospectives and dated audits are append-only and never yours to edit. Return the
 paths changed, the facts left `TODO`, and anything that contradicted an existing

@@ -18,6 +18,19 @@ AI agents do the clerical work (logging, capturing, compacting) so the
 expensive model — and you — only do the thinking. Nothing self-heals, nothing
 phones home, and one markdown file is the law.
 
+## Not only for data engineering
+
+The harness grew out of one person's individual-contributor workflow as a data
+engineer, which is why its examples talk about pipelines, warehouses and dbt.
+None of those tools is a dependency, and the data-flavoured conventions
+(pipeline pages, the SQL skill, design workbooks) are optional, so the harness
+can be customised for any project and any discipline. To start customising,
+change the ticket naming scheme
+([constitution §20](estate/CONSTITUTION.md#20-using-your-own-ticket-naming-scheme)),
+swap the craft modules in [Skills](estate/General%20AI-Knowledge/Skills/_index.md),
+and write [Work Map](estate/General%20AI-Knowledge/Work%20Map/_index.md) pages for
+your own repos and systems.
+
 ## Setup
 
 Installing takes two steps: prove the machinery on your own machine, then lay

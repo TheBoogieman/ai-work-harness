@@ -210,7 +210,8 @@ Checked in Obsidian 1.14.5 (2026-10-30): a `[repos:<repo>]` search or graph grou
 lists; grouping a Base by a list gives one group per exact list; a quoted wiki-link in a property
 (`"[[page]]"`) draws a graph edge and a backlink, but `repos` and `pipelines` hold plain names, which is what
 `check-work-map.py` checks; an edit in the Properties panel rewrites flow lists to block form
-(`check-work-map.py` reads both); an unquoted `: ` in any value hides the whole block from Obsidian.
+(`check-work-map.py` reads both); an unquoted `: ` in any value hides the whole block from Obsidian,
+and `check-work-map.py` reports it as `FRONTMATTER_MALFORMED`.
 
 For a focused graph, filter with
 `path:Tickets OR path:"General AI-Knowledge/Work Map"`. Open a repo or pipeline
@@ -224,7 +225,8 @@ walkthroughs, broken `#anchors`, pipeline-page gaps) and the map checker, writes
 dated report under `General Human Knowledge/Audits/` recording `Work commit audited: <sha>`, then
 proposes fixes batch by batch — each stating what is fixed, added, changed or
 removed — and applies only what you approve. `harness-status.sh` warns when the
-latest audit is older than `HARNESS_AUDIT_STALE_DAYS` (default 30).
+latest audit is older than `HARNESS_AUDIT_STALE_DAYS` (default 30). A run limited to some
+buckets titles its report "… bucket only" and does not reset that clock.
 
 The same rules bind a hand audit: label each claim as observed from a source
 (code, CI, a tracker) or only recorded in a note, and fix the owner rather than

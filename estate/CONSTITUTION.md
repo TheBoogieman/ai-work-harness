@@ -625,7 +625,7 @@ One file per entity, no folders:
   (`[a, b]`), a closing `---`, then the
   first line of the document; no YAML comments, because other scripts read a `#`
   line as a heading; a value containing `: ` is quoted, or Obsidian ignores the
-  whole block. There is no `type`, `status` or `reviewed` property: the path
+  whole block (`check-work-map.py` reports an unquoted one as malformed). There is no `type`, `status` or `reviewed` property: the path
   already says what a document is, and Obsidian writes view edits back into the
   file, which would change a ticket without a Session Log entry. `check-work-map.py`
   reports a missing, unknown, mismatched or malformed block as a NOTE, so files
@@ -910,7 +910,9 @@ close-out.` A retrospective walkthrough does not close the ticket.
 Run by `estate-auditor`, started by the human or the `orchestrator`. `harness-status`
 warns when the
 newest `YYYYMMDD-estate-audit*.md` report in `General Human Knowledge/Audits/` is older than
-`HARNESS_AUDIT_STALE_DAYS` (default 30); hooks never start the audit.
+`HARNESS_AUDIT_STALE_DAYS` (default 30); hooks never start the audit. A run limited to some
+buckets titles its report `# Estate audit <date> — <Bucket> bucket only`; such a report is not a
+full audit, so `harness-status` and `audit-inventory.py` skip it when dating the last audit.
 
 1. **Scope.** Full, or incremental: everything changed since the Work commit recorded
    in the last audit report (`git log --name-only <commit>..HEAD`), plus anything
@@ -1042,7 +1044,8 @@ It reports, with `OK` / `WARN` / `FAIL` prefixes:
   date at all — each names the knowledge-curator as the next act (#72).
 - Audit age: a WARN when the newest `YYYYMMDD-estate-audit*.md` report in
   `General Human Knowledge/Audits/` is older than `HARNESS_AUDIT_STALE_DAYS`
-  (default 30), naming `estate-auditor` as the next act (§15).
+  (default 30), naming `estate-auditor` as the next act (§15). A report titled
+  "bucket only" does not count.
 - Liveness: the age of the last commit in the Work local git (the repository
   is alive — recency only: the installer's commit counts, so this is not
   evidence that your work is committed; the uncommitted-changes WARN above is),

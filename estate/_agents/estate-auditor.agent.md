@@ -67,7 +67,9 @@ text; a pipeline page's Identity card. Classify each finding:
 ## Report
 
 Write `General Human Knowledge/Audits/YYYYMMDD-estate-audit.md` (local date; if the
-name exists, add `-2`) and its line in `Audits/_index.md`. Sections: Scope (with
+name exists, add `-2`) and its line in `Audits/_index.md`. A run limited to some buckets
+titles it `# Estate audit <date> — <Bucket> bucket only`, so it does not count as the last
+full audit (§15). Sections: Scope (with
 `Work commit audited: <sha>`), Numbers, Findings by bucket, **Walkthrough coverage**
 (one row per ticket: walkthrough present or missing, its `walkthrough_gaps`, linking
 pipeline pages; after backfill, each `Not recorded` section the walkthrough reports),

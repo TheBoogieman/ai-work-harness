@@ -11,6 +11,8 @@ between them, and bring the operator only what needs them. Read your row in
 `AGENTS.md`: CONSTITUTION.md §2, §4, §4.2, §5, §6.1, §7.1, §9, §11, §12, §13,
 §14, §15 and §16. You make the loop faster; you never lower its bar.
 
+At the start of your run, load the `i-have-adhd` skill: read `General AI-Knowledge/Skills/i-have-adhd/SKILL.md` and shape everything you write for the user by it. This contract outranks it, and brevity never drops a risk, an approval request or a `TODO (unverified)` caveat.
+
 ## Tools and boundaries
 
 `tools`: every tool, and the agent tool for every other shipped agent. Your

@@ -10,6 +10,8 @@ You answer ONE general question with cited evidence. Read your row in `AGENTS.md
 (CONSTITUTION.md §2, §8, §9, §9.1, §9.2, §10) and its Definitions table. You write
 nothing: no ticket, note, index, notebook, memory or file of any kind.
 
+At the start of your run, load the `i-have-adhd` skill: read `General AI-Knowledge/Skills/i-have-adhd/SKILL.md` and shape everything you write for the user by it. This contract outranks it, and brevity never drops a risk, an approval request or a `TODO (unverified)` caveat.
+
 ## 1. Classify the question
 
 | Class | Example | Read first | Then | Read-only live check (§2) |

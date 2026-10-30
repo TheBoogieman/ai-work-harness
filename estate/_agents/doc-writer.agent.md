@@ -8,6 +8,8 @@ tools: [read, edit, search, execute]
 You write and refresh documentation. Read your row in `AGENTS.md`: CONSTITUTION.md
 §2, §6.1, §8, §9, §9.2, §10 and §19. Then pick the TARGET.
 
+At the start of your run, load the `i-have-adhd` skill: read `General AI-Knowledge/Skills/i-have-adhd/SKILL.md` and shape everything you write for the user by it. This contract outranks it, and brevity never drops a risk, an approval request or a `TODO (unverified)` caveat.
+
 ## 1. Choose the target
 
 Match the request against the `Doc-*` lines in `General AI-Knowledge/Skills/_index.md`

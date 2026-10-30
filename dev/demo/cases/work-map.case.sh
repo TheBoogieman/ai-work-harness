@@ -23,6 +23,12 @@ GAK = "General AI-Knowledge"
 GHK = "General Human Knowledge"
 MAP = f"{GAK}/Work Map"
 TICKET = "Tickets/custom-case/custom-case.md"
+WALKTHROUGH = "Tickets/custom-case/TASK-1-walkthrough.md"
+# The repos property every fixture document carries, in the block-list form Obsidian writes. The
+# fixture ticket's header lists the same repo, so the frontmatter checks find nothing to report.
+FM_ORDERS = "---\nrepos:\n  - orders\n---\n"
+TICKET_BODY = "# TASK-1 - Orders\n\nRepos:\n- Work/GitHub/orders\n\n## Current State\n- Now: active.\n"
+CARD_BODY = "[Ticket](../../../Tickets/custom-case/custom-case.md)\n[Knowledge](../../Topic/_index.md)\n"
 
 
 # Ask the platform once whether it can make a REAL symlink. Stock Windows refuses without
@@ -58,13 +64,13 @@ class WorkMapTests(unittest.TestCase):
         self.put(f"{GAK}/_index.md", "[Map](Work%20Map/_index.md)\n")
         self.put(f"{GHK}/_index.md", "[Runbooks](Repo%20Workflows/_index.md)\n")
         self.put(f"{GHK}/Repo Workflows/_index.md", "[Guide](guide.md)\n")
-        self.put(f"{GHK}/Repo Workflows/guide.md", "[Report](../Reports/report.md)\n")
+        self.put(f"{GHK}/Repo Workflows/guide.md", FM_ORDERS + "[Report](../Reports/report.md)\n")
         self.put(f"{GHK}/Reports/report.md", "# Authored report\n")
         self.put(f"{MAP}/_index.md", "[Orders](Repos/orders.md)\n")
-        self.put(f"{MAP}/Repos/orders.md",
+        self.put(f"{MAP}/Repos/orders.md", FM_ORDERS +
                  "[Ticket](../../..//Tickets/custom-case/custom-case.md)\n"
                  "[Knowledge](../../Topic/_index.md)\n")
-        self.put(TICKET, "# TASK-1 - Orders\n\n## Current State\n- Now: active.\n")
+        self.put(TICKET, FM_ORDERS + TICKET_BODY)
         self.put("Tickets/custom-case/support.md", "[Primary](custom-case.md)\n")
         self.put("Tickets/custom-case/AI-Knowledge/_index.md",
                  "- detail.md - local detail - when changing orders\n")
@@ -91,6 +97,10 @@ class WorkMapTests(unittest.TestCase):
 
     def codes(self, report):
         return {finding["code"] for finding in report["findings"]}
+
+    # Paths of every finding with one code, so a test names exactly which documents it expects.
+    def findings_for(self, report, code):
+        return {finding["path"] for finding in report["findings"] if finding["code"] == code}
 
     # Called after every link-free assertion has passed, so a skip never hides a real failure.
     def skip_without_links(self, guard):
@@ -138,7 +148,7 @@ class WorkMapTests(unittest.TestCase):
         self.assertEqual(self.run_check("--strict")[0], 1)
 
     def test_unmapped_primary_not_satisfied_by_index_link(self):
-        self.put(f"{MAP}/Repos/orders.md", "[Knowledge](../../Topic/_index.md)\n")
+        self.put(f"{MAP}/Repos/orders.md", FM_ORDERS + "[Knowledge](../../Topic/_index.md)\n")
         self.put(f"{MAP}/_index.md", "[Orders](Repos/orders.md)\n"
                  "[Ticket](../../../Tickets/custom-case/custom-case.md)\n")
         exit_code, report = self.run_check()
@@ -307,7 +317,7 @@ class WorkMapTests(unittest.TestCase):
             alias.symlink_to(self.root, target_is_directory=True)
         else:
             alias = self.root
-        self.put(f"{MAP}/Repos/orders.md", f"[Ticket](<{alias / TICKET}>)\n"
+        self.put(f"{MAP}/Repos/orders.md", FM_ORDERS + f"[Ticket](<{alias / TICKET}>)\n"
                  "[Knowledge](../../Topic/_index.md)\n")
         self.put(f"{GAK}/Topic/_index.md", "[Note](Note%20One.md)\n"
                  "[Paren](note(1).md \"Title\")\n[Angle](<note two.md>)\n")
@@ -332,6 +342,125 @@ class WorkMapTests(unittest.TestCase):
         self.assertFalse(report["coverage"]["complete"])
         self.skip_without_links("work-map-symlinked-scope")
         self.assertIn("OUTSIDE_ESTATE", self.codes(report))
+
+    # [work-map-frontmatter-forms] Obsidian may save a list in flow form ([a, b]), quote its items,
+    # leave an optional list empty or write CRLF line endings; each is the same list. The fixture's
+    # three documents of a kind that carries repos (ticket, repo card, runbook) are counted as
+    # expected and present. Red on a helper without the frontmatter coverage counts.
+    def test_frontmatter_block_and_flow_lists_are_equivalent(self):
+        _, report = self.run_check()
+        self.assertEqual(report["coverage"]["frontmatter_expected"], 3)
+        self.assertEqual(report["coverage"]["frontmatter_present"], 3)
+        self.put(TICKET, "---\nrepos: [orders]\npipelines: []\n---\n" + TICKET_BODY)
+        self.put(f"{MAP}/Repos/orders.md", "").write_bytes(
+            ("---\nrepos: [\"orders\"]\n---\n" + CARD_BODY).replace("\n", "\r\n").encode("utf-8"))
+        self.put(f"{GHK}/Repo Workflows/guide.md",
+                 "---\nrepos:\n  - 'orders'\npipelines:\n---\n[Report](../Reports/report.md)\n")
+        exit_code, report = self.run_check("--strict")
+        self.assertEqual(exit_code, 0, report["findings"])
+        self.assertEqual(report["coverage"]["frontmatter_present"], 3)
+
+    # [work-map-frontmatter-missing] A ticket, walkthrough, repo card, pipeline page or runbook with
+    # no repos property is a NOTE, never red: legacy records are grandfathered until a backfill. A
+    # knowledge note needs none, and frontmatter holding other keys only still lacks repos.
+    # Red on a helper without FRONTMATTER_MISSING.
+    def test_frontmatter_missing_on_required_kinds(self):
+        self.put(f"{MAP}/_index.md", "[Orders](Repos/orders.md)\n[Load](Pipelines/orders-load.md)\n")
+        self.put(f"{MAP}/Pipelines/orders-load.md", "# Orders load\n")
+        self.put(WALKTHROUGH, "---\naliases: [Walkthrough]\n---\n# TASK-1 walkthrough\n")
+        self.put(TICKET, TICKET_BODY)
+        exit_code, report = self.run_check()
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(self.findings_for(report, "FRONTMATTER_MISSING"),
+                         {TICKET, WALKTHROUGH, f"{MAP}/Pipelines/orders-load.md"})
+        self.assertEqual(report["coverage"]["frontmatter_expected"], 5)
+        self.assertEqual(report["coverage"]["frontmatter_present"], 2)
+        self.assertEqual(self.run_check("--strict")[0], 1)
+
+    # [work-map-frontmatter-unknown] A repos value names a repo card (Work Map/Repos/<value>.md) and a
+    # pipelines value a pipeline page (Work Map/Pipelines/<value>.md), on any scanned document that
+    # carries them; the finding's target is the missing page. A wiki-link or a path is not a page
+    # name, so its finding has no target. Red on a helper without UNKNOWN_REPO and UNKNOWN_PIPELINE.
+    def test_frontmatter_unknown_values(self):
+        self.put(f"{GAK}/Topic/Note One.md", "---\nrepos:\n  - ghost\npipelines: [nightly]\n---\n# Note\n")
+        self.put(f"{GHK}/Repo Workflows/guide.md",
+                 "---\nrepos: [\"[[orders]]\"]\n---\n[Report](../Reports/report.md)\n")
+        _, report = self.run_check()
+        unknown = sorted((item["code"], item["path"], item.get("target", "")) for item in report["findings"]
+                         if item["code"] in {"UNKNOWN_REPO", "UNKNOWN_PIPELINE"})
+        self.assertEqual(unknown, [
+            ("UNKNOWN_PIPELINE", f"{GAK}/Topic/Note One.md", f"{MAP}/Pipelines/nightly.md"),
+            ("UNKNOWN_REPO", f"{GAK}/Topic/Note One.md", f"{MAP}/Repos/ghost.md"),
+            ("UNKNOWN_REPO", f"{GHK}/Repo Workflows/guide.md", "")])
+        self.put(f"{MAP}/_index.md",
+                 "[Orders](Repos/orders.md)\n[Ghost](Repos/ghost.md)\n[Nightly](Pipelines/nightly.md)\n")
+        self.put(f"{MAP}/Repos/ghost.md", "---\nrepos: [ghost]\n---\n# Ghost\n")
+        self.put(f"{MAP}/Pipelines/nightly.md", "---\nrepos: [ghost]\npipelines: [nightly]\n---\n# Nightly\n")
+        self.put(f"{GHK}/Repo Workflows/guide.md", FM_ORDERS + "[Report](../Reports/report.md)\n")
+        exit_code, report = self.run_check("--strict")
+        self.assertEqual(exit_code, 0, report["findings"])
+
+    # [work-map-frontmatter-ticket-match] A ticket's repos equals the GitHub/<repo> entries of its
+    # header Repos list (read from the raw text, so a backticked entry counts; any other entry, such
+    # as the estate itself, is prose). Its walkthrough carries at least the ticket's repos (a shared
+    # walkthrough may cover more). Red on a helper without FRONTMATTER_MISMATCH.
+    def test_frontmatter_ticket_and_walkthrough_match_header(self):
+        header = ("# TASK-1 - Orders\n\nRepos:\n- Work/GitHub/orders\n- `Work/GitHub/billing`\n"
+                  "- Work (the estate records)\n\n## Current State\n- Now: active.\n")
+        self.put(f"{MAP}/_index.md", "[Orders](Repos/orders.md)\n[Billing](Repos/billing.md)\n")
+        self.put(f"{MAP}/Repos/billing.md", "---\nrepos: [billing]\n---\n# Billing\n")
+        self.put(TICKET, FM_ORDERS + header)
+        self.put(WALKTHROUGH, "---\nrepos: []\n---\n# TASK-1 walkthrough\n")
+        _, report = self.run_check()
+        self.assertEqual(self.findings_for(report, "FRONTMATTER_MISMATCH"), {TICKET, WALKTHROUGH})
+        self.put(TICKET, "---\nrepos: [billing, orders]\n---\n" + header)
+        self.put(WALKTHROUGH, "---\nrepos:\n  - orders\n  - billing\n---\n# TASK-1 walkthrough\n")
+        exit_code, report = self.run_check("--strict")
+        self.assertEqual(exit_code, 0, report["findings"])
+
+    # [work-map-frontmatter-entity-self] A repo card lists its own name in repos; a pipeline page lists
+    # its own slug in pipelines (it is that value's owner) beside the repos that host it.
+    # Red on a helper without FRONTMATTER_MISMATCH for entity pages.
+    def test_frontmatter_entity_pages_name_themselves(self):
+        load = f"{MAP}/Pipelines/orders-load.md"
+        self.put(f"{MAP}/_index.md", "[Orders](Repos/orders.md)\n[Load](Pipelines/orders-load.md)\n")
+        self.put(load, "---\nrepos: [orders]\npipelines: []\n---\n# Orders load\n")
+        self.put(f"{MAP}/Repos/orders.md", "---\nrepos: []\n---\n" + CARD_BODY)
+        _, report = self.run_check()
+        self.assertEqual(self.findings_for(report, "FRONTMATTER_MISMATCH"), {f"{MAP}/Repos/orders.md", load})
+        self.put(load, "---\nrepos: [orders]\npipelines: [orders-load]\n---\n# Orders load\n")
+        self.put(f"{MAP}/Repos/orders.md", FM_ORDERS + CARD_BODY)
+        exit_code, report = self.run_check("--strict")
+        self.assertEqual(exit_code, 0, report["findings"])
+
+    # [work-map-frontmatter-malformed] Frontmatter is the plain subset Obsidian writes. No YAML comment
+    # (other scripts read a "# ..." line as a Markdown heading, so a comment could become a ticket's
+    # title), a closed block, list values for repos and pipelines, no repeated key. A "---" further
+    # down a file is a thematic break, not frontmatter.
+    # Red on a helper without FRONTMATTER_COMMENT and FRONTMATTER_MALFORMED.
+    def test_frontmatter_malformed_and_comments(self):
+        self.put(TICKET, "---\n# TODO fill in\nrepos:\n  - orders\n---\n" + TICKET_BODY)
+        _, report = self.run_check()
+        comments = [(item["path"], item["line"]) for item in report["findings"]
+                    if item["code"] == "FRONTMATTER_COMMENT"]
+        self.assertEqual(comments, [(TICKET, 2)])
+        # The comment is not the ticket's title, so the ticket still counts as initialized.
+        self.assertEqual(report["coverage"]["tickets"], 1)
+        self.assertNotIn("UNINITIALIZED_TICKET", self.codes(report))
+        self.put(TICKET, FM_ORDERS + TICKET_BODY)
+        card = f"{MAP}/Repos/orders.md"
+        for broken in ("---\nrepos:\n  - orders\n",                      # never closed
+                       "---\nrepos: orders\n---\n",                      # a single value, not a list
+                       "---\nrepos: [orders\n---\n",                     # flow list never closed
+                       "---\nrepos: [orders]\nrepos: [orders]\n---\n"):  # repeated key
+            self.put(card, broken + CARD_BODY)
+            _, report = self.run_check()
+            self.assertEqual(self.findings_for(report, "FRONTMATTER_MALFORMED"), {card}, broken)
+        self.put(card, FM_ORDERS + CARD_BODY)
+        self.put("Tickets/custom-case/support.md",
+                 "# Support\n\n---\n\nrepos: [ghost]\n[Primary](custom-case.md)\n")
+        exit_code, report = self.run_check("--strict")
+        self.assertEqual(exit_code, 0, report["findings"])
 
 
 unittest.main(verbosity=2)

@@ -83,6 +83,16 @@ UAT differences: <config or behaviour that differs from PROD for a hop this page
 - Ticket history: one line per ticket, newest last, `[<ID>](<relative link to the primary record>) — <final
   outcome in one line>`; link the walkthrough when one exists.
 - Keep the Identity card under about 25 lines; push detail into sections.
+- Layout (readable by a person first; the page is reread far more often than it is written):
+  - `Last reviewed:` is one short line with the newest date (status scripts read it); every review pass goes
+    in a collapsed `> [!info]- Review history (newest first)` callout, one bullet per pass, newest first.
+  - No prose paragraph over about three lines: use bold-labelled bullets (`- **Scope:** …`), or numbered steps
+    when order matters. Every object name (table, view, job, DAG, task, sensor, model, file, path, branch, ref,
+    commit, profile, connection, env var, command) is in backticks.
+  - Table cells stay short; break a long cell with `<br>` and `•`. In the Dependency Chain keep one short row per
+    hop and put the detail in a `**Hop notes**` list under the table (one `**Hop N — <runtime>:**` bullet each).
+  - A `Sources:` longer than two lines becomes a collapsed `> [!quote]- Sources` callout, one bullet per source.
+    Outside Obsidian both callouts render as plain blockquotes, so nothing is hidden.
 - Frontmatter (CONSTITUTION §9.2): `repos` lists every hosting repo by its repo card file name (the same repos
   as the Identity card's "Repos and source paths" row); `pipelines` lists this page's own file name without
   `.md`. No YAML comments; `check-work-map.py` reports a page whose block is missing or wrong.

@@ -234,7 +234,10 @@ Re-running `install.sh` serves three different intents, each with its own home:
   source checkout, keeping your own content. A three-way merge does this safely: for each file,
   `git merge-file <your copy> <source at the commit you last levelled to> <source now>` applies
   only the upstream change and stops on a real conflict; compare the result with anything this
-  upgrade moved to `_retired/`. The seven agent contracts `ticket-init`, `ticket-scribe`,
+  upgrade moved to `_retired/`. If your estate converted its section links to the Obsidian form
+  (`anchor-style.py --to obsidian`), convert the two source copies the same way before merging
+  (`python3 _harness/scripts/anchor-style.py --to obsidian <dir holding both copies>`): the source
+  writes GitHub-style links, so otherwise nearly every line carrying a section link conflicts. The seven agent contracts `ticket-init`, `ticket-scribe`,
   `doc-writer`, `planner`, `ticket-closer`, `estate-auditor` and `knowledge-curator` (they carry
   your model pins); `AGENTS.md` (the *Stale* definition); `CONSTITUTION.md` (§2, §4.3, §6.1, §8,
   §9.1, §9.2, §14.1, §15, and the audit-age line); your template ticket (add the frontmatter block above its first line,

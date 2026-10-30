@@ -229,11 +229,16 @@ Re-running `install.sh` serves three different intents, each with its own home:
   source in there to upgrade from, and it prints the command that works.
 
   **Upgrading to `repos` / `pipelines` frontmatter (#331).** The upgrade brings the new
-  `check-work-map.py`, `init-ticket.sh` and agent contracts. The files below are records or
-  carry your settings, so it keeps your copies: merge each by hand from the source checkout,
-  comparing it with your copy line by line (and with anything this upgrade moved to
-  `_retired/`), keeping your own content. `CONSTITUTION.md` (§2, §4.3, §6.1, §8, §9.1, §9.2, §14.1,
-  §15); your template ticket (add the frontmatter block above its first line); the five skills
+  `check-work-map.py`, `init-ticket.sh`, `harness-status.sh` and `audit-inventory.py`. The files
+  below are records or carry your settings, so it keeps your copies: merge each by hand from the
+  source checkout, keeping your own content. A three-way merge does this safely: for each file,
+  `git merge-file <your copy> <source at the commit you last levelled to> <source now>` applies
+  only the upstream change and stops on a real conflict; compare the result with anything this
+  upgrade moved to `_retired/`. The seven agent contracts `ticket-init`, `ticket-scribe`,
+  `doc-writer`, `planner`, `ticket-closer`, `estate-auditor` and `knowledge-curator` (they carry
+  your model pins); `AGENTS.md` (the *Stale* definition); `CONSTITUTION.md` (§2, §4.3, §6.1, §8,
+  §9.1, §9.2, §14.1, §15, and the audit-age line); your template ticket (add the frontmatter block above its first line,
+  then one Session Log line through `ticket-scribe`, or the validator fails it); the five skills
   `Doc-Ticket-Walkthrough`, `Doc-Pipeline-Home`, `Doc-Repo-Workflow`, `Doc-Knowledge-Topic` and
   `Doc-AI-Knowledge-Note` under `General AI-Knowledge/Skills/`; `General AI-Knowledge/Work Map/_index.md`
   (Page Shape); `General Human Knowledge/Harness Guide.md` (the Obsidian section, the

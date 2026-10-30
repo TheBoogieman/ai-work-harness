@@ -296,9 +296,20 @@ def document_records(root: Path, today: dt.date, stale_days: int) -> list[dict]:
     return records
 
 
+def is_bucket_only(path: Path) -> bool:
+    """True when a report's first "# " heading says "bucket only": a run limited to some buckets."""
+    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        if line.startswith("# "):
+            return "bucket only" in line.lower()
+    return False
+
+
 def audit_state(root: Path) -> dict:
     # The §15 report name only; other dated notes in Audits/ (e.g. handoffs) are not audits.
     audits = sorted((root / "General Human Knowledge" / "Audits").glob("[0-9]" * 8 + "-estate-audit*.md"))
+    # A report titled "… bucket only" covered some buckets, not the estate, so it is not the baseline
+    # for "changed since the last audit"; harness-status skips it the same way (#331).
+    audits = [path for path in audits if not is_bucket_only(path)]
     state = {"latest_report": None, "recorded_commit": None, "changed_since": None}
     if not audits:
         return state

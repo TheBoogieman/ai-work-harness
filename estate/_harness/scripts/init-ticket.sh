@@ -15,14 +15,18 @@ init_fail() {
 # as its heading, so the resume preview refuses it and the pending duplicate scan misses it. Only
 # the "---" lines are compared with a trailing carriage return removed; the heading itself is
 # printed exactly as the old single-line read returned it. An unclosed block prints nothing.
+# Blank lines between the closing "---" and the heading are skipped too: a backfill can leave one,
+# and reading it as the heading would refuse the record just as reading "---" did (#331).
 ticket_heading() {  # $1 = record path
-  local line first=1 inside=0
+  local line first=1 inside=0 after=0
   while IFS= read -r line || [[ -n "$line" ]]; do
     if (( first )); then
       first=0
       if [[ "${line%$'\r'}" == '---' ]]; then inside=1; continue; fi
     elif (( inside )); then
-      if [[ "${line%$'\r'}" == '---' ]]; then inside=0; fi
+      if [[ "${line%$'\r'}" == '---' ]]; then inside=0; after=1; fi
+      continue
+    elif (( after )) && [[ -z "${line%$'\r'}" ]]; then
       continue
     fi
     printf '%s' "$line"

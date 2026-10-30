@@ -439,10 +439,14 @@ sweep_knowledge() {
 # audit; past HARNESS_AUDIT_STALE_DAYS it is a WARN that names estate-auditor as the next act. Like
 # the knowledge sweep this is derived from the report's own dated name, so it prints directly and
 # never touches the #71 aging state. No report yet is only a NOTE: a fresh estate has nothing to audit.
+# A run limited to some buckets writes the same report name but titles it "… bucket only"; it is
+# not a full audit, so it is skipped here and cannot restart the clock (#331).
 check_audit_age() {
   local dir="$WORK_ROOT/General Human Knowledge/Audits" newest="" f base d age
   for f in "$dir"/[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-estate-audit*.md; do
     [[ -f "$f" ]] || continue
+    # The second grep reads its whole input (no -q), so pipefail never sees an early-exit SIGPIPE.
+    if grep -m1 '^# ' "$f" | grep -i 'bucket only' >/dev/null; then continue; fi
     base=$(basename "$f"); d="${base:0:8}"
     [[ -z "$newest" || "$d" > "$newest" ]] && newest="$d"
   done

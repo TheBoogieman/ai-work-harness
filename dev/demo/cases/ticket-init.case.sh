@@ -415,8 +415,19 @@ ti_frontmatter() {
     result=1
   fi
   rm -rf "$resume"
+  # A blank line between the closing "---" and the heading is still the same record: a backfill can
+  # leave one, and the resume preview must find the heading below it rather than read the blank line.
+  mkdir "$resume" || return 1
+  printf -- '---\nrepos: []\n---\n\n# PROJ-301 - supplied identity\n' > "$resume/${resume##*/}.md"
+  touch "$resume/.ticket-pending" || return 1
+  if ti_assert init-frontmatter-blank-line ti_run --identity PROJ-301 --resume "$resume" --dry-run; then
+    ti_assert init-frontmatter-blank-line-status grep -q '^PREVIEW:' <<< "$ti_output" || result=1
+  else
+    result=1
+  fi
+  rm -rf "$resume"
   if (( result )); then return 1; fi
-  printf '  ok [init-frontmatter-heading] the duplicate scan and resume preview read the heading after frontmatter\n'
+  printf '  ok [init-frontmatter-heading] the duplicate scan and resume preview read the heading after frontmatter, past a blank line\n'
 }
 
 # Explicit teardown preserves the runner's sole EXIT trap, including on expected red runs.

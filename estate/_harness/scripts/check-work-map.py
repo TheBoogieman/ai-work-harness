@@ -177,7 +177,7 @@ def frontmatter(raw: str) -> tuple[dict | None, list[tuple[str, int]]]:
     recorded as present but not read, together with its indented or "- " continuation lines.
     problems holds (code, line) pairs: FRONTMATTER_COMMENT for a "#" comment line, and
     FRONTMATTER_MALFORMED for an unclosed block, a repeated key, a repos or pipelines value that
-    is not a list, or any other line.
+    is not a list, an unquoted value holding ": ", or any other line.
     """
     lines = raw.lstrip("﻿").split("\n")
     if lines[0].rstrip("\r") != "---":
@@ -202,6 +202,11 @@ def frontmatter(raw: str) -> tuple[dict | None, list[tuple[str, int]]]:
             if name in properties:
                 return None, problems + [("FRONTMATTER_MALFORMED", number)]
             current, block = name, False
+            # An unquoted value holding ": " is not a plain scalar in YAML, and Obsidian then drops
+            # the whole block (checked in Obsidian 1.14.5), so every property here would silently
+            # vanish from search, graph groups and Bases. A quoted value is fine (#331).
+            if value[:1] not in ("\"", "'") and ": " in value:
+                return None, problems + [("FRONTMATTER_MALFORMED", number)]
             if name not in FRONTMATTER_KEYS:
                 properties[name] = None
             elif not value:

@@ -34,6 +34,13 @@ list; a walkthrough includes its ticket's repos; a repo card lists itself. A
 missing property is a NOTE like every finding here, so legacy records stay
 grandfathered until a backfill. YAML comments are refused because other scripts
 read a "#" line as a Markdown heading.
+
+External links (#368): a web address left in prose (BARE_URL) and a pull request
+named by number without a link (UNLINKED_PR) are each one NOTE per file with a
+count, at the first occurrence. Link labels and destinations, code, comments,
+frontmatter, frozen earlier audits and every Session Log entry but the newest
+are ignored. An autolink (<https://...>) still counts as bare: the rule asks for
+a label. Nothing else external is matched; that is the writing agents' job.
 """
 
 from __future__ import annotations
@@ -157,6 +164,57 @@ def routes(text: str, index: bool) -> list[tuple[int, str, bool]]:
             else:
                 found.append((line, entry.group(1), False))
     return sorted(set(found))
+
+
+# External-link patterns (#368). Deliberately dumb: a web address left in prose, and a pull request
+# named by number but not linked. Everything else external (tracker keys, comments, wiki pages,
+# scheduler runs) is left to the writing agents, because no cheap pattern tells a linkable tracker
+# key from a ticket folder name or a heading.
+BARE_URL_RE = re.compile(r"(?i)\bhttps?://[^\s<>)\]]+")
+UNLINKED_PR_RE = re.compile(r"(?i)\b(?:PR|pull request)\s?#\d+\b")
+LINK_MESSAGES = {
+    "BARE_URL": "{n} bare web address(es); write each as a masked link, [what it is](address) (CONSTITUTION §6.1).",
+    "UNLINKED_PR": "{n} pull request(s) named by number but not linked; write [PR #N](address) (CONSTITUTION §6.1).",
+}
+
+
+def without_links(text: str) -> str:
+    """Blank every link span (label and destination) and every autolink, keeping offsets, so what
+    is left is the prose a reader sees unlinked. Reuses destination() so a destination with
+    parentheses is spanned the same way the route reader spans it."""
+    masked = list(text)
+    for match in re.finditer(r"^ {0,3}\[[^\]\n]+\]:[ \t]*", text, re.M):
+        _, end = destination(text, match.end())
+        line_end = text.find("\n", end)
+        end = len(text) if line_end < 0 else line_end
+        masked[match.start():end] = blank(text[match.start():end])
+    # Inline links: [label](destination "title"); the label is blanked too, so "[PR #9](url)" is
+    # linked and never counted. Reference-style uses, [label][ref], are blanked the same way.
+    for match in re.finditer(r"(?<!\\)\[(?:\\.|[^\]\\\n])*\]\(", text):
+        _, end = destination(text, match.end())
+        close = re.match(r'''\s*(?:"[^"\n]*"|'[^'\n]*'|\([^\n]*?\))?\s*\)''', text[end:])
+        if close:
+            stop = end + close.end()
+            masked[match.start():stop] = blank(text[match.start():stop])
+    for match in re.finditer(r"(?<!\\)\[(?:\\.|[^\]\\\n])*\]\[[^\]\n]*\]", text):
+        masked[match.start():match.end()] = blank(text[match.start():match.end()])
+    # An autolink <https://...> is clickable but shows the raw address, so it is NOT blanked: the
+    # rule asks for a masked label.
+    return "".join(masked)
+
+
+def history_blanked(text: str) -> str:
+    """Blank every Session Log entry except the newest. Older entries are history that is never
+    rewritten (CONSTITUTION §6), so a note about them could never be fixed; the newest entry is
+    still checked because it was just written."""
+    log = re.search(r"^##[ \t]*Session[ \t]*Log[ \t]*#*[ \t]*$", text, re.M)
+    if not log:
+        return text
+    entries = list(re.finditer(r"^## \d{14} - ", text[log.end():], re.M))
+    if len(entries) < 2:
+        return text
+    start, stop = log.end(), log.end() + entries[-1].start()
+    return text[:start] + blank(text[start:stop]) + text[stop:]
 
 
 def plain_item(text: str) -> str:
@@ -487,9 +545,25 @@ class Observer:
             self.note("UNAVAILABLE", source, "Local target cannot be resolved; not followed.", line)
             return None
 
+    def check_external_links(self):
+        """Note bare web addresses and unlinked PR numbers (#368): one NOTE per file and pattern,
+        at the first occurrence's line, with a count. Frozen earlier audits are history and skipped."""
+        for path in sorted(self.documents):
+            if path in self.frozen_audits:
+                continue
+            # documents[] already has code and comments blanked; frontmatter and older Session Log
+            # entries are blanked here, then links, so only unlinked prose remains.
+            text = without_links(history_blanked(without_frontmatter(self.documents[path])))
+            for code, pattern in (("BARE_URL", BARE_URL_RE), ("UNLINKED_PR", UNLINKED_PR_RE)):
+                hits = list(pattern.finditer(text))
+                if hits:
+                    self.note(code, path, LINK_MESSAGES[code].format(n=len(hits)),
+                              text.count("\n", 0, hits[0].start()) + 1)
+
     def report(self) -> dict:
         self.collect()
         self.check_frontmatter()
+        self.check_external_links()
         for path, text in sorted(self.documents.items()):
             self.edges[path] = set()
             for line, target, estate_relative in routes(text, path.name == "_index.md"):

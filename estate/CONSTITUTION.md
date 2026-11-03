@@ -85,7 +85,7 @@ Ticket folders live **outside** the VS Code multi-repo workspace (`GitHub/<your>
 
 `General Human Knowledge/` mirrors `General AI-Knowledge/` the other way round: GAK is what the machinery **reads**, GHK is what it **writes for you** — human-facing outputs (`Retrospectives/` from the `retrospective` agent, `Audits/` from `estate-auditor`, `Repo Workflows/` and the `Harness Guide.md`). Two rules govern it:
 
-- **HISTORY IS APPEND-ONLY; REFERENCES ARE LIVING.** Dated deliverables, including `Retrospectives/` and `Audits/` (estate audits, §15), are timestamped and never rewritten. A later retrospective or audit is a new file; only `Audits/_index.md` and `Retrospectives/_index.md` are living. `Repo Workflows/`, `Harness Guide.md`, `General AI-Knowledge/Work Map/` and the discovery `_index.md` files are living references: correct them in place when their sources change, and note substantive runbook corrections in their index. New folders are append-only unless explicitly declared living here. Agents may read human-facing runbooks; the audience label is not an access restriction.
+- **HISTORY IS APPEND-ONLY; REFERENCES ARE LIVING.** Dated deliverables, including `Retrospectives/` and `Audits/` (estate audits, §15), are timestamped and never rewritten once frozen: an audit report freezes when its audit session ends, and a retrospective stays open for the user's in-place edits and cuts until they agree to close it. A later retrospective or audit is a new file; only `Audits/_index.md` and `Retrospectives/_index.md` are living. `Repo Workflows/`, `Harness Guide.md`, `General AI-Knowledge/Work Map/` and the discovery `_index.md` files are living references: correct them in place when their sources change, and note substantive runbook corrections in their index. New folders are append-only unless explicitly declared living here. Agents may read human-facing runbooks; the audience label is not an access restriction.
 - **INSIDE THE WHITELIST.** These artifacts **are** record — a review deliverable is worth keeping and versioning — so the folder is re-included above and its contents are tracked and auto-committed like any other record, never treated as disposable scratch.
 
 ---
@@ -758,7 +758,7 @@ Each agent's reading list is its row in [AGENTS.md](AGENTS.md).
 | Capture evidence | `check-scribe` | Parent-qualified observed result passing the Durable Evidence Gate; default zero |
 | Consolidate/promote knowledge | `knowledge-curator` | User-directed maintenance; approval for promotion |
 | Summarize a period | `weekly-digest` | Ephemeral, read-only |
-| Write a dated review deliverable | `retrospective` | User-requested, append-only |
+| Write a dated review deliverable for a window | `retrospective` | User-requested; interviews, then frozen once the user closes it |
 
 **Automatic versus invoked.** Mechanical hooks fire without anyone asking:
 `sessionStart` runs the ticket validator and, as a separate command, the

@@ -187,7 +187,7 @@ settings in the estate's `.obsidian/` folder, which the estate does not track, s
    value that contains `: ` (for example `title: "Orders: daily load"`); unquoted, Obsidian ignores the whole
    block and the note shows no properties at all.
 4. **Bases.** With the Bases core plugin on, open `General Human Knowledge/Estate.base`. Its views list
-   tickets, tickets in one repo, walkthroughs, Work Map pages, runbooks and knowledge notes. For each repo,
+   tickets, tickets in one repo, walkthroughs, Work Map pages, runbooks, retrospectives and knowledge notes. For each repo,
    duplicate the "Tickets in one repo" view and change the name in its `repos.contains("...")` filter.
    Grouping a view by a list property makes one group per exact list (a note listing two repos sits only
    under the group for that pair), so each repo gets its own filtered view instead.

@@ -194,8 +194,12 @@ The workers (who reads which constitution sections: the reading list in
   tickets, knowledge and workflows through linked indexes, with scoped search
   for unindexed work; one cited hit per line; parent-callable, writes nothing
 - `retrospective` (smart, at review time) — writes a period retrospective
-  (default 12 months) FOR THE HUMAN in accomplishment register — one
-  timestamped file to `General Human Knowledge/Retrospectives/`, nothing else
+  (default 12 months) FOR THE HUMAN in accomplishment register, first person by
+  default, with any context you supply that the record lacks labelled as yours —
+  one timestamped file to `General Human Knowledge/Retrospectives/` carrying its
+  tickets' `repos` / `pipelines` frontmatter and Work Map links, plus discovery
+  lines in the Retrospectives index, the General Human Knowledge index and the
+  Work Map hub; nothing else
 
 ### L5 — You + a frontier model
 

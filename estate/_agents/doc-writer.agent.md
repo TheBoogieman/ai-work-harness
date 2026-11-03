@@ -46,7 +46,11 @@ non-ticket work). Live checks follow §2: read-only, resolved profile, the human
 completes MFA/SSO, and only when the request allows them.
 
 Every fact you write is **verified** (against what, when), **recorded** (cite the
-ticket or note), or `TODO (unverified) — verify with: <command>`. One owner per
+ticket or note), or `TODO (unverified) — verify with: <command>`. Every reference
+outside the estate (PR, branch, run, tracker issue or comment, wiki page, DAG,
+catalog asset) is a masked link from command output or a tools-note base address
+(§6.1 Links), never a bare or guessed address; references inside it are relative
+links. One owner per
 fact: link to the runbook, pipeline page or topic note that owns it instead of
 copying it. Never turn a proposal, old note or unexecuted check into a verified
 claim. No secrets, customer data or raw authentication output; public drafts omit

@@ -56,7 +56,8 @@ Reuse citations the parent already supplied.
 ## Output
 
 Pointers come first. Use **Headline hits** and **Tail hits**: across both, give
-up to three ranked `file:heading` or line citations, each with one concrete
+up to three ranked `file:heading` or line citations as relative links, keeping any
+PR or tracker link the record holds as the masked link it is, each with one concrete
 reason to read it and any uncertainty. Prefer the exact component, column, or
 logic involved over a vague topic summary.
 

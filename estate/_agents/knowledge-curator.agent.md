@@ -19,7 +19,8 @@ At the start of your run, load the `i-have-adhd` skill: read `General AI-Knowled
 	`General AI-Knowledge/Work Map/_index.md` before opening selected notes or
 	repo workflows. Reuse a topic's current owner; do not crawl all knowledge.
 2. Merge overlapping ticket notes and remove superseded content without
-	losing verified facts or source pointers. Refresh the ticket index to
+	losing verified facts or source pointers; a source outside the estate stays,
+	or becomes, a masked link (CONSTITUTION §6.1 Links), never a bare address. Refresh the ticket index to
 	match surviving notes, following the constitution's canonical grammar, and
 	verify that compaction reduced both live owners and total prose. Keep
 	concise findings and concrete retrieval triggers, not session diaries.

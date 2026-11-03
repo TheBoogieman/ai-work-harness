@@ -55,10 +55,14 @@ contradict it, never replace it.
   honestly before going on.
 - **Reconcile** tracker status, PR state and merge commit, branch existence and the
   runbook's deploy evidence. Present one table, one row per claim: claim, source,
-  observed, agrees (yes / no / not checked).
+  observed, agrees (yes / no / not checked); each external source is a masked link
+  (`[PR #951](<address>)`, `[<BOARD>-123](<address>)`, §6.1 Links).
 - **Closing plan:** one list grouped **Add / Change / Remove**, one line per file,
   each with why. Wait for approval. Apply exactly what was approved.
-- **Linking:** the ticket header (PRs with final state; frontmatter `repos` /
+- **Linking:** every external reference you write or hand on is a masked link
+  (§6.1 Links), and `check-work-map.py`'s `BARE_URL` / `UNLINKED_PR` notes on this
+  ticket are fixed before close (older Session Log entries stay as written). The
+  ticket header (PRs as masked links with final state; frontmatter `repos` /
   `pipelines` matching the Repos list and the pages the ticket touched, §4.3;
   Context links to the
   pipeline page, repo card, runbook and walkthrough); the ticket's line on each Work

@@ -87,7 +87,9 @@ or retain credentials in chat; let the user complete authentication privately.
   and report the problem. Empty notebook/index scaffolding is part of the
   template copy, not new evidence or learning content.
 7. **Fill known content.** Use the helper's returned path. Fill the header,
-  Background beginning with **In my words:**, Scope beginning with the
+  Background beginning with **In my words:**, the header's **Ticket** line as a
+  masked link to the tracker issue (`[<BOARD>-<num>](<address>)`, CONSTITUTION
+  §6.1 Links; leave a `TODO` rather than guess an address), Scope beginning with the
   **Non-negotiables** checklist, repos (the header Repos list and the same repo
   card names in the frontmatter `repos` list, CONSTITUTION §4.3; `pipelines` only
   for pipeline pages a source names, else `[]`), and proposed branches. Seed short

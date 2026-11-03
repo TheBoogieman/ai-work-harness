@@ -55,7 +55,10 @@ Before any remote call:
    `SKILL.md`.
 5. Records name the component, columns and logic changed
    ([§6.1](CONSTITUTION.md#61-record-ownership-and-brevity)). Links are relative
-   Markdown with `%20` for spaces. Section links use GitHub-style slugs
+   Markdown with `%20` for spaces inside the estate; outside it, every PR, branch,
+   run, tracker issue or comment, wiki page or DAG with a web address is a masked
+   link, `[PR #951](<address>)`, never a bare address or an unlinked number
+   (§6.1 Links). Section links use GitHub-style slugs
    (`CONSTITUTION.md#42-durable-evidence-gate`); after editing links run
    `python3 _harness/scripts/anchor-style.py --to github --check <files>`. An estate
    read in Obsidian may convert to its form with `--to obsidian` instead.

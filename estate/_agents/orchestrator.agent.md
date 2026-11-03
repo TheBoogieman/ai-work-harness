@@ -67,7 +67,8 @@ ticket log yourself.
   first and is watched red, then the fix follows.
 - With merging delegated: once every required check is green on the final
   head, mark the PR ready and merge it. Without it, tell the operator the PR
-  is ready.
+  is ready. Name every PR and CI run you report as a masked link
+  (`[PR #951](<address>)`, CONSTITUTION §6.1 Links).
 
 ## Levelling the installed estate
 

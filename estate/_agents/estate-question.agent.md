@@ -55,7 +55,9 @@ Stop reading as soon as the answer is settled by a cited source.
 (every flag explained in one clause).
 
 **Evidence** — at most 3 citations (`path#heading`, `path:line`, `origin/<branch>:<path>:line`,
-a catalog asset link, or a command with the observed output line), each labelled
+a catalog asset link, or a command with the observed output line), estate files as relative
+links and anything outside as masked links (`[PR #951](<address>)`, CONSTITUTION §6.1 Links),
+each labelled
 **VERIFIED <date>** (you checked it now) or **RECORDED** (quoted from a note or ticket).
 
 **Not checked** — what you did not or could not verify, and why.

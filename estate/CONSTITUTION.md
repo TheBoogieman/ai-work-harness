@@ -92,7 +92,7 @@ Ticket folders live **outside** the VS Code multi-repo workspace (`GitHub/<your>
 
 ## 2. Tools and Authentication
 
-> **Read this before any remote call.** Keep the live inventory — installed CLIs, exact cloud profiles, warehouse connections, scheduler workspaces and agent model pins — in one local tools note under `General AI-Knowledge/` (for example `Tools and Environments/`), routed from its index, with per-tool setup notes beside it. This section owns the rules; that note owns the facts.
+> **Read this before any remote call.** Keep the live inventory — installed CLIs, exact cloud profiles, warehouse connections, scheduler workspaces, agent model pins, and the base web address of each tool whose objects records link to (code host, tracker, wiki, scheduler and CI UIs, data catalog), so links are built rather than guessed (§6.1) — in one local tools note under `General AI-Knowledge/` (for example `Tools and Environments/`), routed from its index, with per-tool setup notes beside it. This section owns the rules; that note owns the facts.
 
 Use available tools for task-relevant authoritative facts before asking the user
 to paste output. They are optional adapters, not harness dependencies. Pick the
@@ -313,17 +313,17 @@ pipelines: []
 ---
 # <BOARD>-<num> — <Short Ticket Description>
 
-**Ticket:** <the issue's URL on its board's tracker>
+**Ticket:** [<BOARD>-<num>](<the issue's address on its board's tracker>)
 **Local path:** Work/Tickets/YYYYMM<seq>-<BOARD>-<num>
 
 Repos:
 - Work/GitHub/<repo>
 
 Branches:
-- `<branch>` in `<repo>`
+- [`<branch>`](<the branch's address on the code host>) in `<repo>`
 
 Pull Requests:
-- [#NNN](<PR URL>) in `<repo>` — draft | in review
+- [PR #NNN](<PR address>) in `<repo>` — draft | in review
 
 Context:
 - <Links to matching repo/pipeline pages, runbook and directly related work>
@@ -428,7 +428,22 @@ one line.
 
 Keep verification separate from implementation; name the check and observed
 outcome, or say "not run". Link to CI, PRs and detailed evidence instead of copying
-them. Prefer "added source_id" to "enhanced traceability" and a named test to
+them.
+
+**Links.** Every reference to something outside the estate that has a web address —
+a PR, a branch, a CI or scheduler run, a tracker issue or comment, a wiki page, a
+scheduler DAG, a dashboard, a catalog asset — is a masked Markdown link: a label that
+says what it is, and the address behind it. `[PR #951](<address>)`, `[comment by <name> on
+<BOARD>-123](<address>)`, `[orders_daily DAG](<address>)`, `[UAT run 2026-11-03](<address>)`. Never a bare
+address, and never an unlinked "PR #951" when the address is known. Take addresses
+from command output (`gh pr view <n> --json url`, a tracker or scheduler CLI) or build
+them from a base address the tools note records (§2); never guess one. When no
+address is known, name the thing plainly and say so (`PR #951 (address not
+recorded)`) rather than inventing it. References inside the estate are relative
+links (§9.1). A writer hands addresses on, not bare numbers: a parent gives
+`ticket-scribe` the address with the PR. Older Session Log entries are not rewritten
+to add links. `check-work-map.py` notes bare addresses and unlinked PR numbers
+(warning-only); everything else external rests on the writer. Prefer "added source_id" to "enhanced traceability" and a named test to
 "validated end to end". These budgets are writer stop conditions and review
 targets, not validator gates: keep load-bearing detail when omitting it would make
 the record misleading. Never rewrite old Session Log entries just to apply the new

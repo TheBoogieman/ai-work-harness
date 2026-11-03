@@ -95,6 +95,11 @@ deploy runs, multi-file edits — goes in an implementer prompt.
   General Human Knowledge root index when a note or runbook was created, moved or
   renamed, run `python3 _harness/scripts/check-work-map.py` once, and hand the
   scribe the links and the checker outcome.
+- Every PR, branch, CI or scheduler run, tracker issue or comment and wiki page you
+  name in a prompt, a report or a scribe hand-off is a masked link (§6.1 Links):
+  `[PR #951](<address>)`, never a bare address or number. Hand the scribe the
+  addresses, taken from `gh pr view <n> --json url` or the tools note's base
+  addresses, not just the numbers.
 - Never rewrite older Session Log entries, prompts or outputs.
 
 ## Close

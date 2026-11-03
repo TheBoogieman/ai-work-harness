@@ -87,7 +87,9 @@ the raw output. Use safe local reads for other terminal work, not remote calls.
 
 Group work by theme. Each accomplishment names the component, columns, or
 logic changed, why it mattered, and the verified outcome, with inline ticket,
-date, and source pointers. Distinguish implementation, testing, and deployment.
+date, and source pointers. Tickets and notes are relative links; PRs, tracker
+issues, runs and other outside sources are masked links taken from the record
+(CONSTITUTION §6.1 Links), never bare addresses. Distinguish implementation, testing, and deployment.
 Use impact language only when the sources support it; no invented savings,
 causal connections, or inflated "improvements". A reusable runbook can be
 linked as an outcome, not copied or silently promoted as new knowledge.

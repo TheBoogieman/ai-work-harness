@@ -42,6 +42,12 @@ Keep verification separate, with its observed outcome and a link to the evidence
 Say "not run" when appropriate. Investigation-only work names the finding and
 explicitly says no implementation changed.
 
+Every PR, branch, run, tracker issue or comment, or wiki page you write is a
+masked link built from the address the parent gives (CONSTITUTION §6.1 Links):
+`[PR #951](<address>)` in the header and the entry alike, never a bare address. If
+the parent gave a number without its address, ask for it rather than writing it
+unlinked.
+
 Omit tool-by-tool activity, repeated repo/PR addresses, and phrases such as
 "aligned the implementation", "enhanced robustness" or "validated end to end"
 without the specific change or check. Link to detailed evidence instead of

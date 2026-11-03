@@ -135,8 +135,9 @@ The dumb inspector. Runs at session START (the entry gate — it audits what the
 previous session left behind; sessionEnd is a best-effort bonus), and checks
 facts only: log appended? Current State exists? Index matches files? Fails
 loudly, judges nothing. A second, separate `sessionStart` command runs the
-warning-only, read-only work-map observer (`check-work-map.py`: links, and the
-`repos` / `pipelines` frontmatter), so its notes
+warning-only, read-only work-map observer (`check-work-map.py`: links, the
+`repos` / `pipelines` frontmatter, and bare web addresses or unlinked PR numbers
+that should be masked links), so its notes
 cannot mask the validator; it never blocks work.
 
 ### L3 — Filesystem

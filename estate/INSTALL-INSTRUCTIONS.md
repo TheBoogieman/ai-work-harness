@@ -275,6 +275,15 @@ Re-running `install.sh` serves three different intents, each with its own home:
   `LEFTOVER:` line for each retired contract still in your assistant's agent directory. Delete
   those three files by hand; the deploy never deletes anything there.
 
+  **Upgrading to masked external links (#368).** The upgrade brings the new `check-work-map.py`,
+  which notes bare web addresses and unlinked PR numbers. Merge by hand, as above: every agent
+  contract (each names the masked-link rule where it writes), `AGENTS.md` (rule 5) and
+  `CONSTITUTION.md` (§2 base addresses, the §4.3 header template, §6.1 **Links**); and, as records,
+  your template ticket's header lines, `Doc-Pipeline-Home` and `Doc-Ticket-Walkthrough`. Then add
+  the base web address of your code host, tracker, wiki, scheduler and CI to your tools note, so
+  agents build links rather than leave plain names. Existing notes on older Session Log entries do
+  not appear: only the newest entry of each ticket is checked.
+
 ## Hook activation caveat
 
 The auto-commit hook is *witnessed firing* on the VS Code Copilot IDE agent

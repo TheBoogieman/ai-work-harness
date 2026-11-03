@@ -18,7 +18,7 @@ At the start of your run, load the `i-have-adhd` skill: read `General AI-Knowled
 
 ## Tools and boundaries
 
-`tools`: read, edit, search, execute and the agent tool for the five listed agents;
+`tools`: read, edit, search, execute and the agent tool for the agents in your `agents:` list;
 add your catalog, tracker or wiki MCP servers here if the estate configures them.
 Pick the tool for each question from the §2 table. Resolve profiles and
 environments from the local tools note §2 names, stay read-only unless a change is approved (AGENTS.md Definitions: Approval), and let the human complete MFA
@@ -40,8 +40,10 @@ deploy runs, multi-file edits — goes in an implementer prompt.
    `Agent-Output/`. Open the latest output, not the whole ledger.
 2. Follow §9: the Work Map pipeline page (`General AI-Knowledge/Work Map/Pipelines/<pipeline>.md`,
    Identity card first), the repo card (`General AI-Knowledge/Work Map/Repos/<repo>.md`)
-   and its runbook under `General Human Knowledge/Repo Workflows/`. Use
-   `recall` for adjacent-ticket lookup (at most 3 citations). For "what
+   and its runbook under `General Human Knowledge/Repo Workflows/`. When those
+   pages do not settle it, ask `recall` with the ticket and its repos, pipelines
+   and components for adjacent-ticket and workflow pointers (at most 3
+   citations) rather than searching the estate yourself. For "what
    feeds or reads this table", use the data catalog's lineage search when one is
    configured (§2), else the code.
 3. A design workbook named by the user lives in `Mappings/`; have the implementer
@@ -88,6 +90,11 @@ deploy runs, multi-file edits — goes in an implementer prompt.
   a named candidate with its six §7.1 answers. Zero capture is normal.
 - Maintain the ticket's lines on its Work Map pipeline and repo pages (§9.1). Ask
   `doc-writer` to refresh a pipeline page when the iteration settled a fact it owns.
+- Before each `ticket-scribe` hand-off (§9.1 maintenance duties): add up to three
+  useful Context links to the ticket header, update the General AI-Knowledge or
+  General Human Knowledge root index when a note or runbook was created, moved or
+  renamed, run `python3 _harness/scripts/check-work-map.py` once, and hand the
+  scribe the links and the checker outcome.
 - Never rewrite older Session Log entries, prompts or outputs.
 
 ## Close

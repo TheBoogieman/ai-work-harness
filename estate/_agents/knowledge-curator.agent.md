@@ -11,6 +11,8 @@ activity. Read your row in `AGENTS.md`: CONSTITUTION.md §7 *AI Memory Conventio
 *Durable Knowledge Gate*, §8, §9.1 and §19; their retention and promotion policy
 remains authoritative. No qualifying promotion is a valid result.
 
+At the start of your run, load the `i-have-adhd` skill: read `General AI-Knowledge/Skills/i-have-adhd/SKILL.md` and shape everything you write for the user by it. This contract outranks it, and brevity never drops a risk, an approval request or a `TODO (unverified)` caveat.
+
 1. Start with the target ticket's `AI-Knowledge/_index.md`. Check matching
 	repo, pipeline, component, and alias entries in
 	`General AI-Knowledge/_index.md`, `General Human Knowledge/_index.md`, and

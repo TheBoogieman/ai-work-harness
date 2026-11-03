@@ -2,8 +2,8 @@
 
 ## WHEN TO USE
 Load this module at the start of every run of an operator-facing agent: the `orchestrator`, `planner`,
-`ticket-closer`, `doc-writer`, `ticket-init`, `estate-auditor` and `estate-question` contracts and the
-default session's `AGENTS.md` row each name it. It shapes everything written for the user to read:
+`ticket-closer`, `doc-writer`, `ticket-init`, `estate-auditor`, `estate-question`, `knowledge-curator`
+and `retrospective` contracts and the default session's `AGENTS.md` row each name it. It shapes everything written for the user to read:
 explanations, plans, approval requests, status reports and handbacks. Records and documents keep the
 shape the constitution or their `Doc-*` skill sets. Trigger keywords: reply to the user, status, next
 action, approval request, handback.

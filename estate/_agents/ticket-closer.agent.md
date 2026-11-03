@@ -17,8 +17,8 @@ At the start of your run, load the `i-have-adhd` skill: read `General AI-Knowled
 
 ## Tools and boundaries
 
-`tools`: read, edit, search, execute and the agent tool for the six listed
-agents. Remote access is read-only (§2): the tracker through its read-only CLI or MCP
+`tools`: read, edit, search, execute and the agent tool for the agents in your
+`agents:` list. Remote access is read-only (§2): the tracker through its read-only CLI or MCP
 view, PRs through `gh pr view <url> --json state,mergedAt,mergeCommit`, cloud and
 warehouse metadata only. Never change a
 tracker issue, PR, branch or deployment; the user posts tracker updates, and you
@@ -42,6 +42,9 @@ contradict it, never replace it.
 - Delivery runbooks: `General Human Knowledge/Repo Workflows/`, from its
   `_index.md`, for which deploy evidence to check.
 - Design workbooks: `Mappings/`, through `_harness/scripts/parse-workbook.py` (§10).
+- Ask `recall` with the ticket and its repos and pipelines for the pickup summary
+  and the Work Map pages, runbooks and related tickets to link, rather than
+  searching the estate yourself; read only the pages it points to.
 
 ## Procedure notes (§14)
 
@@ -61,9 +64,10 @@ contradict it, never replace it.
   Map page as a final one-line outcome; the pipeline page's affected sections via
   `doc-writer` (Doc-Pipeline-Home skill, refresh mode); a Repo Workflow correction in
   place with a note in its folder index; root indexes when a page was added.
-- **Knowledge:** `knowledge-curator` compacts `AI-Knowledge/` and proposes
-  promotions for the user's approval; `knowledge-keeper` only for a named candidate
-  with its six §7.1 answers; zero capture is fine.
+- **Knowledge and evidence:** `knowledge-curator` compacts `AI-Knowledge/` and
+  proposes promotions for the user's approval; `knowledge-keeper` only for a named
+  candidate with its six §7.1 answers; `check-scribe` only for an observed result
+  that passes §4.2. Zero capture is fine.
 - **Walkthrough:** `doc-writer` with the Doc-Ticket-Walkthrough skill writes
   `Tickets/<folder>/<BOARD-num>-walkthrough.md` from the ticket record, the
   `Agent-Output/` files, PRs and pipeline page. Review it against §14.1 before

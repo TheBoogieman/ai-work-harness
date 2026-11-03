@@ -76,6 +76,13 @@ new board needs only its row in the tools note's Boards table (constitution §2)
 `ticket-grammar.sh` is edited only to change the naming pattern. No SVG was edited; this note
 names the lag.
 
+**Diagram currency (2026-11-03, #365, #366):** both sheets still draw `ticket-recall`,
+`harness-recall` and `weekly-digest`. Those three are retired: one read-only `recall` agent takes
+a ticket, a topic or both, and the `retrospective` covers any date window. The sheets also do not
+show `recall` as a subagent of `estate-question` and `retrospective`, the `LEFTOVER` line
+`deploy-agents.sh` prints for a retired contract still in the discovery directory, or the
+retrospective's interview, cuts and closing. No SVG was edited; this note names the lag.
+
 **The pattern (every layer):** file states the rule → agent does the work →
 hook catches the miss → git undoes the damage. Corollary: status observes,
 failures prescribe, nothing heals itself — a fixed record is a human act.

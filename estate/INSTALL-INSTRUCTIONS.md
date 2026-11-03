@@ -256,6 +256,25 @@ Re-running `install.sh` serves three different intents, each with its own home:
   CLI (optional), enable it and record it in your tools note as the Harness Guide's Obsidian
   section says.
 
+  **Upgrading to `recall` and the retrospective interview (#363, #365, #366).** The upgrade
+  creates `_agents/recall.agent.md` and retires `ticket-recall`, `harness-recall` and
+  `weekly-digest` into `_retired/<timestamp>/`, and brings the new `deploy-agents.sh` and retire
+  list. Check the new contract's `model:` pin before you deploy. The agent contracts carry your
+  model pins, so the upgrade keeps your copies: merge these by hand from the source checkout, as
+  above. Every caller's `agents:` list and prose now names `recall` (`planner`, `ticket-init`,
+  `ticket-closer`, `estate-auditor`, `orchestrator`, `estate-question`, `retrospective`); the
+  `retrospective` contract gains the interview, cuts and closing, its frontmatter and its
+  discovery writes; `doc-writer` and `estate-auditor` name §14.1; `knowledge-curator` and
+  `retrospective` load the i-have-adhd skill. `AGENTS.md` (the reading-list rows) and
+  `CONSTITUTION.md` (§1, §9, §9.2, §11, §12) carry your settings too, so merge them the same way.
+  These are records and are kept as they are: `General AI-Knowledge/Skills/i-have-adhd/SKILL.md`
+  (its list of loaders), `General Human Knowledge/Estate.base` (the Retrospectives view),
+  `General Human Knowledge/_index.md` and `General AI-Knowledge/Work Map/_index.md` (the
+  Retrospectives route); merge them by hand, or let the `retrospective` agent add the index and
+  both routes on its first run. Then run `_harness/scripts/deploy-agents.sh`: it prints one
+  `LEFTOVER:` line for each retired contract still in your assistant's agent directory. Delete
+  those three files by hand; the deploy never deletes anything there.
+
 ## Hook activation caveat
 
 The auto-commit hook is *witnessed firing* on the VS Code Copilot IDE agent

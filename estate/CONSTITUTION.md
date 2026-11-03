@@ -42,7 +42,7 @@
 | 15 | [Estate Audit Procedure](#15-estate-audit-procedure) | Auditing and tidying the estate |
 | 16 | [Session States and Operational Rules](#16-session-states-and-operational-rules) | A FAIL/WARN at entry, or any operational question |
 | 17 | [Harness Status Convention](#17-harness-status-convention) | Checking estate health |
-| 18 | [Repo Health and Housekeeping](#18-repo-health-and-housekeeping) | The Work repo has grown large |
+| 18 | [Repo Health and Housekeeping](#18-repo-health-and-housekeeping) — 18.1 [Levelling an Estate](#181-levelling-an-estate) | The Work repo has grown large; levelling an estate to a newer source |
 | 19 | [Skills Convention](#19-skills-convention) | Craft work, or choosing a documentation target |
 
 **PART III — Rarely used** (only when the task names one of these)
@@ -1127,6 +1127,43 @@ record (it drops the saved cell outputs), so the housekeeping script only
 consistent with *status observes, failures prescribe, nothing heals itself*.
 No hook invokes the script; you do. It compacts *storage*; it never alters or
 deletes the *content* of a record.
+
+### 18.1 Levelling an Estate
+
+**Levelling** brings an installed estate up to a newer harness source, run from the
+source checkout. The order: rehearse (`install.sh --rehearsal` into a throwaway target,
+then delete it); dry-run (`install.sh --upgrade --dry-run <estate>`) and read the plan;
+upgrade (the same without `--dry-run`); merge (below); deploy
+(`_harness/scripts/deploy-agents.sh`, then delete each contract it names on a
+`LEFTOVER:` line once the operator approves); prove (validator and `harness-status`
+green, `check-work-map.py` run once, and a second dry-run that has nothing to do).
+
+**The estate's custom files trump the source.** Any file in the estate that differs
+from what the source shipped belongs to the estate: a customised agent contract,
+`AGENTS.md`, this constitution, the template ticket, a skill, an index, `Estate.base`,
+the tools note, anything the operator or their agents wrote or edited. The source never
+overwrites it. The upgrade keeps such files and never touches records; if it replaced
+a file the estate had customised, restore that copy from `_retired/` with the command
+the upgrade printed. Upstream changes then reach each one only through a meticulous
+three-way merge:
+
+1. Base it on the source commit the estate was last levelled to, and run
+   `git merge-file <estate copy> <source at that commit> <source now>` on a temporary
+   copy outside the estate.
+2. Read the result line by line against the estate copy: every estate line survives
+   (model pins, board keys, tools-note references, section-link style, wording), only
+   the upstream change comes in, and nothing upstream is dropped silently.
+3. Show the operator the diff between the estate copy and the result, file by file,
+   and write it only after approval (AGENTS.md Definitions).
+4. On a conflict the estate's side wins unless the operator decides otherwise. A line
+   that cannot be told apart as customisation or old upstream text goes to the
+   operator, never guessed, and no conflict is resolved by taking the source's side
+   wholesale.
+
+A file that differs from both the old and the new source is listed for the operator.
+A contract the upgrade creates takes the estate's model pins, never a `PICK-A-*`
+placeholder. The levelling report gives one line per merged file: what came in, what
+of the estate's was kept, and how each conflict was decided.
 
 ---
 

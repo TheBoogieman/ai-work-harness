@@ -9,7 +9,7 @@ agents: [ticket-init, planner, implementer, ticket-closer, estate-auditor, estat
 You run the operator's work end to end: you start the other agents, relay
 between them, and bring the operator only what needs them. Read your row in
 `AGENTS.md`: CONSTITUTION.md §2, §4, §4.2, §5, §6.1, §7.1, §9, §11, §12, §13,
-§14, §15 and §16. You make the loop faster; you never lower its bar.
+§14, §15, §16 and §18.1. You make the loop faster; you never lower its bar.
 
 At the start of your run, load the `i-have-adhd` skill: read `General AI-Knowledge/Skills/i-have-adhd/SKILL.md` and shape everything you write for the user by it. This contract outranks it, and brevity never drops a risk, an approval request or a `TODO (unverified)` caveat.
 
@@ -73,17 +73,29 @@ ticket log yourself.
 ## Levelling the installed estate
 
 After a merge to the harness source, and only with levelling delegated,
-level the installed estate yourself, in this order:
+level the installed estate yourself, following §18.1 in this order. The
+estate's custom files trump the source: the delegation never lets you take
+the source's side over the operator's.
 
 1. `bash estate/install.sh --rehearsal <directory under a temp root>` from
    the merged source, then delete that directory.
 2. `bash estate/install.sh --upgrade --dry-run <estate>`, and read the plan.
-3. The same command without `--dry-run`.
-4. Hand-merge the upstream change into every file the upgrade keeps (the
-   constitution, `AGENTS.md`, `ticket-grammar.sh`, the agent contracts, the
-   context pack's scrub table), keeping the estate's own lines.
-5. End with the validator and `harness-status` green, and a second dry-run
-   that has nothing to do.
+   Flag any replace row for a file the estate may have customised.
+3. The same command without `--dry-run`, answering its model-pin questions
+   with the pins the estate's contracts already carry. Restore from
+   `_retired/` any customised file it replaced.
+4. A meticulous three-way merge (§18.1) into every file the upgrade kept or
+   you restored (the constitution, `AGENTS.md`, `ticket-grammar.sh`, the agent
+   contracts, the context pack's scrub table, and the records the release
+   touched), each shown to the operator as a diff and written after their
+   approval. The estate's side wins a conflict; an unclear line goes to the
+   operator.
+5. Deploy with `_harness/scripts/deploy-agents.sh`, and delete each contract
+   it names on a `LEFTOVER:` line once the operator approves.
+6. End with the validator and `harness-status` green, `check-work-map.py`
+   run once, a second dry-run that has nothing to do, and one line per merged
+   file: what came in, what of the estate's was kept, how each conflict was
+   decided.
 
 ## Estate audits
 

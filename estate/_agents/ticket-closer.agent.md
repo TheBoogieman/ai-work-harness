@@ -7,7 +7,7 @@ disable-model-invocation: true
 tools: [read, edit, search, execute, agent]
 agents: [ticket-scribe, doc-writer, knowledge-curator, knowledge-keeper, check-scribe, recall]
 ---
-You close one ticket. Read your row in `AGENTS.md`: CONSTITUTION.md §2, §4, §5,
+You close one ticket. Read your row in `AGENTS.md`: CONSTITUTION.md §2, §4, §4.2, §5,
 §6.1, §7, §7.1, §9.1, §9.2, §14, §14.1 and §16. §14 is your procedure; follow its
 eight steps in order. You are the parent agent for this session. A human or the
 `orchestrator` may start you; when a step needs an agent you cannot start, follow
@@ -44,7 +44,8 @@ contradict it, never replace it.
 - Design workbooks: `Mappings/`, through `_harness/scripts/parse-workbook.py` (§10).
 - Ask `recall` with the ticket and its repos and pipelines for the pickup summary
   and the Work Map pages, runbooks and related tickets to link, rather than
-  searching the estate yourself; read only the pages it points to.
+  searching the estate yourself; the ticket's own frontmatter and Repos list
+  still name every page it touched.
 
 ## Procedure notes (§14)
 

@@ -485,6 +485,33 @@ class WorkMapTests(unittest.TestCase):
         self.assertEqual(exit_code, 0, report["findings"])
 
 
+    # [work-map-external-links] (#368) A web address left in prose and a pull request named by
+    # number without a link are each one NOTE per file with a count. Linked labels, code, the
+    # frontmatter and every Session Log entry but the newest are ignored, and an autolink still
+    # counts as bare. Red on a helper without check_external_links: neither code ever appears.
+    def test_external_links_bare_and_unlinked_pr(self):
+        log = ("\n## Session Log\n## 20260101120000 - Old entry\n- Merged PR #1, see https://old.invalid\n"
+               "## 20260102120000 - New entry\n- Opened PR #2 at https://new.invalid/pr/2\n"
+               "- Linked [PR #3](https://new.invalid/pr/3) and `PR #4 https://code.invalid`\n")
+        self.put(TICKET, FM_ORDERS + TICKET_BODY + log)
+        self.put(f"{GAK}/Topic/Note One.md", "# Note\nSee <https://auto.invalid> and PR #5.\n")
+        _, report = self.run_check()
+        found = {(item["path"], item["code"]): item for item in report["findings"]
+                 if item["code"] in ("BARE_URL", "UNLINKED_PR")}
+        self.assertEqual(set(found), {(TICKET, "BARE_URL"), (TICKET, "UNLINKED_PR"),
+                                      (f"{GAK}/Topic/Note One.md", "BARE_URL"),
+                                      (f"{GAK}/Topic/Note One.md", "UNLINKED_PR")})
+        # Only the newest entry counts: one bare address and one PR, both on its first bullet.
+        self.assertTrue(found[(TICKET, "BARE_URL")]["message"].startswith("1 "))
+        self.assertTrue(found[(TICKET, "UNLINKED_PR")]["message"].startswith("1 "))
+        self.assertEqual(found[(TICKET, "UNLINKED_PR")]["line"], 17)
+        # Masked, the same references are clean, and --strict passes again.
+        self.put(TICKET, FM_ORDERS + TICKET_BODY + log.replace(
+            "Opened PR #2 at https://new.invalid/pr/2", "Opened [PR #2](https://new.invalid/pr/2)"))
+        self.put(f"{GAK}/Topic/Note One.md", "# Note\nSee [the page](https://auto.invalid) and [PR #5](https://x.invalid).\n")
+        exit_code, report = self.run_check("--strict")
+        self.assertEqual(exit_code, 0, report["findings"])
+
 unittest.main(verbosity=2)
 PY
 }

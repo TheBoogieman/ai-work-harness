@@ -41,7 +41,7 @@ Work/                                        [git root · local-only · whitelis
 │       ├── make-context-pack.sh             → ~/Desktop/harness-pack-*.zip [disposable · outside repo] · scrub table user-owned, KEEP on upgrade
 │       ├── tracker-sweep.sh                 human-run · on-demand board-vs-estate drift report · pluggable fetch seam · tracker-agnostic · fails open offline
 │       ├── retro-stats.sh                    dumb counter for the retrospective agent · tickets-by-month + checks + promotions · offline · exits 0 always
-│       ├── deploy-agents.sh                 → user-level agent dir (sync source → live)
+│       ├── deploy-agents.sh                 → user-level agent dir (sync source → live · names retired contracts left there)
 │       ├── init-ticket.sh                   ← ticket-init · allocates the folder and copies the template; the agent owns every fact
 │       ├── check-work-map.py                ← SessionStart hook │ human-run · read-only Work Map link observer · warnings only
 │       ├── parse-workbook.py                human-run · Mappings/ workbook → ticket Dump/workbooks/ (INDEX, version history, sheet CSVs, changes-<V>) · needs openpyxl · CONSTITUTION §10
@@ -50,7 +50,7 @@ Work/                                        [git root · local-only · whitelis
 │       ├── harness-housekeeping.sh          human-run · git gc + size report · never touches records
 │       └── harness-drill.sh                 human-run · rehearse restore/bundle/undo · read-only toward the estate
 │
-├── _agents/                                 SOURCE OF TRUTH (versioned) · 16 agents · who reads what: AGENTS.md reading list
+├── _agents/                                 SOURCE OF TRUTH (versioned) · 14 agents · who reads what: AGENTS.md reading list
 │   ├── ticket-init.agent.md                 ┐
 │   ├── orchestrator.agent.md                │ hand-started · runs a ticket end to end · approves only under the operator's standing delegation
 │   ├── planner.agent.md                     │ hand-started · plans, writes Agent-Prompts/, reviews Agent-Output/
@@ -59,13 +59,11 @@ Work/                                        [git root · local-only · whitelis
 │   ├── estate-auditor.agent.md              │ hand-started · dated audit + batch fixes + walkthrough backfill (CONSTITUTION §15)
 │   ├── estate-question.agent.md             │ hand-started · answers one general question with citations · writes nothing
 │   ├── ticket-scribe.agent.md               │ deploy-agents.sh → user-level dir
-│   ├── ticket-recall.agent.md               │
+│   ├── recall.agent.md                      │
 │   ├── check-scribe.agent.md                │   [live · derived · unversioned]
 │   ├── doc-writer.agent.md                  │   drift check (status): differ ⇒ FAIL
 │   ├── knowledge-keeper.agent.md            │   fix ⇒ re-run deploy-agents.sh
-│   ├── knowledge-curator.agent.md           │
-│   ├── weekly-digest.agent.md               │
-│   ├── harness-recall.agent.md              │
+│   ├── knowledge-curator.agent.md           │   retired contract left there ⇒ deploy prints LEFTOVER
 │   └── retrospective.agent.md               ┘
 │
 ├── Tickets/                                 RECORDS ONLY

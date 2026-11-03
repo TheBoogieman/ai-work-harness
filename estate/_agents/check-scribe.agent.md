@@ -19,7 +19,9 @@ evidence owner by pointer rather than duplicating a notebook capsule, CI result,
 or source test. Do not read unrelated tickets or promote checks into knowledge.
 
 Keep the why-note concrete: component or columns checked, the expected
-condition, observed result, and its consequence or limit. For example, describe
+condition, observed result, and its consequence or limit. When the caller gives
+the run's address (a CI or scheduler run), the why-note links it as a masked
+link, `[UAT run 2026-11-03](<address>)` (CONSTITUTION §6.1 Links). For example, describe
 which join/filter or calculation was checked instead of "validated pipeline".
 State point-in-time scope where needed; a prior observation is not proof of the
 current deployment. Keep secrets and customer data out of retained content.

@@ -46,6 +46,13 @@ should carry `repos` but does not (`FRONTMATTER_MISSING`), a value with no repo 
 not list itself (`FRONTMATTER_MISMATCH`), and a block it cannot read or a YAML comment
 (`FRONTMATTER_MALFORMED`, `FRONTMATTER_COMMENT`). All are warnings.
 
+It also notes links outside the estate that are not masked (CONSTITUTION §6.1, "Links"): a web
+address left in prose (`BARE_URL`, an autolink included) and a pull request named by number without a
+link (`UNLINKED_PR`), one note per file with a count. Code, frontmatter, earlier audits and every
+Session Log entry but the newest are ignored. Tracker keys, comments, wiki pages and DAG runs are not
+matched; the writing agents link them when they found the address, and leave the plain name when
+they did not.
+
 The helper is warning-only and read-only; the default root is its own estate.
 It observes encoded relative links, reference definitions, file-index entries
 and promotion links, which initialized tickets are reachable from a map entity
@@ -74,9 +81,9 @@ depends on the assistant following the contract, not a guaranteed background job
 
 | Start it | Agent |
 |---|---|
-| You, directly | `orchestrator`, `ticket-init`, `planner`, `implementer`, `ticket-closer`, `estate-auditor`, `estate-question`, `knowledge-curator`, `weekly-digest`, `retrospective` |
+| You, directly | `orchestrator`, `ticket-init`, `planner`, `implementer`, `ticket-closer`, `estate-auditor`, `estate-question`, `knowledge-curator`, `retrospective` |
 | The `orchestrator`, when you run one | Every other agent; it starts `ticket-init`, `planner`, `implementer`, `ticket-closer` and `estate-auditor` in your place |
-| You or the parent agent | `ticket-recall`, `harness-recall` (read-only) |
+| You or a parent agent (`planner`, `ticket-init`, `ticket-closer`, `estate-auditor`, `estate-question`, `retrospective`) | `recall` (read-only; a ticket, a topic or both) |
 | The parent, when ticket work completes | `ticket-scribe` |
 | The parent, for a named valuable learning only | `knowledge-keeper` |
 | The parent, for qualified evidence only | `check-scribe` |
@@ -110,7 +117,7 @@ an Opus profile too.
 
 | Agents | Profile |
 |---|---|
-| `check-scribe`, `harness-recall`, `knowledge-keeper`, `ticket-recall`, `ticket-scribe`, `weekly-digest` | `Claude Sonnet 5.5 (copilot)` |
+| `check-scribe`, `knowledge-keeper`, `recall`, `ticket-scribe` | `Claude Sonnet 5.5 (copilot)` |
 | `ticket-init`, `planner`, `ticket-closer`, `doc-writer`, `estate-auditor`, `estate-question`, `knowledge-curator`, `retrospective` | `Claude Opus 5.5 (copilot)` |
 | `orchestrator` | the strongest model available: an Opus- or Fable-class profile such as `Claude Opus 5.5 (copilot)` |
 | `implementer` | the cheapest long-context model that follows a prompt exactly (it judges nothing) |
@@ -157,7 +164,7 @@ chat.
 - Plan (`planner`): "Plan `<ticket>`; write the first implementer prompt."
 - Implement (`implementer`): "Run `Tickets/<ticket>/Agent-Prompts/01-<slug>.md`."
 - Review (`planner`): "Review `Agent-Output/01-<slug>.md` and write the next prompt."
-- Recall: "What do we already know about `<repo or pipeline>`? Cite at most three."
+- Recall (`recall`): "What do we already know about `<repo or pipeline>`? Cite at most three." or "Pick up `<ticket>`: what's done and what's next?"
 - Record: "Record this ticket's completed change, update the map links, run the checker."
 - Close (`ticket-closer`): "Close `<ticket>`: it is merged and deployed to PROD."
 - Audit (`estate-auditor`): "Audit the estate; propose the first batch of fixes."

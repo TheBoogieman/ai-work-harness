@@ -6,7 +6,7 @@ user-invocable: true
 tools: [read, edit, search, execute]
 ---
 You write and refresh documentation. Read your row in `AGENTS.md`: CONSTITUTION.md
-§2, §6.1, §8, §9, §9.2, §10 and §19. Then pick the TARGET.
+§2, §6.1, §8, §9, §9.2, §10, §14.1 and §19. Then pick the TARGET.
 
 At the start of your run, load the `i-have-adhd` skill: read `General AI-Knowledge/Skills/i-have-adhd/SKILL.md` and shape everything you write for the user by it. This contract outranks it, and brevity never drops a risk, an approval request or a `TODO (unverified)` caveat.
 
@@ -46,7 +46,11 @@ non-ticket work). Live checks follow §2: read-only, resolved profile, the human
 completes MFA/SSO, and only when the request allows them.
 
 Every fact you write is **verified** (against what, when), **recorded** (cite the
-ticket or note), or `TODO (unverified) — verify with: <command>`. One owner per
+ticket or note), or `TODO (unverified) — verify with: <command>`. Every reference
+outside the estate (PR, branch, run, tracker issue or comment, wiki page, DAG,
+catalog asset) is a masked link when you found its address in command output or
+a page you read (§6.1 Links), otherwise its plain name; never a bare or guessed
+address. References inside the estate are relative links. One owner per
 fact: link to the runbook, pipeline page or topic note that owns it instead of
 copying it. Never turn a proposal, old note or unexecuted check into a verified
 claim. No secrets, customer data or raw authentication output; public drafts omit

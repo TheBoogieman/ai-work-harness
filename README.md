@@ -135,8 +135,9 @@ The dumb inspector. Runs at session START (the entry gate — it audits what the
 previous session left behind; sessionEnd is a best-effort bonus), and checks
 facts only: log appended? Current State exists? Index matches files? Fails
 loudly, judges nothing. A second, separate `sessionStart` command runs the
-warning-only, read-only work-map observer (`check-work-map.py`: links, and the
-`repos` / `pipelines` frontmatter), so its notes
+warning-only, read-only work-map observer (`check-work-map.py`: links, the
+`repos` / `pipelines` frontmatter, and bare web addresses or unlinked PR numbers
+that should be masked links), so its notes
 cannot mask the validator; it never blocks work.
 
 ### L3 — Filesystem
@@ -173,9 +174,16 @@ The workers (who reads which constitution sections: the reading list in
   fixes you approve, including retrospective walkthroughs five tickets at a time
 - `estate-question` (smart, started by hand) — answers a general question
   ("how do I check X", "what is table Y in pipeline Z") from the estate, the repos
-  and read-only live tools, with at most three citations; writes nothing
-- `ticket-recall` (cheap, at pickup) — read-only; narrates one ticket in
-  fixed sections (Done / Changed / Unresolved / Suggested next), writes nothing
+  and read-only live tools, with at most three citations, asking `recall` for
+  ticket pointers; writes nothing
+- `recall` (cheap, at pickup or on demand) — read-only; give it a ticket, a
+  topic (repo, pipeline, component, alias) or both. It finds related tickets,
+  knowledge and workflows through the linked indexes, with a bounded fallback
+  for unindexed work, and returns up to three ranked pointers first, then, for a
+  ticket, fixed sections (Done / Changed / Unresolved / Suggested next).
+  Parent-callable: the planner, `ticket-init`, `ticket-closer`,
+  `estate-auditor`, `estate-question` and `retrospective` ask it instead of
+  searching the estate themselves. Writes nothing
 - `ticket-scribe` (cheap) — writes Session Log + Current State after completed
   ticket work
 - `check-scribe` (cheap) — records a parent-qualified, durable check (any
@@ -187,12 +195,6 @@ The workers (who reads which constitution sections: the reading list in
   zero capture is expected
 - `knowledge-curator` (smart, rare) — compacts and promotes, with human
   approval; direct invocation only
-- `weekly-digest` (cheap, at a boundary) — read-only; narrates a period
-  (default 14 days) from the record — active tickets, knowledge, status
-  deltas — writes nothing
-- `harness-recall` (cheap, at pickup or on demand) — read-only; finds related
-  tickets, knowledge and workflows through linked indexes, with scoped search
-  for unindexed work; one cited hit per line; parent-callable, writes nothing
 - `retrospective` (smart, at review time) — interviews you for the window and,
   after reading the record, for context it cannot show (asking rather than
   assuming); writes a period retrospective FOR THE HUMAN in accomplishment

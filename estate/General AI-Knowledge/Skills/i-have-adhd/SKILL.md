@@ -2,8 +2,8 @@
 
 ## WHEN TO USE
 Load this module at the start of every run of an operator-facing agent: the `orchestrator`, `planner`,
-`ticket-closer`, `doc-writer`, `ticket-init`, `estate-auditor` and `estate-question` contracts and the
-default session's `AGENTS.md` row each name it. It shapes everything written for the user to read:
+`ticket-closer`, `doc-writer`, `ticket-init`, `estate-auditor`, `estate-question`, `knowledge-curator`
+and `retrospective` contracts and the default session's `AGENTS.md` row each name it. It shapes everything written for the user to read:
 explanations, plans, approval requests, status reports and handbacks. Records and documents keep the
 shape the constitution or their `Doc-*` skill sets. Trigger keywords: reply to the user, status, next
 action, approval request, handback.
@@ -11,7 +11,7 @@ action, approval request, handback.
 The agent's contract and the constitution outrank this module, as its own rule "A rule fights the
 harness" says. Brevity never hides a known risk, an approval request or a `TODO (unverified)` caveat.
 
-Source: `skills/i-have-adhd/SKILL.md` of https://github.com/ayghri/i-have-adhd at commit
+Source: `skills/i-have-adhd/SKILL.md` of [ayghri/i-have-adhd](https://github.com/ayghri/i-have-adhd) at commit
 `1ecea1993b7fce257ffbd686c070948b5e07eda6`, copyright Ayoub Ghriss, MIT licence (the `LICENSE` file
 beside this one). The lines between the two `upstream` comment markers below are that file byte for
 byte, so a newer upstream version can be compared with `diff`: edit nothing between them. The upstream

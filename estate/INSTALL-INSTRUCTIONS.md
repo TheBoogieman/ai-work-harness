@@ -208,8 +208,7 @@ Re-running `install.sh` serves three different intents, each with its own home:
   record**: no ticket, log or knowledge file is replaced when present OR recreated
   when absent. User-owned shipped files declare that ownership in their own source
   marker, so even an estate installed before the marker existed is protected on its
-  first upgrade; merge new upstream policy into those files deliberately rather than
-  replacing local content.
+  first upgrade.
 
   There is a fourth thing it does, and it is the only one that edits a file in place.
   A file carried forward for your settings can also be *naming* a file the same rename
@@ -227,34 +226,6 @@ Re-running `install.sh` serves three different intents, each with its own home:
   expected and needs nothing special: one upgrade retires everything superseded across
   the whole span. Run from **inside** the estate, `--upgrade` refuses — there is no
   source in there to upgrade from, and it prints the command that works.
-
-  **Upgrading to `repos` / `pipelines` frontmatter (#331).** The upgrade brings the new
-  `check-work-map.py`, `init-ticket.sh`, `harness-status.sh` and `audit-inventory.py`. The files
-  below are records or carry your settings, so it keeps your copies: merge each by hand from the
-  source checkout, keeping your own content. A three-way merge does this safely: for each file,
-  `git merge-file <your copy> <source at the commit you last levelled to> <source now>` applies
-  only the upstream change and stops on a real conflict; compare the result with anything this
-  upgrade moved to `_retired/`. If your estate converted its section links to the Obsidian form
-  (`anchor-style.py --to obsidian`), convert the two source copies the same way before merging
-  (`python3 _harness/scripts/anchor-style.py --to obsidian <dir holding both copies>`): the source
-  writes GitHub-style links, so otherwise nearly every line carrying a section link conflicts. The seven agent contracts `ticket-init`, `ticket-scribe`,
-  `doc-writer`, `planner`, `ticket-closer`, `estate-auditor` and `knowledge-curator` (they carry
-  your model pins); `AGENTS.md` (the *Stale* definition); `CONSTITUTION.md` (§2, §4.3, §6.1, §8,
-  §9.1, §9.2, §14.1, §15, and the audit-age line); your template ticket (add the frontmatter block above its first line,
-  then one Session Log line through `ticket-scribe`, or the validator fails it); the five skills
-  `Doc-Ticket-Walkthrough`, `Doc-Pipeline-Home`, `Doc-Repo-Workflow`, `Doc-Knowledge-Topic` and
-  `Doc-AI-Knowledge-Note` under `General AI-Knowledge/Skills/`; `General AI-Knowledge/Work Map/_index.md`
-  (Page Shape); `General Human Knowledge/Harness Guide.md` (the Obsidian section, the
-  frontmatter notes under "Checking the graph" and the CLI under "Tool adapters") and
-  `General Human Knowledge/_index.md` (the Estate views line). Copy
-  `General Human Knowledge/Estate.base` in if you have none. Then backfill:
-  `python3 _harness/scripts/check-work-map.py` lists every document without `repos`
-  (`FRONTMATTER_MISSING`), including pipeline pages; fill them in batches with `estate-auditor`
-  (CONSTITUTION §15). Take each value from the record (a ticket's Repos list, a page's own file
-  name), never a guess, and `[]` when unknown. A ticket file changes only through
-  `ticket-scribe`, with its own Session Log entry, or the validator fails it. To use Obsidian's
-  CLI (optional), enable it and record it in your tools note as the Harness Guide's Obsidian
-  section says.
 
 ## Hook activation caveat
 

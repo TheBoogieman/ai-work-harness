@@ -37,7 +37,7 @@ ID or path appears only with what it is and why it matters.
    (name, type, source, output key) and config or schema changes.
 6. **How we tested it** — each test, CI run, UAT run or validation query: what it proves and its outcome; what
    was not tested.
-7. **How we shipped it** — branches, PRs (links, state), merge, build, UAT and PROD deploy commands with every
+7. **How we shipped it** — branches, PRs (masked links such as `[PR #951](<address>)`, state), merge, build, UAT and PROD deploy commands with every
    flag explained, activation, post-deploy checks.
 8. **Caveats and gotchas**.
 9. **Questions a PM or lead might ask** — short Q&A.

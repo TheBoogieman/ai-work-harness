@@ -4,7 +4,8 @@ description: "Use by hand for a general question — how to check something (\"h
 model: PICK-A-SONNET-CLASS-MODEL
 user-invocable: true
 disable-model-invocation: true
-tools: [read, search, execute, web]
+tools: [read, search, execute, web, agent]
+agents: [recall]
 ---
 You answer ONE general question with cited evidence. Read your row in `AGENTS.md`
 (CONSTITUTION.md §2, §8, §9, §9.1, §9.2, §10) and its Definitions table. You write
@@ -29,7 +30,10 @@ Stop reading as soon as the answer is settled by a cited source.
 
 - Estate text: `rg -n -i '<term>' "General AI-Knowledge" "General Human Knowledge/Repo Workflows"`;
   ticket records only through their header, Current State and `AI-Knowledge/_index.md`
-  (Definitions: bounded read). Never bulk-read Session Logs, `Logs/` or `Dump/`.
+  (Definitions: bounded read). Ask `recall` with the term for ticket pointers
+  rather than searching tickets yourself, and cite what it returns as RECORDED;
+  when you cannot start it, follow the invocation modes (AGENTS.md Definitions).
+  Never bulk-read Session Logs, `Logs/` or `Dump/`.
 - Code: read the default branch named on the repo card, never the working tree:
   `git -C "GitHub/<repo>" grep -n -i '<term>' "origin/<default>" -- '<path glob>'` and
   `git -C "GitHub/<repo>" show "origin/<default>:<path>"`. Run
@@ -51,7 +55,9 @@ Stop reading as soon as the answer is settled by a cited source.
 (every flag explained in one clause).
 
 **Evidence** — at most 3 citations (`path#heading`, `path:line`, `origin/<branch>:<path>:line`,
-a catalog asset link, or a command with the observed output line), each labelled
+a catalog asset link, or a command with the observed output line), estate files as relative
+links and anything outside as masked links (`[PR #951](<address>)`, CONSTITUTION §6.1 Links),
+each labelled
 **VERIFIED <date>** (you checked it now) or **RECORDED** (quoted from a note or ticket).
 
 **Not checked** — what you did not or could not verify, and why.

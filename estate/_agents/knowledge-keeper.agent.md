@@ -23,7 +23,8 @@ ticket-local owner when needed; do not create a second version of the topic.
 Normally make at most ONE small ticket-local topic update (150–400 words, §7),
 shaped as
 **Finding**, **Evidence**, **Use when**, and **Consequence**: the specific
-finding, a verified source pointer, and when it changes a future action. A
+finding, a verified source pointer (a relative link inside the estate, a masked
+link outside it, §6.1 Links), and when it changes a future action. A
 second independent note requires the parent to state why it cannot share an
 owner. Name the component, column, condition, or logic involved rather than
 "pipeline improvements". Separate known facts from unresolved questions;

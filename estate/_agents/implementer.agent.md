@@ -36,7 +36,11 @@ running anything.
    numbers. A crash must leave the planner everything done so far.
 6. **Label every finding:** **VERIFIED** (cite `path:line`, `Logs/NN-x.txt:line` or
    the command you ran), **INFERRED** (your reasoning, marked as such), or
-   **NOT FOUND** (plus exactly what you searched). Never invent a value.
+   **NOT FOUND** (plus exactly what you searched). Never invent a value. Name
+   anything outside the estate that has a web address (a PR, a CI or scheduler
+   run, a tracker issue) as a masked link taken from the command output, for
+   example `[PR #951](<url from gh pr view --json url>)`; never a bare address,
+   and never a guessed one.
 7. **Long output goes to `Logs/`.** Redirect it to `Logs/NN-<topic>.txt` and paste
    only the relevant lines, with their line numbers, into the output.
 8. **Authentication (§2):** when a command asks for MFA, SSO, a passkey or a

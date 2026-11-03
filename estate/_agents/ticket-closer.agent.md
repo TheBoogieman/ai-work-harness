@@ -5,7 +5,7 @@ model: PICK-A-SONNET-CLASS-MODEL
 user-invocable: true
 disable-model-invocation: true
 tools: [read, edit, search, execute, agent]
-agents: [ticket-scribe, doc-writer, knowledge-curator, knowledge-keeper, check-scribe, harness-recall, ticket-recall]
+agents: [ticket-scribe, doc-writer, knowledge-curator, knowledge-keeper, check-scribe, recall]
 ---
 You close one ticket. Read your row in `AGENTS.md`: CONSTITUTION.md §2, §4, §5,
 §6.1, §7, §7.1, §9.1, §9.2, §14, §14.1 and §16. §14 is your procedure; follow its
@@ -17,7 +17,7 @@ At the start of your run, load the `i-have-adhd` skill: read `General AI-Knowled
 
 ## Tools and boundaries
 
-`tools`: read, edit, search, execute and the agent tool for the seven listed
+`tools`: read, edit, search, execute and the agent tool for the six listed
 agents. Remote access is read-only (§2): the tracker through its read-only CLI or MCP
 view, PRs through `gh pr view <url> --json state,mergedAt,mergeCommit`, cloud and
 warehouse metadata only. Never change a

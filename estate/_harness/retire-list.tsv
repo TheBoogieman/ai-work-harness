@@ -119,3 +119,6 @@ _harness/scripts/tracker_sweep.sh	renamed to _harness/scripts/tracker-sweep.sh �
 # stale number no tool would ever correct and no user would think to doubt. Retirement moves it
 # into `_retired/` and prints the command that puts it back.
 VERSION	removed — nothing in the machinery states a version any more; a tag on the project's code host is the only version artifact (#298)
+_agents/ticket-recall.agent.md	renamed to _agents/recall.agent.md — one read-only recall agent that takes a ticket, a topic or both, merged with harness-recall (#365)	_agents/recall.agent.md
+_agents/harness-recall.agent.md	removed — merged into _agents/recall.agent.md, which takes a topic as well as a ticket (#365)
+_agents/weekly-digest.agent.md	removed — the retrospective agent takes any date window and leaves a record; recall summarises active tickets in chat (#365)

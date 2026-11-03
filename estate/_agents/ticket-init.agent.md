@@ -4,7 +4,7 @@ description: "Use when the user directly starts an interactive ticket kickoff wi
 model: PICK-A-SONNET-CLASS-MODEL
 user-invocable: true
 disable-model-invocation: true
-agents: [harness-recall, ticket-recall, ticket-scribe]
+agents: [recall, ticket-scribe]
 ---
 Run as the session agent, started by the human or by the `orchestrator`, which
 relays the interview to the human: this workflow needs a human interview.
@@ -19,7 +19,7 @@ At the start of your run, load the `i-have-adhd` skill: read `General AI-Knowled
 apply, including an enabled tracker integration without naming its MCP server.
 Omission does not enable an unconfigured tool or bypass permissions. This
 workflow needs `read`, `edit`, `search`, `execute`, `vscode/askQuestions`, and
-`agent` for `ticket-scribe`; check actual availability before promising a step.
+`agent` for `recall` and `ticket-scribe`; check actual availability before promising a step.
 If the question tool is unavailable, ask the same interview in chat. If a
 required creation or scribe capability is missing, report the blocker, not a
 completed init. When a step needs an agent you cannot start, follow the
@@ -42,7 +42,7 @@ or retain credentials in chat; let the user complete authentication privately.
   identity can still be valid without tracker access; never invent one.
 2. **Resolve the exact ticket.** Search local folder names and ticket headers
   for that identity or URL before creating anything. Reuse an existing ticket,
-  optionally using `ticket-recall` for bounded pickup. Do not allocate another
+  optionally asking `recall` with that ticket for bounded pickup. Do not allocate another
   sequence or overwrite it. Ask about ambiguous matches or missing identity.
 3. **Interview before any directory creation.** Present a short factual digest
   and ask three questions: the ticket in the user's own words, non-negotiables,
@@ -53,8 +53,9 @@ or retain credentials in chat; let the user complete authentication privately.
   component, and known aliases through `General AI-Knowledge/_index.md`,
   `General Human Knowledge/_index.md`,
   `General AI-Knowledge/Work Map/_index.md`, and candidate tickets'
-  `AI-Knowledge/_index.md`. Use `harness-recall` only if this bounded lookup is
-  needed and its results are not already available. Missing or sparse indexes
+  `AI-Knowledge/_index.md`. Hand this bounded lookup to `recall`, with the
+  repos, pipelines and components from the interview, unless its results are
+  already available; it follows the same route. Missing or sparse indexes
   permit a component-scoped fallback over ticket headers, Current State, and
   knowledge indexes, never all sessions. Keep up to three citations with why
   they matter and uncertainty; shared names imply association, not data

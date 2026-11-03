@@ -517,7 +517,7 @@ At pickup, before implementation, and when the target repo/pipeline changes:
    repo/pipeline name and recorded aliases. Open the pipeline page
    (`Work Map/Pipelines/<pipeline>.md`) and read its Identity card first, then only
    the section you need; open the repo card (`Work Map/Repos/<repo>.md`) for its
-   runbook. Follow at most three relevant tickets or notes. `harness-recall` can do
+   runbook. Follow at most three relevant tickets or notes. `recall` can do
    this as a bounded read-only subtask.
 4. If the map has no match, use a scoped search of ticket headers, Current States
    and knowledge indexes. State what was searched and what was not found; a
@@ -719,8 +719,8 @@ watches both is the human, or the `orchestrator` when the human runs one ([§12]
   verified` so the implementer's picture stays true.
 - Own the record: invoke `ticket-scribe` for each completed milestone, and
   `check-scribe` / `knowledge-keeper` only through their gates (§4.2, §7.1);
-  maintain Work Map links (§9.1); call `harness-recall`, `ticket-recall` or
-  `doc-writer` when they save work.
+  maintain Work Map links (§9.1); call `recall` or `doc-writer` when they
+  save work.
 
 ### 11.3 Implementer Boundaries
 
@@ -751,13 +751,11 @@ Each agent's reading list is its row in [AGENTS.md](AGENTS.md).
 | Create or refresh a document | `doc-writer` | Target from a `Doc-*` skill; approval before writing outside a ticket; remote publication stays human |
 | Audit and tidy the estate | `estate-auditor` | Started by the human or the `orchestrator`; dated report; fixes batch by batch with approval (§15) |
 | Answer a general question from the estate, repos and read-only live tools | `estate-question` | Human-started; writes nothing; may propose a knowledge note for the user to route to `knowledge-curator` |
-| Resume one ticket | `ticket-recall` | Read-only; parent may delegate |
-| Find related tickets or workflows | `harness-recall` | Read-only, bounded; parent may delegate |
+| Resume one ticket, or find related tickets and workflows for a topic | `recall` | Read-only, bounded, at most three pointers; parent may delegate |
 | Record completed ticket changes | `ticket-scribe` | One factual outcome delta; never for non-ticket work |
 | Capture knowledge | `knowledge-keeper` | Named candidate passing the Durable Knowledge Gate; default zero |
 | Capture evidence | `check-scribe` | Parent-qualified observed result passing the Durable Evidence Gate; default zero |
 | Consolidate/promote knowledge | `knowledge-curator` | User-directed maintenance; approval for promotion |
-| Summarize a period | `weekly-digest` | Ephemeral, read-only |
 | Write a dated review deliverable for a window | `retrospective` | User-requested; interviews, then frozen once the user closes it |
 
 **Automatic versus invoked.** Mechanical hooks fire without anyone asking:
@@ -768,9 +766,9 @@ instructions for the session that invokes them, not a scheduler or a guarantee:
 hooks do not launch custom agents, and the parent assistant is instructed to
 invoke the specialists when their conditions apply, which depends on it following
 the contract rather than any background job. Started by the human: `orchestrator`,
-`estate-question`, `knowledge-curator`, `weekly-digest`, `retrospective`; by the human
+`estate-question`, `knowledge-curator`, `retrospective`; by the human
 or the `orchestrator`: `ticket-init`, `planner`, `implementer`, `ticket-closer`,
-`estate-auditor`; `ticket-recall`, `harness-recall` and `doc-writer`
+`estate-auditor`; `recall` and `doc-writer`
 by the human or a parent; `ticket-scribe` by the parent for a completed ticket task;
 `knowledge-keeper` and `check-scribe` only for a qualified candidate. The
 `implementer` is never a parent: it invokes nothing. Every agent may also be called
@@ -784,8 +782,8 @@ warnings do not block style.
 **Model profile (optional, operator-chosen).** The `model:` pin in each agent's
 frontmatter is the live selection, written as the model picker's display name (a
 lowercase model ID silently falls back to the session model). Routine agents
-(`check-scribe`, `harness-recall`, `knowledge-keeper`, `ticket-recall`,
-`ticket-scribe`, `weekly-digest`) suit `Claude Sonnet 5.5 (copilot)`; `ticket-init`,
+(`check-scribe`, `knowledge-keeper`, `recall`, `ticket-scribe`) suit
+`Claude Sonnet 5.5 (copilot)`; `ticket-init`,
 `planner`, `ticket-closer`, `doc-writer`, `estate-auditor`, `estate-question`,
 `knowledge-curator` and `retrospective` suit `Claude Opus 5.5 (copilot)`;
 `orchestrator` suits the strongest model available, an Opus- or Fable-class profile,

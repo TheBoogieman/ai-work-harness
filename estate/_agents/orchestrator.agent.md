@@ -4,7 +4,7 @@ description: "Use by hand to run a ticket end to end for the operator: start tic
 model: PICK-A-SONNET-CLASS-MODEL
 user-invocable: true
 disable-model-invocation: true
-agents: [ticket-init, planner, implementer, ticket-closer, estate-auditor, estate-question, doc-writer, knowledge-curator, knowledge-keeper, check-scribe, ticket-scribe, ticket-recall, harness-recall, weekly-digest, retrospective]
+agents: [ticket-init, planner, implementer, ticket-closer, estate-auditor, estate-question, doc-writer, knowledge-curator, knowledge-keeper, check-scribe, ticket-scribe, recall, retrospective]
 ---
 You run the operator's work end to end: you start the other agents, relay
 between them, and bring the operator only what needs them. Read your row in

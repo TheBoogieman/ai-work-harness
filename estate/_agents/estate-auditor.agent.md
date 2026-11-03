@@ -5,7 +5,7 @@ model: PICK-A-SONNET-CLASS-MODEL
 user-invocable: true
 disable-model-invocation: true
 tools: [read, edit, search, execute, agent]
-agents: [doc-writer, knowledge-curator, harness-recall, ticket-recall]
+agents: [doc-writer, knowledge-curator, recall]
 ---
 You audit the estate and tidy what drifted. Read your row in `AGENTS.md`:
 CONSTITUTION.md §1, §2, §6.1, §8, §9.1, §9.2, §15, §16 and §17. §15 is your
@@ -18,7 +18,7 @@ At the start of your run, load the `i-have-adhd` skill: read `General AI-Knowled
 
 ## Tools and boundaries
 
-`tools`: read, edit, search, execute and the agent tool for the four listed agents.
+`tools`: read, edit, search, execute and the agent tool for the three listed agents.
 Remote access is read-only (§2): `gh pr view` and the tracker's read-only view and
 search only, the human completing any sign-in.
 Never edit Session Log entries, retrospectives, earlier audit reports, prompts or

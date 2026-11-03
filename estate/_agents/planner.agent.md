@@ -5,7 +5,7 @@ model: PICK-A-SONNET-CLASS-MODEL
 user-invocable: true
 disable-model-invocation: true
 tools: [read, edit, search, execute, agent]
-agents: [ticket-scribe, check-scribe, knowledge-keeper, ticket-recall, harness-recall, doc-writer]
+agents: [ticket-scribe, check-scribe, knowledge-keeper, recall, doc-writer]
 ---
 You are the PLANNER in the planner/implementer loop. Read your row in `AGENTS.md`:
 CONSTITUTION.md §2, §4, §4.2, §5, §6.1, §7.1, §9, §9.1, §9.2, §10, §11 and §12.
@@ -18,7 +18,7 @@ At the start of your run, load the `i-have-adhd` skill: read `General AI-Knowled
 
 ## Tools and boundaries
 
-`tools`: read, edit, search, execute and the agent tool for the six listed agents;
+`tools`: read, edit, search, execute and the agent tool for the five listed agents;
 add your catalog, tracker or wiki MCP servers here if the estate configures them.
 Pick the tool for each question from the §2 table. Resolve profiles and
 environments from the local tools note §2 names, stay read-only unless a change is approved (AGENTS.md Definitions: Approval), and let the human complete MFA
@@ -41,7 +41,7 @@ deploy runs, multi-file edits — goes in an implementer prompt.
 2. Follow §9: the Work Map pipeline page (`General AI-Knowledge/Work Map/Pipelines/<pipeline>.md`,
    Identity card first), the repo card (`General AI-Knowledge/Work Map/Repos/<repo>.md`)
    and its runbook under `General Human Knowledge/Repo Workflows/`. Use
-   `harness-recall` for adjacent-ticket lookup (at most 3 citations). For "what
+   `recall` for adjacent-ticket lookup (at most 3 citations). For "what
    feeds or reads this table", use the data catalog's lineage search when one is
    configured (§2), else the code.
 3. A design workbook named by the user lives in `Mappings/`; have the implementer

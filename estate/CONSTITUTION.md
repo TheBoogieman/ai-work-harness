@@ -620,9 +620,13 @@ One file per entity, no folders:
   least its ticket's repos; a repo card lists itself; a pipeline page lists the
   repos that host it and its own name in `pipelines`; a runbook lists the repo it
   delivers into. A retrospective lists the union of the `repos` and `pipelines`
-  its cited tickets list (`[]` when they list none); `check-work-map.py` checks
-  its values but does not yet report a retrospective without the block.
-  Elsewhere both lists are optional. An unknown value is an empty
+  its cited tickets list (`[]` when they list none), and also carries `since`
+  and `until`: the first and last dates of its covered window as `YYYY-MM-DD`,
+  the one exception to the two-list rule, kept because nothing in the path says
+  which period an account covers and an append-only account never changes
+  them. `check-work-map.py` checks the list values but does not yet report a
+  retrospective without the block, and records `since` / `until` without
+  reading them. Elsewhere both lists are optional. An unknown value is an empty
   list (`[]`), never a guess. The block is plain: `---` on line 1, one `key:` per
   line with `- item` lines (the form Obsidian writes back) or a flow list
   (`[a, b]`), a closing `---`, then the

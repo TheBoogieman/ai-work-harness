@@ -79,18 +79,20 @@ matching record found" with "no work happened".
 
 ## Write and discover
 
-Record the window near the top of the account. Before writing, inspect
-existing retrospective headers: when the same window already exists, return that
+Record the window near the top of the account. Before writing, read the
+`since` / `until` frontmatter of existing retrospectives (their headers when an
+older account has none): when the same window already exists, return that
 path unless the user explicitly asks for a new edition. Otherwise write ONE new
 file under `General Human Knowledge/Retrospectives/`, named using an observed
 local timestamp; never overwrite a prior retrospective. A later correction belongs in a new dated account that
 references the old one. Retrospectives stay append-only; repo workflow runbooks
 are living references maintained in place by their writer.
 
-Open the account with the `repos` / `pipelines` frontmatter of CONSTITUTION
-§9.2: `repos` is the union of the `repos` lists of the tickets it cites, and
-`pipelines` the union of their `pipelines` lists, copied from those tickets'
-own blocks, never guessed from prose. An empty union is `[]`. Under each
+Open the account with the frontmatter of CONSTITUTION §9.2: `since` and
+`until`, the window's first and last dates as `YYYY-MM-DD`; `repos`, the union
+of the `repos` lists of the tickets it cites; and `pipelines`, the union of
+their `pipelines` lists. Copy repos and pipelines from those tickets' own
+blocks, never guessed from prose; an empty union is `[]`. Under each
 theme, link the Work Map repo card (`Work Map/Repos/<repo>.md`) or pipeline
 page (`Work Map/Pipelines/<pipeline>.md`) the theme's tickets name, when that
 page exists, with relative encoded links; a missing page is noted, not created.

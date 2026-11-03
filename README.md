@@ -197,7 +197,8 @@ The workers (who reads which constitution sections: the reading list in
   (default 12 months) FOR THE HUMAN in accomplishment register, first person by
   default, with any context you supply that the record lacks labelled as yours —
   one timestamped file to `General Human Knowledge/Retrospectives/` carrying its
-  tickets' `repos` / `pipelines` frontmatter and Work Map links, plus discovery
+  window (`since` / `until`) and its tickets' `repos` / `pipelines` as
+  frontmatter, with Work Map links, plus discovery
   lines in the Retrospectives index, the General Human Knowledge index and the
   Work Map hub; nothing else
 

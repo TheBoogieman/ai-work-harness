@@ -208,8 +208,7 @@ Re-running `install.sh` serves three different intents, each with its own home:
   record**: no ticket, log or knowledge file is replaced when present OR recreated
   when absent. User-owned shipped files declare that ownership in their own source
   marker, so even an estate installed before the marker existed is protected on its
-  first upgrade; merge new upstream policy into those files deliberately rather than
-  replacing local content.
+  first upgrade.
 
   There is a fourth thing it does, and it is the only one that edits a file in place.
   A file carried forward for your settings can also be *naming* a file the same rename
@@ -227,62 +226,6 @@ Re-running `install.sh` serves three different intents, each with its own home:
   expected and needs nothing special: one upgrade retires everything superseded across
   the whole span. Run from **inside** the estate, `--upgrade` refuses — there is no
   source in there to upgrade from, and it prints the command that works.
-
-  **Upgrading to `repos` / `pipelines` frontmatter (#331).** The upgrade brings the new
-  `check-work-map.py`, `init-ticket.sh`, `harness-status.sh` and `audit-inventory.py`. The files
-  below are records or carry your settings, so it keeps your copies: merge each by hand from the
-  source checkout, keeping your own content. A three-way merge does this safely: for each file,
-  `git merge-file <your copy> <source at the commit you last levelled to> <source now>` applies
-  only the upstream change and stops on a real conflict; compare the result with anything this
-  upgrade moved to `_retired/`. If your estate converted its section links to the Obsidian form
-  (`anchor-style.py --to obsidian`), convert the two source copies the same way before merging
-  (`python3 _harness/scripts/anchor-style.py --to obsidian <dir holding both copies>`): the source
-  writes GitHub-style links, so otherwise nearly every line carrying a section link conflicts. The seven agent contracts `ticket-init`, `ticket-scribe`,
-  `doc-writer`, `planner`, `ticket-closer`, `estate-auditor` and `knowledge-curator` (they carry
-  your model pins); `AGENTS.md` (the *Stale* definition); `CONSTITUTION.md` (§2, §4.3, §6.1, §8,
-  §9.1, §9.2, §14.1, §15, and the audit-age line); your template ticket (add the frontmatter block above its first line,
-  then one Session Log line through `ticket-scribe`, or the validator fails it); the five skills
-  `Doc-Ticket-Walkthrough`, `Doc-Pipeline-Home`, `Doc-Repo-Workflow`, `Doc-Knowledge-Topic` and
-  `Doc-AI-Knowledge-Note` under `General AI-Knowledge/Skills/`; `General AI-Knowledge/Work Map/_index.md`
-  (Page Shape); `General Human Knowledge/Harness Guide.md` (the Obsidian section, the
-  frontmatter notes under "Checking the graph" and the CLI under "Tool adapters") and
-  `General Human Knowledge/_index.md` (the Estate views line). Copy
-  `General Human Knowledge/Estate.base` in if you have none. Then backfill:
-  `python3 _harness/scripts/check-work-map.py` lists every document without `repos`
-  (`FRONTMATTER_MISSING`), including pipeline pages; fill them in batches with `estate-auditor`
-  (CONSTITUTION §15). Take each value from the record (a ticket's Repos list, a page's own file
-  name), never a guess, and `[]` when unknown. A ticket file changes only through
-  `ticket-scribe`, with its own Session Log entry, or the validator fails it. To use Obsidian's
-  CLI (optional), enable it and record it in your tools note as the Harness Guide's Obsidian
-  section says.
-
-  **Upgrading to `recall` and the retrospective interview (#363, #365, #366).** The upgrade
-  creates `_agents/recall.agent.md` and retires `ticket-recall`, `harness-recall` and
-  `weekly-digest` into `_retired/<timestamp>/`, and brings the new `deploy-agents.sh` and retire
-  list. Check the new contract's `model:` pin before you deploy. The agent contracts carry your
-  model pins, so the upgrade keeps your copies: merge these by hand from the source checkout, as
-  above. Every caller's `agents:` list and prose now names `recall` (`planner`, `ticket-init`,
-  `ticket-closer`, `estate-auditor`, `orchestrator`, `estate-question`, `retrospective`); the
-  `retrospective` contract gains the interview, cuts and closing, its frontmatter and its
-  discovery writes; `doc-writer` and `estate-auditor` name §14.1; `knowledge-curator` and
-  `retrospective` load the i-have-adhd skill. `AGENTS.md` (the reading-list rows) and
-  `CONSTITUTION.md` (§1, §9, §9.2, §11, §12) carry your settings too, so merge them the same way.
-  These are records and are kept as they are: `General AI-Knowledge/Skills/i-have-adhd/SKILL.md`
-  (its list of loaders), `General Human Knowledge/Estate.base` (the Retrospectives view),
-  `General Human Knowledge/_index.md` and `General AI-Knowledge/Work Map/_index.md` (the
-  Retrospectives route); merge them by hand, or let the `retrospective` agent add the index and
-  both routes on its first run. Then run `_harness/scripts/deploy-agents.sh`: it prints one
-  `LEFTOVER:` line for each retired contract still in your assistant's agent directory. Delete
-  those three files by hand; the deploy never deletes anything there.
-
-  **Upgrading to masked external links (#368).** The upgrade brings the new `check-work-map.py`,
-  which notes bare web addresses and unlinked PR numbers. Merge by hand, as above: every agent
-  contract (each names the masked-link rule where it writes), `AGENTS.md` (rule 5) and
-  `CONSTITUTION.md` (§2 base addresses, the §4.3 header template, §6.1 **Links**); and, as records,
-  your template ticket's header lines, `Doc-Pipeline-Home` and `Doc-Ticket-Walkthrough`. Then add
-  the base web address of your code host, tracker, wiki, scheduler and CI to your tools note, so
-  agents build links rather than leave plain names. Existing notes on older Session Log entries do
-  not appear: only the newest entry of each ticket is checked.
 
 ## Hook activation caveat
 

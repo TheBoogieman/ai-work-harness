@@ -166,6 +166,7 @@ chat.
 - Document (`doc-writer`): "Refresh the `<pipeline>` pipeline page; verify live."
 - Workbook: "Parse `Mappings/<workbook>.xlsx` version `<V>` into `<ticket>`."
 - Curate: "Compact and promote knowledge for `<ticket>`; show me before publishing."
+- Review (`retrospective`): "Write my retrospective from 2026-05-18 to today for an end-of-year review, then give me a two-paragraph cut." It asks for anything you left out, then asks about conditions and off-ticket work before it writes.
 
 ## Obsidian
 

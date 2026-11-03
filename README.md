@@ -193,9 +193,13 @@ The workers (who reads which constitution sections: the reading list in
 - `harness-recall` (cheap, at pickup or on demand) — read-only; finds related
   tickets, knowledge and workflows through linked indexes, with scoped search
   for unindexed work; one cited hit per line; parent-callable, writes nothing
-- `retrospective` (smart, at review time) — writes a period retrospective
-  (default 12 months) FOR THE HUMAN in accomplishment register, first person by
-  default, with any context you supply that the record lacks labelled as yours —
+- `retrospective` (smart, at review time) — interviews you for the window and,
+  after reading the record, for context it cannot show (asking rather than
+  assuming); writes a period retrospective FOR THE HUMAN in accomplishment
+  register, first person by default, with the context you supply that the
+  record lacks labelled as yours; then writes the cuts you ask for (a
+  150-character line, two paragraphs) and takes your in-place edits until you
+  close it —
   one timestamped file to `General Human Knowledge/Retrospectives/` carrying its
   window (`since` / `until`) and its tickets' `repos` / `pipelines` as
   frontmatter, with Work Map links, plus discovery

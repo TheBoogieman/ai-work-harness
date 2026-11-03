@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 # rehearsal-declared.case.sh — [rehearsal-*] and [deploy-*] (#304): a rehearsal install has to SAY
 # SO, and the live agent directory refuses a deploy from an estate other than the one recorded as
-# owning it. SOURCED by the runner; see dev/scripts/run-demo.sh.
+# owning it. A fifth guard (#365): a deploy names each retired contract it finds left behind in
+# that directory, and deletes nothing. SOURCED by the runner; see dev/scripts/run-demo.sh.
 #
 # WHAT THIS FAMILY IS ABOUT. A rehearsal install and a real install were the same command, so the
 # only thing keeping practice runs out of a person's live assistant configuration was every caller
 # remembering to redirect the deploy target. One forgot, and fixture-pinned agent contracts —
 # carrying a model pin the product never ships and the path of a script that exists under no name —
-# were written into a real ~/.copilot/agents. The four guards below cover the two halves of the fix:
+# were written into a real ~/.copilot/agents. The first four guards below cover the two halves of the fix:
 #   * the DECLARATION: `install.sh --rehearsal` confines every out-of-estate write to the target.
 #   * the OWNERSHIP RULE that does not depend on anyone remembering the declaration —
 #     THE FIRST DEPLOY ON A MACHINE CLAIMS IT; EVERY LATER ONE MUST PROVE IT OWNS IT.
@@ -171,6 +172,41 @@ rd_owner_enforced() {
     "intact, adoption hands ownership over"
 }
 
+# (5) [deploy-reports-leftover] (#365) — a deploy only adds or overwrites, so a contract the harness
+# retired stays in the live directory and keeps appearing in the assistant's picker. The deploy must
+# NAME each such contract — one the shipped retire list declares retired — and must NOT delete it,
+# nor name an agent the operator added by hand. A probe row is appended to the estate's own retire
+# list so the guard does not depend on which real contracts a release happened to retire; the list
+# is restored before the verdict.
+# REVERT-PROOF: remove the LEFTOVER loop from deploy-agents.sh and the probe is never named -> reds.
+rd_reports_leftover() {
+  local rd_other rd_live rd_list rd_out
+  rd_other="$RD_TMP/real"             # guard (4) left this estate owning nothing new here
+  rd_live="$RD_TMP/live-leftover"; mkdir -p "$rd_live"
+  rd_list="$rd_other/_harness/retire-list.tsv"
+  cp "$rd_list" "$RD_TMP/retire-list.bak"
+  printf '_agents/zz-retired-probe.agent.md\tremoved — demo probe for [deploy-reports-leftover]\n' \
+    >> "$rd_list"
+  printf 'retired contract\n' > "$rd_live/zz-retired-probe.agent.md"
+  printf 'the operator'"'"'s own agent\n' > "$rd_live/zz-operators-own.agent.md"
+  set +e
+  rd_out=$(HARNESS_AGENT_DEPLOY_DIR="$rd_live" bash "$rd_other/_harness/scripts/deploy-agents.sh" 2>&1)
+  set -e
+  cp "$RD_TMP/retire-list.bak" "$rd_list"
+  printf '%s\n' "$rd_out" | grep -q "^LEFTOVER: $rd_live/zz-retired-probe.agent.md " \
+    || { echo "BUG [deploy-reports-leftover]: a retired contract still in the live directory was" \
+           "not named, so it would keep showing in the assistant with nothing saying why. Output:"; \
+         printf '%s\n' "$rd_out" | sed 's/^/      /'; exit 1; }
+  [ -f "$rd_live/zz-retired-probe.agent.md" ] \
+    || { echo "BUG [deploy-reports-leftover]: the retired contract was DELETED — the deploy must" \
+           "report it and leave the deletion to the operator"; exit 1; }
+  printf '%s\n' "$rd_out" | grep -q "zz-operators-own" \
+    && { echo "BUG [deploy-reports-leftover]: an agent the retire list never names was reported" \
+           "as a leftover — only retired contracts may be named"; exit 1; }
+  echo "  ok [deploy-reports-leftover] — a retired contract left in the live directory is named" \
+    "and kept, and the operator's own agent is not mentioned"
+}
+
 case_rehearsal_declared() {
   echo "--- #304 rehearsal-declared: a rehearsal has to say so; the first deploy claims the live" \
     "agent dir and every later one must own it ---"
@@ -179,5 +215,6 @@ case_rehearsal_declared() {
   rd_default_reaches_home
   rd_claims_unrecorded
   rd_owner_enforced
+  rd_reports_leftover
   rm -rf "$RD_TMP"
 }

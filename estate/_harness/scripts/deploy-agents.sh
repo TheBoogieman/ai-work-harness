@@ -83,4 +83,25 @@ done
 # claiming an estate owns contracts it did not finish writing.
 printf '%s\n' "$WORK_ROOT" > "$OWNER_FILE"
 echo "OK: deployed $n agent(s) to $DEPLOY_DIR."
+
+# RETIRED CONTRACTS LEFT BEHIND (#365). The copy above only ever adds or overwrites, so a contract
+# the harness has retired (merged, renamed or removed) stays in the discovery directory and keeps
+# appearing in the assistant's agent picker after an upgrade. This names each one so the operator
+# can delete it. It REPORTS and never deletes: the directory sits outside the estate, nothing here
+# can quarantine it the way the installer quarantines estate files, and it may hold the operator's
+# own agents. Only names the shipped retire list declares retired are reported, so an agent the
+# operator added by hand is never mistaken for a leftover.
+RETIRE_LIST="$WORK_ROOT/_harness/retire-list.tsv"
+if [ -f "$RETIRE_LIST" ]; then
+  # Field one of each non-comment row is an estate-relative path; only agent contracts concern
+  # the discovery directory. A contract still shipped under that name is not a leftover.
+  tr -d '\r' < "$RETIRE_LIST" | awk -F'\t' '/^#/ || NF < 2 { next } { print $1 }' \
+    | while IFS= read -r retired; do
+        case "$retired" in _agents/*.agent.md) ;; *) continue ;; esac
+        [ -e "$WORK_ROOT/$retired" ] && continue
+        [ -f "$DEPLOY_DIR/${retired#_agents/}" ] || continue
+        echo "LEFTOVER: $DEPLOY_DIR/${retired#_agents/} is a contract the harness has retired;" \
+             "it still shows in your assistant. Delete it by hand (see _harness/retire-list.tsv)."
+      done
+fi
 echo "NOTE: verify the discovery directory for YOUR Copilot version (preview-grade; see README Setup) — override with HARNESS_AGENT_DEPLOY_DIR."

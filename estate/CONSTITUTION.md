@@ -85,7 +85,7 @@ Ticket folders live **outside** the VS Code multi-repo workspace (`GitHub/<your>
 
 `General Human Knowledge/` mirrors `General AI-Knowledge/` the other way round: GAK is what the machinery **reads**, GHK is what it **writes for you** — human-facing outputs (`Retrospectives/` from the `retrospective` agent, `Audits/` from `estate-auditor`, `Repo Workflows/` and the `Harness Guide.md`). Two rules govern it:
 
-- **HISTORY IS APPEND-ONLY; REFERENCES ARE LIVING.** Dated deliverables, including `Retrospectives/` and `Audits/` (estate audits, §15), are timestamped and never rewritten. A later retrospective or audit is a new file; only `Audits/_index.md` is living. `Repo Workflows/`, `Harness Guide.md`, `General AI-Knowledge/Work Map/` and the discovery `_index.md` files are living references: correct them in place when their sources change, and note substantive runbook corrections in their index. New folders are append-only unless explicitly declared living here. Agents may read human-facing runbooks; the audience label is not an access restriction.
+- **HISTORY IS APPEND-ONLY; REFERENCES ARE LIVING.** Dated deliverables, including `Retrospectives/` and `Audits/` (estate audits, §15), are timestamped and never rewritten. A later retrospective or audit is a new file; only `Audits/_index.md` and `Retrospectives/_index.md` are living. `Repo Workflows/`, `Harness Guide.md`, `General AI-Knowledge/Work Map/` and the discovery `_index.md` files are living references: correct them in place when their sources change, and note substantive runbook corrections in their index. New folders are append-only unless explicitly declared living here. Agents may read human-facing runbooks; the audience label is not an access restriction.
 - **INSIDE THE WHITELIST.** These artifacts **are** record — a review deliverable is worth keeping and versioning — so the folder is re-included above and its contents are tracked and auto-committed like any other record, never treated as disposable scratch.
 
 ---
@@ -619,7 +619,10 @@ One file per entity, no folders:
   `GitHub/<repo>` entries of its header **Repos** list; a walkthrough carries at
   least its ticket's repos; a repo card lists itself; a pipeline page lists the
   repos that host it and its own name in `pipelines`; a runbook lists the repo it
-  delivers into. Elsewhere both lists are optional. An unknown value is an empty
+  delivers into. A retrospective lists the union of the `repos` and `pipelines`
+  its cited tickets list (`[]` when they list none); `check-work-map.py` checks
+  its values but does not yet report a retrospective without the block.
+  Elsewhere both lists are optional. An unknown value is an empty
   list (`[]`), never a guess. The block is plain: `---` on line 1, one `key:` per
   line with `- item` lines (the form Obsidian writes back) or a flow list
   (`[a, b]`), a closing `---`, then the

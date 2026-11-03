@@ -104,7 +104,7 @@ ticket record in that session.
 | `ticket-recall` | [4.3](CONSTITUTION.md#43-ticket-markdown-file), [5](CONSTITUTION.md#5-current-state-convention), [9](CONSTITUTION.md#9-context-discovery) | Nothing (read-only) | Nothing |
 | `harness-recall` | [9](CONSTITUTION.md#9-context-discovery), [9.1](CONSTITUTION.md#91-linked-work-map), [9.2](CONSTITUTION.md#92-pipeline-and-repo-pages) | Nothing (read-only) | Nothing |
 | `weekly-digest` | [4.3](CONSTITUTION.md#43-ticket-markdown-file), [5](CONSTITUTION.md#5-current-state-convention), [6](CONSTITUTION.md#6-session-logging-convention) | Nothing (ephemeral) | Nothing |
-| `retrospective` | [1](CONSTITUTION.md#1-folder-structure), [6.1](CONSTITUTION.md#61-record-ownership-and-brevity), [17](CONSTITUTION.md#17-harness-status-convention) | One dated file in `General Human Knowledge/Retrospectives/` | Nothing |
+| `retrospective` | [1](CONSTITUTION.md#1-folder-structure), [6.1](CONSTITUTION.md#61-record-ownership-and-brevity), [9.2](CONSTITUTION.md#92-pipeline-and-repo-pages), [17](CONSTITUTION.md#17-harness-status-convention) | One dated file in `General Human Knowledge/Retrospectives/`; discovery lines in its `_index.md`, the General Human Knowledge index and the Work Map hub | Nothing |
 
 Procedures on demand: a red or yellow at entry →
 [§16](CONSTITUTION.md#16-session-states-and-operational-rules); estate health →

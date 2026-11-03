@@ -173,8 +173,8 @@ def routes(text: str, index: bool) -> list[tuple[int, str, bool]]:
 BARE_URL_RE = re.compile(r"(?i)\bhttps?://[^\s<>)\]]+")
 UNLINKED_PR_RE = re.compile(r"(?i)\b(?:PR|pull request)\s?#\d+\b")
 LINK_MESSAGES = {
-    "BARE_URL": "{n} bare web address(es); write each as a masked link, [what it is](address) (CONSTITUTION §6.1).",
-    "UNLINKED_PR": "{n} pull request(s) named by number but not linked; write [PR #N](address) (CONSTITUTION §6.1).",
+    "BARE_URL": "{n} bare web address(es); write each as a masked link, [what it is](<address>) (CONSTITUTION §6.1).",
+    "UNLINKED_PR": "{n} pull request(s) named by number but not linked; write [PR #N](<address>) (CONSTITUTION §6.1).",
 }
 
 

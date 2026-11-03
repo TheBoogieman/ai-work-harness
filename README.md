@@ -156,7 +156,9 @@ The workers (who reads which constitution sections: the reading list in
 - `orchestrator` (strongest tier, started by hand) — runs a ticket end to end:
   starts `ticket-init`, the `planner` and the `implementer`, carries each
   hand-off, waits on CI, then starts `ticket-closer`; approves, merges or
-  pushes only under the standing delegation you write in your tools note
+  pushes only under the standing delegation you write in your tools note, and
+  with levelling delegated levels your estate (CONSTITUTION §18.1: your custom
+  files win, merged three-way)
 - `ticket-init` (smart, at pickup) — pulls the issue from its board's
   tracker, interviews you (your words, non-negotiables, repos), suggests
   branch names, births the folder

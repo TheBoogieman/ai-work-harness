@@ -137,6 +137,11 @@ delegation** section you write in your local tools note (CONSTITUTION §2), with
 your words quoted, the date, and what they cover. No agent writes or widens it.
 Without it the orchestrator is a courier, and you approve everything as before.
 
+With levelling delegated, it also levels your installed estate after a merge to the
+harness source, following CONSTITUTION §18.1: your estate's custom files trump the
+source, so each file the upgrade keeps gets a three-way merge in which your lines
+survive, shown to you as a diff and written only after your yes.
+
 Hosts differ in whether one agent can start another. An agent that cannot start
 the agent a step needs hands that step back (`AGENTS.md` Definitions: Invocation
 modes).

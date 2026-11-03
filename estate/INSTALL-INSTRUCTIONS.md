@@ -208,7 +208,9 @@ Re-running `install.sh` serves three different intents, each with its own home:
   record**: no ticket, log or knowledge file is replaced when present OR recreated
   when absent. User-owned shipped files declare that ownership in their own source
   marker, so even an estate installed before the marker existed is protected on its
-  first upgrade.
+  first upgrade. Your copies of those files win: an upstream change reaches them only
+  through a three-way merge in which your lines survive, and `CONSTITUTION.md` §18.1
+  owns that rule.
 
   There is a fourth thing it does, and it is the only one that edits a file in place.
   A file carried forward for your settings can also be *naming* a file the same rename

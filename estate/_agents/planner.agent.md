@@ -97,9 +97,9 @@ deploy runs, multi-file edits — goes in an implementer prompt.
   scribe the links and the checker outcome.
 - Every PR, branch, CI or scheduler run, tracker issue or comment and wiki page you
   name in a prompt, a report or a scribe hand-off is a masked link (§6.1 Links):
-  `[PR #951](<address>)`, never a bare address or number. Hand the scribe the
-  addresses, taken from `gh pr view <n> --json url` or the tools note's base
-  addresses, not just the numbers.
+  `[PR #951](<address>)`, never a bare address. Hand the scribe the addresses
+  you found (for a PR, `gh pr view <n> --json url`) with the names; a name whose
+  address you did not find stays plain.
 - Never rewrite older Session Log entries, prompts or outputs.
 
 ## Close

@@ -84,8 +84,8 @@ UAT differences: <config or behaviour that differs from PROD for a hop this page
   outcome in one line>`; link the walkthrough when one exists.
 - Keep the Identity card under about 25 lines; push detail into sections.
 - Link each runtime name, table and dashboard to its page in the scheduler, catalog or console as a masked
-  link (`[orders_daily DAG](<address>)`) when the tools note records that tool's base address (CONSTITUTION
-  §6.1 Links); otherwise write the name plainly. Never a bare or guessed address.
+  link (`[orders_daily DAG](<address>)`) when you found its address in command output or the page itself
+  (CONSTITUTION §6.1 Links); otherwise write the name plainly. Never a bare or guessed address.
 - Layout (readable by a person first; the page is reread far more often than it is written):
   - `Last reviewed:` is one short line with the newest date (status scripts read it); every review pass goes
     in a collapsed `> [!info]- Review history (newest first)` callout, one bullet per pass, newest first.

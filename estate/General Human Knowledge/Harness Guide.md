@@ -50,8 +50,8 @@ It also notes links outside the estate that are not masked (CONSTITUTION §6.1, 
 address left in prose (`BARE_URL`, an autolink included) and a pull request named by number without a
 link (`UNLINKED_PR`), one note per file with a count. Code, frontmatter, earlier audits and every
 Session Log entry but the newest are ignored. Tracker keys, comments, wiki pages and DAG runs are not
-matched; the writing agents carry those. Record each tool's base web address in your tools note so
-agents can build links instead of leaving plain names.
+matched; the writing agents link them when they found the address, and leave the plain name when
+they did not.
 
 The helper is warning-only and read-only; the default root is its own estate.
 It observes encoded relative links, reference definitions, file-index entries

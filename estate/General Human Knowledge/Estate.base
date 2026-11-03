@@ -64,6 +64,19 @@ views:
       - file.name
       - repos
   - type: table
+    name: Retrospectives
+    filters:
+      and:
+        - file.inFolder("General Human Knowledge/Retrospectives")
+        - not:
+            - file.name.startsWith("_index")
+    order:
+      - file.name
+      - since
+      - until
+      - repos
+      - pipelines
+  - type: table
     name: Knowledge notes
     filters:
       or:

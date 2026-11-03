@@ -96,7 +96,7 @@ Work/                                        [git root · local-only · whitelis
 │   ├── Harness Guide.md                    operator guide · what runs by itself, who starts which agent, model pins, sample prompts
 │   ├── Repo Workflows/                     living repo runbooks · _index.md routes to verified delivery and environment steps
 │   ├── Audits/                             ← estate-auditor · one dated report per audit, "Work commit audited: <sha>" · _index.md is living
-│   └── Retrospectives/                      ← retrospective agent · one timestamped file per run
+│   └── Retrospectives/                      ← retrospective agent · one timestamped file per run, with repos/pipelines frontmatter · _index.md is living
 │
 ├── _retired/<timestamp>/                    QUARANTINE — appears only after install.sh --upgrade [gitignored · deliberately outside the record]
 │   └── <original path>                      your copy of a replaced or superseded file, moved never deleted · the run printed the mv that restores it

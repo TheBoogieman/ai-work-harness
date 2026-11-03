@@ -72,6 +72,8 @@ views:
             - file.name.startsWith("_index")
     order:
       - file.name
+      - since
+      - until
       - repos
       - pipelines
   - type: table

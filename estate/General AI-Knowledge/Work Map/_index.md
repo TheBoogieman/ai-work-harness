@@ -7,7 +7,7 @@ a deployment inventory or a replacement for ticket records. Pipeline pages are
 the one home of each pipeline's facts (CONSTITUTION §9.2): read a page's
 Identity card first, then one section. Repo cards are routing.
 
-[Reusable knowledge](../_index.md) | [Repo workflows](../../General%20Human%20Knowledge/Repo%20Workflows/_index.md) | [Pipeline page template](../Skills/Doc-Pipeline-Home/SKILL.md)
+[Reusable knowledge](../_index.md) | [Repo workflows](../../General%20Human%20Knowledge/Repo%20Workflows/_index.md) | [Pipeline page template](../Skills/Doc-Pipeline-Home/SKILL.md) | [Retrospectives](../../General%20Human%20Knowledge/Retrospectives/_index.md)
 
 ## Repositories
 

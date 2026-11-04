@@ -157,6 +157,7 @@ demo_order() {
     case:workbook-parse \
     case:section-pointers \
     case:session-clock \
+    case:entry-order \
     case:housekeeping \
     case:worktree-store \
     case:backfill-guards \

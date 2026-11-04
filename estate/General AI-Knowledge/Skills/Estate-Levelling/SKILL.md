@@ -95,7 +95,8 @@ throw-away helpers there as bash or Python files rather than long one-liners (se
   came in and what of the estate's was kept. Write only after their yes, and refuse to write a file
   whose estate copy changed since the merge was computed.
 - A changed template ticket needs its own Session Log entry through `ticket-scribe`, or the
-  validator goes red. The parent passes the timestamp from `date +%Y%m%d%H%M%S`.
+  validator goes red. The scribe writes it with `append-session-entry.sh`, which reads the clock;
+  pass no timestamp.
 
 ### 7. Shipped records the upgrade never creates
 The upgrade never creates a record (anything outside `_harness/`, `_agents/`, the root files and the

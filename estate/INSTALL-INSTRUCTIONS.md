@@ -324,9 +324,9 @@ point against their current documentation.
   that starts after the folder exists. The interactive agents (`ticket-init`,
   `planner`, `ticket-closer`, `estate-auditor`) need the human in the loop: run them
   as the session (`claude --agent <name>`), or as subagents of an `orchestrator`
-  session, which relays their questions to you. `ticket-scribe` has no
-  shell, so it can't read the clock its header needs: pass it the local timestamp
-  (`date +%Y%m%d%H%M%S`).
+  session, which relays their questions to you. `ticket-scribe` runs one shell
+  command, `_harness/scripts/append-session-entry.sh`, which reads the local clock
+  itself, so no timestamp is passed to it (CONSTITUTION §6, *Writing an entry*).
 - **Model pins** in the agent files are Copilot picker names. Give the Claude Code
   copies their own models by the Harness Guide's tiers. On a Copilot plan whose
   picker offers only Auto, pin `Auto`: every Copilot agent then runs on that one

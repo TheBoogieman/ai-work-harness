@@ -100,10 +100,10 @@ or retain credentials in chat; let the user complete authentication privately.
   Before the final scribe step, link the new ticket from its repo/pipeline page
   entries and the map root (create a page only when a source backs it) and add up
   to three useful Context links to the ticket header.
-8. **Record and validate the real init.** Observe local time with
-  `date +%Y%m%d%H%M%S` after the work. Invoke `ticket-scribe` with the actual
-  path, observed timestamp, interview facts, and actions performed, to append
-  the init entry and refresh Current State together. Then run
+8. **Record and validate the real init.** Invoke `ticket-scribe` with the actual
+  path, interview facts, and actions performed, to append the init entry (it
+  writes it with `append-session-entry.sh`, which reads the clock, so pass no
+  timestamp) and refresh Current State together. Then run
   `bash _harness/scripts/check-ticket-log.sh` from the estate root. A `FAIL`
   means init is not done: preserve and diagnose the record, repair only from
   observed facts, and rerun. Never invent a log to silence validation. Run

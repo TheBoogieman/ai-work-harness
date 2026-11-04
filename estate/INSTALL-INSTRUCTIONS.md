@@ -206,10 +206,9 @@ Re-running `install.sh` serves three different intents, each with its own home:
   customized Constitution and `AGENTS.md`, context-pack scrub table, board grammar, model
   pins and hook configuration all keep the values you gave them — and it **never touches a
   record**: no ticket, log or knowledge file is replaced when present OR recreated
-  when absent. The two documents that describe the harness itself are the exception:
-  the Harness Guide and `General AI-Knowledge/AI Harness/DESIGN.md` count as machinery,
-  so the upgrade replaces them like any shipped script, with the same `_retired/` copy
-  and printed `mv`. User-owned shipped files declare that ownership in their own source
+  when absent. The two documents that describe the harness itself, the Harness Guide
+  and `General AI-Knowledge/AI Harness/DESIGN.md`, are laid down when absent and kept
+  when present, like the Constitution. User-owned shipped files declare that ownership in their own source
   marker, so even an estate installed before the marker existed is protected on its
   first upgrade. Your copies of those files win: an upstream change reaches them only
   through a three-way merge in which your lines survive, and `CONSTITUTION.md` §18.1
@@ -231,6 +230,17 @@ Re-running `install.sh` serves three different intents, each with its own home:
   expected and needs nothing special: one upgrade retires everything superseded across
   the whole span. Run from **inside** the estate, `--upgrade` refuses — there is no
   source in there to upgrade from, and it prints the command that works.
+
+  **P.S. Using the `orchestrator` and the `Estate-Levelling` skill is recommended.**
+  The commands above are the mechanical half of a levelling. The other half is the
+  three-way merge of every file your estate customised (CONSTITUTION §18.1), and
+  that is where a levelling goes wrong by hand. Start the `orchestrator` and ask it
+  to level your estate: it reads
+  [the Estate-Levelling skill](General%20AI-Knowledge/Skills/Estate-Levelling/SKILL.md)
+  first, which carries the whole runbook (proving the base commit, the merges, the
+  traps, the last levelled line in your tools note), and it shows you every merge as
+  a diff before writing it. Without a standing delegation it acts as a courier and
+  brings each approval to you.
 
 ## Hook activation caveat
 

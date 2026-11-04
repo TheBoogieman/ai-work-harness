@@ -733,12 +733,13 @@ in_up_advance_source() {
   return 0
 }
 
-# in_up_harness_docs (#371) — the two shipped reference documents, moved on by the release this
-# estate is about to receive. It sits apart from in_up_advance_source because it edits BOTH sides:
-# the source moves forward, and the estate gains a line of its own in the Harness Guide (so the
-# guard can prove a customised copy is quarantined, not lost) and in a neighbouring index (so the
-# guard can prove the exception stops at those two paths). DESIGN.md stays as shipped on purpose:
-# it is the ordinary case, an estate that never edited the file.
+# in_up_harness_docs (#371, #375) — the two shipped reference documents, moved on by the release
+# this estate is about to receive. It sits apart from in_up_advance_source because it edits BOTH
+# sides: the source moves forward, and the estate gains a line of its own in the Harness Guide (so
+# the guard can prove a customised copy comes through untouched) and in a neighbouring index (so the
+# guard can prove nothing past those two paths changed class). DESIGN.md stays as shipped on purpose:
+# it is the ordinary case, an estate that never edited the file. Both estate copies are snapshotted
+# AFTER the estate's edit, because the snapshot is what the upgrade must leave them equal to.
 in_up_harness_docs() {
   UP_GUIDE="General Human Knowledge/Harness Guide.md"
   UP_DESIGN="General AI-Knowledge/AI Harness/DESIGN.md"
@@ -755,6 +756,8 @@ Local note: a guide line of our own.
   printf '
 Local note: an index line of our own.
 ' >> "$UP_NEIGHBOUR"
+  cp -p "$UP_EST/$UP_GUIDE" "$I39_ROOT/snap.guide"
+  cp -p "$UP_EST/$UP_DESIGN" "$I39_ROOT/snap.design"
   return 0
 }
 
@@ -874,25 +877,40 @@ in_upgrade_retires() {
     "restore command reported"
 }
 
-# (y) upgrade-carries-harness-docs (#371): the Harness Guide and DESIGN.md describe the harness
-#     itself, so a release that changes the harness must carry them. Left as records, an upgrade
-#     that retires an agent leaves the estate's guide naming it, and the plan never says so.
+# (y) upgrade-keeps-harness-docs (#375, reversing #371): the Harness Guide and DESIGN.md are the
+#     documents an estate customises most (its own model pins, examples and design notes). Replaced
+#     as machinery, a customised copy went to quarantine on EVERY upgrade, had to be restored by
+#     hand and merged anyway, and a levelling could never end on a dry-run with nothing to do,
+#     because the next dry-run planned the same replacement. They now carry the source's
+#     user-ownership marker, so they are KEPT like CONSTITUTION.md and AGENTS.md, and the upstream
+#     change reaches them through the three-way merge (§18.1).
 #     Reads the run in_upgrade_retires already made, so it costs no second upgrade.
-#     THREE CLAIMS, IN THE ORDER A READER WOULD DOUBT THEM: both documents arrive; a copy the
-#     estate had edited is quarantined with a restore line, because replacing without that is
-#     data loss; and the neighbouring index keeps its line, because an exception wider than two
-#     paths would quietly make other records replaceable.
-#     REVERT-PROVABLE: drop the two paths from upgrade_is_machinery and this reds on its first
-#     assertion, because both documents then stay behind the source.
-in_upgrade_carries_harness_docs() {
-  local d
-  for d in "$UP_GUIDE" "$UP_DESIGN"; do
-    cmp -s "$UP_EST/$d" "$UP_SRC/estate/$d"       || { echo "BUG [upgrade-carries-harness-docs]: the upgrade left '$d' behind the source.";            echo "    It describes the harness this same run changed, so the estate keeps";            echo "    describing a harness it no longer has until someone merges it by hand.";            exit 1; }
+#     THREE CLAIMS, IN THE ORDER A READER WOULD DOUBT THEM: both documents come through
+#     byte-identical, the edited one included, so nothing of the estate's is lost; the run NAMES
+#     both under keep and quarantines neither, so the merge they need is said out loud; and the
+#     neighbouring index keeps its line, so no other record changed class.
+#     REVERT-PROVABLE: drop the marker from the source guide and this reds on its first assertion,
+#     because the upgrade then replaces the estate's edited copy with the source's.
+in_upgrade_keeps_harness_docs() {
+  local d s
+  for d in guide:"$UP_GUIDE" design:"$UP_DESIGN"; do
+    s="$I39_ROOT/snap.${d%%:*}"; d="${d#*:}"
+    cmp -s "$s" "$UP_EST/$d" \
+      || { echo "BUG [upgrade-keeps-harness-docs]: the upgrade CHANGED '$d'. An estate edits this"; \
+           echo "    document for itself, so replacing it sends the estate's lines to quarantine on"; \
+           echo "    every upgrade and no levelling can end clean. Diff:"; diff "$s" "$UP_EST/$d" | head -5; \
+           exit 1; }
+    grep -q "^ *$d\$" "$I39_ROOT/up.first" \
+      || { echo "BUG [upgrade-keeps-harness-docs]: '$d' was kept but never NAMED under keep, so"; \
+           echo "    nothing tells the user it now needs a three-way merge"; exit 1; }
+    ! find "$UP_EST/_retired" -path "*/$d" 2>/dev/null | grep -q . \
+      || { echo "BUG [upgrade-keeps-harness-docs]: a copy of '$d' reached quarantine"; exit 1; }
   done
-  grep -q 'a guide line of our own' "$UP_EST/_retired/"*"/$UP_GUIDE"     || { echo "BUG [upgrade-carries-harness-docs]: the estate's edited guide is not in";          echo "    quarantine, so replacing it destroyed the estate's own line"; exit 1; }
-  grep -A2 "^REPLACED $UP_GUIDE\$" "$I39_ROOT/up.first" | grep -q 'RESTORE IT WITH: *mv '     || { echo "BUG [upgrade-carries-harness-docs]: the guide was replaced without the command";          echo "    that puts it back, and _retired/ is untracked, so nothing else says so";          exit 1; }
-  grep -q 'an index line of our own' "$UP_NEIGHBOUR"     || { echo "BUG [upgrade-carries-harness-docs]: the exception reached past its two paths:";          echo "    a neighbouring record lost the estate's line"; exit 1; }
-  echo "  ok [upgrade-carries-harness-docs] — both documents arrive, the edited guide is"     "quarantined with its restore line, and the neighbouring record is untouched"
+  grep -q 'an index line of our own' "$UP_NEIGHBOUR" \
+    || { echo "BUG [upgrade-keeps-harness-docs]: a neighbouring record lost the estate's line"; \
+         exit 1; }
+  echo "  ok [upgrade-keeps-harness-docs] — both documents come through byte-identical, named" \
+    "under keep, none quarantined, and the neighbouring record is untouched"
 }
 
 # (u) upgrade-retires-version (#298): THE ONE NEW BEHAVIOUR IN A CHANGE THAT IS OTHERWISE ALL
@@ -1216,7 +1234,7 @@ case_installer() {
   in_dry_run_asks_nothing
   in_upgrade_needs_source
   in_upgrade_retires
-  in_upgrade_carries_harness_docs
+  in_upgrade_keeps_harness_docs
   in_upgrade_retires_version
   in_upgrade_keeps_settings
   in_upgrade_repoints

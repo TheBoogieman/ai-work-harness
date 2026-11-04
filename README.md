@@ -42,6 +42,12 @@ reconfiguration and the hook-activation caveat. This page repeats none of them
 on purpose: two install documents drift apart, so every install command is told
 once, there.
 
+*P.S. Upgrading an installed estate to a newer release? Using the `orchestrator`
+and the [Estate-Levelling skill](<estate/General AI-Knowledge/Skills/Estate-Levelling/SKILL.md>)
+is recommended: the orchestrator reads the skill before every levelling and walks
+you through the upgrade and the three-way merge of your customised files, one
+diff at a time. The upgrade commands themselves are in INSTALL-INSTRUCTIONS.md.*
+
 ## Assumptions
 
 This harness assumes — and only works as designed with — the following.
@@ -382,9 +388,10 @@ the vocabulary those guarantees are written in. *Referenced by:* this page.
 — `_index.md`, `SKILL-TEMPLATE.md`, `SQL-Writing/SKILL.md`, the eight `Doc-*`
 documentation targets `doc-writer` writes to, discovered index-first, and
 `i-have-adhd/` (an MIT output-style module copied from ayghri/i-have-adhd, which
-the operator-facing agents load at the start of each run). *Referenced by:*
+the operator-facing agents load at the start of each run), and `Estate-Levelling/`
+(the levelling runbook the orchestrator reads before every levelling). *Referenced by:*
 `AGENTS.md` (rule 4 and the reading list), the operator-facing agent contracts,
-constitution (§19 Skills Convention).
+constitution (§19 Skills Convention, §18.1 Levelling an Estate).
 
 ### Design notes and the diagram-currency ledger
 

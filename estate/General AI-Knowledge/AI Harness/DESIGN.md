@@ -1,6 +1,8 @@
 # Design notes — why the harness is shaped like this
 Last reviewed: 2026-10-21
 
+<!-- harness-upgrade: preserve-user-content -->
+
 **Diagram currency (#354):** the sheets do not draw the `orchestrator` agent,
 which can start every other agent and carry the planner/implementer hand-offs,
 or the standing delegation it acts under. No SVG was edited; this note names the

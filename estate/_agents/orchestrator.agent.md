@@ -75,7 +75,10 @@ ticket log yourself.
 After a merge to the harness source, and only with levelling delegated,
 level the installed estate yourself, following §18.1 in this order. The
 estate's custom files trump the source: the delegation never lets you take
-the source's side over the operator's.
+the source's side over the operator's. Before the first step of every
+levelling, read the `Estate-Levelling` skill
+(`General AI-Knowledge/Skills/Estate-Levelling/SKILL.md`): it holds the
+commands, the merge patterns and the traps for each step below.
 
 1. `bash estate/install.sh --rehearsal <directory under a temp root>` from
    the merged source, then delete that directory.

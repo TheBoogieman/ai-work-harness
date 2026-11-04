@@ -848,15 +848,30 @@ upgrade_paths() {
 # record folder invented after this was written is protected without anyone editing this function.
 # THE ONE NAMED EXCEPTION (#371) is the two shipped documents that describe the harness itself. As
 # records they stayed behind the source, so an upgrade that retired an agent left the estate's
-# guide still naming it. They are exact paths, not a folder, so no other document becomes
-# replaceable; an estate that edited one gets it back from quarantine and merges it (§18.1).
+# guide still naming it. They are exact paths, not a folder, so no other document changes class.
+# Being machinery is what gets an absent copy laid down; a PRESENT copy is never replaced, because
+# both carry the user-ownership marker (#375) and so land in KEEP, where the run names them and the
+# upstream change reaches them through the three-way merge (§18.1). Replacing them sent an
+# estate's own pins and notes to quarantine on every upgrade, and no levelling could end clean.
 upgrade_is_machinery() {
+  upgrade_is_harness_doc "$1" && return 0
   case "$1" in
     _harness/*|_agents/*) return 0 ;;
-    "General Human Knowledge/Harness Guide.md") return 0 ;;
-    "General AI-Knowledge/AI Harness/DESIGN.md") return 0 ;;
     */*)                  return 1 ;;
     *)                    return 0 ;;
+  esac
+}
+
+# upgrade_is_harness_doc <estate-relative path> — the ONE home of the two exception paths above.
+# Named once because two places read it: upgrade_is_machinery (an absent copy is laid down) and
+# plan_upgrade_repoints (a kept copy is never rewritten in place). Both documents narrate the
+# harness's history, so an old filename in them is often a true statement about the past, and
+# re-pointing it would turn "renamed X to Y" into "renamed Y to Y". Their renames arrive through the
+# three-way merge instead, which carries the source's own wording (#375).
+upgrade_is_harness_doc() {
+  case "$1" in
+    "General Human Knowledge/Harness Guide.md"|"General AI-Knowledge/AI Harness/DESIGN.md") return 0 ;;
+    *) return 1 ;;
   esac
 }
 
@@ -1121,6 +1136,8 @@ plan_upgrade_repoints() {
   local rel row pair po pn n
   for rel in ${up_keep[@]+"${up_keep[@]}"}; do
     [ -f "$TARGET/$rel" ] || continue
+    # The harness documents narrate history; their renames come through the merge (#375).
+    upgrade_is_harness_doc "$rel" && continue
     while IFS= read -r row; do
       while IFS= read -r pair; do
         po="$(printf '%s' "$pair" | cut -f1)"; pn="$(printf '%s' "$pair" | cut -f2)"

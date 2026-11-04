@@ -1,5 +1,7 @@
 # Harness Guide
 
+<!-- harness-upgrade: preserve-user-content -->
+
 How the harness keeps records connected, what runs by itself, what you start,
 and which model profile suits which agent. Rules live in the
 [constitution](../CONSTITUTION.md); this guide is the operator's map of them.

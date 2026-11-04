@@ -57,7 +57,8 @@ start with `OK:`, `NOTE:`, `WARN:` or `FAIL:`. A `WARN:` schedules work; a
 
 **An agent** is a markdown file under `_agents/` holding instructions for the AI
 assistant — one file per job. `ticket-scribe`, for instance, is the one that
-writes session-log entries. In a normal day you never type the commands that
+writes session-log entries, through the one helper script that places them,
+`_harness/scripts/append-session-entry.sh`. In a normal day you never type the commands that
 those agents run; you ask your assistant, and it does what its agent file says.
 This document types them out so that you can see exactly what lands on disk.
 
@@ -185,8 +186,9 @@ which is exactly what the validator refuses. Clear it with the manual half of
 the fix it prints, and the ticket validates:
 
 ```bash
-printf '\n## %s - session unrecorded; changes per commits\n' "$(date +%Y%m%d%H%M%S)" \
-  >> Tickets/999912Z-PROJ-99999/999912Z-PROJ-99999.md
+printf -- '- Session not recorded at the time; the changes are in the commits.\n' \
+  | bash _harness/scripts/append-session-entry.sh \
+      Tickets/999912Z-PROJ-99999/999912Z-PROJ-99999.md "session unrecorded; changes per commits"
 bash _harness/scripts/check-ticket-log.sh    # OK: 999912Z-PROJ-99999 validated.
 ```
 
@@ -201,9 +203,11 @@ test run stay ephemeral because code, tests, and CI already own their results.
 The null-date behavior is different: it is undocumented, verified, expensive to
 rediscover, and changes what a future editor must do, so the parent names it as a
 candidate and it passes the Durable Knowledge Gate. It becomes one compact
-retrieval card. Then you record the session in the log the way the
-`ticket-scribe` agent writes one: a block headed with the local timestamp, and a
-line saying what happened. (That agent also refreshes the record's
+retrieval card. Then you record the session in the log with the helper the
+`ticket-scribe` agent itself uses, `append-session-entry.sh`: you give it the
+ticket, a one-line description and the bullets, and it reads the local clock,
+writes the header and appends the block at the bottom, so neither the time nor
+the place is anyone's judgement. (That agent also refreshes the record's
 `## Current State` section in the same breath. That part is prose about your own
 work rather than machinery, so it is left out of this transcript.)
 
@@ -211,7 +215,9 @@ Then you ask the validator again.
 
 ```console
 $ printf '%s\n' '# Staging model null-date behavior' '' '## Finding' 'Rows with a null effective date are dropped by the staging model.' '' '## Evidence' 'Verified against the staging model and its focused test.' '' '## Use when' 'Read before changing effective-date handling in the staging model.' '' '## Consequence' 'Preserve or explicitly replace the null-date behavior when editing the model.' > Tickets/202607A-PROJ-4021/AI-Knowledge/staging-model-quirk.md
-$ printf '\n## %s - Traced the missing rows\n- Null effective dates are dropped by the staging model.\n' "$(date +%Y%m%d%H%M%S)" >> Tickets/202607A-PROJ-4021/202607A-PROJ-4021.md
+$ printf -- '- Null effective dates are dropped by the staging model.\n' | bash _harness/scripts/append-session-entry.sh Tickets/202607A-PROJ-4021/202607A-PROJ-4021.md "Traced the missing rows"
+OK: appended to Tickets/202607A-PROJ-4021/202607A-PROJ-4021.md
+## <TIMESTAMP> - Traced the missing rows
 $ bash _harness/scripts/check-ticket-log.sh
 FAIL: 202607A-PROJ-4021 orphan file AI-Knowledge/staging-model-quirk.md not in _index.md. Fix: echo '- staging-model-quirk.md — <what it covers>' >> '<ESTATE>/Tickets/202607A-PROJ-4021/AI-Knowledge/_index.md'
 FAIL: 1 ticket(s) need attention — red blocks.
@@ -346,8 +352,8 @@ You will not type most of what is above; it was typed out here so that you could
 see it. The day you will actually have is a conversation: you say you are picking
 up PROJ-4021, and `ticket-init` pulls the issue, asks you three questions and
 creates the folder from section 2; you work; and when the task ends
-`ticket-scribe` writes the session-log entry and rewrites Current State in one
-step, while `knowledge-keeper` writes the note and its index line in one step —
+`ticket-scribe` writes the session-log entry through `append-session-entry.sh` and
+rewrites Current State in the same step, while `knowledge-keeper` writes the note and its index line in one step —
 for the named candidate that passed the gate. An ordinary task invokes no keeper
 and adds no notebook cell, so the red block in section 3 is rarer than this page
 makes it look.

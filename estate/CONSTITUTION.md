@@ -379,12 +379,47 @@ Every ticket markdown file must include the **Repos**, **Branches**, and **Pull 
 `date +%Y%m%d%H%M%S`. Do not write UTC (unless the machine's timezone is UTC):
 the validator interprets this header in the machine's local timezone, so a
 header written in a different zone can be misread as stale and wrongly
-red-block the next session.
+red-block the next session. The helper below reads this clock itself, which is
+why no one hands a timestamp to anyone.
 
-**The newest entry goes at the BOTTOM** — the validator reads the last entry in
-file order, not the highest timestamp, so a new block written at the top leaves
-an older one last and red-blocks with *"changed but no new Session Log entry
-since last validation"* on the session where you have just written one.
+**The newest entry goes at the BOTTOM** — recency is judged on the last entry in
+file order. When an entry newer than the last validation sits above an older one,
+the validator fails with *"newest Session Log entry (…) is not at the bottom"*
+and names the block to move; the helper below cannot produce that state.
+
+**Writing an entry: `_harness/scripts/append-session-entry.sh`.** Every new
+Session Log entry is written by this one helper, never by editing the file:
+`ticket-scribe` runs it as its only command, and a human recording a gap by hand
+(§16 S1, S5) runs the same command. From the estate root:
+
+```bash
+bash _harness/scripts/append-session-entry.sh Tickets/<ticket>/<ticket>.md "<short one-line description>" <<'EOF'
+- <what changed: component, columns, logic>
+- Verification: <check and observed outcome, or "not run">
+EOF
+```
+
+| It guarantees | How |
+|---|---|
+| The clock | It reads LOCAL machine time (`date +%Y%m%d%H%M%S`) at the moment of writing. No timestamp is passed in, so none can be omitted, mistyped or UTC. |
+| The header | Exactly `## YYYYMMDDHHMMSS - <description>`, the strict form above. |
+| The place | The very end of the file, which must be the Session Log: the last `## ` section that is not an entry. |
+| The order | The new time must be later than every entry already in the file. |
+| No damage | The entry goes into a copy; the copy is checked (original bytes intact, exactly one new entry, it is both last and newest) before it replaces the ticket. Older entries are never touched. |
+
+It prints `OK: appended to <file>` and the header it wrote. Anything it cannot
+guarantee is `REFUSED: <reason>`, exit 2, with the file byte-identical: two
+arguments not given, an empty or multi-line description, a description
+starting with `#`, an empty body, a body line opening a `#` or `##` heading (it
+would split the log or forge an entry), a file whose last section is not the
+Session Log, or a clock at or behind the newest entry (a future-dated or
+wrong-clock entry is corrected first; within the same second, wait one and run it
+again). A refusal is never worked around by editing the file.
+
+**What the parent hands the scribe:** the ticket, the outcome, the meaningful
+changes, the verification summary, Now / Next / Blocked, header deltas and the
+links with their addresses (§6.1). Never a timestamp. The scribe returns the
+header the helper printed, and the parent then runs the validator.
 
 **Example:**
 ```markdown
@@ -397,7 +432,7 @@ since last validation"* on the session where you have just written one.
 
 Logs are bullet points only — concise, factual, in past tense. Each new session appends a new block; older blocks are never edited. The header must strictly follow `## YYYYMMDDHHMMSS - [Short one line description of session update]` — no other format is accepted.
 
-Appending a Session Log block and refreshing **Current State** (and the Repos/Branches/PRs sections if they changed) are **one atomic step** — never do one without the other.
+Appending a Session Log block and refreshing **Current State** (and the Repos/Branches/PRs sections if they changed) are **one atomic step** — never do one without the other. The helper writes the block; Current State and the header are edited in the same step.
 
 ### 6.1 Record Ownership and Brevity
 
@@ -999,8 +1034,8 @@ current one. Triage in two bins:
   reconstruct honestly — from memory via `ticket-scribe`, or from
   `git -C <Work root> log` / `diff` — the Work root is the directory containing this file — (the auto-commits
   captured every write even though the paperwork failed). Late-but-true
-  beats fabricated. Truly unreconstructable? Log it as:
-  `## <ts> - Session unrecorded; changes per commits <range>`.
+  beats fabricated. Truly unreconstructable? Log it with the helper (§6,
+  *Writing an entry*), description `Session unrecorded; changes per commits <range>`.
 Then re-run `check-ticket-log.sh` to confirm green, and start work.
 
 **S2 — WARN/NOTE nags.** Never interrupt flow for these. Fat index → run
@@ -1022,7 +1057,8 @@ stop hand-fixing and take a context pack to a design session.
 the picker, a script erroring): run `harness-status.sh` and follow its
 prescriptions. Machinery failure never blocks ticket delivery — but every
 session run with broken machinery ends with a MANUAL `ticket-scribe`
-invocation, and the breakage gets fixed before it becomes normal.
+invocation (or, with the agent itself unavailable, the same
+`append-session-entry.sh` command run by hand, §6), and the breakage gets fixed before it becomes normal.
 
 ---
 

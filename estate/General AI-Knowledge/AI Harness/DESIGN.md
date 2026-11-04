@@ -85,6 +85,12 @@ show `recall` as a subagent of `estate-question` and `retrospective`, the `LEFTO
 `deploy-agents.sh` prints for a retired contract still in the discovery directory, or the
 retrospective's interview, cuts and closing. No SVG was edited; this note names the lag.
 
+**Diagram currency (2026-11-04, #377):** the sheets draw `ticket-scribe` writing the Session Log
+directly. It now writes each entry through `_harness/scripts/append-session-entry.sh`, which
+reads the local clock and appends at the bottom, and the validator names a newest entry that is
+not at the bottom. Neither the helper nor that check is drawn. No SVG was edited; this note
+names the lag.
+
 **The pattern (every layer):** file states the rule → agent does the work →
 hook catches the miss → git undoes the damage. Corollary: status observes,
 failures prescribe, nothing heals itself — a fixed record is a human act.

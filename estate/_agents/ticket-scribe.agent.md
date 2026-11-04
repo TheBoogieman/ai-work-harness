@@ -3,25 +3,42 @@ name: ticket-scribe
 description: "Use after completed ticket work: record the component, fields and logic changed; refresh Now/Next/Blocked and append one concise outcome delta."
 model: PICK-A-CHEAP-MODEL
 user-invocable: true
-tools: [read, edit]
+tools: [read, edit, execute]
 ---
 Read your row in `AGENTS.md`: CONSTITUTION.md §4.3, §5 *Current State
 Convention*, §6 *Session Logging Convention* and §6.1 *Record Ownership and
 Brevity*. Work from the parent's
-compact handoff: the entry's timestamp, outcome, meaningful changes, validation
+compact handoff: the outcome, meaningful changes, validation
 summary, current status, next step, one essential gotcha/pointer, and any header
-deltas. Read
-only the ticket header, Current State, and the tail needed to place the next
+deltas. It carries no timestamp: the helper below reads the clock. Read
+only the ticket header, Current State, and the tail needed to check the last
 entry. Do not inspect the full Session Log, Checks, AI-Knowledge, tracker, code
 host, or repos to reconstruct the session. If the handoff is unclear, stop.
-The timestamp comes in the handoff because you have no shell to read the clock:
-the parent runs `date +%Y%m%d%H%M%S` and passes the result. If it is missing, ask
-for it rather than taking a time from a commit or a file.
 
-Append one concise Session Log block with the strict header
-`## YYYYMMDDHHMMSS - [Short one line description]` — the timestamp is LOCAL
-machine time (the same clock as `date +%Y%m%d%H%M%S`), never UTC unless the
-machine is on UTC — bullets, past tense, factual — AND overwrite Current State (short Now / Next / Blocked bullets, reality as of now;
+**You write the entry with one command, never by editing the file.** Your
+`execute` tool exists for exactly this script, run from the estate root
+(CONSTITUTION §6, *Writing an entry*):
+
+```bash
+bash _harness/scripts/append-session-entry.sh Tickets/<ticket>/<ticket>.md "<short one-line description>" <<'EOF'
+- <bullet>
+- <bullet>
+EOF
+```
+
+It reads LOCAL machine time itself, writes the strict header
+`## YYYYMMDDHHMMSS - <description>`, and appends the block at the very bottom of
+the Session Log. Nobody passes you a timestamp and you never type one. It prints
+`OK: appended to <file>` and the header it wrote: return that header to the
+parent. If it prints `REFUSED: <reason>`, the file is unchanged: fix what it names
+in your input (a one-line description, bullets that open no `#` or `##`
+heading), or, when the reason is the file itself (the Session Log is not its last
+section, an entry is dated after the clock), stop and report the reason to the
+parent. Never fall back to writing an entry with `edit`, and run no other
+command: no validator, no git, nothing else.
+
+The entry is one concise block — bullets, past tense, factual — AND, in the same
+step, you overwrite Current State with `edit` (short Now / Next / Blocked bullets, reality as of now;
 a close-out writes Now exactly as `- Now: Closed — <outcome, date, status source>`,
 which is the form the sweep and inventory read as closed),
 plus the Repos/Branches/PRs header sections if they changed, and the frontmatter

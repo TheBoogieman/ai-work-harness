@@ -193,7 +193,8 @@ The workers (who reads which constitution sections: the reading list in
   `estate-auditor`, `estate-question` and `retrospective` ask it instead of
   searching the estate themselves. Writes nothing
 - `ticket-scribe` (cheap) — writes Session Log + Current State after completed
-  ticket work
+  ticket work; the entry goes through `append-session-entry.sh`, its only shell
+  command, which reads the clock and places the entry by code
 - `check-scribe` (cheap) — records a parent-qualified, durable check (any
   language) via the helper; zero is the normal outcome
 - `doc-writer` (smart) — creates, refreshes or checks any estate document
@@ -263,7 +264,7 @@ telling lives in `CONSTITUTION.md` (Part II) or the home named inline.
 
 ## Capture — checks and records
 
-**There is one door into a notebook, and a session record is written by hand.**
+**There is one door into a notebook, and one door into a Session Log.**
 
 - **`_harness/scripts/append-notebook-cell.py`** — the single deterministic writer
   for `Checks/checks_master.ipynb`: one why-note + one **real, executable** code
@@ -272,14 +273,22 @@ telling lives in `CONSTITUTION.md` (Part II) or the home named inline.
   notebook and run it, and the notebook format binds the actual output to the cell
   that produced it. An appended but unexecuted cell is a captured replay definition,
   not proof; most checks are never captured. Detail: the script's own commented header.
-- **A session entry in a ticket `.md` you write yourself**, or ask the
-  `ticket-scribe` agent to write. It is not a stamping job: an entry restates
-  where the ticket now stands, which is judgement. `check-ticket-log.sh` then
-  validates what was written and names the exact fix if it is wrong.
+- **`_harness/scripts/append-session-entry.sh`** — the single writer of a Session
+  Log entry in a ticket `.md`, used by the `ticket-scribe` agent and by a human
+  recording a gap. The words are judgement (an entry restates where the ticket now
+  stands, written by you or the scribe); the clock, the header and the place are
+  not, so the helper owns them: it reads local time itself, appends at the bottom,
+  refuses anything it cannot place, and checks its copy before it replaces the
+  ticket. Current State is still edited in the same step. `check-ticket-log.sh`
+  then validates the record, and names a newest entry that is not at the bottom.
+  CONSTITUTION §6 (*Writing an entry*) is its full reference.
 
 Three earlier tools sat here — a record appender, a shell-output transcriber and a
 block-transport helper (#280). Nothing called any of them, and none had a job the
-two routes above do not do better; they were removed rather than kept for symmetry.
+two routes above did not do better; they were removed rather than kept for symmetry.
+The Session Log helper above is not that appender returning: it exists because
+hand-placed entries went wrong in practice (#377), and the scribe calls it on
+every entry.
 
 **Design workbooks** are an input, not a record: they sit in `Mappings/`
 (untracked), and `parse-workbook.py` turns one into CSVs, a version history and

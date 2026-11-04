@@ -25,7 +25,10 @@ it; the files do.
   matching general root index. Promotion leaves a valid tombstone in the ticket
   index.
 - `ticket-scribe` validates the links it is given and asks the parent to repair
-  gaps; it does not rebuild the broad map. `ticket-init` needs the new ticket's
+  gaps; it does not rebuild the broad map. It writes each Session Log entry with
+  `_harness/scripts/append-session-entry.sh`, which reads the clock and places the
+  entry at the bottom, so no parent hands it a timestamp (CONSTITUTION §6).
+  `ticket-init` needs the new ticket's
   page entries linked before its final scribe step. `knowledge-curator` repairs
   backlinks and root indexes after renames and promotion. `doc-writer` registers a
   new runbook in its index. `ticket-closer` updates the affected Work Map pages

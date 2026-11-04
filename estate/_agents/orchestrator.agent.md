@@ -54,7 +54,8 @@ Only the operator writes it.
 4. **Close:** once the work is merged and deployed, or concluded, start
    `ticket-closer` (§14) and answer its approval rows within the delegation.
 
-The planner records each milestone through `ticket-scribe`; you write no
+The planner records each milestone through `ticket-scribe`, which writes each
+entry with `append-session-entry.sh` (no timestamp is passed anywhere); you write no
 ticket log yourself.
 
 ## Testing and merging

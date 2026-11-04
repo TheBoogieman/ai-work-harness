@@ -38,6 +38,7 @@ Work/                                        [git root · local-only · whitelis
 │       ├── init-ticket.sh                   ticket-init's full-template scaffold helper · local month/sequence, duplicate refusal, pending completion preview · never invents ticket facts
 │       ├── portability.sh                   shared GNU/BSD shims: ts14→epoch, sourced by validator + status (one home · no drift)
 │       ├── append-notebook-cell.py          ← check-scribe · THE ONE DOOR into a notebook: appends one selected evidence capsule · runs on whatever python3 is on the path, needs nbformat [user-created prereq]
+│       ├── append-session-entry.sh          ← ticket-scribe · THE ONE DOOR into a Session Log: reads the local clock, appends one entry at the bottom, refuses what it cannot place (CONSTITUTION §6)
 │       ├── make-context-pack.sh             → ~/Desktop/harness-pack-*.zip [disposable · outside repo] · scrub table user-owned, KEEP on upgrade
 │       ├── tracker-sweep.sh                 human-run · on-demand board-vs-estate drift report · pluggable fetch seam · tracker-agnostic · fails open offline
 │       ├── retro-stats.sh                    dumb counter for the retrospective agent · tickets-by-month + checks + promotions · offline · exits 0 always
@@ -69,7 +70,7 @@ Work/                                        [git root · local-only · whitelis
 ├── Tickets/                                 RECORDS ONLY
 │   ├── README.md                            thin pointer (the map lives at the Work root)
 │   └── YYYYMM<seq>-<BOARD>-<num>/            one per ticket (recommended name; template: 999912Z-PROJ-99999)
-│       ├── YYYYMM<seq>-<BOARD>-<num>.md       source of truth ← ticket-scribe (log + state, atomic)
+│       ├── YYYYMM<seq>-<BOARD>-<num>.md       source of truth ← ticket-scribe (log entry via append-session-entry.sh + state, one step)
 │       ├── <BOARD>-<num>-walkthrough.md       ← ticket-closer via doc-writer · one human-facing walkthrough at close-out (CONSTITUTION §14.1)
 │       ├── Agent-Prompts/NN-<slug>.md         ← planner · one prompt per implementer run (CONSTITUTION §11.1) [tracked]
 │       ├── Agent-Output/NN-<slug>.md          ← implementer · its handback for the matching prompt [tracked]

@@ -79,7 +79,8 @@ contradict it, never replace it.
   accepting: human-facing, every command and flag explained, no raw logs, no
   unexplained hashes, honest about what was not tested, and opening with the
   ticket's `repos` / `pipelines` frontmatter.
-- **Record:** `ticket-scribe` writes one final entry and Current State
+- **Record:** `ticket-scribe` writes one final entry (through
+  `append-session-entry.sh`, so no timestamp is handed over) and Current State
   `Now: Closed — <outcome, date, status source>`, `Next: none` (or the named
   follow-up ticket), `Blocked: none`. Re-run the validator and
   `check-work-map.py`, then report: the walkthrough path, files changed, checker

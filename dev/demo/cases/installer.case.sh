@@ -628,6 +628,7 @@ in_upgrade_fixture() {
   in_up_run upgrade-fixture --yes "$UP_EST"
   in_up_customise
   in_up_advance_source
+  in_up_harness_docs
 }
 
 # in_up_customise — the settings a user owns, moved off their shipped defaults, and a record
@@ -729,6 +730,31 @@ in_up_advance_source() {
     >> "$sc/harness-drill.sh"
   printf '# upgrade fixture: the installer source itself moved forward.\n' \
     >> "$UP_SRC/estate/install.sh"
+  return 0
+}
+
+# in_up_harness_docs (#371) — the two shipped reference documents, moved on by the release this
+# estate is about to receive. It sits apart from in_up_advance_source because it edits BOTH sides:
+# the source moves forward, and the estate gains a line of its own in the Harness Guide (so the
+# guard can prove a customised copy is quarantined, not lost) and in a neighbouring index (so the
+# guard can prove the exception stops at those two paths). DESIGN.md stays as shipped on purpose:
+# it is the ordinary case, an estate that never edited the file.
+in_up_harness_docs() {
+  UP_GUIDE="General Human Knowledge/Harness Guide.md"
+  UP_DESIGN="General AI-Knowledge/AI Harness/DESIGN.md"
+  UP_NEIGHBOUR="$UP_EST/General Human Knowledge/_index.md"
+  printf '
+upgrade fixture: this release changed the guide.
+' >> "$UP_SRC/estate/$UP_GUIDE"
+  printf '
+upgrade fixture: this release changed the notes.
+' >> "$UP_SRC/estate/$UP_DESIGN"
+  printf '
+Local note: a guide line of our own.
+' >> "$UP_EST/$UP_GUIDE"
+  printf '
+Local note: an index line of our own.
+' >> "$UP_NEIGHBOUR"
   return 0
 }
 
@@ -846,6 +872,27 @@ in_upgrade_retires() {
          exit 1; }
   echo "  ok [upgrade-retires] — superseded file MOVED to quarantine, replacement laid down," \
     "restore command reported"
+}
+
+# (y) upgrade-carries-harness-docs (#371): the Harness Guide and DESIGN.md describe the harness
+#     itself, so a release that changes the harness must carry them. Left as records, an upgrade
+#     that retires an agent leaves the estate's guide naming it, and the plan never says so.
+#     Reads the run in_upgrade_retires already made, so it costs no second upgrade.
+#     THREE CLAIMS, IN THE ORDER A READER WOULD DOUBT THEM: both documents arrive; a copy the
+#     estate had edited is quarantined with a restore line, because replacing without that is
+#     data loss; and the neighbouring index keeps its line, because an exception wider than two
+#     paths would quietly make other records replaceable.
+#     REVERT-PROVABLE: drop the two paths from upgrade_is_machinery and this reds on its first
+#     assertion, because both documents then stay behind the source.
+in_upgrade_carries_harness_docs() {
+  local d
+  for d in "$UP_GUIDE" "$UP_DESIGN"; do
+    cmp -s "$UP_EST/$d" "$UP_SRC/estate/$d"       || { echo "BUG [upgrade-carries-harness-docs]: the upgrade left '$d' behind the source.";            echo "    It describes the harness this same run changed, so the estate keeps";            echo "    describing a harness it no longer has until someone merges it by hand.";            exit 1; }
+  done
+  grep -q 'a guide line of our own' "$UP_EST/_retired/"*"/$UP_GUIDE"     || { echo "BUG [upgrade-carries-harness-docs]: the estate's edited guide is not in";          echo "    quarantine, so replacing it destroyed the estate's own line"; exit 1; }
+  grep -A2 "^REPLACED $UP_GUIDE\$" "$I39_ROOT/up.first" | grep -q 'RESTORE IT WITH: *mv '     || { echo "BUG [upgrade-carries-harness-docs]: the guide was replaced without the command";          echo "    that puts it back, and _retired/ is untracked, so nothing else says so";          exit 1; }
+  grep -q 'an index line of our own' "$UP_NEIGHBOUR"     || { echo "BUG [upgrade-carries-harness-docs]: the exception reached past its two paths:";          echo "    a neighbouring record lost the estate's line"; exit 1; }
+  echo "  ok [upgrade-carries-harness-docs] — both documents arrive, the edited guide is"     "quarantined with its restore line, and the neighbouring record is untouched"
 }
 
 # (u) upgrade-retires-version (#298): THE ONE NEW BEHAVIOUR IN A CHANGE THAT IS OTHERWISE ALL
@@ -1169,6 +1216,7 @@ case_installer() {
   in_dry_run_asks_nothing
   in_upgrade_needs_source
   in_upgrade_retires
+  in_upgrade_carries_harness_docs
   in_upgrade_retires_version
   in_upgrade_keeps_settings
   in_upgrade_repoints

@@ -71,12 +71,25 @@ md_hash() {
 
 # check_recency — 1) RECENCY (header time vs stamp line 1, the wall-clock watermark): the newest
 # session-log header must sit at/after the last validation — a file that changed with no new log
-# entry FAILs.
+# entry FAILs. ORDER comes first (#377): recency reads the LAST header in file order, so a new entry
+# written above an older one used to fail here as "no new entry" on a ticket that had just been
+# given one. The newest-dated entry must be the last one; when it is not, say exactly that.
 check_recency() {
   latest=$(grep -oE '^## [0-9]{14} ' "$md" | tail -1 | tr -dc '0-9' || true)
   if [[ -z "$latest" ]]; then
     echo "FAIL: $name has no Session Log entry. Fix: run ticket-scribe" \
          "(or reconstruct from: git -C '$WORK_ROOT' log -- 'Tickets/$name')."
+    ok=0
+    return 0
+  fi
+  newest=$(grep -oE '^## [0-9]{14} ' "$md" | tr -dc '0-9\n' | sort | tail -1)
+  # Only a GENUINELY new entry (newer than the last validation) counts as misplaced; an older
+  # misordering, such as a wrong-clock header after a local one, keeps the recency message below.
+  if [[ "$newest" != "$latest" ]] && (( $(epoch_from_ts14 "$newest") > stamp_wall )); then
+    echo "FAIL: $name newest Session Log entry ($newest) is not at the bottom; the last entry in" \
+         "the file is $latest. Fix: move the '## $newest - ...' block, unchanged, to the end of the" \
+         "file (ticket-scribe appends with _harness/scripts/append-session-entry.sh, which cannot" \
+         "misplace one)."
     ok=0
     return 0
   fi

@@ -1144,8 +1144,10 @@ from what the source shipped belongs to the estate: a customised agent contract,
 the tools note, anything the operator or their agents wrote or edited. The source never
 overwrites it. The upgrade keeps such files and never touches records; if it replaced
 a file the estate had customised, restore that copy from `_retired/` with the command
-the upgrade printed. Upstream changes then reach each one only through a meticulous
-three-way merge:
+the upgrade printed. The two documents that describe the harness itself, the Harness
+Guide and `General AI-Knowledge/AI Harness/DESIGN.md`, are machinery rather than records,
+so the upgrade replaces them; a customised copy is restored the same way. Upstream
+changes then reach each one only through a meticulous three-way merge:
 
 1. Base it on the source commit the estate was last levelled to, and run
    `git merge-file <estate copy> <source at that commit> <source now>` on a temporary

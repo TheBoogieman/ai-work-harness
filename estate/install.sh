@@ -828,7 +828,7 @@ reconfigure_only() {
 # happens to one. There is no fifth verb, and in particular there is no delete.
 #
 # A RECORD IS OUTSIDE ALL FOUR. Records are never created, replaced, retired or re-pointed —
-# an upgraded estate's drawings, design notes and notebooks keep whatever names they were written
+# an upgraded estate's drawings, ticket notes and notebooks keep whatever names they were written
 # with, and correcting those is a human act on the record, not something an installer does.
 
 # upgrade_paths — the estate-relative shipped paths, from the SAME derivation the create path uses
@@ -846,9 +846,15 @@ upgrade_paths() {
 # trees this installer lays the harness machinery down into. Everything else is a record.
 # THE FAIL-SAFE DIRECTION IS "LEAVE IT ALONE": an unrecognised folder reads as a record, so a
 # record folder invented after this was written is protected without anyone editing this function.
+# THE ONE NAMED EXCEPTION (#371) is the two shipped documents that describe the harness itself. As
+# records they stayed behind the source, so an upgrade that retired an agent left the estate's
+# guide still naming it. They are exact paths, not a folder, so no other document becomes
+# replaceable; an estate that edited one gets it back from quarantine and merges it (§18.1).
 upgrade_is_machinery() {
   case "$1" in
     _harness/*|_agents/*) return 0 ;;
+    "General Human Knowledge/Harness Guide.md") return 0 ;;
+    "General AI-Knowledge/AI Harness/DESIGN.md") return 0 ;;
     */*)                  return 1 ;;
     *)                    return 0 ;;
   esac

@@ -1145,8 +1145,8 @@ the tools note, anything the operator or their agents wrote or edited. The sourc
 overwrites it. The upgrade keeps such files and never touches records; if it replaced
 a file the estate had customised, restore that copy from `_retired/` with the command
 the upgrade printed. The two documents that describe the harness itself, the Harness
-Guide and `General AI-Knowledge/AI Harness/DESIGN.md`, are machinery rather than records,
-so the upgrade replaces them; a customised copy is restored the same way. Upstream
+Guide and `General AI-Knowledge/AI Harness/DESIGN.md`, are laid down when absent and
+kept when present, like this constitution. Upstream
 changes then reach each one only through a meticulous three-way merge:
 
 1. Base it on the source commit the estate was last levelled to, and run
@@ -1165,7 +1165,10 @@ changes then reach each one only through a meticulous three-way merge:
 A file that differs from both the old and the new source is listed for the operator.
 A contract the upgrade creates takes the estate's model pins, never a `PICK-A-*`
 placeholder. The levelling report gives one line per merged file: what came in, what
-of the estate's was kept, and how each conflict was decided.
+of the estate's was kept, and how each conflict was decided. The commit levelled to is
+recorded as one **last levelled** line in the tools note (§2), which no upgrade ships or
+merges, so the next levelling has its base. The procedure, its commands and its traps
+live in the `Estate-Levelling` skill, which whoever levels reads first.
 
 ---
 

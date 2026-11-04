@@ -206,10 +206,9 @@ Re-running `install.sh` serves three different intents, each with its own home:
   customized Constitution and `AGENTS.md`, context-pack scrub table, board grammar, model
   pins and hook configuration all keep the values you gave them — and it **never touches a
   record**: no ticket, log or knowledge file is replaced when present OR recreated
-  when absent. The two documents that describe the harness itself are the exception:
-  the Harness Guide and `General AI-Knowledge/AI Harness/DESIGN.md` count as machinery,
-  so the upgrade replaces them like any shipped script, with the same `_retired/` copy
-  and printed `mv`. User-owned shipped files declare that ownership in their own source
+  when absent. The two documents that describe the harness itself, the Harness Guide
+  and `General AI-Knowledge/AI Harness/DESIGN.md`, are laid down when absent and kept
+  when present, like the Constitution. User-owned shipped files declare that ownership in their own source
   marker, so even an estate installed before the marker existed is protected on its
   first upgrade. Your copies of those files win: an upstream change reaches them only
   through a three-way merge in which your lines survive, and `CONSTITUTION.md` §18.1

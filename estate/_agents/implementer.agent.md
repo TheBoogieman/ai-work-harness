@@ -22,7 +22,7 @@ running anything.
    `Tickets/<ticket>/Logs/NN-<topic>.txt`, and the repo files the prompt
    explicitly authorises. Never edit the prompt, the ticket `.md`, `AI-Knowledge/`,
    `Checks/`, `General AI-Knowledge/`, `General Human Knowledge/`,
-   `CONSTITUTION.md`, `AGENTS.md`, `_agents/` or `_harness/`.
+   `CONSTITUTION.md`, `AGENTS.md`, `_harness/` or the estate's own `_agents/`.
 3. **Invoke no agents.** You hold no agent tool. Never act as `ticket-scribe`,
    `check-scribe`, `knowledge-keeper` or any other recorder.
 4. **Git:** use only the git verbs the prompt allows. Read facts from the remote

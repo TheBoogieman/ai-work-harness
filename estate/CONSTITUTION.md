@@ -743,7 +743,7 @@ watches both is the human, or the `orchestrator` when the human runs one ([§12]
 - Writes only its own `Agent-Output/NN-<slug>.md`, `Logs/NN-*.txt`, and the repo
   files the prompt authorises. Never edits a prompt, the ticket `.md`,
   `AI-Knowledge/`, `Checks/`, General AI/Human Knowledge, `CONSTITUTION.md`,
-  `AGENTS.md`, `_agents/` or `_harness/`.
+  `AGENTS.md`, `_harness/` or the estate's own `_agents/`.
 - Invokes no agents and decides no judgement call: an ambiguity, a failed
   expectation or a scope question goes into the handback.
 - Follows §2 exactly: waits for MFA/SSO, never retries in a loop, never switches

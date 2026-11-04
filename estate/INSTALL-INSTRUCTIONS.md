@@ -231,6 +231,17 @@ Re-running `install.sh` serves three different intents, each with its own home:
   the whole span. Run from **inside** the estate, `--upgrade` refuses — there is no
   source in there to upgrade from, and it prints the command that works.
 
+  **P.S. Using the `orchestrator` and the `Estate-Levelling` skill is recommended.**
+  The commands above are the mechanical half of a levelling. The other half is the
+  three-way merge of every file your estate customised (CONSTITUTION §18.1), and
+  that is where a levelling goes wrong by hand. Start the `orchestrator` and ask it
+  to level your estate: it reads
+  [the Estate-Levelling skill](General%20AI-Knowledge/Skills/Estate-Levelling/SKILL.md)
+  first, which carries the whole runbook (proving the base commit, the merges, the
+  traps, the last levelled line in your tools note), and it shows you every merge as
+  a diff before writing it. Without a standing delegation it acts as a courier and
+  brings each approval to you.
+
 ## Hook activation caveat
 
 The auto-commit hook is *witnessed firing* on the VS Code Copilot IDE agent

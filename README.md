@@ -42,6 +42,12 @@ reconfiguration and the hook-activation caveat. This page repeats none of them
 on purpose: two install documents drift apart, so every install command is told
 once, there.
 
+*P.S. Upgrading an installed estate to a newer release? Using the `orchestrator`
+and the [Estate-Levelling skill](<estate/General AI-Knowledge/Skills/Estate-Levelling/SKILL.md>)
+is recommended: the orchestrator reads the skill before every levelling and walks
+you through the upgrade and the three-way merge of your customised files, one
+diff at a time. The upgrade commands themselves are in INSTALL-INSTRUCTIONS.md.*
+
 ## Assumptions
 
 This harness assumes — and only works as designed with — the following.

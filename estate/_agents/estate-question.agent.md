@@ -42,7 +42,8 @@ Stop reading as soon as the answer is settled by a cited source.
   temporary folder outside the estate (`--out "$TMPDIR/workbooks"`), never into a ticket.
 - Live tools follow §2 exactly: profiles and connections from the local tools note
   §2 names, passed explicitly; metadata and counts only, never customer rows; the
-  user completes MFA or SSO in the terminal.
+  user completes MFA or SSO in the dialog or prompt; commands that can prompt run
+  through the credential helper and time limit the local tools note names.
 - Allowed commands: `rg`, `ls`, `sed -n`, `git grep|show|log|ls-tree`, the cloud
   CLI's `describe-*|list-*|get-*` calls, the warehouse CLI with `SELECT COUNT`,
   `SHOW` or `DESCRIBE` only, `gh ... view|list`, the tracker's view and search, and

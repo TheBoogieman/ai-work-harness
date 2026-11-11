@@ -165,8 +165,12 @@ any configured MCP server. Keep the real profile, account, role and
 environment mappings in an indexed local `Tools and Environments` note under
 General AI-Knowledge (recommended), never in public files. A configured tool is
 not an authenticated one. For MFA, SSO or passphrases, the human completes the
-prompt in the terminal or browser and the agent waits; secrets never go through
-chat.
+prompt in the terminal, a system dialog or the browser and the agent waits;
+secrets never go through chat. Check whether your agent host gives commands an
+interactive terminal: if it does not, a terminal prompt cannot reach you. Use a
+helper that shows a system dialog or reads the OS keychain, wrap prompting
+commands in a time limit, and record both in the tools note
+([§2](../CONSTITUTION.md#2-tools-and-authentication)).
 
 ## Sample prompts
 

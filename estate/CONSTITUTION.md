@@ -145,12 +145,18 @@ a tool is unavailable, state the limit and the next useful action.
   mutate. Do not run unrelated services on every task. The human posts tracker
   updates; agents may draft the text or a read-only verification script.
 - **The human authenticates.** For MFA, passkeys, SSO or key passphrases, leave the
-  terminal/browser prompt visible and ask the human to complete it directly (for
-  example "Please enter the MFA code in the terminal"). Wait and resume the same
-  operation after completion; do not cancel, repeatedly retry, abandon the check,
-  switch profile, or substitute an assumption. Never collect secrets through
-  chat/question tools, echo them, save them, or wrap interactive commands in output
-  filters.
+  terminal, system or browser prompt visible and ask the human to complete it
+  directly (for example "Please enter the MFA code in the dialog"). Some agent
+  hosts run commands without an interactive terminal (stdin is not a TTY), so a
+  terminal prompt either fails or waits where the human cannot answer it. On such
+  a host, use a credential helper that shows a system dialog or reads the OS
+  keychain, and run every command that can prompt inside a time limit (for
+  example `timeout 180s ...`); record both in the local tools note. Wait and
+  resume the same operation after completion. If the time limit expires, report
+  it and do not retry while a prompt is still open; never retry in a loop,
+  abandon the check, switch profile, or substitute an assumption. Never collect
+  secrets through chat/question tools, echo them, save them, or wrap interactive
+  commands in output filters.
 - **Keep secrets and customer data out of records.** Use metadata or aggregate
   results where possible. Never copy credentials, customer data, private account
   identifiers or raw authentication output into tickets, knowledge, prompts,

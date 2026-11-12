@@ -34,8 +34,9 @@ Before any remote call:
 - Never infer a profile or environment; pass it explicitly. Read-only unless the
   user approves a change. The user posts tracker updates.
 - MFA, SSO, passkeys, passphrases: leave the prompt visible, ask the human to
-  complete it, wait, then resume the same command. Never ask for, echo or store a
-  secret.
+  complete it, wait, then resume the same command. Where agent commands have no
+  interactive terminal, use the dialog or keychain helper and time limit the
+  tools note names. Never ask for, echo or store a secret.
 - No credentials, customer rows or raw authentication output in any record.
 
 ## Rules for every agent

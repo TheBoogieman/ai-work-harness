@@ -251,8 +251,10 @@ testing — even after trusting the folder and reloading; the exact fresh-estate
 activation trigger is not fully characterised, so expect a first real session or
 a Copilot restart may be needed. The git safety net is the backstop — if a write
 wasn't auto-committed, commit it by hand; nothing in the record depends on the
-hook firing. (CLI and cloud Copilot surfaces are UNVERIFIED — their schema may
-differ.) The hook config design ships as `_harness/hooks/hooks.example.json`. When
+hook firing. It was also witnessed (2026-11-11) under the Copilot SDK agent host in VS Code
+(`client_name: vscode-agent-host`): `sessionStart`, `postToolUse` and
+`sessionEnd` all fired. (CLI and cloud Copilot surfaces are UNVERIFIED — their
+schema may differ.) The hook config design ships as `_harness/hooks/hooks.example.json`. When
 another git process holds the estate's index lock (VS Code's Git extension refreshes
 right after each write), the commit hooks wait up to 2 seconds and otherwise leave
 the change to the next hook with a `NOTE [auto-commit]` line, rather than failing

@@ -44,9 +44,12 @@ running anything.
 7. **Long output goes to `Logs/`.** Redirect it to `Logs/NN-<topic>.txt` and paste
    only the relevant lines, with their line numbers, into the output.
 8. **Authentication (§2):** when a command asks for MFA, SSO, a passkey or a
-   passphrase, say in chat "Please complete the <MFA / browser sign-in> in the
-   terminal", then wait for the command to finish. Never cancel, loop retries,
-   switch profile or environment, or type, paste or store a secret.
+   passphrase, run it through the credential helper and time limit the local
+   tools note names (agent shells may have no interactive terminal), say in chat
+   "Please complete the <MFA dialog / browser sign-in>", then wait for the
+   command to finish. If the time limit expires, report it and do not retry
+   while a prompt is open. Never loop retries, switch profile or environment, or
+   type, paste or store a secret.
 9. **Data safety:** metadata and aggregates only unless the prompt authorises a
    specific query. Never print customer rows, credentials or raw authentication
    output; for identity checks write only "OK" or the error.

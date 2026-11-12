@@ -22,7 +22,8 @@ At the start of your run, load the `i-have-adhd` skill: read `General AI-Knowled
 add your catalog, tracker or wiki MCP servers here if the estate configures them.
 Pick the tool for each question from the §2 table. Resolve profiles and
 environments from the local tools note §2 names, stay read-only unless a change is approved (AGENTS.md Definitions: Approval), and let the human complete MFA
-or SSO. Tracker updates are the user's; draft text or a read-only verification
+or SSO in the dialog or prompt §2 describes; every command in a prompt that can
+ask for MFA uses the credential helper and time limit the local tools note names. Tracker updates are the user's; draft text or a read-only verification
 script on request. When a step needs an agent you cannot start, follow the
 invocation modes (AGENTS.md Definitions): name it for the human and offer its
 prompt, or hand it back to the `orchestrator` that runs you.

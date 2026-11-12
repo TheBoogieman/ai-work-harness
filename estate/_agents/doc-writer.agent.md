@@ -43,7 +43,8 @@ owns is linked, not copied. Read code from the remote default branch
 Design workbooks come from `Mappings/` through `_harness/scripts/parse-workbook.py`
 into a ticket's `Dump/workbooks/` (or a temporary folder outside the estate for
 non-ticket work). Live checks follow §2: read-only, resolved profile, the human
-completes MFA/SSO, and only when the request allows them.
+completes MFA/SSO through the credential helper and time limit the local tools
+note names, and only when the request allows them.
 
 Every fact you write is **verified** (against what, when), **recorded** (cite the
 ticket or note), or `TODO (unverified) — verify with: <command>`. Every reference

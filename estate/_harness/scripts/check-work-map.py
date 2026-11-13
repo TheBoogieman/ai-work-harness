@@ -28,7 +28,10 @@ Frontmatter: a leading YAML block (Obsidian properties) is read in the plain
 subset Obsidian writes, block or flow lists. repos (repo card file names) is
 expected on ticket primaries, walkthroughs, repo cards, pipeline pages and Repo
 Workflows runbooks; pipelines (pipeline page slugs) is optional except on a
-pipeline page, which lists its own slug. Every value must name an existing Work
+pipeline page, which lists its own slug. workbooks (file names in Mappings/) is
+optional and read on pipeline pages only (#385): a value that names no file there
+is MISSING_WORKBOOK, and the workbooks no page names are one UNLINKED_WORKBOOK
+note with a count. Nothing in Mappings/ is ever opened. Every value must name an existing Work
 Map page; a ticket's repos equals the GitHub/<repo> entries of its header Repos
 list; a walkthrough includes its ticket's repos; a repo card lists itself. A
 missing property is a NOTE like every finding here, so legacy records stay
@@ -68,7 +71,7 @@ EXCLUDED = {"Logs", "Dump", ".git", "_retired"}
 AUDIT_RE = re.compile(r"^\d{8}-estate-audit.*\.md$")
 # The two frontmatter list properties this helper reads, and the plain page name a value must be:
 # a repo card's or pipeline page's file name without .md, so never a path, a wiki-link or a dotfile.
-FRONTMATTER_KEYS = ("repos", "pipelines")
+FRONTMATTER_KEYS = ("repos", "pipelines", "workbooks")
 PLAIN_NAME_RE = re.compile(r"^(?!\.)[^/\\\[\]|#^<>:\x00]+$")
 FRONTMATTER_MESSAGES = {
     "FRONTMATTER_COMMENT": "YAML comment in frontmatter; other scripts read a # line as a Markdown heading.",
@@ -78,6 +81,9 @@ FRONTMATTER_MESSAGES = {
     "UNKNOWN_REPO_NAME": "A repos value is not a repo card file name (no path or wiki-link).",
     "UNKNOWN_PIPELINE": "A pipelines value names no pipeline page.",
     "UNKNOWN_PIPELINE_NAME": "A pipelines value is not a pipeline page file name (no path or wiki-link).",
+    "MISSING_WORKBOOK": "A workbooks value names no file in Mappings/.",
+    "UNLINKED_WORKBOOK": "{n} workbook(s) in Mappings/ that no pipeline page names in its workbooks list; "
+                         "mappings-index.py lists them.",
 }
 
 
@@ -363,6 +369,8 @@ class Observer:
         self.history_links = 0
         # Raw file text, for the checks that must see what prose() blanks (frontmatter, header lists).
         self.raw: dict[Path, str] = {}
+        # Each document's frontmatter as read, kept for the checks that run after check_frontmatter.
+        self.properties: dict[Path, dict | None] = {}
         self.frontmatter_expected = 0
         self.frontmatter_present = 0
         self.map_dir = root / GAK / "Work Map"
@@ -494,6 +502,7 @@ class Observer:
         for path in sorted(self.documents):
             properties, problems = frontmatter(self.raw.get(path, ""))
             found[path] = properties
+            self.properties[path] = properties
             for code, line in problems:
                 self.note(code, path, FRONTMATTER_MESSAGES[code], line)
             kind = self.kind(path)
@@ -599,6 +608,32 @@ class Observer:
                     self.note(code, path, LINK_MESSAGES[code].format(n=len(hits)),
                               text.count("\n", 0, hits[0].start()) + 1)
 
+    def check_workbooks(self):
+        """Note the two gaps between Mappings/ and the pipeline pages (#385). A pipeline page names
+        its design workbooks in its frontmatter workbooks list, by file name. A name with no file
+        in Mappings/ is one NOTE on that page. The workbooks no page names are ONE note with a
+        count, however many there are, because this runs at every session start and an estate may
+        hold a hundred workbooks. Only file names are read; no workbook is opened."""
+        folder = self.root / "Mappings"
+        try:
+            books = {p.name for p in folder.iterdir()
+                     if p.is_file() and p.suffix.lower() in (".xlsx", ".xlsm") and not p.name.startswith("~$")}
+        except OSError:
+            books = set()
+        named: set[str] = set()
+        for path in sorted(self.documents):
+            if self.kind(path) != "pipeline":
+                continue
+            for value in (self.properties.get(path) or {}).get("workbooks") or []:
+                named.add(value)
+                if value not in books:
+                    self.note("MISSING_WORKBOOK", path, FRONTMATTER_MESSAGES["MISSING_WORKBOOK"], 1,
+                              folder / value)
+        unnamed = books - named
+        if unnamed:
+            self.note("UNLINKED_WORKBOOK", folder,
+                      FRONTMATTER_MESSAGES["UNLINKED_WORKBOOK"].format(n=len(unnamed)))
+
     def check_file_mentions(self):
         """Note estate files a ticket file names by path without linking them (#384): one NOTE per
         ticket, at the first occurrence's line, with a count of distinct files. Only a path that
@@ -629,6 +664,7 @@ class Observer:
         self.check_frontmatter()
         self.check_external_links()
         self.check_file_mentions()
+        self.check_workbooks()
         for path, text in sorted(self.documents.items()):
             self.edges[path] = set()
             for line, target, estate_relative in routes(text, path.name == "_index.md"):

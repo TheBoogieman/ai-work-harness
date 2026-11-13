@@ -334,6 +334,7 @@ pipelines: []
 
 **Ticket:** [<BOARD>-<num>](<the issue's address on its board's tracker>)
 **Local path:** Work/Tickets/YYYYMM<seq>-<BOARD>-<num>
+**Design workbook:** <workbook file in Mappings/> v<version> | none
 
 Repos:
 - Work/GitHub/<repo>
@@ -682,7 +683,8 @@ run `python3 _harness/scripts/check-work-map.py` once. It is a read-only,
 warning-only observer (`--json` for counts and findings; `--strict` is opt-in and
 never wired into a hook) of encoded relative links, file-index and promotion
 links, whether each initialized ticket is reachable from a map entity page,
-orphaned general notes, and the `repos` / `pipelines` frontmatter (§9.2). It
+orphaned general notes, the `repos` / `pipelines` frontmatter and a pipeline
+page's `workbooks` list against `Mappings/` (§9.2, §10). It
 reads only the Markdown syntax it supports (its
 docstring lists the limits); it does not establish that a fact is true, lineage,
 or cloud state. Report existing uninitialized tickets and references outside the
@@ -742,7 +744,9 @@ One file per entity, no folders:
   `.md`); a value is never a path or a wiki-link. A ticket's `repos` equals the
   `GitHub/<repo>` entries of its header **Repos** list; a walkthrough carries at
   least its ticket's repos; a repo card lists itself; a pipeline page lists the
-  repos that host it and its own name in `pipelines`; a runbook lists the repo it
+  repos that host it and its own name in `pipelines`, and may add a third list,
+  `workbooks`, naming each design workbook it is built from by its file name in
+  `Mappings/` ([§10](#10-design-workbooks-in-mappings)); a runbook lists the repo it
   delivers into. A retrospective lists the union of the `repos` and `pipelines`
   its cited tickets list (`[]` when they list none), and also carries `since`
   and `until`: the first and last dates of its covered window as `YYYY-MM-DD`,
@@ -795,8 +799,20 @@ version for each task; an agent never silently picks "the latest".
 - Cite workbook facts as `<workbook> v<version>, sheet '<name>' row <n>`, and quote
   the sha256 from `INDEX.md` when a decision rests on it. A design row is a
   requirement, not evidence that the pipeline already does it.
-- Pipeline pages name their workbook and sheets in the Identity card. Historical
-  tickets keep their own copies and extracts in `Dump/`; new work reads `Mappings/`.
+- **The pipeline page names the workbook, never the reverse.** A pipeline page lists
+  its workbooks by file name in its frontmatter `workbooks:` list
+  ([§9.2](#92-pipeline-and-repo-pages)) and links them, with their sheets, in the
+  Identity card. Nothing is written in or beside a workbook to point back.
+- **A ticket records the version it works from** on its header's `Design workbook:`
+  line (`<workbook> v<version>`, or `none`), as the user named it.
+- **The index is generated.** `python3 _harness/scripts/mappings-index.py --write`
+  writes `General AI-Knowledge/Work Map/Mappings.md`: one row per workbook with its
+  versions, the latest one and the pipeline page that names it, then the workbooks
+  no page names and the pages naming a workbook that is absent. Re-run it; never
+  edit the page. `check-work-map.py` reports the same two gaps as warnings
+  (`UNLINKED_WORKBOOK`, `MISSING_WORKBOOK`).
+- Historical tickets keep their own copies and extracts in `Dump/`; new work reads
+  `Mappings/`.
 
 ---
 
@@ -1341,7 +1357,16 @@ live with the skills** — the convention text, the frozen module shape (WHEN TO
 gate* law are all stated in `Skills/_index.md` and `Skills/SKILL-TEMPLATE.md`. This constitution
 only points; read those two files for the convention itself. New skills are minted through
 `knowledge-curator` on explicit user approval — the same promote-with-approval gate as General
-AI-Knowledge.
+AI-Knowledge. Any agent may propose one.
+
+**The skill map and the two families.** `Skills/SKILL-MAP.md` lists which skill fits which
+situation and which agent reads which; every skill folder is linked there. An estate grows two
+families of its own from the templates at the Skills root: `Repo-<name>` (how to work in one
+repository) and `Pipeline-<pattern>` (how one kind of change is implemented). They are the
+distilled form of what pipeline pages and design workbooks hold, written so a team can share
+them, with one estate's names and values left out. They never replace a pipeline page or a
+workbook: the page's Change recipes section links the skill and keeps the pipeline's own values.
+Like every skill they advise and never gate. The harness ships the templates only.
 
 **Documentation targets are skills.** Every document type `doc-writer` produces is a
 `Doc-*` skill (for example `Doc-Pipeline-Home`, `Doc-Ticket-Walkthrough`,

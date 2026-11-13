@@ -101,6 +101,10 @@ names the lag.
 section, the entry helper linking prompts, outputs and reviews into it, the validator's
 unlinked-file check, or `backfill-iterations.sh`. No SVG was edited; this note names the lag.
 
+**Diagram currency (2026-11-13, #385):** the sheets do not draw the skill map, the `Repo-*` and
+`Pipeline-*` skill templates, a pipeline page's `workbooks` list, or `mappings-index.py` and the
+Work Map's generated `Mappings.md`. No SVG was edited; this note names the lag.
+
 **The pattern (every layer):** file states the rule → agent does the work →
 hook catches the miss → git undoes the damage. Corollary: status observes,
 failures prescribe, nothing heals itself — a fixed record is a human act.

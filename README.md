@@ -299,6 +299,8 @@ every entry.
 **Design workbooks** are an input, not a record: they sit in `Mappings/`
 (untracked), and `parse-workbook.py` turns one into CSVs, a version history and
 per-version change lists in the ticket's `Dump/workbooks/` (CONSTITUTION §10).
+A pipeline page names its workbooks; `mappings-index.py --write` lists every
+workbook with its versions and the page that names it, and the ones no page names.
 
 ## The one pattern, repeated everywhere
 

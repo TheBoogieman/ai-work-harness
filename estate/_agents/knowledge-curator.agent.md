@@ -51,7 +51,17 @@ Skills use the same approval door. For a requested craft module, read
 `General AI-Knowledge/Skills/_index.md` and the existing
 `Skills/SKILL-TEMPLATE.md`, then draft the module for approval. On approval,
 publish `General AI-Knowledge/Skills/<Skill-Name>/SKILL.md`, update the Skills
-index, and ensure the GAK root index routes to it. Never self-approve a skill.
+index and add its row to `Skills/SKILL-MAP.md`, and ensure the GAK root index
+routes to it. Never self-approve a skill.
+
+Two families are the estate's own (CONSTITUTION §19): `Repo-<name>`, from
+`Skills/REPO-SKILL-TEMPLATE.md`, and `Pipeline-<pattern>`, from
+`Skills/PIPELINE-SKILL-TEMPLATE.md`. Distil one from the repo's runbook, its
+pipeline pages and the design workbook rows the user names: keep the pattern,
+leave one pipeline's names and values on its page, and link the page from the
+skill. After publishing, add the skill's link to the Change recipes section of
+each pipeline page it serves, through `doc-writer`. Any agent may propose a
+skill to you; the operator approves it.
 
 Return the actual changed paths, merges or promotions, and unresolved claims
 for the owning session's `ticket-scribe` handoff; do not independently rewrite

@@ -38,7 +38,9 @@ Work/                                        [git root · local-only · whitelis
 │       ├── init-ticket.sh                   ticket-init's full-template scaffold helper · local month/sequence, duplicate refusal, pending completion preview · never invents ticket facts
 │       ├── portability.sh                   shared GNU/BSD shims: ts14→epoch, sourced by validator + status (one home · no drift)
 │       ├── append-notebook-cell.py          ← check-scribe · THE ONE DOOR into a notebook: appends one selected evidence capsule · runs on whatever python3 is on the path, needs nbformat [user-created prereq]
-│       ├── append-session-entry.sh          ← ticket-scribe · THE ONE DOOR into a Session Log: reads the local clock, appends one entry at the bottom, refuses what it cannot place (CONSTITUTION §6)
+│       ├── append-session-entry.sh          ← ticket-scribe · THE ONE DOOR into a Session Log: reads the local clock, appends one entry at the bottom, refuses what it cannot place · links unlinked prompts, outputs and reviews under Iterations (CONSTITUTION §6)
+│       ├── iteration-links.sh               shared: which prompt, output and review files a ticket holds and whether its file links each · sourced by the entry helper, the validator and the backfill (one home · no drift)
+│       ├── backfill-iterations.sh           human-run after an upgrade · links older tickets' prompts, outputs and reviews with one new entry each · --dry-run · idempotent
 │       ├── make-context-pack.sh             → ~/Desktop/harness-pack-*.zip [disposable · outside repo] · scrub table user-owned, KEEP on upgrade
 │       ├── tracker-sweep.sh                 human-run · on-demand board-vs-estate drift report · pluggable fetch seam · tracker-agnostic · fails open offline
 │       ├── retro-stats.sh                    dumb counter for the retrospective agent · closed tickets by completion month from Current State (open, undated apart) + pickup-to-close + per repo/pipeline + merged PRs + checks + promotions · offline, no git dates · exits 0 always

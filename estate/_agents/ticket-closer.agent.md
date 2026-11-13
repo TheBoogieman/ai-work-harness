@@ -61,12 +61,13 @@ contradict it, never replace it.
 - **Closing plan:** one list grouped **Add / Change / Remove**, one line per file,
   each with why. Wait for approval. Apply exactly what was approved.
 - **Linking:** every external reference you write or hand on is a masked link
-  (§6.1 Links), and `check-work-map.py`'s `BARE_URL` / `UNLINKED_PR` notes on this
+  (§6.1 Links), and `check-work-map.py`'s `BARE_URL` / `UNLINKED_PR` / `UNLINKED_FILE` notes on this
   ticket are fixed before close (older Session Log entries stay as written). The
   ticket header (PRs as masked links with final state; frontmatter `repos` /
   `pipelines` matching the Repos list and the pages the ticket touched, §4.3;
-  Context links to the
-  pipeline page, repo card, runbook and walkthrough); the ticket's line on each Work
+  Context links, checked in this order: the pipeline page, the design workbook,
+  General AI-Knowledge, General Human Knowledge (the repo card and runbook), then
+  the walkthrough); the ticket's line on each Work
   Map page as a final one-line outcome; the pipeline page's affected sections via
   `doc-writer` (Doc-Pipeline-Home skill, refresh mode); a Repo Workflow correction in
   place with a note in its folder index; root indexes when a page was added.

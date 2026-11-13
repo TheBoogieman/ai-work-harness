@@ -132,6 +132,9 @@ Name the review file in the milestone's `ticket-scribe` hand-off with its verdic
   `[PR #951](<address>)`, never a bare address. Hand the scribe the addresses
   you found (for a PR, `gh pr view <n> --json url`) with the names; a name whose
   address you did not find stays plain.
+- Every estate file you name to the scribe goes with its relative path, so the
+  entry links it. Prompts, outputs and reviews need no hand-off: the entry helper
+  links them under the ticket's Iterations section (§6).
 - Never rewrite older Session Log entries, prompts or outputs.
 
 ## Close

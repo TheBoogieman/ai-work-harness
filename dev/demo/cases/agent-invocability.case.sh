@@ -28,8 +28,9 @@ case_agent_invocability() {
 # because the one in front of them lacks a tool or cannot start a worker. Every operator-facing
 # contract therefore holds edit, execute and the agent tool (or no tools: line, which means every
 # tool) and lists the whole worker roster in agents:. The two recording workers hold what their
-# job needs: ticket-scribe reads, searches, edits and runs the helper; knowledge-keeper can run a
-# check. The guard then points the same check at a probe contract that lacks all of it, so each run
+# job needs when they carry a list at all: ticket-scribe reads, searches, edits and runs the
+# helper; knowledge-keeper can run a check. No agent but the orchestrator may refuse to be
+# started by another. The guard then points the same check at a probe contract that lacks all of it, so each run
 # shows the check can fail.
 AC_WORKERS="ticket-scribe check-scribe knowledge-keeper knowledge-curator doc-writer recall"
 AC_OPERATOR_FACING="planner ticket-init ticket-closer doc-writer estate-auditor estate-question knowledge-curator retrospective"
@@ -60,12 +61,17 @@ ac_privilege_gaps() {
       case " $agents " in *" $w "*) ;; *) echo "$a: agents lacks $w" ;; esac
     done
   done
+  # The two recording workers: no tools: line is every tool; a closed list must still hold these.
   tools=$(ac_fm tools estate/_agents/ticket-scribe.agent.md)
-  for t in read edit search execute; do
-    case " $tools " in *" $t "*) ;; *) echo "ticket-scribe: tools lacks $t" ;; esac
-  done
+  if [ -n "$tools" ]; then
+    for t in read edit search execute; do
+      case " $tools " in *" $t "*) ;; *) echo "ticket-scribe: tools lacks $t" ;; esac
+    done
+  fi
   tools=$(ac_fm tools estate/_agents/knowledge-keeper.agent.md)
-  case " $tools " in *" execute "*) ;; *) echo "knowledge-keeper: tools lacks execute" ;; esac
+  if [ -n "$tools" ]; then
+    case " $tools " in *" execute "*) ;; *) echo "knowledge-keeper: tools lacks execute" ;; esac
+  fi
   # disable-model-invocation: true stops every other agent starting that agent, and a host that
   # ignores the agents: line has nothing to override it. Only the orchestrator, which nobody
   # starts as a subagent, may carry it.

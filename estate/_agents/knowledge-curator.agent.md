@@ -3,7 +3,6 @@ name: knowledge-curator
 description: "Use when the user requests ticket-knowledge cleanup or a reusable note or skill promotion; compact existing owners, propose verified generalization, and publish indexed knowledge only after approval."
 model: PICK-A-SONNET-CLASS-MODEL
 user-invocable: true
-disable-model-invocation: false
 agents: [ticket-scribe, check-scribe, knowledge-keeper, doc-writer, recall]
 ---
 Run as the direct session agent for requested curation, not routine task-end

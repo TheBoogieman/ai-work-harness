@@ -162,18 +162,16 @@ modes).
 - **CLIs need nothing.** Any agent that can run a command can run every CLI on your path
   (`aws`, `gh`, `snow`, `dbt`, and the rest). All fourteen agents can run commands.
 - **No `tools:` line means every tool.** A contract without that line gets whatever the session
-  has enabled: the built-in tools, every configured MCP server and every extension tool. The
-  agents that do your work carry no `tools:` line for that reason: `orchestrator`,
-  `ticket-init`, `planner`, `implementer`, `ticket-closer`, `doc-writer`, `estate-auditor`,
-  `estate-question`, `knowledge-curator` and `retrospective`.
-- **A `tools:` line is a closed list.** An agent that has one gets only what it names, so it
-  reaches no MCP server unless the list says `<server name>/*`. The four small workers keep a
-  short list so their context stays small and cheap: `ticket-scribe`, `check-scribe`,
-  `knowledge-keeper` and `recall`. To give one of them an MCP server, add `<server name>/*` to
-  its list in your estate's copy and run `deploy-agents.sh`.
+  has enabled: the built-in tools, every configured MCP server and every extension tool. No
+  shipped contract carries a `tools:` line, so a server you add reaches every agent with no
+  contract to edit. What an agent should and should not do is said in its contract's text.
+- **A `tools:` line is a closed list.** Add one to a contract in your estate only to restrict
+  that agent: it then gets only what the line names, and reaches no MCP server unless the line
+  says `<server name>/*`.
 - **Who another agent can start.** `disable-model-invocation: true` stops other agents starting
   that agent, and in the Copilot harness no `agents:` list overrides it. Only the `orchestrator`
-  carries it, so every other agent can be started as a subagent. Whom to start is said by name in
+  carries it; the others omit the line, because `false` is the default, so each can be started
+  as a subagent. Whom to start is said by name in
   each contract's body and in each agent's `description`, which is what a host's delegation tool
   reads; the `agents:` lines repeat it for hosts that read them.
 - **Check it on your host.** Read in the VS Code docs on 2026-11-13

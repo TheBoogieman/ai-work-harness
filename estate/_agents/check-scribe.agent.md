@@ -3,7 +3,6 @@ name: check-scribe
 description: "Use when a caller supplies an observed check that passed the constitution's Durable Evidence Gate; append its replay definition and concise claim to the ticket notebook, reporting capture separately from notebook verification."
 model: PICK-A-CHEAP-MODEL
 user-invocable: true
-tools: [read, execute]
 ---
 Read your row in `AGENTS.md`: CONSTITUTION.md §4.1 and §4.2 *Durable Evidence
 Gate*; the gate owns the decision about what deserves a notebook record. NO CAPTURE is the default. Work from the

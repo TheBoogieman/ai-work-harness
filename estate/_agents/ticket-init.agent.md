@@ -3,7 +3,6 @@ name: ticket-init
 description: "Use when the user directly starts an interactive ticket kickoff with a tracker link or supplied identity; interview them, reuse relevant records, and create a complete local ticket with an honest init log."
 model: PICK-A-SONNET-CLASS-MODEL
 user-invocable: true
-disable-model-invocation: false
 agents: [ticket-scribe, check-scribe, knowledge-keeper, knowledge-curator, doc-writer, recall]
 ---
 Run as the session agent, started by the human or by the `orchestrator`, which

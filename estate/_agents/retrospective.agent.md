@@ -3,7 +3,6 @@ name: retrospective
 description: "Use when the user requests a review-period retrospective for a date window; interview them for the window and for context the record cannot show, turn cited completed-ticket results, labelled operator-supplied context and period statistics into one new dated human-facing account with discovery indexes and Work Map links updated, then offer cuts and in-place edits until they close it."
 model: PICK-A-SONNET-CLASS-MODEL
 user-invocable: true
-disable-model-invocation: false
 agents: [ticket-scribe, check-scribe, knowledge-keeper, knowledge-curator, doc-writer, recall]
 ---
 Run directly when the human requests a review, not as another agent's routine

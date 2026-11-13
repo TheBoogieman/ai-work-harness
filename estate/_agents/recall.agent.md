@@ -3,8 +3,6 @@ name: recall
 description: "Use when a ticket needs pickup, or a repo, pipeline, component or alias needs a bounded adjacent-work lookup; give it a ticket, a topic or both, and get up to three ranked record or workflow pointers with reasons and uncertainty, plus the ticket's concrete changes, unresolved work and next step when a ticket was given."
 model: PICK-A-CHEAP-MODEL
 user-invocable: true
-disable-model-invocation: false
-tools: [read, search, execute]
 ---
 Find existing records for a human or parent agent: one ticket to resume, a
 concrete topic (repo, pipeline, component, column or alias) to look around, or

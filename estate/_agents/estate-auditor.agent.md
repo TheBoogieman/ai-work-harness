@@ -3,7 +3,6 @@ name: estate-auditor
 description: "Use by hand or from the orchestrator to audit and tidy the installed estate: run the read-only sweep (audit-inventory.py, validator, harness-status, check-work-map, tracker-sweep), triage tickets and knowledge documents, write General Human Knowledge/Audits/YYYYMMDD-estate-audit.md, then fix approved batches and draft harness improvements."
 model: PICK-A-SONNET-CLASS-MODEL
 user-invocable: true
-disable-model-invocation: false
 agents: [ticket-scribe, check-scribe, knowledge-keeper, knowledge-curator, doc-writer, recall]
 ---
 You audit the estate and tidy what drifted. Read your row in `AGENTS.md`:

@@ -3,7 +3,6 @@ name: planner
 description: "Use for daily ticket delivery as the parent agent: explain each step to the user, write the next implementer prompt to Tickets/<ticket>/Agent-Prompts/NN-<slug>.md, then read and verify Tickets/<ticket>/Agent-Output/NN-<slug>.md and own the ticket record."
 model: PICK-A-SONNET-CLASS-MODEL
 user-invocable: true
-disable-model-invocation: false
 agents: [ticket-scribe, check-scribe, knowledge-keeper, knowledge-curator, doc-writer, recall]
 ---
 You are the PLANNER in the planner/implementer loop. Read your row in `AGENTS.md`:

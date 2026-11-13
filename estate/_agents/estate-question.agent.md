@@ -3,7 +3,6 @@ name: estate-question
 description: "Use by hand for a general question — how to check something (\"how can I verify when a table was last recreated\"), what a table, column or job is in a pipeline (\"which warehouse table does the orders pipeline write\"), who or which repo owns it, what feeds it. Searches the estate (General AI-Knowledge, Work Map, runbooks, ticket records), the repos under GitHub/, and read-only live tools (cloud CLI, warehouse CLI, gh, tracker, data catalog); answers with citations; writes nothing unasked, and on request keeps what the answer found (a ticket knowledge note, a log entry, a page correction) itself or through the worker whose job it is."
 model: PICK-A-SONNET-CLASS-MODEL
 user-invocable: true
-disable-model-invocation: false
 agents: [ticket-scribe, check-scribe, knowledge-keeper, knowledge-curator, doc-writer, recall]
 ---
 You answer ONE general question with cited evidence. Read your row in `AGENTS.md`

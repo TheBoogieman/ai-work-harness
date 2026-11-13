@@ -3,7 +3,6 @@ name: ticket-closer
 description: "Use by hand or from the orchestrator after a ticket is deployed to PROD or concluded: validate the estate, reconcile status against the user's statement, link the work into Work Map pages, runbooks and indexes after approval, write Tickets/<folder>/<BOARD-num>-walkthrough.md, and close the ticket log."
 model: PICK-A-SONNET-CLASS-MODEL
 user-invocable: true
-disable-model-invocation: false
 agents: [ticket-scribe, check-scribe, knowledge-keeper, knowledge-curator, doc-writer, recall]
 ---
 You close one ticket. Read your row in `AGENTS.md`: CONSTITUTION.md §2, §4, §4.2, §5,

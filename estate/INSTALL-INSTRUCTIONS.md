@@ -329,6 +329,8 @@ point against their current documentation.
   subagent, `.claude/agents/<name>.md`: tools `read` → `Read, Glob, Grep`, `edit` →
   `Edit, Write, NotebookEdit`, `search` → `Glob, Grep`, `execute` → `Bash`, `web` →
   `WebFetch, WebSearch`, and `agent` with an `agents:` list → `Agent(<that list>)`;
+  a contract with no `tools:` line, or with the wildcard `tools: ['*']`, gets no
+  `tools` line, which in Claude Code means every tool;
   the body is copied unchanged. `user-invocable` and `disable-model-invocation` have
   no Claude Code equivalent. Treat the copies like the deployed Copilot agents:
   derived, regenerated after every change to `_agents/`, and picked up by a session

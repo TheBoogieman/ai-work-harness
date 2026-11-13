@@ -41,6 +41,14 @@ count, at the first occurrence. Link labels and destinations, code, comments,
 frontmatter, frozen earlier audits and every Session Log entry but the newest
 are ignored. An autolink (<https://...>) still counts as bare: the rule asks for
 a label. Nothing else external is matched; that is the writing agents' job.
+
+Estate files (#384): a ticket file that names an existing file by its path without
+linking it (UNLINKED_FILE) is one NOTE per ticket with a count. A path is a token
+with a folder and a file extension, such as Agent-Output/03-load.md, that exists
+under the ticket folder, or under Tickets/ or Mappings/ from the estate root
+(scripts, contracts and config files are things a ticket changes, not records). Inline code is read, because that is
+how a path is usually written; fenced blocks, comments, frontmatter, links and
+every Session Log entry but the newest are ignored.
 """
 
 from __future__ import annotations
@@ -176,6 +184,37 @@ LINK_MESSAGES = {
     "BARE_URL": "{n} bare web address(es); write each as a masked link, [what it is](<address>) (CONSTITUTION §6.1).",
     "UNLINKED_PR": "{n} pull request(s) named by number but not linked; write [PR #N](<address>) (CONSTITUTION §6.1).",
 }
+
+
+# A path as a ticket file writes one: at least one folder, then a file name with an extension, no
+# spaces. The lookbehind keeps a match from starting in the middle of a longer path or address.
+FILE_MENTION_RE = re.compile(r"(?<![\w/.%:~-])((?:[\w.-]+/)+[\w.-]+\.[A-Za-z0-9]{1,6})(?![\w/-])")
+# Estate-rooted paths count only under these folders: they hold records a reader follows. A
+# script, an agent contract or a config file named as the thing a ticket changed is not a record
+# to navigate to, and a repo checkout is not part of the estate.
+RECORD_ROOTS = ("Tickets", "Mappings")
+FILE_MESSAGE = ("{n} estate file(s) named by path but not linked; write [what it is](relative/path) "
+                "(CONSTITUTION §6.1).")
+
+
+def fences_blanked(text: str) -> str:
+    """Blank comments and fenced code but keep inline code, keeping offsets. prose() blanks inline
+    code too, and a file path in a ticket is nearly always written in backticks."""
+    token = re.compile(r"<!--|^ {0,3}(?P<fence>`{3,}|~{3,})[^\n]*", re.M)
+    pieces = []
+    offset = 0
+    while match := token.search(text, offset):
+        if fence := match.group("fence"):
+            closing = re.compile(r"^ {0,3}" + re.escape(fence[0]) +
+                                 "{" + str(len(fence)) + r",}[ \t]*$", re.M).search(text, match.end())
+            end = len(text) if closing is None else closing.end()
+        else:
+            closing_at = text.find("-->", match.end())
+            end = len(text) if closing_at < 0 else closing_at + 3
+        pieces.extend((text[offset:match.start()], blank(text[match.start():end])))
+        offset = end
+    pieces.append(text[offset:])
+    return "".join(pieces)
 
 
 def without_links(text: str) -> str:
@@ -560,10 +599,36 @@ class Observer:
                     self.note(code, path, LINK_MESSAGES[code].format(n=len(hits)),
                               text.count("\n", 0, hits[0].start()) + 1)
 
+    def check_file_mentions(self):
+        """Note estate files a ticket file names by path without linking them (#384): one NOTE per
+        ticket, at the first occurrence's line, with a count of distinct files. Only a path that
+        exists in the ticket folder or under a record root is counted, so a path quoted from a
+        repo or an example never is."""
+        for path in sorted(self.tickets):
+            raw = self.raw.get(path)
+            if raw is None:
+                continue
+            text = without_links(history_blanked(without_frontmatter(fences_blanked(raw))))
+            seen: dict[str, int] = {}
+            for match in FILE_MENTION_RE.finditer(text):
+                token = match.group(1)
+                if token in seen:
+                    continue
+                try:
+                    exists = (path.parent / token).is_file() or (
+                        token.split("/", 1)[0] in RECORD_ROOTS and (self.root / token).is_file())
+                except OSError:
+                    exists = False
+                if exists:
+                    seen[token] = text.count("\n", 0, match.start()) + 1
+            if seen:
+                self.note("UNLINKED_FILE", path, FILE_MESSAGE.format(n=len(seen)), min(seen.values()))
+
     def report(self) -> dict:
         self.collect()
         self.check_frontmatter()
         self.check_external_links()
+        self.check_file_mentions()
         for path, text in sorted(self.documents.items()):
             self.edges[path] = set()
             for line, target, estate_relative in routes(text, path.name == "_index.md"):

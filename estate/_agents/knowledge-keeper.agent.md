@@ -11,7 +11,7 @@ or manufacture a note at every task end. Without a named candidate and the
 parent's six gate answers, or when any gate test fails, return
 `NO CAPTURE: <failed gate>` without editing. One exception: a note the operator
 asked for by name is written (§7.1), with one line in your return saying which
-gate tests it would not have passed. Use `execute` for read-only checks that
+gate tests it would not have passed. Run read-only commands for the checks that
 confirm the finding or its source (a `git show`, a metadata call, the validator
 after your index edit). Only secrets are kept out of a note; identifiers and
 query results stay as observed (CONSTITUTION §2).

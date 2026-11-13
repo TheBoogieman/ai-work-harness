@@ -151,13 +151,32 @@ cannot mask the validator; it never blocks work.
 Single source of truth. `CONSTITUTION.md` holds every rule; each ticket folder
 holds its own log, state, and knowledge; `General AI-Knowledge/` holds the
 durable stuff; `AGENTS.md` is the pointer Copilot loads on every surface —
-navigation, tools and authentication, six rules, and a per-agent reading list
+navigation, tools and authentication, nine rules, and a per-agent reading list
 into the constitution's numbered sections.
 
 ### L4 — The agents
 
 The workers (who reads which constitution sections: the reading list in
-`AGENTS.md`; who starts which agent: the Harness Guide):
+`AGENTS.md`; who starts which agent: the Harness Guide).
+
+What every one of them does, whichever you start:
+
+- **Your word wins.** Each agent has a lane, and the lanes are defaults. Ask one
+  for something outside its lane and it says so once and does it; it never sends
+  you to another agent. It starts the worker whose job a step is, or does the
+  step itself.
+- **It checks instead of asking.** Read-only checks run unasked, and it tells you
+  what it ran. A command that needs your sign-in is announced first, so you are
+  there for the prompt.
+- **Approvals stay.** A push, a merge, a tracker comment or any other remote
+  change waits for your yes; the agent that asked then makes the change itself.
+- **Only secrets are kept out of records.** API keys, passwords, tokens and
+  credentials never go in. Everything else is recorded as observed. A public
+  surface stays generic.
+- **Every agent holds every tool your session has**, MCP servers included. What
+  an agent should do is said in its contract, not by a tool list.
+
+The agents:
 
 - `orchestrator` (strongest tier, started by hand) — runs a ticket end to end:
   starts `ticket-init`, the `planner` and the `implementer`, carries each
@@ -198,18 +217,22 @@ The workers (who reads which constitution sections: the reading list in
   Parent-callable: the planner, `ticket-init`, `ticket-closer`,
   `estate-auditor`, `estate-question` and `retrospective` ask it instead of
   searching the estate themselves. Writes nothing
-- `ticket-scribe` (cheap) — writes Session Log + Current State after completed
-  ticket work; the entry goes through `append-session-entry.sh`, its only shell
-  command, which reads the clock and places the entry by code
+- `ticket-scribe` (cheap) — owns the ticket file: after completed ticket work it
+  writes the Session Log entry through `append-session-entry.sh`, which reads
+  the clock, places the entry by code, rewrites Now / Next / Blocked and links
+  the ticket's prompt, output and review files; every other section it edits
+  directly
 - `check-scribe` (cheap) — records a parent-qualified, durable check (any
   language) via the helper; zero is the normal outcome
 - `doc-writer` (smart) — creates, refreshes or checks any estate document
   against a `Doc-*` skill target: pipeline pages, walkthroughs, runbooks,
-  knowledge notes, PR/README/tracker drafts
+  knowledge notes, and PR, README and tracker drafts, which it posts or opens
+  itself after your yes
 - `knowledge-keeper` (cheap) — captures a named learning into `AI-Knowledge/`;
   zero capture is expected
-- `knowledge-curator` (smart, rare) — compacts and promotes, with human
-  approval; direct invocation only
+- `knowledge-curator` (smart, rare) — compacts and promotes, and mints skills
+  (`Repo-*`, `Pipeline-*`) from the templates, always with your approval; any
+  agent may propose one to it
 - `retrospective` (smart, at review time) — interviews you for the window and,
   after reading the record, for context it cannot show (asking rather than
   assuming); writes a period retrospective FOR THE HUMAN in accomplishment

@@ -104,8 +104,10 @@ that does not carry it behaves exactly as this paragraph describes.) It
 asks for your board key and model pins (Enter accepts each suggested default;
 `--dry-run` plans without touching anything **and asks nothing** — a run that
 creates no file can apply no answer — while `--yes` accepts every default). The
-agents deploy to your Copilot version's discovery directory — verify that path
-for your version (override with `HARNESS_AGENT_DEPLOY_DIR`). Finally, paste
+agents deploy to `~/.copilot/agents`, where the Copilot harness reads user-level
+agents (override with `HARNESS_AGENT_DEPLOY_DIR`). After an install or an upgrade,
+run the one-line checks under "Host compatibility" in the Harness Guide: they
+show whether your host honours the model pins and gives the agents their tools. Finally, paste
 `AI-SETUP-PROMPT.md` into your AI assistant, working in the new estate: it is the **final
 validation gate** — it confirms the validator + status are green, spot-checks the
 scaffolded tickets, and walks you through the personalisation the installer left
@@ -333,10 +335,11 @@ point against their current documentation.
   that starts after the folder exists. The interactive agents (`ticket-init`,
   `planner`, `ticket-closer`, `estate-auditor`) need the human in the loop: run them
   as the session (`claude --agent <name>`), or as subagents of an `orchestrator`
-  session, which relays their questions to you. `ticket-scribe` runs one shell
-  command, `_harness/scripts/append-session-entry.sh`, which reads the local clock
+  session, which relays their questions to you. `ticket-scribe` writes each entry
+  with `_harness/scripts/append-session-entry.sh`, which reads the local clock
   itself, so no timestamp is passed to it (CONSTITUTION §6, *Writing an entry*).
-- **Model pins** in the agent files are Copilot picker names. Give the Claude Code
+- **Model pins** in the agent files are written for Copilot (the Harness Guide,
+  "Host compatibility", says in which form). Give the Claude Code
   copies their own models by the Harness Guide's tiers. On a Copilot plan whose
   picker offers only Auto, pin `Auto`: every Copilot agent then runs on that one
   model.

@@ -16,7 +16,7 @@ At the start of your run, load the `i-have-adhd` skill: read `General AI-Knowled
 
 Match the request against the `Doc-*` lines in `General AI-Knowledge/Skills/_index.md`
 and read only that skill's `SKILL.md`: it gives the destination path, the kind
-(living, append-only or draft-only), the section template, the sources to mine in
+(living, append-only or draft-first), the section template, the sources to mine in
 order, and the indexes to update. If no `Doc-*` skill matches, say so and propose
 one for the user to approve (`knowledge-curator` mints skills); do not improvise a
 new document type.
@@ -68,7 +68,7 @@ Write after approval (AGENTS.md Definitions; ticket-folder targets requested by 
 second approval). A stale or wrong fact you find while writing an approved change,
 on a page that change already edits, is fixed in the same write and reported
 **old → new** with its source in your return (§15 step 6); a finding on any other
-page is returned as a proposal, not written. Draft-only targets (PR description, README, tracker update) go to
+page is returned as a proposal, not written. Draft-first targets (PR description, README, tracker update) go to
 chat unless the user asks for a file; after the user's yes you post the comment
 or open or edit the PR yourself (§2). After writing, update the indexes the skill
 names, keep Work Map links valid and the target's `repos` / `pipelines`

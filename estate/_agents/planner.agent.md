@@ -70,7 +70,7 @@ deploy runs, multi-file edits — goes in an implementer prompt.
    - `## 0. Hard rules` — "The implementer contract's standard rules apply." Then
      only the extras: the exact repo files it may change, allowed git verbs, the
      branch and remote ref to read facts from, which commands need the user's MFA,
-     data limits, and STOP conditions.
+     and STOP conditions.
    - `## 1..N` steps: purpose, exact commands (absolute paths, quoted), expected
      result, STOP condition, and what to record in which output section.
    - A final step: `## Handback` — what the output must report back.

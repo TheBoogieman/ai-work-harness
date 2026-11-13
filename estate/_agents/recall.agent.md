@@ -16,7 +16,7 @@ Reuse citations the parent already supplied.
 
 - Read-only and ephemeral. No file writes, persisted search index, cache, or
   record maintenance. Existing curated indexes are routing aids, not proof.
-- `execute` permits only safe local read commands, such as scoped `rg`,
+- Run only safe local read commands, such as scoped `rg`,
   `git grep`, `git --no-pager log`, and bounded file reads. Scope git history
   to the ticket or its recorded repos, branches, and relevant paths. No remote
   calls, arbitrary scripts, redirections that write files, or commands that

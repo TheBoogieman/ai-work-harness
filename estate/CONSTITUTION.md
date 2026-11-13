@@ -923,7 +923,7 @@ Each agent's reading list is its row in [AGENTS.md](AGENTS.md).
 | Plan, explain and verify a ticket iteration | `planner` | Parent agent; writes prompts, verifies output, owns records (§11) |
 | Execute one planner prompt | `implementer` | Worker; writes its output, logs and authorised repo files only; invokes nothing (§11.3) |
 | Check a plan before build, or a change before its PR | `reviewer` | Started by the `planner`, the `orchestrator` or the human; trusts nothing it is handed; writes only its review; its blocking findings stop the loop until it passes or the operator unblocks (§11.4) |
-| Close a deployed or concluded ticket | `ticket-closer` | Started by the human or the `orchestrator`; approval before writing outside the ticket; tracker read-only (§14) |
+| Close a deployed or concluded ticket | `ticket-closer` | Started by the human or the `orchestrator`; approval before writing outside the ticket; a tracker change waits for the user's yes (§14) |
 | Create or refresh a document | `doc-writer` | Target from a `Doc-*` skill; approval before writing outside a ticket; posts or opens a draft itself after the user's yes |
 | Audit and tidy the estate | `estate-auditor` | Started by the human or the `orchestrator`; dated report; fixes batch by batch with approval (§15) |
 | Answer a general question from the estate, repos and read-only live tools | `estate-question` | Human-started; writes nothing unasked; on the user's request it keeps what the answer found (a ticket note, a log entry, a page correction) itself or through the worker whose job it is |
@@ -968,12 +968,14 @@ judgement, and the objective checkers'
 warnings do not block style.
 
 **Model profile (optional, operator-chosen).** The `model:` pin in each agent's
-frontmatter is the live selection, written as the model picker's display name (a
-lowercase model ID silently falls back to the session model). Routine agents
-(`check-scribe`, `knowledge-keeper`, `recall`, `ticket-scribe`) suit
-`Claude Sonnet 5.5 (copilot)`; `ticket-init`,
+frontmatter is the live selection. Its form depends on the host: write the
+identifier that host's own completion inserts in an agent file, and check that it
+took effect, because a pin a host does not recognise can fall back to the session
+model without saying so (Harness Guide, "Host compatibility"). Routine agents
+(`check-scribe`, `knowledge-keeper`, `recall`, `ticket-scribe`) suit a
+Sonnet-class model; `ticket-init`,
 `planner`, `ticket-closer`, `doc-writer`, `estate-auditor`, `estate-question`,
-`knowledge-curator` and `retrospective` suit `Claude Opus 5.5 (copilot)`;
+`knowledge-curator` and `retrospective` suit an Opus-class model;
 `orchestrator` suits the strongest model available, an Opus- or Fable-class profile,
 and shares the installer's second pin with that group; `reviewer` ships on the same
 pin and is better re-pinned by hand to a strong model from a different vendor than
@@ -1024,8 +1026,9 @@ the work has otherwise concluded. Every step is also the by-hand fallback.
    whether branches still exist, and the deployment evidence the repo's runbook
    names (workflow runs, release tags, the deployed artefact or DAG version).
    Compare with the user's statement; report every disagreement and never overwrite
-   the user's statement with an inference. The tracker stays read-only: on request,
-   draft a summary or a read-only verification script for the user to post.
+   the user's statement with an inference. The reads run unasked. A change to the
+   tracker (a comment, a status) waits for the user's yes; after it the closer
+   posts it itself, or hands over the draft when the user prefers to post it.
 4. **Present the closing plan; wait for approval.** List every file the close-out
    will touch, grouped as **add / change / remove**, one line each: ticket header and
    Context, Changes Made, Current State, Work Map pipeline and repo pages, the
@@ -1371,7 +1374,8 @@ Like every skill they advise and never gate. The harness ships the templates onl
 **Documentation targets are skills.** Every document type `doc-writer` produces is a
 `Doc-*` skill (for example `Doc-Pipeline-Home`, `Doc-Ticket-Walkthrough`,
 `Doc-Repo-Workflow`): its CRAFT GUIDANCE names the destination path, whether the
-target is living, append-only or draft-only, the section template, the sources to
+target is living, append-only or draft-first (shown, then posted after the user's
+yes), the section template, the sources to
 mine in order, and the indexes to update afterwards. Adding a target means adding
 one skill folder and its index line; `doc-writer` needs no change.
 

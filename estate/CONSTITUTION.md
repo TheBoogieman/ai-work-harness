@@ -919,14 +919,14 @@ Each agent's reading list is its row in [AGENTS.md](AGENTS.md).
 | Need | Agent | Boundary |
 |---|---|---|
 | Run a ticket end to end: start each agent, carry the hand-offs, wait on CI | `orchestrator` | Human-started; approves, merges and pushes only under the operator's standing delegation (§2); may do an agent's step itself under that agent's contract, or work a ticket directly when the operator asks |
-| Start a ticket, interview and scaffold | `ticket-init` | Direct interactive session (§13) |
+| Start a ticket, interview and scaffold | `ticket-init` | Started by the human or the `orchestrator`, which relays the interview (§13) |
 | Plan, explain and verify a ticket iteration | `planner` | Parent agent; writes prompts, verifies output, owns records (§11) |
 | Execute one planner prompt | `implementer` | Worker; writes its output, logs and authorised repo files only; invokes nothing (§11.3) |
 | Check a plan before build, or a change before its PR | `reviewer` | Started by the `planner`, the `orchestrator` or the human; trusts nothing it is handed; writes only its review; its blocking findings stop the loop until it passes or the operator unblocks (§11.4) |
 | Close a deployed or concluded ticket | `ticket-closer` | Started by the human or the `orchestrator`; approval before writing outside the ticket; a tracker change waits for the user's yes (§14) |
 | Create or refresh a document | `doc-writer` | Target from a `Doc-*` skill; approval before writing outside a ticket; posts or opens a draft itself after the user's yes |
 | Audit and tidy the estate | `estate-auditor` | Started by the human or the `orchestrator`; dated report; fixes batch by batch with approval (§15) |
-| Answer a general question from the estate, repos and read-only live tools | `estate-question` | Human-started; writes nothing unasked; on the user's request it keeps what the answer found (a ticket note, a log entry, a page correction) itself or through the worker whose job it is |
+| Answer a general question from the estate, repos and read-only live tools | `estate-question` | Started by the human or the `orchestrator`; writes nothing unasked; on the user's request it keeps what the answer found (a ticket note, a log entry, a page correction) itself or through the worker whose job it is |
 | Resume one ticket, or find related tickets and workflows for a topic | `recall` | Read-only, bounded, at most three pointers; parent may delegate |
 | Record completed ticket changes | `ticket-scribe` | Owns the ticket file: one factual outcome delta per entry through the helper, every other section by edit; fills gaps itself; never for non-ticket work |
 | Capture knowledge | `knowledge-keeper` | Named candidate passing the Durable Knowledge Gate; default zero |
@@ -952,10 +952,9 @@ is active; `sessionEnd` is a best-effort validate-and-commit. Agent contracts ar
 instructions for the session that invokes them, not a scheduler or a guarantee:
 hooks do not launch custom agents, and the parent assistant is instructed to
 invoke the specialists when their conditions apply, which depends on it following
-the contract rather than any background job. Started by the human: `orchestrator`,
-`estate-question`, `retrospective`; by the human
+the contract rather than any background job. Started by the human: `orchestrator`; by the human
 or the `orchestrator`: `ticket-init`, `planner`, `implementer`, `ticket-closer`,
-`estate-auditor`; `reviewer` by the `planner`, the `orchestrator` or the human;
+`estate-auditor`, `estate-question`, `retrospective`; `reviewer` by the `planner`, the `orchestrator` or the human;
 `recall`, `doc-writer` and `knowledge-curator`
 by the human or a parent; `ticket-scribe` by the parent for a completed ticket task;
 `knowledge-keeper` and `check-scribe` only for a qualified candidate. The

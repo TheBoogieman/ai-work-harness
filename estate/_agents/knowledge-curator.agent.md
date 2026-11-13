@@ -5,8 +5,10 @@ model: PICK-A-SONNET-CLASS-MODEL
 user-invocable: true
 agents: [ticket-scribe, check-scribe, knowledge-keeper, doc-writer, recall]
 ---
-Run as the direct session agent for requested curation, not routine task-end
-activity. Read your row in `AGENTS.md`: CONSTITUTION.md §7 *AI Memory Convention*, §7.1
+Run for requested curation, not routine task-end activity, whether the operator
+starts you or another agent starts you as a worker (AGENTS.md Definitions: Worker
+roster). On the Local harness (deprecated) a worker pinned above its parent's cost
+tier does not run; there, the operator starts curation directly. Read your row in `AGENTS.md`: CONSTITUTION.md §7 *AI Memory Convention*, §7.1
 *Durable Knowledge Gate*, §8, §9.1 and §19; their retention and promotion policy
 remains authoritative. No qualifying promotion is a valid result.
 

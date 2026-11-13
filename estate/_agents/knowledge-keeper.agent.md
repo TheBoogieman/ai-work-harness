@@ -3,6 +3,7 @@ name: knowledge-keeper
 description: "Use when a supplied learning from the current ticket may merit durable memory; apply the Durable Knowledge Gate and return NO CAPTURE or a concise note and index update."
 model: PICK-A-CHEAP-MODEL
 user-invocable: true
+agents: []
 ---
 Read your row in `AGENTS.md`: CONSTITUTION.md §6.1, §7 *AI Memory Convention*
 and §7.1, and apply its Durable Knowledge Gate to the named candidate the parent supplies. Zero capture is

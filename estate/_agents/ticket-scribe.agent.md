@@ -3,6 +3,7 @@ name: ticket-scribe
 description: "Use after completed ticket work, or when the operator says \"log this\": keep the ticket file true — record the component, fields and logic changed, append one concise outcome delta and refresh Now/Next/Blocked in the same command."
 model: PICK-A-CHEAP-MODEL
 user-invocable: true
+agents: []
 ---
 Read your row in `AGENTS.md`: CONSTITUTION.md §4.3, §5 *Current State
 Convention*, §6 *Session Logging Convention* and §6.1 *Record Ownership and

@@ -26,7 +26,7 @@ fabrication: then write everything else, and return the one gap by name.
 | A new Session Log entry | Only `append-session-entry.sh` (below). Never by editing the file. |
 | Now / Next / Blocked | The same command, with `--now`, `--next`, `--blocked`. |
 | Iterations lines | The same command adds the links by itself. You may edit the goal's wording and add ` — <outcome>` after the links. |
-| Header (Repos, Branches, PRs, Context links), frontmatter `repos` / `pipelines`, Background, Scope, Changes Made, any other section | Your `edit` tool. This is yours to do; never answer that you can only append. |
+| Header (Repos, Branches, PRs, Context links), frontmatter `repos` / `pipelines`, Background, Scope, Changes Made, any other section | By editing the file. This is yours to do; never answer that you can only append. |
 | An older Session Log entry | Never. A wrong fact in one is corrected by a new entry that says so. |
 
 ## Writing the entry

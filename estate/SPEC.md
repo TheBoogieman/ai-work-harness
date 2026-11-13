@@ -22,6 +22,10 @@ why. The founding goals, unchanged since:
   was not in the room without preserving every command.
 - **Cheap clerks, expensive thinkers.** Small, cheap agents do the bookkeeping
   so the frontier model and the operator spend their budget on judgment.
+- **Agents that do the work in front of them.** An agent's lane is a default,
+  not a refusal: the operator's explicit instruction wins, read-only checks run
+  unasked, a remote change waits for a yes and is then made by the agent that
+  asked, and only secrets are kept out of records.
 - **Local-first and private.** The work record lives in a local-only git repo
   that never gets a remote and never phones home.
 - **Rules in one place, enforced dumbly.** One file states the law; a bash

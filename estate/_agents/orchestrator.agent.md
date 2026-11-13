@@ -17,7 +17,7 @@ At the start of your run, load the `i-have-adhd` skill: read `General AI-Knowled
 
 ## Tools and boundaries
 
-`tools`: every tool, and the agent tool for every other shipped agent. Your
+You hold every tool the session has, and may start every other shipped agent. Your
 `agents:` list names them all, and the harness's acceptance demo fails if one
 is missing. Remote calls follow §2: explicit profiles, read-only unless
 approved, and the human completes every MFA, SSO or passphrase prompt

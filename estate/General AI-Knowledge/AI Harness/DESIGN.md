@@ -105,6 +105,12 @@ unlinked-file check, or `backfill-iterations.sh`. No SVG was edited; this note n
 `Pipeline-*` skill templates, a pipeline page's `workbooks` list, or `mappings-index.py` and the
 Work Map's generated `Mappings.md`. No SVG was edited; this note names the lag.
 
+**Diagram currency (2026-11-13, #388):** the sheets predate the agents' present reach: every
+agent holds every session tool, a lane is a default the operator's word outranks, read-only
+checks run unasked, and only secrets are kept out of records. They also show the VS Code
+Local harness, which its vendor has deprecated; the Harness Guide's Host compatibility section
+is current. No SVG was edited; this note names the lag.
+
 **The pattern (every layer):** file states the rule → agent does the work →
 hook catches the miss → git undoes the damage. Corollary: status observes,
 failures prescribe, nothing heals itself — a fixed record is a human act.

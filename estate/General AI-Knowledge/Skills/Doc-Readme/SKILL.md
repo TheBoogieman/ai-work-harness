@@ -5,14 +5,15 @@ Drafting or refreshing a repository or module README. Triggers: README, module r
 getting started section.
 
 ## CRAFT GUIDANCE
-**Kind:** draft only unless the user explicitly asks for a local edit in a repo; the human (or an implementer
-prompt) commits it. **Destination:** the repo's own README path, on the ticket's branch.
+**Kind:** draft first. Show it in chat; after the user's yes, write it in the repo on the ticket's branch
+yourself, or put it in an implementer prompt (CONSTITUTION §2). **Destination:** the repo's own README path, on the ticket's branch.
 
 **Shape:** what it is (one paragraph) · how to run it locally · how to test · how it is deployed (link the
 runbook rather than duplicating it) · configuration · where to get help. Keep commands copy-pasteable with
 placeholders.
 
-**Rules:** component-first and concrete; no work identifiers, secrets or customer data in anything public;
+**Rules:** component-first and concrete; no secrets anywhere, and no work identifiers or data in a README
+that is public;
 link the pipeline page or runbook in the estate only from estate documents, not from the repo.
 
 **Sources to mine:** the repo's existing README, Makefile, CI workflows and config on the remote default

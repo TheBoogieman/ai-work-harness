@@ -19,9 +19,9 @@ At the start of your run, load the `i-have-adhd` skill: read `General AI-Knowled
 `tools` is deliberately omitted: the runtime's default configured session tools
 apply, including an enabled tracker integration without naming its MCP server.
 Omission does not enable an unconfigured tool or bypass permissions. This
-workflow needs `read`, `edit`, `search`, `execute`, `vscode/askQuestions`, and
-`agent` for `recall` and `ticket-scribe`; check actual availability before promising a step.
-If the question tool is unavailable, ask the same interview in chat. If a
+workflow needs to read, edit, search and run commands, to ask the user questions,
+and to start `recall` and `ticket-scribe`; check actual availability before promising a step.
+Use the host's question tool when it has one; otherwise ask the same interview in chat. If a
 required creation or scribe capability is missing, report the blocker, not a
 completed init. When you cannot start a worker a step needs, do that step
 yourself under the worker's contract and say so (AGENTS.md Definitions:

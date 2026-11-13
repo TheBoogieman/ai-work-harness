@@ -26,7 +26,7 @@
 #
 # LINE FORMAT (one per skill): `- <Skill-Name> — triggers: <keywords> — tools: <tool[, tool...] | none>`
 # Doc-* skills are doc-writer's documentation targets (CONSTITUTION §19): each names its destination,
-# kind (living, append-only or draft-only), section template, sources and indexes.
+# kind (living, append-only or draft-first), section template, sources and indexes.
 - SQL-Writing — triggers: sql, query, select, join, cte, window, aggregation, dbt model, warehouse query — tools: sqlfluff, dbt
 - Doc-Pipeline-Home — triggers: pipeline doc, pipeline home, pipeline page, identity card, refresh pipeline page, schedule, DAG, tables populated, dependency chain, design workbook, why didn't it run — tools: git, parse-workbook.py, mappings-index.py, check-work-map.py
 - Doc-Ticket-Walkthrough — triggers: walkthrough, handover, implementation walkthrough, close-out document, explain the ticket — tools: gh, git

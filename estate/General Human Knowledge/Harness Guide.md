@@ -129,18 +129,20 @@ an Opus profile too.
 
 | Agents | Profile |
 |---|---|
-| `check-scribe`, `knowledge-keeper`, `recall`, `ticket-scribe` | `Claude Sonnet 5.5 (copilot)` |
-| `ticket-init`, `planner`, `ticket-closer`, `doc-writer`, `estate-auditor`, `estate-question`, `knowledge-curator`, `retrospective` | `Claude Opus 5.5 (copilot)` |
-| `orchestrator` | the strongest model available: an Opus- or Fable-class profile such as `Claude Opus 5.5 (copilot)` |
+| `check-scribe`, `knowledge-keeper`, `recall`, `ticket-scribe` | a Sonnet-class model |
+| `ticket-init`, `planner`, `ticket-closer`, `doc-writer`, `estate-auditor`, `estate-question`, `knowledge-curator`, `retrospective` | an Opus-class model |
+| `orchestrator` | the strongest model available: an Opus- or Fable-class model |
 | `reviewer` | a strong model from a different vendor than the planner's, so the two do not share blind spots. The installer gives it the same pin as the row above; change the `model:` line in `_agents/reviewer.agent.md` by hand and re-run `deploy-agents.sh` |
 | `implementer` | the cheapest long-context model that follows a prompt exactly (it judges nothing) |
 
-Pin the model picker's display name exactly. Lowercase model IDs were tried and
-fell back silently to the session model; display names were confirmed with
-tool-free probe agents.
+**Which form to write.** It depends on the harness, and a pin in the wrong form can
+fall back to the session model without saying so. In the Copilot harness, write the
+runtime model ID that completion inserts when you type `model:` in an agent file. In
+the Local harness (deprecated), write the picker's display name, `<model name> (copilot)`.
+"Host compatibility" below has the check that shows a pin took effect.
 
-This profile was applied on the maintainer's live setup. That does not guarantee
-the names exist on other accounts.
+The tiers were applied on the maintainer's live setup. That does not guarantee
+the same models exist on other accounts.
 
 ## Orchestrator and standing delegation
 
@@ -155,14 +157,45 @@ harness source, following CONSTITUTION §18.1 and the `Estate-Levelling` skill: 
 estate's custom files trump the source, so each file the upgrade keeps gets a three-way
 merge in which your lines survive, shown to you as a diff and written only after your yes.
 
-Hosts differ in whether one agent can start another. An agent that cannot start
+## Host compatibility
+
+The contracts are plain Markdown with a small frontmatter, and a host may ignore a
+frontmatter line without saying so. That has bitten twice: a line that stopped
+agents starting each other, and a tool list that cut agents off from MCP servers.
+This section says, field by field, what is known and how you check the rest on
+your own host in one line. "Read" means read in the vendor's documentation on the
+date given; "witnessed" means seen working on a live host; "not verified" means
+neither.
+
+**The Copilot harness is the one to target.** VS Code's documentation says the Local
+harness is deprecated and will be removed in February 2027 (read 2026-11-13 in the
+[custom agent file reference](https://code.visualstudio.com/docs/agents/reference/custom-agent-file-reference), page dated 2026-11-11). Wherever these documents say what
+a host does, the Copilot harness is meant unless the Local one is named.
+
+| Contract line or setting | Copilot harness | Check on your host |
+|---|---|---|
+| `model:` | Read: takes the runtime model ID that completion inserts, not the Local harness's display name; a list is allowed and the first available model is used. What an unrecognised value does is not stated; in the Local harness a wrong form fell back silently (witnessed). | Start the agent and ask: "Which model are you running on?" Compare with the pin. Do it once per tier after an install or upgrade. |
+| No `tools:` line | Not verified. The documentation states "omitted means the enabled tools" for the Local harness only; for the Copilot harness it says `*` selects all tools and `<server name>/*` one server's. | Ask any agent: "List your tools, MCP servers included." If a configured server is missing, add `tools: ['*']` to that contract in your estate and re-run `deploy-agents.sh`. |
+| `agents:` | Read: not accepted; the Copilot harness delegates through its own task tool. The lines are kept because they are harmless there, they bind in the Local harness until it is removed, and other hosts read them (the Claude Code translation in `INSTALL-INSTRUCTIONS.md` turns them into its agent list). Whom to start is said in each contract's body and `description`, which is what the task tool reads. | Ask the planner: "Start `recall` on this ticket." It should start it, not answer for it. |
+| `disable-model-invocation: true` (orchestrator only) | Read: stops other agents starting that agent; default `false`. Nothing overrides it in the Copilot harness. | None needed: no agent should start the orchestrator. |
+| `user-invocable: true` | Read: the agent appears in the agents dropdown, in both harnesses; default `true`. | The fifteen agents are in the picker. |
+| Deploy directory | Read: user-level agents are read from `~/.copilot/agents`, which is where `deploy-agents.sh` writes. The Local harness keeps its own in VS Code profile storage. | `harness-status.sh` fails with the fix when a contract is missing there or differs. |
+| A subagent starting its own subagents | Not verified. `chat.subagents.allowInvocationsFromSubagents` (off by default, depth at most 5) is documented for the Local harness; the documentation says only that the Copilot harness "manages delegation". | Ask the orchestrator to run the planner and have it start `ticket-scribe`. If it cannot, the planner does the scribe's step itself and says so (`AGENTS.md` Definitions: Invocation modes); turn the setting on if your host has it. |
+| Hooks (`.github/hooks/harness.json`) | Witnessed: `sessionStart`, `postToolUse` and `sessionEnd` fired with the shipped file on the Copilot agent host in VS Code (2026-11-11) and on its Copilot CLI harness on Windows (`INSTALL-INSTRUCTIONS.md`). Read: the harness loads `.github/hooks/*.json` and names those three events among its own; hooks are in preview there. The shipped entries use `bash` and `powershell` keys; the documentation's example uses `command`. | Open a session: the validator's `OK:` or `FAIL:` line is its first output. Write a file: `git log -1` shows an `auto-write` commit. |
+| Asking you a question | Read: no tool is named for it. The contracts say "ask the user" and never name a host tool; an agent uses the host's question tool when it has one and the chat when it does not. | None needed. |
+
+Sources, all read 2026-11-13: [custom agent file reference](https://code.visualstudio.com/docs/agents/reference/custom-agent-file-reference), [subagents](https://code.visualstudio.com/docs/agents/run/subagents), [agent hooks](https://code.visualstudio.com/docs/agent-customization/hooks).
+Nothing in this table was tested on a live Copilot harness for this release except
+the hooks row; run the checks once on yours.
+
+Hosts also differ in whether one agent can start another. An agent that cannot start
 the agent a step needs hands that step back (`AGENTS.md` Definitions: Invocation
 modes).
 
 | Host | What was found |
 |---|---|
-| VS Code agents, Local harness | Naming an agent in another agent's `agents:` list overrides its `disable-model-invocation: true`; the listing agent needs the `agent` tool. A subagent cannot start further subagents unless `chat.subagents.allowInvocationsFromSubagents` is on (off by default; nesting depth at most 5). **Turn it on**: every operator-facing agent lists the worker roster, and an agent started by another (the planner under the orchestrator, `doc-writer` under the closer) can start its workers only with this setting; without it that agent does the worker's step itself. Read in the VS Code docs on 2026-10-29: [subagents](https://code.visualstudio.com/docs/agents/run/subagents), [custom agent file reference](https://code.visualstudio.com/docs/agents/reference/custom-agent-file-reference). |
-| Copilot CLI and cloud agent | They do not accept the `agents:` field and delegate through their own task tool. How they treat `disable-model-invocation` and nested agents is not verified. |
+| VS Code agents, Local harness (deprecated, removal February 2027) | Naming an agent in another agent's `agents:` list overrides its `disable-model-invocation: true`; the listing agent needs the `agent` tool. A subagent cannot start further subagents unless `chat.subagents.allowInvocationsFromSubagents` is on (off by default; nesting depth at most 5). **Turn it on**: every operator-facing agent lists the worker roster, and an agent started by another (the planner under the orchestrator, `doc-writer` under the closer) can start its workers only with this setting; without it that agent does the worker's step itself. Read in the VS Code docs on 2026-10-29: [subagents](https://code.visualstudio.com/docs/agents/run/subagents), [custom agent file reference](https://code.visualstudio.com/docs/agents/reference/custom-agent-file-reference). |
+| VS Code agents, Copilot harness; Copilot CLI and cloud agent | They do not accept the `agents:` field and delegate through their own task tool. `disable-model-invocation: true` is documented as stopping other agents starting that agent. Nested agents are not verified: see the table above. |
 | Claude Code | `user-invocable` and `disable-model-invocation` have no equivalent (`INSTALL-INSTRUCTIONS.md`, "Running the estate with Claude Code"). On one seat, a subagent started a further subagent of its own (2026-10-29). |
 
 ## What each agent can reach
@@ -182,14 +215,9 @@ modes).
   as a subagent. Whom to start is said by name in
   each contract's body and in each agent's `description`, which is what a host's delegation tool
   reads; the `agents:` lines repeat it for hosts that read them.
-- **Check it on your host.** Read in the VS Code docs on 2026-11-13
-  ([custom agent file reference](https://code.visualstudio.com/docs/agents/reference/custom-agent-file-reference)):
-  in the Local harness an omitted `tools` gives the tools enabled in the tools picker; in the
-  Copilot harness `*` selects all tools and `<server name>/*` a server's tools. What an omitted
-  `tools` gives in the Copilot harness is not stated there: ask an agent to list its tools once.
-  The same page says the Copilot harness does not accept the `agents:` field and delegates
-  through its own task tool, so the `agents:` lists bind only in the Local harness, which the
-  page marks as deprecated.
+- **Check it on your host.** What an omitted `tools` gives in the Copilot harness is not
+  stated in its documentation, so ask an agent to list its tools once. "Host compatibility"
+  above has that check and the others, with what to change when one fails.
 
 ## Tool adapters
 

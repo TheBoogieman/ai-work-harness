@@ -228,6 +228,8 @@ stay generic either way.
 - Ask (`estate-question`): "How can I check when a table was last recreated?" or "Which warehouse table does the `<pipeline>` pipeline write?"
 - Document (`doc-writer`): "Refresh the `<pipeline>` pipeline page; verify live."
 - Workbook: "Parse `Mappings/<workbook>.xlsx` version `<V>` into `<ticket>`."
+- Workbook index: "Refresh the Mappings index." (`python3 _harness/scripts/mappings-index.py --write`; it lists each workbook, its versions and the pipeline page that names it.)
+- Skill: "Propose a `Pipeline-<pattern>` skill from `<ticket>`; show me before publishing." (`knowledge-curator`; the map is `General AI-Knowledge/Skills/SKILL-MAP.md`.)
 - Curate: "Compact and promote knowledge for `<ticket>`; show me before publishing."
 - Review (`retrospective`): "Write my retrospective from 2026-05-18 to today for an end-of-year review, then give me a two-paragraph cut." It asks for anything you left out, then asks about conditions and off-ticket work before it writes.
 

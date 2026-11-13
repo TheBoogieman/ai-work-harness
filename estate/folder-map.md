@@ -48,6 +48,7 @@ Work/                                        [git root · local-only · whitelis
 │       ├── init-ticket.sh                   ← ticket-init · allocates the folder and copies the template; the agent owns every fact
 │       ├── check-work-map.py                ← SessionStart hook │ human-run · read-only Work Map link observer · warnings only
 │       ├── parse-workbook.py                human-run · Mappings/ workbook → ticket Dump/workbooks/ (INDEX, version history, sheet CSVs, changes-<V>) · needs openpyxl · CONSTITUTION §10
+│       ├── mappings-index.py                human-run │ doc-writer · Mappings/ + pipeline pages' workbooks lists → Work Map/Mappings.md (versions, owning page, two gap lists) · writes nothing in Mappings/ · CONSTITUTION §10
 │       ├── audit-inventory.py               ← estate-auditor │ human-run · read-only inventory: ticket staleness, PRs, walkthroughs, broken #anchors, pipeline-page sections · CONSTITUTION §15
 │       ├── anchor-style.py                  human-run · rewrites section links between GitHub slugs and Obsidian heading text · --check reports unresolved links
 │       ├── harness-housekeeping.sh          human-run · git gc + size report · never touches records

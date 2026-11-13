@@ -21,6 +21,8 @@ repos:
   - <repo>
 pipelines:
   - <pipeline-file-name>
+workbooks:
+  - <workbook file name in Mappings/>
 ---
 # <Pipeline display name>
 
@@ -40,7 +42,7 @@ Aliases: `<runtime name>`, `<names seen in tickets>`. Read the Identity card fir
 | Tables populated | | |
 | Egress destination | | |
 | Configuration (event handlers, tenant vars) | | |
-| Design workbook | `Mappings/<file>.xlsx`, sheets <...> | |
+| Design workbook | [<file>.xlsx](<relative link into Mappings/>), sheets <...> (both) | |
 | Delivery runbook | [<repo> workflow](<relative link>) | |
 
 Sources: <path:line, ticket, or command + date>
@@ -73,6 +75,11 @@ UAT differences: <config or behaviour that differs from PROD for a hop this page
 ```
 
 **Rules.**
+- Technical, with plain commentary. The page may be as technical as the pipeline is, but every technical
+  detail is tied to the business logic it serves in a plain sentence beside it: what a filter keeps out and
+  why the business wants that, what a join key means, what a schedule is waiting for. A reader who knows the
+  business and not the code should be able to follow How it works; a reader who knows the code should learn
+  why it is that way.
 - One owner per fact: delivery mechanics (branching, build, generic deploy commands) belong to the repo's
   runbook in `General Human Knowledge/Repo Workflows/`; this page holds the pipeline-specific VALUES plugged
   into them (app name, definition names, YAML patterns, DAG ids, buckets) and the validation recipe. Link, never copy.
@@ -99,6 +106,14 @@ UAT differences: <config or behaviour that differs from PROD for a hop this page
 - Frontmatter (CONSTITUTION §9.2): `repos` lists every hosting repo by its repo card file name (the same repos
   as the Identity card's "Repos and source paths" row); `pipelines` lists this page's own file name without
   `.md`. No YAML comments; `check-work-map.py` reports a page whose block is missing or wrong.
+- Design workbooks (CONSTITUTION §10): `workbooks` lists the file name of each workbook in `Mappings/` this
+  pipeline is designed in (leave the key out when there is none), and the Identity card row links the same
+  file. The page names the workbook; nothing is ever written in or beside a workbook. Never name a version
+  here: a ticket records the version it works from. After changing the list, run
+  `mappings-index.py --write` so the Work Map's workbook index follows.
+- Change recipes: the steps for the kinds of change this pipeline gets. Where a `Repo-*` or `Pipeline-*`
+  skill already describes the pattern, link it and keep only this pipeline's values here (names, paths,
+  parameters). A skill never replaces this section.
 - Dependency Chain: one row per hop, ordered from the first upstream producer to this pipeline's own trigger,
   so a reader can walk up from whatever is missing. Name each hop's gate exactly as it is configured (file
   type, table and date column, sensor and metric row) and give the check that proves it passed. A hop that
@@ -136,6 +151,7 @@ Resolve and approve remote targets before use (CONSTITUTION §2):
 - Your cloud CLI's read-only job or pipeline listing, with an explicit profile (for example `aws ... --profile '<profile>'`) — runtime names, state and schedule (human MFA).
 - The scheduler's CLI or UI — DAG ids and schedules (read-only; human SSO).
 - The trigger's or scheduler's run and task logs — which dependency a run waited on and when it passed (read-only).
+- `python3 _harness/scripts/mappings-index.py --write` — refresh the Work Map's workbook index after the `workbooks` list changes.
 - `python3 _harness/scripts/check-work-map.py` — confirm links after writing.
 
-Last reviewed: 2026-10-30
+Last reviewed: 2026-11-13

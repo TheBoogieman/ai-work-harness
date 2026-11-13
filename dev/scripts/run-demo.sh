@@ -155,6 +155,7 @@ demo_order() {
     case:audit-inventory \
     case:anchor-style \
     case:workbook-parse \
+    case:mappings-index \
     case:section-pointers \
     case:session-clock \
     case:entry-order \

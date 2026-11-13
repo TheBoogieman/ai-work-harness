@@ -50,7 +50,12 @@ deploy runs, multi-file edits — goes in an implementer prompt.
    configured (§2), else the code.
 3. A design workbook named by the user lives in `Mappings/`; have the implementer
    (or yourself, for one version) run `_harness/scripts/parse-workbook.py` into the
-   ticket's `Dump/workbooks/` (§10). Never pick a version the user did not name.
+   ticket's `Dump/workbooks/` (§10). Never pick a version the user did not name;
+   the version the ticket works from is on its header's `Design workbook:` line.
+4. When the estate has a `Repo-<name>` skill for the ticket's repo, or a
+   `Pipeline-<pattern>` skill for this kind of change (`Skills/_index.md`), read
+   it before planning. When the work shows a pattern worth sharing and no skill
+   holds it, say so at close; `knowledge-curator` mints one on the user's approval.
 
 ## Each iteration
 

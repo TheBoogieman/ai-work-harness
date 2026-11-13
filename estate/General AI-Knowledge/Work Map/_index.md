@@ -7,7 +7,7 @@ a deployment inventory or a replacement for ticket records. Pipeline pages are
 the one home of each pipeline's facts (CONSTITUTION §9.2): read a page's
 Identity card first, then one section. Repo cards are routing.
 
-[Reusable knowledge](../_index.md) | [Repo workflows](../../General%20Human%20Knowledge/Repo%20Workflows/_index.md) | [Pipeline page template](../Skills/Doc-Pipeline-Home/SKILL.md) | [Retrospectives](../../General%20Human%20Knowledge/Retrospectives/_index.md)
+[Reusable knowledge](../_index.md) | [Repo workflows](../../General%20Human%20Knowledge/Repo%20Workflows/_index.md) | [Pipeline page template](../Skills/Doc-Pipeline-Home/SKILL.md) | [Retrospectives](../../General%20Human%20Knowledge/Retrospectives/_index.md) | [Design workbooks](Mappings.md)
 
 ## Repositories
 
@@ -34,7 +34,10 @@ work establishes it. Record only observed aliases, not guesses:
   Validate, Behaviour and traps, Read before, Ticket history), each ending with a
   `Sources:` line. `doc-writer` creates and refreshes it with the
   [Doc-Pipeline-Home](../Skills/Doc-Pipeline-Home/SKILL.md) skill. Its frontmatter lists
-  the hosting repos in `repos` and its own file name in `pipelines`.
+  the hosting repos in `repos`, its own file name in `pipelines`, and the design
+  workbooks it is built from in `workbooks` (file names in `Mappings/`).
+  [Design workbooks](Mappings.md) is the generated list of every workbook and the
+  page that names it; refresh it with `python3 _harness/scripts/mappings-index.py --write`.
 - **Repo card** (`Repos/<repo>.md`): local path, code-host repo, default branch,
   its delivery runbook, the pipelines it hosts, and ticket history. Its frontmatter
   `repos` lists its own file name (CONSTITUTION §9.2).

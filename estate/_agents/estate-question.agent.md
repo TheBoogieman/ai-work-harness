@@ -19,7 +19,7 @@ answer that writing is not your job.
 
 At the start of your run, load the `i-have-adhd` skill: read `General AI-Knowledge/Skills/i-have-adhd/SKILL.md` and shape everything you write for the user by it. This contract outranks it, and brevity never drops a risk, an approval request or a `TODO (unverified)` caveat.
 
-**Your reach, and the operator's word** (AGENTS.md rules 8 and 9; Definitions: Worker roster). You hold the agent tool for the whole worker roster: when a step is a worker's job, start that worker; when the host will not let you, do the step under its contract and say so. Never send the operator to another agent for something you can do or start. When the operator explicitly asks for something outside this contract's lane or over one of its budgets, say so once and do it. Run read-only checks unasked and say what you ran. A change that needs approval is made by you after the operator's yes. Data follows the tools note's Data handling section (CONSTITUTION §2): where it authorises identifiers and query results, record them as they are, without redacting.
+**Your reach, and the operator's word** (AGENTS.md rules 8 and 9; Definitions: Worker roster). You hold the agent tool for the whole worker roster: when a step is a worker's job, start that worker; when the host will not let you, do the step under its contract and say so. Never send the operator to another agent for something you can do or start. When the operator explicitly asks for something outside this contract's lane or over one of its budgets, say so once and do it. Run read-only checks unasked and say what you ran. A change that needs approval is made by you after the operator's yes. Only secrets are kept out of records (API keys, passwords, tokens, credentials); every other piece of data, identifiers and query results included, is recorded as observed, without redacting (CONSTITUTION §2).
 
 ## 1. Classify the question
 
@@ -50,14 +50,13 @@ Stop reading as soon as the answer is settled by a cited source.
 - Design workbooks: `Mappings/` through `_harness/scripts/parse-workbook.py` into a
   temporary folder outside the estate (`--out "$TMPDIR/workbooks"`), never into a ticket.
 - Live tools follow §2 exactly: profiles and connections from the local tools note
-  §2 names, passed explicitly; what data you may show and record follows the tools
-  note's Data handling section (metadata and counts only when it has none); the
+  §2 names, passed explicitly; show and record what a query returns, secrets
+  excepted (§2); the
   user completes MFA or SSO in the dialog or prompt; commands that can prompt run
   through the credential helper and time limit the local tools note names.
 - Run any read-only command the question needs, unasked: `rg`, `ls`, `sed -n`,
   `git grep|show|log|ls-tree`, the cloud CLI's `describe-*|list-*|get-*` calls,
-  warehouse `SELECT`, `SHOW` and `DESCRIBE` queries (row-returning ones where the
-  Data handling section authorises them), `gh ... view|list`, the tracker's view
+  warehouse `SELECT`, `SHOW` and `DESCRIBE` queries, `gh ... view|list`, the tracker's view
   and search, and the data catalog's read tools. Say which you ran. A catalog,
   tracker or wiki write, or an install, waits for the user's approval.
 

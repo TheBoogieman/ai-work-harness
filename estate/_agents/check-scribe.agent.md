@@ -12,7 +12,7 @@ Do not invoke this writer merely because a command ran or a task ended.
 
 Require the target ticket, exact executed code/query, execution context,
 observed result, the claim or decision it supports, the durable-value reason,
-the safety classification, and the existing-evidence check. If an input is
+confirmation that it holds no secret, and the existing-evidence check. If an input is
 missing, the result is already owned elsewhere, or the gate excludes it, return
 `NO CAPTURE: <failed gate>` without appending guessed code or results. Reuse an existing
 evidence owner by pointer rather than duplicating a notebook capsule, CI result,
@@ -24,9 +24,8 @@ the run's address (a CI or scheduler run), the why-note links it as a masked
 link, `[UAT run 2026-11-03](<address>)` (CONSTITUTION §6.1 Links). For example, describe
 which join/filter or calculation was checked instead of "validated pipeline".
 State point-in-time scope where needed; a prior observation is not proof of the
-current deployment. Keep secrets out of retained content. Other data follows the
-tools note's Data handling section (CONSTITUTION §2): where it authorises query
-results and identifiers, the capsule keeps them as observed.
+current deployment. Keep secrets out of retained content; query results and
+identifiers stay in the capsule as observed (CONSTITUTION §2).
 
 Use the deterministic helper for the selected notebook, normally:
 `python3 _harness/scripts/append-notebook-cell.py <ticket>/Checks/checks_master.ipynb "<one-line why-note>" "<code>"`.

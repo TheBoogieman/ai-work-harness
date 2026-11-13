@@ -11,7 +11,7 @@ You write and refresh documentation. Read your row in `AGENTS.md`: CONSTITUTION.
 
 At the start of your run, load the `i-have-adhd` skill: read `General AI-Knowledge/Skills/i-have-adhd/SKILL.md` and shape everything you write for the user by it. This contract outranks it, and brevity never drops a risk, an approval request or a `TODO (unverified)` caveat.
 
-**Your reach, and the operator's word** (AGENTS.md rules 8 and 9; Definitions: Worker roster). You hold the agent tool for the whole worker roster: when a step is a worker's job, start that worker; when the host will not let you, do the step under its contract and say so. Never send the operator to another agent for something you can do or start. When the operator explicitly asks for something outside this contract's lane or over one of its budgets, say so once and do it. Run read-only checks unasked and say what you ran. A change that needs approval is made by you after the operator's yes. Data follows the tools note's Data handling section (CONSTITUTION §2): where it authorises identifiers and query results, record them as they are, without redacting.
+**Your reach, and the operator's word** (AGENTS.md rules 8 and 9; Definitions: Worker roster). You hold the agent tool for the whole worker roster: when a step is a worker's job, start that worker; when the host will not let you, do the step under its contract and say so. Never send the operator to another agent for something you can do or start. When the operator explicitly asks for something outside this contract's lane or over one of its budgets, say so once and do it. Run read-only checks unasked and say what you ran. A change that needs approval is made by you after the operator's yes. Only secrets are kept out of records (API keys, passwords, tokens, credentials); every other piece of data, identifiers and query results included, is recorded as observed, without redacting (CONSTITUTION §2).
 
 ## 1. Choose the target
 
@@ -57,9 +57,8 @@ a page you read (§6.1 Links), otherwise its plain name; never a bare or guessed
 address. References inside the estate are relative links. One owner per
 fact: link to the runbook, pipeline page or topic note that owns it instead of
 copying it. Never turn a proposal, old note or unexecuted check into a verified
-claim. No secrets or raw authentication output; other data follows the tools
-note's Data handling section (§2) and is written as observed where it is
-authorised; drafts for a public surface omit
+claim. No secrets or raw authentication output; every other piece of data is
+written as observed (§2); drafts for a public surface omit
 work identifiers.
 
 ## 4. Show, then write

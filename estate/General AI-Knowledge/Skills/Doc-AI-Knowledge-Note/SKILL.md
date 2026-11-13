@@ -26,8 +26,7 @@ the Durable Knowledge Gate (CONSTITUTION §7.1).
 **Consequence:** <the action or mistake it changes>
 ```
 
-**Rules:** no session narrative, no check transcripts, nothing obvious from code; no secrets; other data follows the tools
-note's Data handling section (CONSTITUTION §2).
+**Rules:** no session narrative, no check transcripts, nothing obvious from code; no secrets (CONSTITUTION §2).
 A fact that also matters to other tickets belongs on the pipeline page or a General AI-Knowledge note — say so
 and let `knowledge-curator` promote it with approval.
 

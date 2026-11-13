@@ -163,19 +163,16 @@ a tool is unavailable, state the limit and the next useful action.
 - **Tell the human before a prompt.** Before running a command you expect to ask
   for MFA or a sign-in, say so and wait until the human is present; a prompt
   nobody answers only times out.
-- **Data handling, by class.** *Secrets* (API keys, passwords, tokens, credentials,
-  raw authentication output) never go into any record, prompt, output, draft or
-  chat. *Everything else* (customer and account identifiers, names, query text
-  with literal values, result rows) follows the tools note's **Data handling**
-  section: the operator's own words, dated, saying what may be recorded in local
-  records, what may go into drafts for the tracker and internal PRs, and what
-  stays out. An agent adds or changes that section only by quoting what the
-  operator said, never by inferring it. With no section, keep such data out of
-  records and use metadata or aggregates. Where the section authorises it, record
-  it: the query as run, its result and the identifiers that make the record
-  reproducible, without asking again and without redacting. Whatever the section
-  says, only generic text goes to a public surface (a public repository, issue or
-  PR), and the context pack stays scrubbed ([§21](#21-context-pack-convention)).
+- **Only secrets are banned.** API keys, passwords, tokens, credentials and raw
+  authentication output never go into any record, prompt, output, draft or chat.
+  Everything else may be recorded as observed: customer and account identifiers,
+  names, query text with literal values and result rows, in ticket logs,
+  notebooks, prompts, outputs, knowledge notes and drafts for the tracker or an
+  internal PR, at whatever size the record needs. Do not redact it, reduce it to
+  counts or ask again before writing it. An estate whose organisation is stricter
+  says so in its tools note, and that note then governs. One surface stays
+  generic whatever the estate allows: a public repository, issue or PR, and the
+  context pack, which stays scrubbed ([§21](#21-context-pack-convention)).
   Report an unverified result honestly.
 
 ---
@@ -296,8 +293,7 @@ outcome of ordinary ticket work.
 2. Source tests, CI, a PR check, a durable application log, or an existing notebook
    capsule do not already retain the result adequately.
 3. The command and output are safe to retain: no credentials, tokens or transient
-   authentication material, and no data the tools note's Data handling section
-   keeps out of records ([§2](#2-tools-and-authentication)).
+   authentication material ([§2](#2-tools-and-authentication)).
 4. A future reader could safely replay it, or it is explicitly scoped as a
    point-in-time observation that must not be replayed blindly.
 
@@ -796,7 +792,7 @@ watches both is the human, or the `orchestrator` when the human runs one ([§12]
 - `NN` is two digits, sequential per ticket, never reused. A rework or follow-up
   takes the next number; an issued prompt is never edited or overwritten.
 - Both folders are tracked records: no credentials, tokens or raw authentication
-  output; other data follows the Data handling section ([§2](#2-tools-and-authentication)).
+  output; any other data is recorded as observed ([§2](#2-tools-and-authentication)).
 - **Prompt shape:** `# <ID> — Prompt NN: <goal> (<scope>)`; a one-line worker role;
   `Context the planner already verified` (facts, plus any small correction the
   planner made since the last output); `## 0. Hard rules` (the implementer
@@ -833,8 +829,7 @@ watches both is the human, or the `orchestrator` when the human runs one ([§12]
 - Invokes no agents and decides no judgement call: an ambiguity, a failed
   expectation or a scope question goes into the handback.
 - Follows §2 exactly: waits for MFA/SSO, never retries in a loop, never switches
-  profile or environment, never prints secrets; other data follows the Data
-  handling section.
+  profile or environment, never prints secrets.
 
 ---
 

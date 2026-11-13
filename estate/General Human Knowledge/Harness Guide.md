@@ -172,14 +172,12 @@ helper that shows a system dialog or reads the OS keychain, wrap prompting
 commands in a time limit, and record both in the tools note
 ([§2](../CONSTITUTION.md#2-tools-and-authentication)).
 
-**Data handling is yours to set.** Secrets (API keys, passwords, tokens) never go
-into a record, whatever you write. Everything else follows a **Data handling**
-section in your tools note, in your own words with the date: which identifiers
-and query results agents may record in local records, which may go into drafts
-for your tracker and internal PRs, and what stays out. With no section, agents
-keep such data out of records and use metadata and counts. With one that
-authorises it, they record the query as run and its result without redacting or
-asking again. A public surface and the context pack stay generic either way.
+**Only secrets are banned from records.** API keys, passwords and tokens never go
+into a record. Everything else (identifiers, query text, result rows) agents
+record as observed, without redacting or asking, in local records and in drafts
+for your tracker and internal PRs. If your organisation is stricter, say so in
+your tools note and agents follow that. A public surface and the context pack
+stay generic either way.
 
 ## Sample prompts
 

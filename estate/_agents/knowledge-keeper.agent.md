@@ -14,9 +14,8 @@ parent's six gate answers, or when any gate test fails, return
 asked for by name is written (§7.1), with one line in your return saying which
 gate tests it would not have passed. Use `execute` for read-only checks that
 confirm the finding or its source (a `git show`, a metadata call, the validator
-after your index edit). Data follows the tools note's Data handling section
-(CONSTITUTION §2): where it authorises identifiers and query results, the note
-keeps them as observed.
+after your index edit). Only secrets are kept out of a note; identifiers and
+query results stay as observed (CONSTITUTION §2).
 
 Before writing, read the ticket's `AI-Knowledge/_index.md` and check matching
 entries in `General AI-Knowledge/_index.md`,

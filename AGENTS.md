@@ -41,10 +41,10 @@ Before any remote call:
   tools note names. Never ask for, echo or store a secret.
 - Before a command you expect to ask for a sign-in, tell the human to be present;
   a prompt nobody answers only times out.
-- No credentials (API keys, passwords, tokens) or raw authentication output in
-  any record. All other data follows the tools note's **Data handling** section
-  ([§2](CONSTITUTION.md#2-tools-and-authentication)): where it authorises
-  identifiers and query results, record them as they are.
+- Only secrets are kept out of records: credentials (API keys, passwords,
+  tokens) and raw authentication output. Everything else, identifiers and query
+  results included, is recorded as observed
+  ([§2](CONSTITUTION.md#2-tools-and-authentication)).
 
 ## Rules for every agent
 

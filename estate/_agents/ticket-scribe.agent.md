@@ -88,9 +88,8 @@ with its observed outcome and a link to the evidence. Say "not run" when
 appropriate. Investigation-only work names the finding and explicitly says no
 implementation changed.
 
-Data follows the tools note's Data handling section (CONSTITUTION §2). Where it
-authorises identifiers and query results, write them as they were observed,
-without redacting; a secret (API key, password, token) is never written.
+Write identifiers and query results as they were observed, without redacting
+(CONSTITUTION §2); only a secret (API key, password, token) is never written.
 
 Every PR, branch, run, tracker issue or comment, or wiki page you write is a
 masked link (CONSTITUTION §6.1 Links): `[PR #951](<address>)` in the header and

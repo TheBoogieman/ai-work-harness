@@ -358,7 +358,8 @@ for the named candidate that passed the gate. An ordinary task invokes no keeper
 and adds no notebook cell, so the red block in section 3 is rarer than this page
 makes it look.
 For larger work you start a `planner` session, which writes numbered prompts that
-an `implementer` session runs one at a time, and you finish with `ticket-closer`,
+an `implementer` session runs one at a time; a `reviewer` checks the plan before
+it is built and the change before its PR; and you finish with `ticket-closer`,
 which verifies the status you state, updates the map and writes the walkthrough.
 The hook commits behind all of it. What is left for you is what only a person can
 do: decide the work is worth a ticket, say in your own words what you learned,

@@ -30,7 +30,7 @@
 | 8 | [General AI-Knowledge Convention](#8-general-ai-knowledge-convention) | | Writing non-ticket knowledge |
 | 9 | [Context Discovery](#9-context-discovery) | 9.1 [Linked Work Map](#91-linked-work-map) · 9.2 [Pipeline and Repo Pages](#92-pipeline-and-repo-pages) | Picking up work, or changing repo or pipeline |
 | 10 | [Design Workbooks in Mappings](#10-design-workbooks-in-mappings) | | A task names a design spreadsheet or version |
-| 11 | [Planner and Implementer Loop](#11-planner-and-implementer-loop) | 11.1 [Prompt and Output Files](#111-prompt-and-output-files) · 11.2 [Planner Duties](#112-planner-duties) · 11.3 [Implementer Boundaries](#113-implementer-boundaries) | Running or reading a planner/implementer iteration |
+| 11 | [Planner and Implementer Loop](#11-planner-and-implementer-loop) | 11.1 [Prompt and Output Files](#111-prompt-and-output-files) · 11.2 [Planner Duties](#112-planner-duties) · 11.3 [Implementer Boundaries](#113-implementer-boundaries) · 11.4 [The Review Gate](#114-the-review-gate) | Running or reading a planner/implementer iteration |
 | 12 | [Agent Routing](#12-agent-routing) | | Choosing or invoking another agent |
 
 **PART II — Procedures and maintenance** (load on demand)
@@ -263,7 +263,7 @@ Tickets/
     ├── PROJ-65474-walkthrough.md ← human-facing handover, written by ticket-closer at close-out (§14.1)
     ├── AI-Knowledge/           ← AI agent memory .md files for this ticket (indexed + compacted, see §7)
     ├── Agent-Prompts/          ← planner → implementer prompts: NN-<slug>.md (§11.1)
-    ├── Agent-Output/           ← implementer results: NN-<slug>.md, same name as its prompt (§11.1)
+    ├── Agent-Output/           ← implementer results: NN-<slug>.md, same name as its prompt (§11.1); reviewer verdicts: NN-review.md (§11.4)
     ├── Checks/                 ← selected durable evidence: checks_master.ipynb (+ scratch files / per-tool subfolders as YOUR stack needs)
     ├── Logs/                   ← long run logs (build/test/pipeline output, implementer NN-<topic>.txt) — dump here so grep can slice them
     └── Dump/                   ← user-dropped misc files for the AI to read (.csv, screenshots, .docx/.pptx/.eml) and parsed workbooks (§10)
@@ -274,7 +274,7 @@ Any supporting files (exports, scripts, etc.) also live in this folder. Design w
 The standard subfolders:
 
 - **`AI-Knowledge/`** — AI agent memory/knowledge `.md` files for this ticket (see [§7](#7-ai-memory-convention) — including the **index + compaction** rules).
-- **`Agent-Prompts/`** and **`Agent-Output/`** — the planner/implementer iteration ledger ([§11.1](#111-prompt-and-output-files)). Tracked records: the planner writes prompts, the implementer writes outputs, and `ticket-closer` cites both in the walkthrough. Never credentials, tokens, customer rows or raw authentication output.
+- **`Agent-Prompts/`** and **`Agent-Output/`** — the planner/implementer iteration ledger ([§11.1](#111-prompt-and-output-files)). Tracked records: the planner writes prompts, the implementer writes outputs, the reviewer writes its reviews beside them ([§11.4](#114-the-review-gate)), and `ticket-closer` cites them in the walkthrough. Never credentials, tokens, customer rows or raw authentication output.
 - **`Checks/`** — selected, reproducible evidence in ANY language your work needs (SQL, Python, shell, API probes). `checks_master.ipynb` is the default recorder — one markdown why-note + one code cell per durable claim, appended via `append-notebook-cell.py`, on the workspace default kernel (`venv_global` by convention — see *Python environment* below; register other kernels freely). Routine verification stays ephemeral; scratch files may hold temporary work. Add per-tool subfolders if your stack wants them — the harness imposes none.
 - **`Logs/`** — long-running command output (e.g. build/test output, dbt runs, pipeline logs). **AI agents: always redirect long logs here** instead of printing them into chat, so they can be sliced with `grep`/`tail`/`awk` and don't overflow the session context window.
 - **`Dump/`** — the "landfill" for user-generated misc files dropped in for the AI to read: `.csv` extracts, screenshots (`.png`/`.jpg`), `.docx`/`.pptx`/`.eml`, plus parsed workbook output (`Dump/workbooks/`). This is *user input for the AI*, distinct from checks you write (`Checks/`) and command output (`Logs/`). Large scratch or dropped inputs belong **here** (git-ignored), not in the tracked ticket root — `harness-status` WARNs (yellow, never blocks) if a ticket's tracked root grows past `HARNESS_TICKET_WARN_MB` (default 5), pointing you here. **No customer PII, credentials, or secrets ever land in `Dump/`** — if an extract contains PII it doesn't belong in this folder tree at all; work with it in the approved location and reference it by path/description instead.
@@ -776,13 +776,15 @@ version for each task; an agent never silently picks "the latest".
 
 ## 11. Planner and Implementer Loop
 
-Delivery runs as two agents in two chats. The courier who carries each hand-off and
-watches both is the human, or the `orchestrator` when the human runs one ([§12](#12-agent-routing)).
+Delivery runs as two agents in two chats, with a third that checks them. The courier
+who carries each hand-off and watches the chats is the human, or the `orchestrator`
+when the human runs one ([§12](#12-agent-routing)).
 
 | Role | Agent | Job |
 |---|---|---|
 | Planner | `planner` | Explains every step to the human, writes the implementer's prompt, then reads and verifies the output. The parent agent: owns the ticket record and the capture gates. |
 | Implementer | `implementer` | Executes one prompt exactly: long context, logs, commands and code changes. Not a knowledge worker; hands every judgement back. |
+| Reviewer | `reviewer` | Trusts neither of them: checks the plan before it is built and the change before its PR. Its blocking findings stop the loop ([§11.4](#114-the-review-gate)). |
 
 ### 11.1 Prompt and Output Files
 
@@ -791,6 +793,8 @@ watches both is the human, or the `orchestrator` when the human runs one ([§12]
   `NN-<slug>.md` name in both folders. Bulky output: `Tickets/<ticket>/Logs/NN-<topic>.txt`.
 - `NN` is two digits, sequential per ticket, never reused. A rework or follow-up
   takes the next number; an issued prompt is never edited or overwritten.
+- A review is `Tickets/<ticket>/Agent-Output/NN-review.md`: it takes the next
+  unused number and has no prompt file of its own ([§11.4](#114-the-review-gate)).
 - Both folders are tracked records: no credentials, tokens or raw authentication
   output; any other data is recorded as observed ([§2](#2-tools-and-authentication)).
 - **Prompt shape:** `# <ID> — Prompt NN: <goal> (<scope>)`; a one-line worker role;
@@ -831,6 +835,37 @@ watches both is the human, or the `orchestrator` when the human runs one ([§12]
 - Follows §2 exactly: waits for MFA/SSO, never retries in a loop, never switches
   profile or environment, never prints secrets.
 
+### 11.4 The Review Gate
+
+The planner verifies its own plan and the implementer's output, so nothing else in
+the loop is built to disagree. The `reviewer` is: a senior architect's read, from a
+fresh context, that trusts neither the plan nor the build nor the stated approach.
+
+- **When.** A design check on the plan before the first build prompt. A review of
+  the finished change before the PR (before it is marked ready, where the repo
+  opens a draft early), and again whenever the branch changes after a pass.
+- **What it is given.** The ticket (header, Scope, acceptance criteria) and the plan
+  or the diff. Never the planner's reasoning.
+- **What it checks.** Whether the change is in the right repo and uses the simplest
+  mechanism that does the job; whether the build matches what the specification
+  promised; the data it produces; what it may break downstream; complexity and
+  duplicated helpers; configuration and hardcoded parameters; whether the tests
+  could fail. It runs what it needs and lists the commands with their results.
+- **What it writes.** Only `Agent-Output/NN-review.md` ([§11.1](#111-prompt-and-output-files)):
+  a verdict (PASS, PASS WITH IMPROVEMENTS or BLOCKED), numbered blocking findings
+  with the required action, and improvements marked non-blocking. It changes no
+  code and no record, and starts no agent.
+- **The gate.** A blocking finding blocks. The planner answers each by number and
+  has it implemented; the reviewer re-reviews and marks each earlier finding
+  fixed, partly fixed, open or regressed. There is no round cap. The loop ends
+  when the reviewer passes the change or the operator unblocks a finding in their
+  own words. No agent waives a finding, and a standing delegation does not
+  reach one.
+- **By hand.** The operator may start the reviewer on any PR or branch; then its
+  findings go to the operator.
+- **Not a worker.** An agent that cannot start the reviewer asks whoever runs it
+  to start it, and never reviews its own work in its place.
+
 ---
 
 ## 12. Agent Routing
@@ -845,6 +880,7 @@ Each agent's reading list is its row in [AGENTS.md](AGENTS.md).
 | Start a ticket, interview and scaffold | `ticket-init` | Direct interactive session (§13) |
 | Plan, explain and verify a ticket iteration | `planner` | Parent agent; writes prompts, verifies output, owns records (§11) |
 | Execute one planner prompt | `implementer` | Worker; writes its output, logs and authorised repo files only; invokes nothing (§11.3) |
+| Check a plan before build, or a change before its PR | `reviewer` | Started by the `planner`, the `orchestrator` or the human; trusts nothing it is handed; writes only its review; its blocking findings stop the loop until it passes or the operator unblocks (§11.4) |
 | Close a deployed or concluded ticket | `ticket-closer` | Started by the human or the `orchestrator`; approval before writing outside the ticket; tracker read-only (§14) |
 | Create or refresh a document | `doc-writer` | Target from a `Doc-*` skill; approval before writing outside a ticket; posts or opens a draft itself after the user's yes |
 | Audit and tidy the estate | `estate-auditor` | Started by the human or the `orchestrator`; dated report; fixes batch by batch with approval (§15) |
@@ -877,10 +913,11 @@ invoke the specialists when their conditions apply, which depends on it followin
 the contract rather than any background job. Started by the human: `orchestrator`,
 `estate-question`, `retrospective`; by the human
 or the `orchestrator`: `ticket-init`, `planner`, `implementer`, `ticket-closer`,
-`estate-auditor`; `recall`, `doc-writer` and `knowledge-curator`
+`estate-auditor`; `reviewer` by the `planner`, the `orchestrator` or the human;
+`recall`, `doc-writer` and `knowledge-curator`
 by the human or a parent; `ticket-scribe` by the parent for a completed ticket task;
 `knowledge-keeper` and `check-scribe` only for a qualified candidate. The
-`implementer` is never a parent: it invokes nothing. Every agent may also be called
+`implementer` is never a parent: it invokes nothing, and neither does the `reviewer`. Every agent may also be called
 by a human. A step that needs an agent the running one cannot start follows the
 invocation modes in [AGENTS.md](AGENTS.md) Definitions. Publishing a draft is
 authorized by the parent; no agent pushes autonomously, and the `orchestrator`
@@ -896,7 +933,9 @@ lowercase model ID silently falls back to the session model). Routine agents
 `planner`, `ticket-closer`, `doc-writer`, `estate-auditor`, `estate-question`,
 `knowledge-curator` and `retrospective` suit `Claude Opus 5.5 (copilot)`;
 `orchestrator` suits the strongest model available, an Opus- or Fable-class profile,
-and shares the installer's second pin with that group;
+and shares the installer's second pin with that group; `reviewer` ships on the same
+pin and is better re-pinned by hand to a strong model from a different vendor than
+the planner's, so the two do not share blind spots;
 `implementer` judges nothing and suits the cheapest long-context model that follows
 a prompt exactly. Public template pins stay installer-configurable; tiers are a
 capability guide, not a price guarantee. See the

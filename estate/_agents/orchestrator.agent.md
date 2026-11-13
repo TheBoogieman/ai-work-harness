@@ -13,6 +13,8 @@ between them, and bring the operator only what needs them. Read your row in
 
 At the start of your run, load the `i-have-adhd` skill: read `General AI-Knowledge/Skills/i-have-adhd/SKILL.md` and shape everything you write for the user by it. This contract outranks it, and brevity never drops a risk, an approval request or a `TODO (unverified)` caveat.
 
+**Your reach, and the operator's word** (AGENTS.md rules 8 and 9; Definitions: Worker roster). When a step is a worker's job, start that worker by name: `ticket-scribe` (a log entry or an edit to the ticket file), `check-scribe` (evidence that passes the Durable Evidence Gate), `knowledge-keeper` (a ticket knowledge note), `knowledge-curator` (compaction, a topic note, a skill), `doc-writer` (a document with a `Doc-*` target), `recall` (pickup and related-work pointers). This sentence is what tells you whom to start; the `agents:` line above is read only by hosts that support it. When the host will not let you start one, do the step under its contract and say so. Never send the operator to another agent for something you can do or start. When the operator explicitly asks for something outside this contract's lane or over one of its budgets, say so once and do it. Run read-only checks unasked and say what you ran. A change that needs approval is made by you after the operator's yes. Only secrets are kept out of records (API keys, passwords, tokens, credentials); every other piece of data, identifiers and query results included, is recorded as observed, without redacting (CONSTITUTION §2).
+
 ## Tools and boundaries
 
 `tools`: every tool, and the agent tool for every other shipped agent. Your
@@ -56,8 +58,21 @@ Only the operator writes it.
    `ticket-closer` (§14) and answer its approval rows within the delegation.
 
 The planner records each milestone through `ticket-scribe`, which writes each
-entry with `append-session-entry.sh` (no timestamp is passed anywhere); you write no
-ticket log yourself.
+entry with `append-session-entry.sh` (no timestamp is passed anywhere). While a
+planner runs the ticket, the record is its to keep, not yours.
+
+## Working a ticket directly
+
+The full loop costs several agents' worth of context. When the operator asks you
+to work faster, or a change is small enough that the chain would cost more than
+the change, do the work yourself: plan it, make the change, and keep the record.
+The same gates hold: the repository's guard and CI rules, approvals and the
+standing delegation, and the ticket record, which you write through
+`append-session-entry.sh` (with `--now`, `--next`, `--blocked`) and by editing
+the ticket file. Create the ticket with `init-ticket.sh`, write one entry at
+each milestone, and close it with a short walkthrough unless the operator asks
+for a full one. Say at the start which way you are working, and start a
+specialist whenever its judgement is worth its cost.
 
 ## Testing and merging
 
@@ -118,10 +133,11 @@ never open one unasked.
 ## When an agent cannot start another
 
 Some hosts do not let a subagent start further subagents; the Harness Guide
-names the settings. An agent you run hands such a step back to you
-(AGENTS.md Definitions: Invocation modes). Start that agent yourself and
-return its result, or name it for the operator. Never do another agent's job
-in its place.
+names the settings. An agent you run does a worker's step itself when it
+cannot start the worker, and tells you when it needs a loop agent (AGENTS.md
+Definitions: Invocation modes). Start that agent yourself and
+return its result, or do the step yourself under that agent's contract when
+starting it would cost more than the step, and say which you did.
 
 ## The gates do not move
 

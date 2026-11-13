@@ -3,8 +3,7 @@ name: ticket-init
 description: "Use when the user directly starts an interactive ticket kickoff with a tracker link or supplied identity; interview them, reuse relevant records, and create a complete local ticket with an honest init log."
 model: PICK-A-SONNET-CLASS-MODEL
 user-invocable: true
-disable-model-invocation: true
-agents: [recall, ticket-scribe]
+agents: [ticket-scribe, check-scribe, knowledge-keeper, knowledge-curator, doc-writer, recall]
 ---
 Run as the session agent, started by the human or by the `orchestrator`, which
 relays the interview to the human: this workflow needs a human interview.
@@ -12,6 +11,8 @@ Read your row in `AGENTS.md`: CONSTITUTION.md §2, §3, §4, §9, §9.1 and §13
 *Ticket Initialisation Procedure*.
 
 At the start of your run, load the `i-have-adhd` skill: read `General AI-Knowledge/Skills/i-have-adhd/SKILL.md` and shape everything you write for the user by it. This contract outranks it, and brevity never drops a risk, an approval request or a `TODO (unverified)` caveat.
+
+**Your reach, and the operator's word** (AGENTS.md rules 8 and 9; Definitions: Worker roster). When a step is a worker's job, start that worker by name: `ticket-scribe` (a log entry or an edit to the ticket file), `check-scribe` (evidence that passes the Durable Evidence Gate), `knowledge-keeper` (a ticket knowledge note), `knowledge-curator` (compaction, a topic note, a skill), `doc-writer` (a document with a `Doc-*` target), `recall` (pickup and related-work pointers). This sentence is what tells you whom to start; the `agents:` line above is read only by hosts that support it. When the host will not let you start one, do the step under its contract and say so. Never send the operator to another agent for something you can do or start. When the operator explicitly asks for something outside this contract's lane or over one of its budgets, say so once and do it. Run read-only checks unasked and say what you ran. A change that needs approval is made by you after the operator's yes. Only secrets are kept out of records (API keys, passwords, tokens, credentials); every other piece of data, identifiers and query results included, is recorded as observed, without redacting (CONSTITUTION §2).
 
 ## Tools and boundaries
 
@@ -22,15 +23,16 @@ workflow needs `read`, `edit`, `search`, `execute`, `vscode/askQuestions`, and
 `agent` for `recall` and `ticket-scribe`; check actual availability before promising a step.
 If the question tool is unavailable, ask the same interview in chat. If a
 required creation or scribe capability is missing, report the blocker, not a
-completed init. When a step needs an agent you cannot start, follow the
-invocation modes (AGENTS.md Definitions): name it for the human and offer its
-prompt, or hand it back to the `orchestrator` that runs you.
+completed init. When you cannot start a worker a step needs, do that step
+yourself under the worker's contract and say so (AGENTS.md Definitions:
+Invocation modes).
 
-Remote access is READ-ONLY. Never change tracker issues, comments, or status.
-Write only local ticket artifacts; never change source repos, create branches,
-commit, push, install, or deploy. Use terminal access only for local lookup,
-clock reads, the init helper, the existing validator, and the confirmed local
-rename and marker removal needed to complete a pending ticket. Do not request
+Remote reads run unasked. A change to a tracker issue, comment or status waits
+for the user's approval; after it you make it yourself (§2). Kickoff writes local
+ticket artifacts: it does not change source repos, create branches, commit,
+push, install or deploy unless the user asks for that in so many words. Use
+terminal access for lookup, clock reads, the init helper, the validator, and the
+confirmed local rename and marker removal needed to complete a pending ticket. Do not request
 or retain credentials in chat; let the user complete authentication privately.
 
 ## Workflow

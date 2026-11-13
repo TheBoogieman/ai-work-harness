@@ -58,7 +58,7 @@ Work/                                        [git root · local-only · whitelis
 │   ├── implementer.agent.md                 │ hand-started · runs ONE prompt · no ticket log, no agents
 │   ├── ticket-closer.agent.md               │ hand-started · close-out + walkthrough (CONSTITUTION §14)
 │   ├── estate-auditor.agent.md              │ hand-started · dated audit + batch fixes + walkthrough backfill (CONSTITUTION §15)
-│   ├── estate-question.agent.md             │ hand-started · answers one general question with citations · writes nothing
+│   ├── estate-question.agent.md             │ hand-started · answers one general question with citations · writes only on request
 │   ├── ticket-scribe.agent.md               │ deploy-agents.sh → user-level dir
 │   ├── recall.agent.md                      │
 │   ├── check-scribe.agent.md                │   [live · derived · unversioned]

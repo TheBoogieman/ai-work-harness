@@ -140,10 +140,13 @@ a tool is unavailable, state the limit and the next useful action.
   runbooks before a remote operation. Do not infer per-environment profiles, silently
   fall back to a default account, or switch environment to bypass denied access.
   Actual mappings belong in those local references, not public agent contracts.
-- **Read-only by default.** Request explicit approval before changing remote data,
-  infrastructure or tracker state. Authentication is access, not permission to
-  mutate. Do not run unrelated services on every task. The human posts tracker
-  updates; agents may draft the text or a read-only verification script.
+- **Reads run unasked; changes wait.** Run the read-only check that settles a fact
+  without asking permission to look, and say what you ran. Request explicit
+  approval before changing remote data, infrastructure or tracker state;
+  authentication is access, not permission to mutate. After the approval, the
+  agent that asked makes the change itself, a tracker post, a PR or a push
+  included; it does not hand the user a draft and send them elsewhere. Do not run
+  unrelated services on every task.
 - **The human authenticates.** For MFA, passkeys, SSO or key passphrases, leave the
   terminal, system or browser prompt visible and ask the human to complete it
   directly (for example "Please enter the MFA code in the dialog"). Some agent
@@ -157,10 +160,20 @@ a tool is unavailable, state the limit and the next useful action.
   abandon the check, switch profile, or substitute an assumption. Never collect
   secrets through chat/question tools, echo them, save them, or wrap interactive
   commands in output filters.
-- **Keep secrets and customer data out of records.** Use metadata or aggregate
-  results where possible. Never copy credentials, customer data, private account
-  identifiers or raw authentication output into tickets, knowledge, prompts,
-  outputs, public issues or PRs. Report an unverified result honestly.
+- **Tell the human before a prompt.** Before running a command you expect to ask
+  for MFA or a sign-in, say so and wait until the human is present; a prompt
+  nobody answers only times out.
+- **Only secrets are banned.** API keys, passwords, tokens, credentials and raw
+  authentication output never go into any record, prompt, output, draft or chat.
+  Everything else may be recorded as observed: customer and account identifiers,
+  names, query text with literal values and result rows, in ticket logs,
+  notebooks, prompts, outputs, knowledge notes and drafts for the tracker or an
+  internal PR, at whatever size the record needs. Do not redact it, reduce it to
+  counts or ask again before writing it. An estate whose organisation is stricter
+  says so in its tools note, and that note then governs. One surface stays
+  generic whatever the estate allows: a public repository, issue or PR, and the
+  context pack, which stays scrubbed ([§21](#21-context-pack-convention)).
+  Report an unverified result honestly.
 
 ---
 
@@ -279,8 +292,8 @@ outcome of ordinary ticket work.
 1. The exact check ran and its result was observed in this session.
 2. Source tests, CI, a PR check, a durable application log, or an existing notebook
    capsule do not already retain the result adequately.
-3. The command and output are safe to retain: no credentials, tokens, PII,
-   customer data, or transient authentication material.
+3. The command and output are safe to retain: no credentials, tokens or transient
+   authentication material ([§2](#2-tools-and-authentication)).
 4. A future reader could safely replay it, or it is explicitly scoped as a
    point-in-time observation that must not be replayed blindly.
 
@@ -368,7 +381,7 @@ Every ticket markdown file must include the **Repos**, **Branches**, and **Pull 
 - Anything non-obvious an agent must know before touching the ticket (gotchas, decisions made, files that matter).
 - Pointers into `AI-Knowledge/` or the Session Log **only when** deeper context is genuinely needed (e.g. "see `AI-Knowledge/field-mapping.md` before editing the staging model").
 
-**AI agents: update Current State at the end of every ticket session, as part of the same step as the Session Log append.** Overwrite it — unlike the Session Log, it has no history; history lives in the log. If the user asks a question the Current State can't answer, *then* deep-dive the Session Log / AI-Knowledge and say you're doing so.
+**AI agents: update Current State at the end of every ticket session, as part of the same step as the Session Log append.** The helper does both in one command (`--now`, `--next`, `--blocked`, [§6](#6-session-logging-convention)). Overwrite it — unlike the Session Log, it has no history; history lives in the log. If the user asks a question the Current State can't answer, *then* deep-dive the Session Log / AI-Knowledge and say you're doing so.
 
 ---
 
@@ -395,7 +408,8 @@ and names the block to move; the helper below cannot produce that state.
 
 **Writing an entry: `_harness/scripts/append-session-entry.sh`.** Every new
 Session Log entry is written by this one helper, never by editing the file:
-`ticket-scribe` runs it as its only command, and a human recording a gap by hand
+`ticket-scribe` runs it, any parent agent may run it directly when starting the
+scribe would cost more than the entry, and a human recording a gap by hand
 (§16 S1, S5) runs the same command. From the estate root:
 
 ```bash
@@ -421,6 +435,29 @@ would split the log or forge an entry), a file whose last section is not the
 Session Log, or a clock at or behind the newest entry (a future-dated or
 wrong-clock entry is corrected first; within the same second, wait one and run it
 again). A refusal is never worked around by editing the file.
+
+**Current State in the same command.** `--now "<text>"`, `--next "<text>"` and
+`--blocked "<text>"`, given before the ticket path, each rewrite that one line of
+the Current State section in the same write as the entry; an option not given
+leaves its line alone, and nothing outside that section changes. A value that is
+not one plain line is `REFUSED` like any other bad input.
+
+```bash
+bash _harness/scripts/append-session-entry.sh --now "<now>" --next "<next>" --blocked "<blocked>" \
+  Tickets/<ticket>/<ticket>.md "<short one-line description>" <<'EOF'
+- <what changed>
+EOF
+```
+
+**`ticket-scribe` owns the ticket file.** With the parent's context it keeps the
+whole record true: it may edit any section (header, frontmatter, Background,
+Scope, Changes Made) and writes Session Log entries and Now / Next / Blocked
+through the helper. It never edits an older entry. A gap in the hand-off is the
+scribe's to fill: it reads the ticket, the latest output or a PR's address
+rather than bouncing the hand-off, and returns finished work with any gap it
+could not fill named. It writes an entry at a completed milestone, whenever the
+operator says "log this", and when an exploration in another agent turns out to
+belong to a ticket.
 
 **What the parent hands the scribe:** the ticket, the outcome, the meaningful
 changes, the verification summary, Now / Next / Blocked, header deltas and the
@@ -470,7 +507,9 @@ one line.
 Keep verification separate from implementation; name the check and observed
 outcome, or say "not run". Link to CI, PRs and detailed evidence instead of copying
 them. Prefer "added source_id" to "enhanced traceability" and a named test to
-"validated end to end". These budgets are writer stop conditions and review
+"validated end to end". These budgets are defaults for what an agent writes
+unasked, never a reason to shorten or refuse what the operator asked for
+([AGENTS.md](AGENTS.md) rule 8). They are writer stop conditions and review
 targets, not validator gates: keep load-bearing detail when omitting it would make
 the record misleading. Never rewrite old Session Log entries just to apply the new
 style.
@@ -500,7 +539,9 @@ Create any new memory `.md` files under `Tickets/YYYYMM<seq>-<BOARD>-<num>/AI-Kn
 ### 7.1 Durable Knowledge Gate
 
 The parent agent invokes `knowledge-keeper` only with a NAMED candidate from the
-current ticket task, never merely to prove that zero is correct; neither agent
+current ticket task, never merely to prove that zero is correct. The gate governs
+what agents capture unasked: a note the operator asks for by name is written, with
+one line saying which tests it would not have passed. Otherwise neither agent
 searches for something to preserve. A candidate must pass all six tests:
 
 1. **Non-obvious:** a competent future agent would not infer it quickly from code,
@@ -750,8 +791,8 @@ watches both is the human, or the `orchestrator` when the human runs one ([§12]
   `NN-<slug>.md` name in both folders. Bulky output: `Tickets/<ticket>/Logs/NN-<topic>.txt`.
 - `NN` is two digits, sequential per ticket, never reused. A rework or follow-up
   takes the next number; an issued prompt is never edited or overwritten.
-- Both folders are tracked records: no credentials, tokens, customer rows or raw
-  authentication output.
+- Both folders are tracked records: no credentials, tokens or raw authentication
+  output; any other data is recorded as observed ([§2](#2-tools-and-authentication)).
 - **Prompt shape:** `# <ID> — Prompt NN: <goal> (<scope>)`; a one-line worker role;
   `Context the planner already verified` (facts, plus any small correction the
   planner made since the last output); `## 0. Hard rules` (the implementer
@@ -788,7 +829,7 @@ watches both is the human, or the `orchestrator` when the human runs one ([§12]
 - Invokes no agents and decides no judgement call: an ambiguity, a failed
   expectation or a scope question goes into the handback.
 - Follows §2 exactly: waits for MFA/SSO, never retries in a loop, never switches
-  profile or environment, never prints secrets or customer rows.
+  profile or environment, never prints secrets.
 
 ---
 
@@ -800,20 +841,31 @@ Each agent's reading list is its row in [AGENTS.md](AGENTS.md).
 
 | Need | Agent | Boundary |
 |---|---|---|
-| Run a ticket end to end: start each agent, carry the hand-offs, wait on CI | `orchestrator` | Human-started; approves, merges and pushes only under the operator's standing delegation (§2), otherwise a courier |
+| Run a ticket end to end: start each agent, carry the hand-offs, wait on CI | `orchestrator` | Human-started; approves, merges and pushes only under the operator's standing delegation (§2); may do an agent's step itself under that agent's contract, or work a ticket directly when the operator asks |
 | Start a ticket, interview and scaffold | `ticket-init` | Direct interactive session (§13) |
 | Plan, explain and verify a ticket iteration | `planner` | Parent agent; writes prompts, verifies output, owns records (§11) |
 | Execute one planner prompt | `implementer` | Worker; writes its output, logs and authorised repo files only; invokes nothing (§11.3) |
 | Close a deployed or concluded ticket | `ticket-closer` | Started by the human or the `orchestrator`; approval before writing outside the ticket; tracker read-only (§14) |
-| Create or refresh a document | `doc-writer` | Target from a `Doc-*` skill; approval before writing outside a ticket; remote publication stays human |
+| Create or refresh a document | `doc-writer` | Target from a `Doc-*` skill; approval before writing outside a ticket; posts or opens a draft itself after the user's yes |
 | Audit and tidy the estate | `estate-auditor` | Started by the human or the `orchestrator`; dated report; fixes batch by batch with approval (§15) |
-| Answer a general question from the estate, repos and read-only live tools | `estate-question` | Human-started; writes nothing; may propose a knowledge note for the user to route to `knowledge-curator` |
+| Answer a general question from the estate, repos and read-only live tools | `estate-question` | Human-started; writes nothing unasked; on the user's request it keeps what the answer found (a ticket note, a log entry, a page correction) itself or through the worker whose job it is |
 | Resume one ticket, or find related tickets and workflows for a topic | `recall` | Read-only, bounded, at most three pointers; parent may delegate |
-| Record completed ticket changes | `ticket-scribe` | One factual outcome delta; never for non-ticket work |
+| Record completed ticket changes | `ticket-scribe` | Owns the ticket file: one factual outcome delta per entry through the helper, every other section by edit; fills gaps itself; never for non-ticket work |
 | Capture knowledge | `knowledge-keeper` | Named candidate passing the Durable Knowledge Gate; default zero |
 | Capture evidence | `check-scribe` | Parent-qualified observed result passing the Durable Evidence Gate; default zero |
 | Consolidate/promote knowledge | `knowledge-curator` | User-directed maintenance; approval for promotion |
 | Write a dated review deliverable for a window | `retrospective` | User-requested; interviews, then frozen once the user closes it |
+
+**Lanes are defaults; the operator's word wins.** The table says who normally does
+what, so that work lands with the agent built for it. It is not a list of
+refusals. Every operator-facing agent holds edit, execute and the agent tool for
+the whole worker roster ([AGENTS.md](AGENTS.md) Definitions), so a request never
+forces the operator to switch agent: the agent in front of them starts the worker
+whose job it is, or does the step under that worker's contract. When the operator
+explicitly asks for something outside an agent's lane or over a budget, the agent
+says so once and does it (AGENTS.md rule 8). What still holds: no secret in any
+record, no remote write without approval, no fabricated record, no rewrite of an
+older Session Log entry.
 
 **Automatic versus invoked.** Mechanical hooks fire without anyone asking:
 `sessionStart` runs the ticket validator and, as a separate command, the
@@ -823,9 +875,9 @@ instructions for the session that invokes them, not a scheduler or a guarantee:
 hooks do not launch custom agents, and the parent assistant is instructed to
 invoke the specialists when their conditions apply, which depends on it following
 the contract rather than any background job. Started by the human: `orchestrator`,
-`estate-question`, `knowledge-curator`, `retrospective`; by the human
+`estate-question`, `retrospective`; by the human
 or the `orchestrator`: `ticket-init`, `planner`, `implementer`, `ticket-closer`,
-`estate-auditor`; `recall` and `doc-writer`
+`estate-auditor`; `recall`, `doc-writer` and `knowledge-curator`
 by the human or a parent; `ticket-scribe` by the parent for a completed ticket task;
 `knowledge-keeper` and `check-scribe` only for a qualified candidate. The
 `implementer` is never a parent: it invokes nothing. Every agent may also be called

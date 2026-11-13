@@ -153,9 +153,35 @@ modes).
 
 | Host | What was found |
 |---|---|
-| VS Code agents | Naming an agent in another agent's `agents:` list overrides its `disable-model-invocation: true`; the listing agent needs the `agent` tool. A subagent cannot start further subagents unless `chat.subagents.allowInvocationsFromSubagents` is on (off by default; nesting depth at most 5). Read in the VS Code docs on 2026-10-29: [subagents](https://code.visualstudio.com/docs/agents/run/subagents), [custom agent file reference](https://code.visualstudio.com/docs/agents/reference/custom-agent-file-reference). |
+| VS Code agents, Local harness | Naming an agent in another agent's `agents:` list overrides its `disable-model-invocation: true`; the listing agent needs the `agent` tool. A subagent cannot start further subagents unless `chat.subagents.allowInvocationsFromSubagents` is on (off by default; nesting depth at most 5). **Turn it on**: every operator-facing agent lists the worker roster, and an agent started by another (the planner under the orchestrator, `doc-writer` under the closer) can start its workers only with this setting; without it that agent does the worker's step itself. Read in the VS Code docs on 2026-10-29: [subagents](https://code.visualstudio.com/docs/agents/run/subagents), [custom agent file reference](https://code.visualstudio.com/docs/agents/reference/custom-agent-file-reference). |
 | Copilot CLI and cloud agent | They do not accept the `agents:` field and delegate through their own task tool. How they treat `disable-model-invocation` and nested agents is not verified. |
 | Claude Code | `user-invocable` and `disable-model-invocation` have no equivalent (`INSTALL-INSTRUCTIONS.md`, "Running the estate with Claude Code"). On one seat, a subagent started a further subagent of its own (2026-10-29). |
+
+## What each agent can reach
+
+- **CLIs need nothing.** Any agent that can run a command can run every CLI on your path
+  (`aws`, `gh`, `snow`, `dbt`, and the rest). All fourteen agents can run commands.
+- **No `tools:` line means every tool.** A contract without that line gets whatever the session
+  has enabled: the built-in tools, every configured MCP server and every extension tool. No
+  shipped contract carries a `tools:` line, so a server you add reaches every agent with no
+  contract to edit. What an agent should and should not do is said in its contract's text.
+- **A `tools:` line is a closed list.** Add one to a contract in your estate only to restrict
+  that agent: it then gets only what the line names, and reaches no MCP server unless the line
+  says `<server name>/*`.
+- **Who another agent can start.** `disable-model-invocation: true` stops other agents starting
+  that agent, and in the Copilot harness no `agents:` list overrides it. Only the `orchestrator`
+  carries it; the others omit the line, because `false` is the default, so each can be started
+  as a subagent. Whom to start is said by name in
+  each contract's body and in each agent's `description`, which is what a host's delegation tool
+  reads; the `agents:` lines repeat it for hosts that read them.
+- **Check it on your host.** Read in the VS Code docs on 2026-11-13
+  ([custom agent file reference](https://code.visualstudio.com/docs/agents/reference/custom-agent-file-reference)):
+  in the Local harness an omitted `tools` gives the tools enabled in the tools picker; in the
+  Copilot harness `*` selects all tools and `<server name>/*` a server's tools. What an omitted
+  `tools` gives in the Copilot harness is not stated there: ask an agent to list its tools once.
+  The same page says the Copilot harness does not accept the `agents:` field and delegates
+  through its own task tool, so the `agents:` lists bind only in the Local harness, which the
+  page marks as deprecated.
 
 ## Tool adapters
 
@@ -171,6 +197,13 @@ interactive terminal: if it does not, a terminal prompt cannot reach you. Use a
 helper that shows a system dialog or reads the OS keychain, wrap prompting
 commands in a time limit, and record both in the tools note
 ([§2](../CONSTITUTION.md#2-tools-and-authentication)).
+
+**Only secrets are banned from records.** API keys, passwords and tokens never go
+into a record. Everything else (identifiers, query text, result rows) agents
+record as observed, without redacting or asking, in local records and in drafts
+for your tracker and internal PRs. If your organisation is stricter, say so in
+your tools note and agents follow that. A public surface and the context pack
+stay generic either way.
 
 ## Sample prompts
 

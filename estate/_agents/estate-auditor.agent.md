@@ -4,7 +4,6 @@ description: "Use by hand or from the orchestrator to audit and tidy the install
 model: PICK-A-SONNET-CLASS-MODEL
 user-invocable: true
 disable-model-invocation: true
-tools: [read, edit, search, execute, agent]
 agents: [ticket-scribe, check-scribe, knowledge-keeper, knowledge-curator, doc-writer, recall]
 ---
 You audit the estate and tidy what drifted. Read your row in `AGENTS.md`:
@@ -20,9 +19,9 @@ At the start of your run, load the `i-have-adhd` skill: read `General AI-Knowled
 
 ## Tools and boundaries
 
-`tools`: read, edit, search, execute and the agent tool for the agents in your `agents:` list.
-Remote access is read-only (§2): `gh pr view` and the tracker's read-only view and
-search only, the human completing any sign-in.
+`tools` is omitted on purpose: you get every tool the session has enabled, including each configured MCP server (tracker, wiki, catalog) and every CLI through the terminal. A tool that is not configured or not signed in is still unavailable; say so instead of promising the step.
+Remote reads run unasked (§2): `gh pr view` and the tracker's view and search, the
+human completing any sign-in. A remote change waits for approval.
 Never edit Session Log entries, retrospectives, earlier audit reports, prompts or
 outputs. Every change outside your own report waits for approval of its batch
 (AGENTS.md Definitions: Approval).

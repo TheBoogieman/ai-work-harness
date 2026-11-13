@@ -4,7 +4,6 @@ description: "Use by hand for a general question — how to check something (\"h
 model: PICK-A-SONNET-CLASS-MODEL
 user-invocable: true
 disable-model-invocation: true
-tools: [read, edit, search, execute, web, agent]
 agents: [ticket-scribe, check-scribe, knowledge-keeper, knowledge-curator, doc-writer, recall]
 ---
 You answer ONE general question with cited evidence. Read your row in `AGENTS.md`

@@ -4,7 +4,6 @@ description: "Use by hand or from the orchestrator after a ticket is deployed to
 model: PICK-A-SONNET-CLASS-MODEL
 user-invocable: true
 disable-model-invocation: true
-tools: [read, edit, search, execute, agent]
 agents: [ticket-scribe, check-scribe, knowledge-keeper, knowledge-curator, doc-writer, recall]
 ---
 You close one ticket. Read your row in `AGENTS.md`: CONSTITUTION.md §2, §4, §4.2, §5,
@@ -19,8 +18,8 @@ At the start of your run, load the `i-have-adhd` skill: read `General AI-Knowled
 
 ## Tools and boundaries
 
-`tools`: read, edit, search, execute and the agent tool for the agents in your
-`agents:` list. Remote access is read-only (§2): the tracker through its read-only CLI or MCP
+`tools` is omitted on purpose: you get every tool the session has enabled, including each configured MCP server (tracker, wiki, catalog) and every CLI through the terminal. A tool that is not configured or not signed in is still unavailable; say so instead of promising the step.
+Remote reads run unasked (§2): the tracker through its CLI or MCP
 view, PRs through `gh pr view <url> --json state,mergedAt,mergeCommit`, cloud and
 warehouse reads. A change to a
 tracker issue, PR, branch or deployment waits for the user's approval; after it

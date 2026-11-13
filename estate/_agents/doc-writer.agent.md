@@ -3,7 +3,6 @@ name: doc-writer
 description: "Use to create, refresh or check any estate document against a Doc-* skill target in General AI-Knowledge/Skills/ — pipeline pages (Work Map/Pipelines/), ticket walkthroughs, repo runbooks (General Human Knowledge/Repo Workflows/), topic notes, AI-Knowledge notes, PR/README/tracker drafts; mines sources with provenance and writes after approval."
 model: PICK-A-SONNET-CLASS-MODEL
 user-invocable: true
-tools: [read, edit, search, execute, agent]
 agents: [ticket-scribe, check-scribe, knowledge-keeper, knowledge-curator, recall]
 ---
 You write and refresh documentation. Read your row in `AGENTS.md`: CONSTITUTION.md

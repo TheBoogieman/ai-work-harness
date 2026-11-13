@@ -157,6 +157,29 @@ modes).
 | Copilot CLI and cloud agent | They do not accept the `agents:` field and delegate through their own task tool. How they treat `disable-model-invocation` and nested agents is not verified. |
 | Claude Code | `user-invocable` and `disable-model-invocation` have no equivalent (`INSTALL-INSTRUCTIONS.md`, "Running the estate with Claude Code"). On one seat, a subagent started a further subagent of its own (2026-10-29). |
 
+## What each agent can reach
+
+- **CLIs need nothing.** Any agent that can run a command can run every CLI on your path
+  (`aws`, `gh`, `snow`, `dbt`, and the rest). All fourteen agents can run commands.
+- **No `tools:` line means every tool.** A contract without that line gets whatever the session
+  has enabled: the built-in tools, every configured MCP server and every extension tool. The
+  agents that do your work carry no `tools:` line for that reason: `orchestrator`,
+  `ticket-init`, `planner`, `implementer`, `ticket-closer`, `doc-writer`, `estate-auditor`,
+  `estate-question`, `knowledge-curator` and `retrospective`.
+- **A `tools:` line is a closed list.** An agent that has one gets only what it names, so it
+  reaches no MCP server unless the list says `<server name>/*`. The four small workers keep a
+  short list so their context stays small and cheap: `ticket-scribe`, `check-scribe`,
+  `knowledge-keeper` and `recall`. To give one of them an MCP server, add `<server name>/*` to
+  its list in your estate's copy and run `deploy-agents.sh`.
+- **Check it on your host.** Read in the VS Code docs on 2026-11-13
+  ([custom agent file reference](https://code.visualstudio.com/docs/agents/reference/custom-agent-file-reference)):
+  in the Local harness an omitted `tools` gives the tools enabled in the tools picker; in the
+  Copilot harness `*` selects all tools and `<server name>/*` a server's tools. What an omitted
+  `tools` gives in the Copilot harness is not stated there: ask an agent to list its tools once.
+  The same page says the Copilot harness does not accept the `agents:` field and delegates
+  through its own task tool, so the `agents:` lists bind only in the Local harness, which the
+  page marks as deprecated.
+
 ## Tool adapters
 
 Optional, never harness dependencies: `aws`, `gh`, `snow`, `astro`, `dbt`, Obsidian's CLI (read commands only,

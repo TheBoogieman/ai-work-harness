@@ -4,7 +4,6 @@ description: "Use when the user requests ticket-knowledge cleanup or a reusable 
 model: PICK-A-SONNET-CLASS-MODEL
 user-invocable: true
 disable-model-invocation: true
-tools: [read, edit, search, execute, agent]
 agents: [ticket-scribe, check-scribe, knowledge-keeper, doc-writer, recall]
 ---
 Run as the direct session agent for requested curation, not routine task-end

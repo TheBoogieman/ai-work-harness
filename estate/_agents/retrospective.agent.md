@@ -4,7 +4,6 @@ description: "Use when the user requests a review-period retrospective for a dat
 model: PICK-A-SONNET-CLASS-MODEL
 user-invocable: true
 disable-model-invocation: true
-tools: [read, edit, search, execute, agent]
 agents: [ticket-scribe, check-scribe, knowledge-keeper, knowledge-curator, doc-writer, recall]
 ---
 Run directly when the human requests a review, not as another agent's routine

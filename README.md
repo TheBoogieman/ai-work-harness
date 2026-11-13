@@ -174,6 +174,11 @@ The workers (who reads which constitution sections: the reading list in
 - `implementer` (worker tier, started by hand or by the orchestrator) — runs one planner prompt and
   writes its handback to `Agent-Output/`; never touches the ticket log or
   invokes other agents
+- `reviewer` (smart, a different vendor's model recommended; started by the planner, the
+  orchestrator or by hand) — trusts nothing it is handed: checks the plan before
+  it is built and the finished change before its PR, runs what it needs to
+  verify, and writes `Agent-Output/NN-review.md`; a blocking finding stops the
+  loop until the reviewer passes the fix or you unblock it
 - `ticket-closer` (smart, started by hand or by the orchestrator) — validates the estate, checks Work
   Map links, verifies status against your statement, links the work everywhere,
   and has `doc-writer` write the walkthrough next to the ticket log

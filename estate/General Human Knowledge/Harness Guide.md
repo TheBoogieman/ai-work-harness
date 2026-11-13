@@ -86,9 +86,10 @@ depends on the assistant following the contract, not a guaranteed background job
 
 | Start it | Agent |
 |---|---|
-| You, directly | `orchestrator`, `ticket-init`, `planner`, `implementer`, `ticket-closer`, `estate-auditor`, `estate-question`, `knowledge-curator`, `retrospective` |
+| You, directly | `orchestrator`, `ticket-init`, `planner`, `implementer`, `reviewer`, `ticket-closer`, `estate-auditor`, `estate-question`, `knowledge-curator`, `retrospective` |
 | The `orchestrator`, when you run one | Every other agent; it starts `ticket-init`, `planner`, `implementer`, `ticket-closer` and `estate-auditor` in your place |
 | You or a parent agent (`planner`, `ticket-init`, `ticket-closer`, `estate-auditor`, `estate-question`, `retrospective`) | `recall` (read-only; a ticket, a topic or both) |
+| The `planner` (or the `orchestrator`, or you), on a plan before build and a change before its PR | `reviewer` |
 | The parent, when ticket work completes | `ticket-scribe` |
 | The parent, for a named valuable learning only | `knowledge-keeper` |
 | The parent, for qualified evidence only | `check-scribe` |
@@ -98,7 +99,11 @@ The build loop (CONSTITUTION §11): start a `planner` session on the ticket; it
 writes `Agent-Prompts/NN-<slug>.md`. Start an `implementer` session on that one
 prompt; it writes `Agent-Output/NN-<slug>.md` and stops. Return to the planner to
 review and write the next prompt. The implementer never writes the ticket log or
-invokes agents; the planner owns the record. Finish with `ticket-closer`
+invokes agents; the planner owns the record. The planner puts its plan, and later
+the finished change, through the `reviewer` (CONSTITUTION §11.4): it writes
+`Agent-Output/NN-review.md`, and a blocking finding stops the loop until the
+reviewer passes the fix or you unblock it in your own words. You can also start
+the reviewer yourself on any PR or branch. Finish with `ticket-closer`
 (CONSTITUTION §14), which asks before writing outside the ticket folder. An
 `orchestrator` session can run this whole loop for you: it starts each agent,
 carries every hand-off, waits on CI through your host's PR notifications, and
@@ -125,6 +130,7 @@ an Opus profile too.
 | `check-scribe`, `knowledge-keeper`, `recall`, `ticket-scribe` | `Claude Sonnet 5.5 (copilot)` |
 | `ticket-init`, `planner`, `ticket-closer`, `doc-writer`, `estate-auditor`, `estate-question`, `knowledge-curator`, `retrospective` | `Claude Opus 5.5 (copilot)` |
 | `orchestrator` | the strongest model available: an Opus- or Fable-class profile such as `Claude Opus 5.5 (copilot)` |
+| `reviewer` | a strong model from a different vendor than the planner's, so the two do not share blind spots. The installer gives it the same pin as the row above; change the `model:` line in `_agents/reviewer.agent.md` by hand and re-run `deploy-agents.sh` |
 | `implementer` | the cheapest long-context model that follows a prompt exactly (it judges nothing) |
 
 Pin the model picker's display name exactly. Lowercase model IDs were tried and
@@ -160,7 +166,7 @@ modes).
 ## What each agent can reach
 
 - **CLIs need nothing.** Any agent that can run a command can run every CLI on your path
-  (`aws`, `gh`, `snow`, `dbt`, and the rest). All fourteen agents can run commands.
+  (`aws`, `gh`, `snow`, `dbt`, and the rest). All fifteen agents can run commands.
 - **No `tools:` line means every tool.** A contract without that line gets whatever the session
   has enabled: the built-in tools, every configured MCP server and every extension tool. No
   shipped contract carries a `tools:` line, so a server you add reaches every agent with no
@@ -210,6 +216,7 @@ stay generic either way.
 - Init: "Start ticket `<tracker link>`; reuse related work."
 - Plan (`planner`): "Plan `<ticket>`; write the first implementer prompt."
 - Implement (`implementer`): "Run `Tickets/<ticket>/Agent-Prompts/01-<slug>.md`."
+- Review (`reviewer`): "Review the branch `<branch>` against `<ticket>`." or "Review PR `<number>` in `<repo>`."
 - Review (`planner`): "Review `Agent-Output/01-<slug>.md` and write the next prompt."
 - Recall (`recall`): "What do we already know about `<repo or pipeline>`? Cite at most three." or "Pick up `<ticket>`: what's done and what's next?"
 - Record: "Record this ticket's completed change, update the map links, run the checker."

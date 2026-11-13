@@ -91,6 +91,12 @@ reads the local clock and appends at the bottom, and the validator names a newes
 not at the bottom. Neither the helper nor that check is drawn. No SVG was edited; this note
 names the lag.
 
+**Diagram currency (2026-11-13, #383):** the sheets do not draw the `reviewer` agent or its gate:
+a design check on the planner's plan before build, a review of the finished change before its PR,
+and `Agent-Output/NN-review.md` with blocking findings that stop the loop until the reviewer
+passes the fix or the operator unblocks it (CONSTITUTION §11.4). No SVG was edited; this note
+names the lag.
+
 **The pattern (every layer):** file states the rule → agent does the work →
 hook catches the miss → git undoes the damage. Corollary: status observes,
 failures prescribe, nothing heals itself — a fixed record is a human act.
@@ -105,6 +111,10 @@ failures prescribe, nothing heals itself — a fixed record is a human act.
   runs one prompt and hands back a file, never touching the ticket log or
   invoking agents. The handoff is files, not agent calls, so every step is
   reviewable and resumable.
+- Nothing in that pair is built to disagree, so a third agent is: the reviewer
+  reads the plan and the finished change from a fresh context, trusts neither,
+  and its blocking findings stop the loop. Only its own pass or the operator's
+  words close one (#383).
 - Session semantics are unreliable (idle chats fire nothing; sessionEnd may
   never fire, or fire per-turn) → commits anchor to WRITES (postToolUse),
   validation anchors to ENTRY (sessionStart), sessionEnd is a bonus.

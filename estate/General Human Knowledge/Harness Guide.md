@@ -153,7 +153,7 @@ modes).
 
 | Host | What was found |
 |---|---|
-| VS Code agents | Naming an agent in another agent's `agents:` list overrides its `disable-model-invocation: true`; the listing agent needs the `agent` tool. A subagent cannot start further subagents unless `chat.subagents.allowInvocationsFromSubagents` is on (off by default; nesting depth at most 5). **Turn it on**: every operator-facing agent lists the worker roster, and an agent started by another (the planner under the orchestrator, `doc-writer` under the closer) can start its workers only with this setting; without it that agent does the worker's step itself. Read in the VS Code docs on 2026-10-29: [subagents](https://code.visualstudio.com/docs/agents/run/subagents), [custom agent file reference](https://code.visualstudio.com/docs/agents/reference/custom-agent-file-reference). |
+| VS Code agents, Local harness | Naming an agent in another agent's `agents:` list overrides its `disable-model-invocation: true`; the listing agent needs the `agent` tool. A subagent cannot start further subagents unless `chat.subagents.allowInvocationsFromSubagents` is on (off by default; nesting depth at most 5). **Turn it on**: every operator-facing agent lists the worker roster, and an agent started by another (the planner under the orchestrator, `doc-writer` under the closer) can start its workers only with this setting; without it that agent does the worker's step itself. Read in the VS Code docs on 2026-10-29: [subagents](https://code.visualstudio.com/docs/agents/run/subagents), [custom agent file reference](https://code.visualstudio.com/docs/agents/reference/custom-agent-file-reference). |
 | Copilot CLI and cloud agent | They do not accept the `agents:` field and delegate through their own task tool. How they treat `disable-model-invocation` and nested agents is not verified. |
 | Claude Code | `user-invocable` and `disable-model-invocation` have no equivalent (`INSTALL-INSTRUCTIONS.md`, "Running the estate with Claude Code"). On one seat, a subagent started a further subagent of its own (2026-10-29). |
 
@@ -171,6 +171,11 @@ modes).
   short list so their context stays small and cheap: `ticket-scribe`, `check-scribe`,
   `knowledge-keeper` and `recall`. To give one of them an MCP server, add `<server name>/*` to
   its list in your estate's copy and run `deploy-agents.sh`.
+- **Who another agent can start.** `disable-model-invocation: true` stops other agents starting
+  that agent, and in the Copilot harness no `agents:` list overrides it. Only the `orchestrator`
+  carries it, so every other agent can be started as a subagent. Whom to start is said by name in
+  each contract's body and in each agent's `description`, which is what a host's delegation tool
+  reads; the `agents:` lines repeat it for hosts that read them.
 - **Check it on your host.** Read in the VS Code docs on 2026-11-13
   ([custom agent file reference](https://code.visualstudio.com/docs/agents/reference/custom-agent-file-reference)):
   in the Local harness an omitted `tools` gives the tools enabled in the tools picker; in the

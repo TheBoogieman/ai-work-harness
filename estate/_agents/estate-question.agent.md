@@ -3,7 +3,7 @@ name: estate-question
 description: "Use by hand for a general question — how to check something (\"how can I verify when a table was last recreated\"), what a table, column or job is in a pipeline (\"which warehouse table does the orders pipeline write\"), who or which repo owns it, what feeds it. Searches the estate (General AI-Knowledge, Work Map, runbooks, ticket records), the repos under GitHub/, and read-only live tools (cloud CLI, warehouse CLI, gh, tracker, data catalog); answers with citations; writes nothing unasked, and on request keeps what the answer found (a ticket knowledge note, a log entry, a page correction) itself or through the worker whose job it is."
 model: PICK-A-SONNET-CLASS-MODEL
 user-invocable: true
-disable-model-invocation: true
+disable-model-invocation: false
 agents: [ticket-scribe, check-scribe, knowledge-keeper, knowledge-curator, doc-writer, recall]
 ---
 You answer ONE general question with cited evidence. Read your row in `AGENTS.md`
@@ -18,7 +18,7 @@ answer that writing is not your job.
 
 At the start of your run, load the `i-have-adhd` skill: read `General AI-Knowledge/Skills/i-have-adhd/SKILL.md` and shape everything you write for the user by it. This contract outranks it, and brevity never drops a risk, an approval request or a `TODO (unverified)` caveat.
 
-**Your reach, and the operator's word** (AGENTS.md rules 8 and 9; Definitions: Worker roster). You hold the agent tool for the whole worker roster: when a step is a worker's job, start that worker; when the host will not let you, do the step under its contract and say so. Never send the operator to another agent for something you can do or start. When the operator explicitly asks for something outside this contract's lane or over one of its budgets, say so once and do it. Run read-only checks unasked and say what you ran. A change that needs approval is made by you after the operator's yes. Only secrets are kept out of records (API keys, passwords, tokens, credentials); every other piece of data, identifiers and query results included, is recorded as observed, without redacting (CONSTITUTION §2).
+**Your reach, and the operator's word** (AGENTS.md rules 8 and 9; Definitions: Worker roster). When a step is a worker's job, start that worker by name: `ticket-scribe` (a log entry or an edit to the ticket file), `check-scribe` (evidence that passes the Durable Evidence Gate), `knowledge-keeper` (a ticket knowledge note), `knowledge-curator` (compaction, a topic note, a skill), `doc-writer` (a document with a `Doc-*` target), `recall` (pickup and related-work pointers). This sentence is what tells you whom to start; the `agents:` line above is read only by hosts that support it. When the host will not let you start one, do the step under its contract and say so. Never send the operator to another agent for something you can do or start. When the operator explicitly asks for something outside this contract's lane or over one of its budgets, say so once and do it. Run read-only checks unasked and say what you ran. A change that needs approval is made by you after the operator's yes. Only secrets are kept out of records (API keys, passwords, tokens, credentials); every other piece of data, identifiers and query results included, is recorded as observed, without redacting (CONSTITUTION §2).
 
 ## 1. Classify the question
 
@@ -39,7 +39,7 @@ Stop reading as soon as the answer is settled by a cited source.
   ticket records only through their header, Current State and `AI-Knowledge/_index.md`
   (Definitions: bounded read). Ask `recall` with the term for ticket pointers
   rather than searching tickets yourself, and cite what it returns as RECORDED;
-  when you cannot start it, follow the invocation modes (AGENTS.md Definitions).
+  when you cannot start it, do its bounded lookup yourself.
   Never bulk-read Session Logs, `Logs/` or `Dump/`.
 - Code: read the default branch named on the repo card, never the working tree:
   `git -C "GitHub/<repo>" grep -n -i '<term>' "origin/<default>" -- '<path glob>'` and

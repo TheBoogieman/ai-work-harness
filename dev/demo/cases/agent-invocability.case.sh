@@ -66,6 +66,16 @@ ac_privilege_gaps() {
   done
   tools=$(ac_fm tools estate/_agents/knowledge-keeper.agent.md)
   case " $tools " in *" execute "*) ;; *) echo "knowledge-keeper: tools lacks execute" ;; esac
+  # disable-model-invocation: true stops every other agent starting that agent, and a host that
+  # ignores the agents: line has nothing to override it. Only the orchestrator, which nobody
+  # starts as a subagent, may carry it.
+  for f in estate/_agents/*.agent.md; do
+    a=$(basename "$f" .agent.md)
+    [ "$a" = orchestrator ] && continue
+    case " $(ac_fm disable-model-invocation "$f") " in
+      *" true "*) echo "$a: disable-model-invocation is true, so no other agent can start it" ;;
+    esac
+  done
   return 0
 }
 

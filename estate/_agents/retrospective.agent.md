@@ -76,9 +76,15 @@ each with a reason and uncertainty; the period's accomplishment citations are
 not subject to that limit. A shared component is an association, never proof
 of upstream/downstream data lineage.
 
-Run `_harness/scripts/retro-stats.sh` with the same window. Use only counts
-the script actually reports, retaining their labels, scope, and caveats. Do
-not turn activity counts into completion or business-impact metrics. If a
+Run `_harness/scripts/retro-stats.sh` with the same window. It reads only the
+local ticket records: a ticket counts as closed when its Current State `Now:`
+line starts with `Closed`, dated by the first date in that line or else by its
+last Session Log entry, and the window selects closed tickets by that
+completion month. Open and undated tickets are reported on their own lines,
+outside the window. Use only counts the script actually reports, retaining
+their labels, scope, and caveats, and still confirm each ticket you cite as
+completed from its own record. Do not turn the counts into business-impact
+metrics; `checks-captured` is record volume, not verified evidence. If a
 number looks wrong or the script fails, report it; do not hand-correct it or
 invent a replacement. Fold relevant counts into the account without pasting
 the raw output. Use safe local reads for other terminal work, not remote calls.

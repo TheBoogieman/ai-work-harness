@@ -41,7 +41,7 @@ Work/                                        [git root · local-only · whitelis
 │       ├── append-session-entry.sh          ← ticket-scribe · THE ONE DOOR into a Session Log: reads the local clock, appends one entry at the bottom, refuses what it cannot place (CONSTITUTION §6)
 │       ├── make-context-pack.sh             → ~/Desktop/harness-pack-*.zip [disposable · outside repo] · scrub table user-owned, KEEP on upgrade
 │       ├── tracker-sweep.sh                 human-run · on-demand board-vs-estate drift report · pluggable fetch seam · tracker-agnostic · fails open offline
-│       ├── retro-stats.sh                    dumb counter for the retrospective agent · tickets-by-month + checks + promotions · offline · exits 0 always
+│       ├── retro-stats.sh                    dumb counter for the retrospective agent · closed tickets by completion month from Current State (open, undated apart) + pickup-to-close + per repo/pipeline + merged PRs + checks + promotions · offline, no git dates · exits 0 always
 │       ├── deploy-agents.sh                 → user-level agent dir (sync source → live · names retired contracts left there)
 │       ├── init-ticket.sh                   ← ticket-init · allocates the folder and copies the template; the agent owns every fact
 │       ├── check-work-map.py                ← SessionStart hook │ human-run · read-only Work Map link observer · warnings only

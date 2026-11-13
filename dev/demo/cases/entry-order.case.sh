@@ -111,7 +111,75 @@ eo_append_helper() {
   rm -rf "$EO2"
 }
 
+# [entry-current-state] (#382) the entry and Current State are one step (CONSTITUTION §5, §6), and
+#   the scribe used to do the second half with a hand edit it sometimes refused to make. The helper
+#   now takes --now / --next / --blocked and rewrites those lines in the same command as the entry.
+#   The SUCCESS case runs first: before the options exist every call is refused as a usage error and
+#   the file stays unchanged, so refusal checks alone would pass on the pre-fix tree.
+#   REVERT-PROVABLE: drop the option parsing from append-session-entry.sh and step 1 reds at once.
+eo_current_state() {
+  echo "--- entry-order: the helper rewrites Now / Next / Blocked with the entry ---"
+  EO3="estate/Tickets/202607W-PROJ-43"; local md="$EO3/202607W-PROJ-43.md" helper out rc sec want h0
+  helper="estate/_harness/scripts/append-session-entry.sh"
+  r09_make "$EO3"
+  sleep 1
+  # eo_cs FILE — the body of the Current State section: its heading down to the next level-2 heading.
+  eo_cs() { awk '/^## Current State/ { on = 1; next } on && /^## / { exit } on { print }' "$1"; }
+
+  # 1. All three lines and the entry, in one command.
+  set +e
+  out=$(printf -- '- state probe body\n' | bash "$helper" --now "fix merged" --next "close the ticket" \
+    --blocked "none" "$md" "state probe" 2>&1); rc=$?
+  set -e
+  [ "$rc" -eq 0 ] \
+    || { echo "BUG [entry-current-state]: the helper failed with --now/--next/--blocked (rc $rc):"; \
+         printf '%s\n' "$out"; exit 1; }
+  sec=$(eo_cs "$md")
+  for want in "- Now: fix merged" "- Next: close the ticket" "- Blocked: none"; do
+    printf '%s\n' "$sec" | grep -qFx -- "$want" \
+      || { echo "BUG [entry-current-state]: Current State lacks the line '$want':"; \
+           printf '%s\n' "$sec"; exit 1; }
+  done
+  [ "$(printf '%s\n' "$sec" | grep -cE '^- (Now|Next|Blocked):')" -eq 3 ] \
+    || { echo "BUG [entry-current-state]: an old Now/Next/Blocked line survived beside the new one:"; \
+         printf '%s\n' "$sec"; exit 1; }
+  [ "$(tail -1 "$md")" = "- state probe body" ] \
+    || { echo "BUG [entry-current-state]: the entry is not the end of the file"; tail -3 "$md"; exit 1; }
+  grep -q '^## Background' "$md" && grep -q 'r09 probe' "$md" \
+    || { echo "BUG [entry-current-state]: a section or an older entry outside Current State was lost"; exit 1; }
+  eo_validate
+  printf '%s\n' "$EO_OUT" | grep -q "OK: 202607W-PROJ-43 validated" \
+    || { echo "BUG [entry-current-state]: the validator refused the ticket after the rewrite:"; \
+         printf '%s\n' "$EO_OUT" | grep 202607W-PROJ-43; exit 1; }
+
+  # 2. One option alone changes one line and leaves the other two as they were.
+  sleep 1
+  set +e
+  out=$(printf -- '- second body\n' | bash "$helper" --now "second state" "$md" "state probe two" 2>&1); rc=$?
+  set -e
+  sec=$(eo_cs "$md")
+  [ "$rc" -eq 0 ] && printf '%s\n' "$sec" | grep -qFx -- "- Now: second state" \
+    && printf '%s\n' "$sec" | grep -qFx -- "- Next: close the ticket" \
+    && printf '%s\n' "$sec" | grep -qFx -- "- Blocked: none" \
+    || { echo "BUG [entry-current-state]: --now alone did not change Now only (rc $rc):"; \
+         printf '%s\n' "$out" "$sec"; exit 1; }
+
+  # 3. A value that is not one plain line is refused, and the ticket is byte-identical.
+  sleep 1
+  h0=$(eo_hash "$md")
+  set +e
+  out=$(printf -- '- body\n' | bash "$helper" --now $'two\nlines' "$md" "bad state" 2>&1); rc=$?
+  set -e
+  [ "$rc" -ne 0 ] && printf '%s\n' "$out" | grep -q '^REFUSED:' && [ "$(eo_hash "$md")" = "$h0" ] \
+    || { echo "BUG [entry-current-state]: a two-line --now was not refused with the file unchanged" \
+           "(rc $rc):"; printf '%s\n' "$out"; exit 1; }
+  echo "  ok [entry-current-state] — Now / Next / Blocked rewritten in the same command as the entry," \
+    "one option changes one line, and a two-line value is refused with the file unchanged"
+  rm -rf "$EO3"
+}
+
 case_entry_order() {
   eo_newest_entry_last
   eo_append_helper
+  eo_current_state
 }

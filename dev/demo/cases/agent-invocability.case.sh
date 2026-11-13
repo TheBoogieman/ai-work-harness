@@ -21,6 +21,72 @@ case_agent_invocability() {
   echo "  ok [agents-invocable] — all $r08_total agents are user-invocable: true"
   ac_core_roster
   ac_orchestrator_roster
+  ac_privileges
+}
+
+# [agents-privileged] (#382) an operator who starts an agent by hand must not have to switch agent
+# because the one in front of them lacks a tool or cannot start a worker. Every operator-facing
+# contract therefore holds edit, execute and the agent tool (or no tools: line, which means every
+# tool) and lists the whole worker roster in agents:. The two recording workers hold what their
+# job needs: ticket-scribe reads, searches, edits and runs the helper; knowledge-keeper can run a
+# check. The guard then points the same check at a probe contract that lacks all of it, so each run
+# shows the check can fail.
+AC_WORKERS="ticket-scribe check-scribe knowledge-keeper knowledge-curator doc-writer recall"
+AC_OPERATOR_FACING="planner ticket-init ticket-closer doc-writer estate-auditor estate-question knowledge-curator retrospective"
+
+# ac_fm KEY FILE — the words of one frontmatter line (brackets and commas become spaces); empty when
+# the frontmatter has no such line. Only the block between the first two --- lines is read.
+ac_fm() {
+  awk -v k="$1:" 'NR == 1 && /^---$/ { fm = 1; next } fm && /^---$/ { exit }
+                  fm && index($0, k) == 1 { print substr($0, length(k) + 1) }' "$2" \
+    | sed -e 's/\[//g' -e 's/\]//g' -e 's/,/ /g'
+}
+
+# ac_privilege_gaps — prints one line per gap, "<agent>: <what is missing>"; nothing when there is none.
+ac_privilege_gaps() {
+  local a f tools agents t w
+  for a in $AC_OPERATOR_FACING; do
+    f="estate/_agents/$a.agent.md"
+    [ -f "$f" ] || { echo "$a: contract missing"; continue; }
+    tools=$(ac_fm tools "$f")
+    if [ -n "$tools" ]; then
+      for t in edit execute agent; do
+        case " $tools " in *" $t "*) ;; *) echo "$a: tools lacks $t" ;; esac
+      done
+    fi
+    agents=$(ac_fm agents "$f")
+    for w in $AC_WORKERS; do
+      [ "$w" = "$a" ] && continue   # an agent does not list itself
+      case " $agents " in *" $w "*) ;; *) echo "$a: agents lacks $w" ;; esac
+    done
+  done
+  tools=$(ac_fm tools estate/_agents/ticket-scribe.agent.md)
+  for t in read edit search execute; do
+    case " $tools " in *" $t "*) ;; *) echo "ticket-scribe: tools lacks $t" ;; esac
+  done
+  tools=$(ac_fm tools estate/_agents/knowledge-keeper.agent.md)
+  case " $tools " in *" execute "*) ;; *) echo "knowledge-keeper: tools lacks execute" ;; esac
+  return 0
+}
+
+ac_privileges() {
+  local gaps probe=estate/_agents/zz-priv-probe.agent.md
+  echo "--- [agents-privileged]: operator-facing agents hold the tools and the worker roster ---"
+  gaps=$(ac_privilege_gaps)
+  [ -z "$gaps" ] \
+    || { echo "BUG [agents-privileged]: a contract would force the operator to switch agent:"; \
+         printf '%s\n' "$gaps"; exit 1; }
+  # Prove the check can fail: a contract with one tool and one worker must be reported for the rest.
+  # The probe is removed before the verdict, so a red here leaves no stray file in _agents/.
+  printf -- '---\nname: zz-priv-probe\ntools: [read]\nagents: [recall]\n---\n' > "$probe"
+  gaps=$(AC_OPERATOR_FACING=zz-priv-probe ac_privilege_gaps)
+  rm -f "$probe"
+  printf '%s\n' "$gaps" | grep -qx 'zz-priv-probe: tools lacks edit' \
+    && printf '%s\n' "$gaps" | grep -qx 'zz-priv-probe: agents lacks ticket-scribe' \
+    || { echo "BUG [agents-privileged]: a probe contract with one tool and one worker was not" \
+           "reported for what it lacks:"; printf '%s\n' "$gaps"; exit 1; }
+  echo "  ok [agents-privileged] — every operator-facing contract holds edit, execute and the agent" \
+    "tool with the full worker roster; a bare probe contract is reported by name"
 }
 
 # [agents-core] the agents a daily workflow cannot run without — the planner/implementer loop,

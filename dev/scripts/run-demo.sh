@@ -158,6 +158,7 @@ demo_order() {
     case:section-pointers \
     case:session-clock \
     case:entry-order \
+    case:iteration-links \
     case:housekeeping \
     case:worktree-store \
     case:backfill-guards \

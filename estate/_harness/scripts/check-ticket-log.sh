@@ -25,6 +25,9 @@ source "$SCRIPT_DIR/ticket-grammar.sh"
 # epoch_from_ts14 (ts14->epoch) is SHARED with harness-status via portability.sh — one home so the
 # validator and status can never drift on how a session-log header converts to epoch (R-21).
 source "$SCRIPT_DIR/portability.sh"
+# iter_unlinked is SHARED with the entry helper, which links what this check reports (#384): one
+# definition of "the ticket file links this prompt, output or review".
+source "$SCRIPT_DIR/iteration-links.sh"
 # ---- portability compat (GNU/BSD) — issue #1 (file_mtime is validator-only, so it stays local)
 file_mtime() {  # epoch mtime, GNU stat -c / BSD stat -f
   if stat -c %Y "$1" >/dev/null 2>&1; then stat -c %Y "$1"; else stat -f %m "$1"; fi
@@ -190,6 +193,23 @@ check_knowledge() {
   return 0
 }
 
+# check_iterations — 4) every prompt, output and review file is linked from the ticket file (#384).
+# An unlinked one is an orphan nobody reading the record can find, the same defect as an
+# AI-Knowledge file missing from its index, so it fails the same way. Like every check here it runs
+# only on a ticket whose file changed since its last validation, so an older ticket is not failed
+# until it is next worked on; and an entry written through append-session-entry.sh links the files
+# itself, so the fix is the entry the change needed anyway.
+check_iterations() {
+  while IFS= read -r rel; do
+    [[ -z "$rel" ]] && continue
+    echo "FAIL: $name file $rel is not linked from $name.md." \
+         "Fix: record the step with _harness/scripts/append-session-entry.sh, which links it under" \
+         "'## Iterations' (CONSTITUTION §6.1); for older tickets run _harness/scripts/backfill-iterations.sh."
+    ok=0
+  done < <(iter_unlinked "$md" "$dir")
+  return 0
+}
+
 # main — the validation loop. Ticket names are read line-by-line rather than
 # `for name in $(ticket_dirs)`: the old word-splitting form shattered a space-bearing folder like
 # "My Random Ticket 42" into bogus names ("My", "Random", ...). Line-at-a-time keeps each name
@@ -221,6 +241,7 @@ main() {
     check_recency
     check_current_state
     check_knowledge
+    check_iterations
     if (( ok == 1 )); then
       printf '%s\n%s\n%s\n' "$(date +%s)" "$md_epoch" "$cur_hash" > "$stamp"
       echo "OK: $name validated."

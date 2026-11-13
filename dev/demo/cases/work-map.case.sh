@@ -512,6 +512,34 @@ class WorkMapTests(unittest.TestCase):
         exit_code, report = self.run_check("--strict")
         self.assertEqual(exit_code, 0, report["findings"])
 
+    # [work-map-unlinked-file] (#384) A ticket file that names one of its own files by path
+    # without linking it is one NOTE with a count of distinct files. Inline code is read, because
+    # that is how a path is written; a path that does not exist, a path under a script or config
+    # folder, a fenced block and every Session Log entry but the newest are ignored. Red on a
+    # helper without check_file_mentions: the code never appears.
+    def test_unlinked_file_named_in_a_ticket(self):
+        self.put("Tickets/custom-case/Agent-Output/01-load.md", "# output\n")
+        self.put("Tickets/custom-case/Agent-Output/02-review.md", "# review\n")
+        self.put("_harness/scripts/tool.sh", "echo\n")
+        log = ("\n## Session Log\n## 20260101120000 - Old entry\n- Wrote `Agent-Output/01-load.md`.\n"
+               "## 20260102120000 - New entry\n- Output in `Agent-Output/01-load.md`, reviewed in Agent-Output/02-review.md.\n"
+               "- Again `Agent-Output/01-load.md`; changed `_harness/scripts/tool.sh`; no such `Agent-Output/09-gone.md`.\n"
+               "```\nAgent-Output/02-review.md\n```\n")
+        self.put(TICKET, FM_ORDERS + TICKET_BODY + log)
+        _, report = self.run_check()
+        found = [item for item in report["findings"] if item["code"] == "UNLINKED_FILE"]
+        self.assertEqual([item["path"] for item in found], [TICKET])
+        # Two distinct existing files in the newest entry; the first is on its first bullet.
+        self.assertTrue(found[0]["message"].startswith("2 "), found[0]["message"])
+        self.assertEqual(found[0]["line"], 17)
+        # Linked, the same references are clean, and --strict passes again.
+        self.put(TICKET, FM_ORDERS + TICKET_BODY + log.replace(
+            "Output in `Agent-Output/01-load.md`, reviewed in Agent-Output/02-review.md.",
+            "Output in [the load output](Agent-Output/01-load.md), reviewed in [the review](Agent-Output/02-review.md).")
+            .replace("- Again `Agent-Output/01-load.md`;", "- Again the same output;"))
+        exit_code, report = self.run_check("--strict")
+        self.assertEqual(exit_code, 0, report["findings"])
+
 unittest.main(verbosity=2)
 PY
 }

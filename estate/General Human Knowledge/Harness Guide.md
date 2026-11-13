@@ -27,7 +27,9 @@ it; the files do.
 - `ticket-scribe` validates the links it is given and asks the parent to repair
   gaps; it does not rebuild the broad map. It writes each Session Log entry with
   `_harness/scripts/append-session-entry.sh`, which reads the clock and places the
-  entry at the bottom, so no parent hands it a timestamp (CONSTITUTION §6).
+  entry at the bottom, so no parent hands it a timestamp (CONSTITUTION §6). The
+  same command links every prompt, output and review file the ticket holds under
+  its Iterations section, so none is left where the record cannot reach it.
   `ticket-init` needs the new ticket's
   page entries linked before its final scribe step. `knowledge-curator` repairs
   backlinks and root indexes after renames and promotion. `doc-writer` registers a

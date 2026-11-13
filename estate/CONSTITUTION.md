@@ -363,10 +363,18 @@ Context:
 ## Changes Made
 <Technical detail of what was changed and where>
 
+## Iterations
+- NN — <goal> — [prompt](Agent-Prompts/NN-<slug>.md) · [output](Agent-Output/NN-<slug>.md) · [review](Agent-Output/NN-<review>.md) — <outcome>
+
 ---
 
 ## Session Log
 ```
+
+**Iterations** lists every prompt, output and review file the ticket holds, one line per
+iteration. `append-session-entry.sh` adds the links ([§6](#6-session-logging-convention));
+`ticket-scribe` may add the goal's wording and the outcome after them. A ticket with no
+iterations leaves the section empty or omits it.
 
 Every ticket markdown file must include the **Repos**, **Branches**, and **Pull Requests** sections directly after the header, listing the repos worked in, the branches, and every PR (draft, in review, merged or closed) with links, repo, and state. Keep them current as repos, branches, or PRs change. At close-out `ticket-closer` adds the walkthrough to **Context** (§14). The file opens with a frontmatter block whose `repos` list names the same repos as the **Repos** section's `GitHub/<repo>` entries (`[]` while none is known) and whose optional `pipelines` list names the pipeline pages it touches ([§9.2](#92-pipeline-and-repo-pages) owns the grammar); `ticket-scribe` changes the section and the list together.
 
@@ -435,6 +443,18 @@ would split the log or forge an entry), a file whose last section is not the
 Session Log, or a clock at or behind the newest entry (a future-dated or
 wrong-clock entry is corrected first; within the same second, wait one and run it
 again). A refusal is never worked around by editing the file.
+
+**Iteration files in the same command.** Every call also links each prompt, output
+and review file of the ticket (`Agent-Prompts/NN-*.md`, `Agent-Output/NN-*.md`) that
+the ticket file does not link yet, under `## Iterations`, in the same write as the
+entry. It takes no option, so nobody has to remember it. An iteration that already
+has a line gets the new link added to that line and keeps its words; a new one gets
+`- NN — <goal> — [prompt](<path>) · [output](<path>) · [review](<path>)`, the goal taken from
+the prompt's heading; a ticket with no Iterations section gets one above the
+Session Log. It prints `Iterations linked: N file(s)`. The validator fails a
+changed ticket that still holds an unlinked one, naming the file. Older tickets are
+linked in one pass by `_harness/scripts/backfill-iterations.sh` (`--dry-run` lists
+them first), which writes one new entry per ticket and touches no older entry.
 
 **Current State in the same command.** `--now "<text>"`, `--next "<text>"` and
 `--blocked "<text>"`, given before the ticket path, each rewrite that one line of
@@ -523,12 +543,18 @@ address was found: a label that says what it is, and the address behind it.
 address. Record the address an agent actually found — in command output
 (`gh pr view <n> --json url`), on a tracker issue or page it read, or from the
 user — and never build or guess one; when none was found, write the name plainly
-and carry on. References inside the estate are relative links (§9.1). A writer
+and carry on. References inside the estate are relative links (§9.1): every estate
+file a ticket file names is linked, and every file an agent creates for a ticket is
+linked from that ticket before the agent finishes, in the Session Log entry for the
+step and, for a prompt, an output or a review, in the Iterations section, which the
+entry helper fills (§6). A writer
 hands addresses on with the names: a parent gives `ticket-scribe` a PR's address
 when it has one. Older Session Log entries are not rewritten to add links.
 `check-work-map.py` notes bare addresses and unlinked PR numbers (warning-only; a
 PR's address is one `gh pr view` away); everything else external rests on the
-writer.
+writer. It also notes a ticket file that names one of its own files, or a file
+under `Tickets/` or `Mappings/`, by path without linking it (`UNLINKED_FILE`,
+warning-only).
 
 ---
 

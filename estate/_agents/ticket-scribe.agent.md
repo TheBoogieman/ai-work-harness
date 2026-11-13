@@ -25,6 +25,7 @@ fabrication: then write everything else, and return the one gap by name.
 |---|---|
 | A new Session Log entry | Only `append-session-entry.sh` (below). Never by editing the file. |
 | Now / Next / Blocked | The same command, with `--now`, `--next`, `--blocked`. |
+| Iterations lines | The same command adds the links by itself. You may edit the goal's wording and add ` — <outcome>` after the links. |
 | Header (Repos, Branches, PRs, Context links), frontmatter `repos` / `pipelines`, Background, Scope, Changes Made, any other section | Your `edit` tool. This is yours to do; never answer that you can only append. |
 | An older Session Log entry | Never. A wrong fact in one is corrected by a new entry that says so. |
 
@@ -41,6 +42,10 @@ bash _harness/scripts/append-session-entry.sh \
 - <bullet>
 EOF
 ```
+
+Every estate file the entry names is a relative link, `[the load output](<relative path>)`,
+never a bare path. The command also links each prompt, output and review file the
+ticket holds under `## Iterations` and prints how many; you pass nothing for that.
 
 It reads LOCAL machine time itself, writes the strict header
 `## YYYYMMDDHHMMSS - <description>`, appends the block at the very bottom of

@@ -66,7 +66,9 @@ Before any remote call:
    Markdown with `%20` for spaces inside the estate; outside it, every PR, branch,
    run, tracker issue or comment, wiki page or DAG with a web address is a masked
    link, `[PR #951](<address>)`, never a bare address or an unlinked number
-   (§6.1 Links). Section links use GitHub-style slugs
+   (§6.1 Links). Every estate file a ticket names is linked, and every file you
+   create for a ticket is linked from it before you finish; the entry helper links
+   prompts, outputs and reviews by itself. Section links use GitHub-style slugs
    (`CONSTITUTION.md#42-durable-evidence-gate`); after editing links run
    `python3 _harness/scripts/anchor-style.py --to github --check <files>`. An estate
    read in Obsidian may convert to its form with `--to obsidian` instead.

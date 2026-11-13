@@ -24,8 +24,12 @@
 #       bash _harness/scripts/append-session-entry.sh --now "<now>" --next "<next>" \
 #         --blocked "<blocked>" <ticket.md> "<description>" < body
 # Anything that would break one of those is REFUSED with the reason, exit 2, and the ticket is left
-# byte-identical. Outside the Current State lines an option names, it never edits an existing line,
-# so it can never rewrite an older entry.
+# byte-identical. Outside the Current State lines an option names and the Iterations section (below),
+# it never edits an existing line, so it can never rewrite an older entry.
+#
+# ITERATION LINKS (#384): every call also links, under "## Iterations", each prompt, output and
+# review file of the ticket (Agent-Prompts/NN-*.md, Agent-Output/NN-*.md) that the ticket file does
+# not link yet, in the same atomic write. It needs no option: an agent cannot forget it.
 set -euo pipefail
 export LC_ALL=C
 
@@ -96,8 +100,8 @@ header="## $ts - $desc_trim"
 tmp=$(mktemp "$(dirname "$md")/.append-session-entry.XXXXXX")
 # `base` is the ticket as it stands before the entry is appended: the ticket itself, or, when a
 # Current State option was given, a second copy with those lines rewritten.
-base="$md"; cs_tmp=""
-trap 'rm -f "$tmp" "$cs_tmp"' EXIT
+base="$md"; cs_tmp=""; it_tmp=""
+trap 'rm -f "$tmp" "$cs_tmp" "$it_tmp"' EXIT
 
 # cs_strip FILE — the file without the body of its Current State section, so two files can be
 # compared on everything else. The section runs from its heading to the next level-2 heading.
@@ -146,6 +150,27 @@ if [ $((set_now + set_next + set_blocked)) -gt 0 ]; then
   base="$cs_tmp"
 fi
 
+# ITERATION LINKS (#384). A prompt, output or review file that the ticket file does not link is an
+# orphan: neither a reader nor an agent picking the ticket up can find it from the record. Linking
+# it used to be something an agent had to remember. Every entry now links whatever is unlinked, under
+# "## Iterations", in the same atomic write, so the validator's unlinked-file check cannot fail on
+# a ticket whose entries go through this helper. The shared definition of "linked" lives in
+# iteration-links.sh, which the validator reads too.
+# shellcheck source=/dev/null
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/iteration-links.sh"
+ticket_dir=$(dirname "$md")
+it_tmp=$(mktemp "$ticket_dir/.append-session-entry.XXXXXX")
+iter_sync "$base" "$ticket_dir" "$it_tmp"
+if [ "$ITER_LINKED" -gt 0 ]; then
+  # Check the sync before building on it: nothing outside the Iterations section changed (blank
+  # and "---" lines aside, which a new section moves), and no ledger file is left unlinked.
+  iter_strip "$base" | cmp -s - <(iter_strip "$it_tmp") \
+    || refuse "internal check: linking the iteration files changed something outside '## Iterations'"
+  [ -z "$(iter_unlinked "$it_tmp" "$ticket_dir")" ] \
+    || refuse "internal check: a prompt, output or review file is still unlinked after the sync"
+  base="$it_tmp"
+fi
+
 cp -p "$md" "$tmp"
 cat "$base" > "$tmp"
 size=$(wc -c < "$base" | tr -d ' ')
@@ -166,7 +191,7 @@ after_n=$(grep -cE "$ENTRY_RE" "$tmp" || true)
   || refuse "internal check: the new entry is not the newest one"
 
 mv "$tmp" "$md"
-rm -f "$cs_tmp"
+rm -f "$cs_tmp" "$it_tmp"
 trap - EXIT
 printf 'OK: appended to %s\n%s\n' "$md" "$header"
 # Say which Current State lines were rewritten, so the caller need not read the file to know.
@@ -174,4 +199,8 @@ if [ $((set_now + set_next + set_blocked)) -gt 0 ]; then
   printf 'Current State rewritten:%s%s%s\n' \
     "$([ "$set_now" -eq 1 ] && printf ' Now')" "$([ "$set_next" -eq 1 ] && printf ' Next')" \
     "$([ "$set_blocked" -eq 1 ] && printf ' Blocked')"
+fi
+# Say how many files were linked, for the same reason.
+if [ "$ITER_LINKED" -gt 0 ]; then
+  printf 'Iterations linked: %s file(s)\n' "$ITER_LINKED"
 fi

@@ -231,6 +231,13 @@ Re-running `install.sh` serves three different intents, each with its own home:
   the whole span. Run from **inside** the estate, `--upgrade` refuses — there is no
   source in there to upgrade from, and it prints the command that works.
 
+  **After an upgrade that brings in `backfill-iterations.sh`**, link your older
+  tickets' prompt, output and review files once, from the estate root:
+  `bash _harness/scripts/backfill-iterations.sh --dry-run` lists them, and the same
+  command without the flag links them, writing one new Session Log entry per ticket
+  and touching no older entry. Skipping it breaks nothing: an older ticket is not
+  failed while it sits untouched, and its next entry links its files anyway.
+
   **P.S. Using the `orchestrator` and the `Estate-Levelling` skill is recommended.**
   The commands above are the mechanical half of a levelling. The other half is the
   three-way merge of every file your estate customised (CONSTITUTION §18.1), and

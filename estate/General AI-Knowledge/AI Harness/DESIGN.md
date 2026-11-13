@@ -97,6 +97,10 @@ and `Agent-Output/NN-review.md` with blocking findings that stop the loop until 
 passes the fix or the operator unblocks it (CONSTITUTION §11.4). No SVG was edited; this note
 names the lag.
 
+**Diagram currency (2026-11-13, #384):** the sheets do not draw the ticket file's Iterations
+section, the entry helper linking prompts, outputs and reviews into it, the validator's
+unlinked-file check, or `backfill-iterations.sh`. No SVG was edited; this note names the lag.
+
 **The pattern (every layer):** file states the rule → agent does the work →
 hook catches the miss → git undoes the damage. Corollary: status observes,
 failures prescribe, nothing heals itself — a fixed record is a human act.

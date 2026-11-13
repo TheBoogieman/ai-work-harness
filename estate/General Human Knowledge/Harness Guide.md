@@ -89,6 +89,7 @@ depends on the assistant following the contract, not a guaranteed background job
 | Start it | Agent |
 |---|---|
 | You, directly | `orchestrator`, `ticket-init`, `planner`, `implementer`, `reviewer`, `ticket-closer`, `estate-auditor`, `estate-question`, `knowledge-curator`, `retrospective` |
+| Any operator-facing agent, as a worker (`AGENTS.md` Definitions: Worker roster), on requested curation or a skill | `knowledge-curator` |
 | The `orchestrator`, when you run one | Every other agent; it starts `ticket-init`, `planner`, `implementer`, `ticket-closer` and `estate-auditor` in your place |
 | You or a parent agent (`planner`, `ticket-init`, `ticket-closer`, `estate-auditor`, `estate-question`, `retrospective`) | `recall` (read-only; a ticket, a topic or both) |
 | The `planner` (or the `orchestrator`, or you), on a plan before build and a change before its PR | `reviewer` |

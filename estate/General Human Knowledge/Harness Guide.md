@@ -91,12 +91,12 @@ depends on the assistant following the contract, not a guaranteed background job
 | You, directly | `orchestrator`, `ticket-init`, `planner`, `implementer`, `reviewer`, `ticket-closer`, `estate-auditor`, `estate-question`, `knowledge-curator`, `retrospective` |
 | Any operator-facing agent, as a worker (`AGENTS.md` Definitions: Worker roster), on requested curation or a skill | `knowledge-curator` |
 | The `orchestrator`, when you run one | Every other agent; it starts `ticket-init`, `planner`, `implementer`, `ticket-closer` and `estate-auditor` in your place |
-| You or a parent agent (`planner`, `ticket-init`, `ticket-closer`, `estate-auditor`, `estate-question`, `retrospective`) | `recall` (read-only; a ticket, a topic or both) |
+| You, or any operator-facing agent as a worker (`AGENTS.md` Definitions: Worker roster) | `recall` (read-only; a ticket, a topic or both) |
 | The `planner` (or the `orchestrator`, or you), on a plan before build and a change before its PR | `reviewer` |
 | The parent, when ticket work completes | `ticket-scribe` |
 | The parent, for a named valuable learning only | `knowledge-keeper` |
 | The parent, for qualified evidence only | `check-scribe` |
-| You, the parent, `planner`, `ticket-closer` or `estate-auditor`, on a requested document | `doc-writer` (targets: the `Doc-*` skills) |
+| You, or any operator-facing agent as a worker (Worker roster), on a requested document | `doc-writer` (targets: the `Doc-*` skills) |
 
 The build loop (CONSTITUTION §11): start a `planner` session on the ticket; it
 writes `Agent-Prompts/NN-<slug>.md`. Start an `implementer` session on that one
@@ -215,7 +215,9 @@ modes).
   carries it; the others omit the line, because `false` is the default, so each can be started
   as a subagent. Whom to start is said by name in
   each contract's body and in each agent's `description`, which is what a host's delegation tool
-  reads; the `agents:` lines repeat it for hosts that read them.
+  reads; the `agents:` lines repeat it for hosts that read them. A worker that starts nothing (`implementer`,
+  `reviewer`, `ticket-scribe`, `check-scribe`, `knowledge-keeper`, `recall`) carries `agents: []`,
+  because a host that reads the line treats an omitted one as every agent.
 - **Check it on your host.** What an omitted `tools` gives in the Copilot harness is not
   stated in its documentation, so ask an agent to list its tools once. "Host compatibility"
   above has that check and the others, with what to change when one fails.

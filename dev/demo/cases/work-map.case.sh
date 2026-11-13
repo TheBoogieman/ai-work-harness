@@ -540,6 +540,31 @@ class WorkMapTests(unittest.TestCase):
         exit_code, report = self.run_check("--strict")
         self.assertEqual(exit_code, 0, report["findings"])
 
+    # [work-map-workbooks] (#385) A pipeline page names its design workbooks in its frontmatter
+    # workbooks list. A name with no file in Mappings/ is a note on that page; the workbooks no
+    # page names are ONE note with a count; an Office lock file is not a workbook. Red on a helper
+    # without check_workbooks: neither code ever appears.
+    def test_workbooks_named_by_pipeline_pages(self):
+        load = f"{MAP}/Pipelines/orders-load.md"
+        self.put(f"{MAP}/_index.md", "[Orders](Repos/orders.md)\n[Load](Pipelines/orders-load.md)\n")
+        self.put(load, "---\nrepos: [orders]\npipelines: [orders-load]\n"
+                       "workbooks:\n  - Orders Design.xlsx\n  - gone.xlsx\n---\n# Orders load\n")
+        for name in ("Orders Design.xlsx", "spare-one.xlsx", "spare-two.xlsm", "~$Orders Design.xlsx", "notes.txt"):
+            self.put(f"Mappings/{name}", "not opened\n")
+        _, report = self.run_check()
+        found = {item["code"]: item for item in report["findings"]
+                 if item["code"] in ("MISSING_WORKBOOK", "UNLINKED_WORKBOOK")}
+        self.assertEqual(set(found), {"MISSING_WORKBOOK", "UNLINKED_WORKBOOK"}, report["findings"])
+        self.assertEqual(found["MISSING_WORKBOOK"]["path"], load)
+        self.assertEqual(found["UNLINKED_WORKBOOK"]["path"], "Mappings")
+        self.assertTrue(found["UNLINKED_WORKBOOK"]["message"].startswith("2 "), found["UNLINKED_WORKBOOK"])
+        self.assertNotIn("FRONTMATTER_MALFORMED", self.codes(report))
+        # Every workbook named and every name backed by a file: clean, and --strict passes again.
+        self.put(load, "---\nrepos: [orders]\npipelines: [orders-load]\n"
+                       "workbooks: [Orders Design.xlsx, spare-one.xlsx, spare-two.xlsm]\n---\n# Orders load\n")
+        exit_code, report = self.run_check("--strict")
+        self.assertEqual(exit_code, 0, report["findings"])
+
 unittest.main(verbosity=2)
 PY
 }

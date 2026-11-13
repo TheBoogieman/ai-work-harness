@@ -153,7 +153,7 @@ modes).
 
 | Host | What was found |
 |---|---|
-| VS Code agents | Naming an agent in another agent's `agents:` list overrides its `disable-model-invocation: true`; the listing agent needs the `agent` tool. A subagent cannot start further subagents unless `chat.subagents.allowInvocationsFromSubagents` is on (off by default; nesting depth at most 5). Read in the VS Code docs on 2026-10-29: [subagents](https://code.visualstudio.com/docs/agents/run/subagents), [custom agent file reference](https://code.visualstudio.com/docs/agents/reference/custom-agent-file-reference). |
+| VS Code agents | Naming an agent in another agent's `agents:` list overrides its `disable-model-invocation: true`; the listing agent needs the `agent` tool. A subagent cannot start further subagents unless `chat.subagents.allowInvocationsFromSubagents` is on (off by default; nesting depth at most 5). **Turn it on**: every operator-facing agent lists the worker roster, and an agent started by another (the planner under the orchestrator, `doc-writer` under the closer) can start its workers only with this setting; without it that agent does the worker's step itself. Read in the VS Code docs on 2026-10-29: [subagents](https://code.visualstudio.com/docs/agents/run/subagents), [custom agent file reference](https://code.visualstudio.com/docs/agents/reference/custom-agent-file-reference). |
 | Copilot CLI and cloud agent | They do not accept the `agents:` field and delegate through their own task tool. How they treat `disable-model-invocation` and nested agents is not verified. |
 | Claude Code | `user-invocable` and `disable-model-invocation` have no equivalent (`INSTALL-INSTRUCTIONS.md`, "Running the estate with Claude Code"). On one seat, a subagent started a further subagent of its own (2026-10-29). |
 
@@ -171,6 +171,15 @@ interactive terminal: if it does not, a terminal prompt cannot reach you. Use a
 helper that shows a system dialog or reads the OS keychain, wrap prompting
 commands in a time limit, and record both in the tools note
 ([§2](../CONSTITUTION.md#2-tools-and-authentication)).
+
+**Data handling is yours to set.** Secrets (API keys, passwords, tokens) never go
+into a record, whatever you write. Everything else follows a **Data handling**
+section in your tools note, in your own words with the date: which identifiers
+and query results agents may record in local records, which may go into drafts
+for your tracker and internal PRs, and what stays out. With no section, agents
+keep such data out of records and use metadata and counts. With one that
+authorises it, they record the query as run and its result without redacting or
+asking again. A public surface and the context pack stay generic either way.
 
 ## Sample prompts
 

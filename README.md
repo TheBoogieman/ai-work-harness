@@ -182,8 +182,9 @@ The workers (who reads which constitution sections: the reading list in
   fixes you approve, including retrospective walkthroughs five tickets at a time
 - `estate-question` (smart, started by hand) — answers a general question
   ("how do I check X", "what is table Y in pipeline Z") from the estate, the repos
-  and read-only live tools, with at most three citations, asking `recall` for
-  ticket pointers; writes nothing
+  and read-only live tools, with three citations by default, asking `recall` for
+  ticket pointers; writes nothing unasked, and on request keeps what it found
+  through the worker whose job it is
 - `recall` (cheap, at pickup or on demand) — read-only; give it a ticket, a
   topic (repo, pipeline, component, alias) or both. It finds related tickets,
   knowledge and workflows through the linked indexes, with a bounded fallback

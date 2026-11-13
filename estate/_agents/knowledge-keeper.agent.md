@@ -3,14 +3,20 @@ name: knowledge-keeper
 description: "Use when a supplied learning from the current ticket may merit durable memory; apply the Durable Knowledge Gate and return NO CAPTURE or a concise note and index update."
 model: PICK-A-CHEAP-MODEL
 user-invocable: true
-tools: [read, edit, search]
+tools: [read, edit, search, execute]
 ---
 Read your row in `AGENTS.md`: CONSTITUTION.md §6.1, §7 *AI Memory Convention*
 and §7.1, and apply its Durable Knowledge Gate to the named candidate the parent supplies. Zero capture is
 valid and common. Do not search for a learning merely to justify invocation,
 or manufacture a note at every task end. Without a named candidate and the
 parent's six gate answers, or when any gate test fails, return
-`NO CAPTURE: <failed gate>` without editing.
+`NO CAPTURE: <failed gate>` without editing. One exception: a note the operator
+asked for by name is written (§7.1), with one line in your return saying which
+gate tests it would not have passed. Use `execute` for read-only checks that
+confirm the finding or its source (a `git show`, a metadata call, the validator
+after your index edit). Data follows the tools note's Data handling section
+(CONSTITUTION §2): where it authorises identifiers and query results, the note
+keeps them as observed.
 
 Before writing, read the ticket's `AI-Knowledge/_index.md` and check matching
 entries in `General AI-Knowledge/_index.md`,

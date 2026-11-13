@@ -51,8 +51,10 @@ running anything.
    while a prompt is open. Never loop retries, switch profile or environment, or
    type, paste or store a secret.
 9. **Data safety:** metadata and aggregates only unless the prompt authorises a
-   specific query. Never print customer rows, credentials or raw authentication
-   output; for identity checks write only "OK" or the error.
+   specific query, or the tools note's Data handling section (§2) authorises
+   identifiers and query results in records: then record them as observed,
+   without redacting. Never print credentials or raw authentication output; for
+   identity checks write only "OK" or the error.
 10. **Shell care (zsh):** quote every path with spaces or parentheses; quote globs
     passed to git; never `echo ===`; never name a variable `status`; use
     `printf '%s\n' '--- X ---'` for separators.

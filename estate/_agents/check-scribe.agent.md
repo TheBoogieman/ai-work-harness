@@ -24,7 +24,9 @@ the run's address (a CI or scheduler run), the why-note links it as a masked
 link, `[UAT run 2026-11-03](<address>)` (CONSTITUTION §6.1 Links). For example, describe
 which join/filter or calculation was checked instead of "validated pipeline".
 State point-in-time scope where needed; a prior observation is not proof of the
-current deployment. Keep secrets and customer data out of retained content.
+current deployment. Keep secrets out of retained content. Other data follows the
+tools note's Data handling section (CONSTITUTION §2): where it authorises query
+results and identifiers, the capsule keeps them as observed.
 
 Use the deterministic helper for the selected notebook, normally:
 `python3 _harness/scripts/append-notebook-cell.py <ticket>/Checks/checks_master.ipynb "<one-line why-note>" "<code>"`.

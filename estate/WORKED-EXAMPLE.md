@@ -40,8 +40,8 @@ That fourteen-digit stamp is your machine's local date and time.
 
 **A knowledge note** is anything you learned that would be expensive to learn
 twice. It goes in the ticket's `AI-Knowledge/` folder as its own markdown file,
-and it must be listed in that folder's `_index.md` — one line per file, saying
-what the file covers.
+and it must be listed in that folder's `_index.md` — one line per file, linking
+the file and saying what it covers.
 
 **The validator** is `_harness/scripts/check-ticket-log.sh`. It reads the records
 and refuses the ones that are broken. It judges nothing subjective: it checks
@@ -218,12 +218,17 @@ $ printf '%s\n' '# Staging model null-date behavior' '' '## Finding' 'Rows with 
 $ printf -- '- Null effective dates are dropped by the staging model.\n' | bash _harness/scripts/append-session-entry.sh Tickets/202607A-PROJ-4021/202607A-PROJ-4021.md "Traced the missing rows"
 OK: appended to Tickets/202607A-PROJ-4021/202607A-PROJ-4021.md
 ## <TIMESTAMP> - Traced the missing rows
+Ticket files refreshed: +1 -0 link(s), 3 file(s) listed
 $ bash _harness/scripts/check-ticket-log.sh
-FAIL: 202607A-PROJ-4021 orphan file AI-Knowledge/staging-model-quirk.md not in _index.md. Fix: echo '- staging-model-quirk.md — <what it covers>' >> '<ESTATE>/Tickets/202607A-PROJ-4021/AI-Knowledge/_index.md'
+FAIL: 202607A-PROJ-4021 orphan file AI-Knowledge/staging-model-quirk.md not in _index.md. Fix: echo '- staging-model-quirk.md — [Read note](staging-model-quirk.md) — <what it covers> — <when to read it>' >> '<ESTATE>/Tickets/202607A-PROJ-4021/AI-Knowledge/_index.md'
 FAIL: 1 ticket(s) need attention — red blocks.
 $ echo $?
 1
 ```
+
+The helper's last line is the record keeping itself navigable: in the same write as the
+entry it refreshed the record's `## Ticket files` section, which links every file in the
+ticket folder, and the new note had no other link yet.
 
 This is the part worth watching. You wrote a note and did not list it, so the
 next person to open the folder would find a file nobody had described. The
@@ -237,7 +242,7 @@ record that a machine quietly repaired is no longer a record of what happened.
 ## 4. Do what the red line says
 
 ```console
-$ echo '- staging-model-quirk.md — null effective dates are dropped — read before editing the model' >> Tickets/202607A-PROJ-4021/AI-Knowledge/_index.md
+$ echo '- staging-model-quirk.md — [Read note](staging-model-quirk.md) — null effective dates are dropped — read before editing the model' >> Tickets/202607A-PROJ-4021/AI-Knowledge/_index.md
 $ bash _harness/scripts/check-ticket-log.sh
 OK: 202607A-PROJ-4021 validated.
 ```
@@ -309,9 +314,9 @@ Checks
 Dump
 Logs
 $ cat Tickets/202607A-PROJ-4021/AI-Knowledge/_index.md
-# _index.md — one line per file: `- <file>.md — <what it covers> — <when to read it>`
-# Tombstones for promoted files: `- <file>.md (promoted -> General AI-Knowledge/<Topic>)`
-- staging-model-quirk.md — null effective dates are dropped — read before editing the model
+# _index.md — one line per file: `- <file>.md — [Read note](<file>.md) — <what it covers> — <when to read it>`
+# Tombstones for promoted files: `- <file>.md (promoted -> General AI-Knowledge/<Topic>) — [Read promoted note](<relative path to the note>)`
+- staging-model-quirk.md — [Read note](staging-model-quirk.md) — null effective dates are dropped — read before editing the model
 $ grep -A3 '^## Current State' Tickets/202607A-PROJ-4021/202607A-PROJ-4021.md
 ## Current State
 - Now: template only; no ticket work started.

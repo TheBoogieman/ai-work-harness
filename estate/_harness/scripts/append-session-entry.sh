@@ -24,12 +24,17 @@
 #       bash _harness/scripts/append-session-entry.sh --now "<now>" --next "<next>" \
 #         --blocked "<blocked>" <ticket.md> "<description>" < body
 # Anything that would break one of those is REFUSED with the reason, exit 2, and the ticket is left
-# byte-identical. Outside the Current State lines an option names and the Iterations section (below),
-# it never edits an existing line, so it can never rewrite an older entry.
+# byte-identical. Outside the Current State lines an option names and the Iterations and Ticket
+# files sections (below), it never edits an existing line, so it can never rewrite an older entry.
 #
 # ITERATION LINKS (#384): every call also links, under "## Iterations", each prompt, output and
 # review file of the ticket (Agent-Prompts/NN-*.md, Agent-Output/NN-*.md) that the ticket file does
 # not link yet, in the same atomic write. It needs no option: an agent cannot forget it.
+#
+# TICKET FILES (#397): every call also refreshes the generated block of "## Ticket files" through
+# ticket-files.py, which links every other retained file of the ticket folder, in the same atomic
+# write. It needs python3; without it the entry is written, the section is left alone and a NOTE
+# says so.
 set -euo pipefail
 export LC_ALL=C
 
@@ -100,12 +105,19 @@ header="## $ts - $desc_trim"
 tmp=$(mktemp "$(dirname "$md")/.append-session-entry.XXXXXX")
 # `base` is the ticket as it stands before the entry is appended: the ticket itself, or, when a
 # Current State option was given, a second copy with those lines rewritten.
-base="$md"; cs_tmp=""; it_tmp=""
-trap 'rm -f "$tmp" "$cs_tmp" "$it_tmp"' EXIT
+base="$md"; cs_tmp=""; it_tmp=""; tf_tmp=""
+trap 'rm -f "$tmp" "$cs_tmp" "$it_tmp" "$tf_tmp"' EXIT
 
 # cs_strip FILE — the file without the body of its Current State section, so two files can be
 # compared on everything else. The section runs from its heading to the next level-2 heading.
 cs_strip() { awk '/^## Current State/ { print; on = 1; next } on && /^## / { on = 0 } !on { print }' "$1"; }
+
+# tf_strip FILE — the file without its Ticket files section and without blank or "---" lines, so
+# the Ticket files refresh (#397) can be checked to have touched nothing else.
+tf_strip() {
+  awk '/^##[ \t]+Ticket files[ \t#]*$/ { on = 1; next } on && /^## / { on = 0 }
+       !on && !/^(---)?[[:space:]]*$/ { print }' "$1"
+}
 
 if [ $((set_now + set_next + set_blocked)) -gt 0 ]; then
   grep -q '^## Current State' "$md" \
@@ -171,6 +183,30 @@ if [ "$ITER_LINKED" -gt 0 ]; then
   base="$it_tmp"
 fi
 
+# TICKET FILES (#397). Every other retained file of the ticket folder (notebooks, scripts, SQL,
+# logs, extracts, dropped inputs) is linked under "## Ticket files" in the same atomic write, so a
+# reader of the record can reach each one and no agent has to remember to link it. ticket-files.py
+# owns the inventory and the section; it runs on the copy built so far, after the Iterations links,
+# so a prompt, output or review linked there is not listed twice. It needs python3: without it the
+# entry is still written and the section is left as it was, with a NOTE saying so. Any refusal
+# from the helper (an unreadable folder, broken section markers) refuses the entry too, leaving the
+# ticket byte-identical, because writing an entry over a known-wrong section would hide the problem.
+tf_note=""; tf_out=""
+if command -v python3 >/dev/null 2>&1; then
+  tf_tmp=$(mktemp "$ticket_dir/.append-session-entry.XXXXXX")
+  if ! tf_out=$(python3 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/ticket-files.py" \
+                  --input "$base" --output "$tf_tmp" "$md" 2>&1); then
+    refuse "the Ticket files section could not be refreshed: $(printf '%s\n' "$tf_out" | grep -m1 'REFUSED' || printf '%s\n' "$tf_out" | tail -1)"
+  fi
+  # Check the refresh before building on it: nothing outside that section changed (blank and
+  # "---" lines aside, which a new section moves).
+  tf_strip "$base" | cmp -s - <(tf_strip "$tf_tmp") \
+    || refuse "internal check: refreshing the Ticket files section changed something outside it"
+  base="$tf_tmp"
+else
+  tf_note="NOTE: python3 unavailable; the Ticket files section was not refreshed (CONSTITUTION §6.1)"
+fi
+
 cp -p "$md" "$tmp"
 cat "$base" > "$tmp"
 size=$(wc -c < "$base" | tr -d ' ')
@@ -191,7 +227,7 @@ after_n=$(grep -cE "$ENTRY_RE" "$tmp" || true)
   || refuse "internal check: the new entry is not the newest one"
 
 mv "$tmp" "$md"
-rm -f "$cs_tmp" "$it_tmp"
+rm -f "$cs_tmp" "$it_tmp" "$tf_tmp"
 trap - EXIT
 printf 'OK: appended to %s\n%s\n' "$md" "$header"
 # Say which Current State lines were rewritten, so the caller need not read the file to know.
@@ -204,3 +240,6 @@ fi
 if [ "$ITER_LINKED" -gt 0 ]; then
   printf 'Iterations linked: %s file(s)\n' "$ITER_LINKED"
 fi
+# The Ticket files refresh reports its own changes and skips (#397), or why it did not run.
+[ -z "$tf_out" ] || printf '%s\n' "$tf_out"
+[ -z "$tf_note" ] || printf '%s\n' "$tf_note"

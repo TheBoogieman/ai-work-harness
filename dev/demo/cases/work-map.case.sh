@@ -27,7 +27,11 @@ WALKTHROUGH = "Tickets/custom-case/TASK-1-walkthrough.md"
 # The repos property every fixture document carries, in the block-list form Obsidian writes. The
 # fixture ticket's header lists the same repo, so the frontmatter checks find nothing to report.
 FM_ORDERS = "---\nrepos:\n  - orders\n---\n"
-TICKET_BODY = "# TASK-1 - Orders\n\nRepos:\n- Work/GitHub/orders\n\n## Current State\n- Now: active.\n"
+# The healthy ticket links every retained file of its folder (#397): the support note directly and the
+# knowledge note through the knowledge index it links.
+TICKET_FILES = "\n## Ticket files\n- [Support](support.md)\n- [Knowledge index](AI-Knowledge/_index.md)\n"
+TICKET_BODY = ("# TASK-1 - Orders\n\nRepos:\n- Work/GitHub/orders\n\n## Current State\n- Now: active.\n"
+               + TICKET_FILES)
 CARD_BODY = "[Ticket](../../../Tickets/custom-case/custom-case.md)\n[Knowledge](../../Topic/_index.md)\n"
 
 
@@ -73,7 +77,7 @@ class WorkMapTests(unittest.TestCase):
         self.put(TICKET, FM_ORDERS + TICKET_BODY)
         self.put("Tickets/custom-case/support.md", "[Primary](custom-case.md)\n")
         self.put("Tickets/custom-case/AI-Knowledge/_index.md",
-                 "- detail.md - local detail - when changing orders\n")
+                 "- detail.md - [Read note](detail.md) - local detail - when changing orders\n")
         self.put("Tickets/custom-case/AI-Knowledge/detail.md", "# Detail\n")
         self.put(f"{GAK}/Topic/_index.md", "[Note](Note%20One.md#heading)\n")
         self.put(f"{GAK}/Topic/Note One.md", "# Note\n")
@@ -195,7 +199,13 @@ class WorkMapTests(unittest.TestCase):
         self.put(f"{GAK}/Topic/ignored.ipynb", "not a notebook; must never be parsed")
         self.put("Tickets/not-a-ticket/support.md", "[ignored](absent.md)\n")
         self.put("GitHub/project/README.md", "[ignored](absent.md)\n")
-        self.assertEqual(self.run_check("--strict")[0], 0)
+        # Those ticket files are retained files (#397), so the ticket links them; linking one never
+        # makes its Markdown parsed. A .git folder is git internals: reported, never entered.
+        self.put(TICKET, FM_ORDERS + TICKET_BODY + "".join(
+            f"- [{name}]({name}/bad.md)\n" for name in ("Logs", "Dump", "_retired", "SQL", "Checks")))
+        _, report = self.run_check()
+        self.assertEqual(self.codes(report), {"TICKET_FILE_SKIPPED"}, report["findings"])
+        self.assertEqual(self.findings_for(report, "TICKET_FILE_SKIPPED"), {"Tickets/custom-case/.git"})
         self.put("Tickets/custom-case/support.md", "[record]: absent.md\n[use][record]\n")
         self.assertIn("MISSING_LINK", self.codes(self.run_check()[1]))
 
@@ -215,12 +225,24 @@ class WorkMapTests(unittest.TestCase):
         self.assertNotIn("UNMAPPED_TICKET", self.codes(report))
         self.assertFalse(report["coverage"]["complete"])
 
+    # [work-map-index-real-links] (#397) An index is read like any other Markdown: its links are
+    # routes, and a bare filename-first entry or a promotion declaration is not, because it links
+    # nothing a reader or an editor's graph can follow. Red on a helper that still mints routes from
+    # bare entries: the first run would find no orphan.
     def test_index_routing_and_promotion_not_grammar_validation(self):
         self.put(f"{GAK}/Topic/_index.md",
                  "- Note%20One.md - detail - read before changes\n"
                  "- old.md (promoted -> General AI-Knowledge/Promoted Topic)\n"
                  "- <file>.md - inert\n# - nonexistent.md - comment\n")
         self.put(f"{GAK}/Promoted Topic/Promoted Topic.md", "# Promoted\n")
+        _, report = self.run_check()
+        self.assertEqual(self.findings_for(report, "ORPHAN_NOTE"),
+                         {f"{GAK}/Topic/Note One.md", f"{GAK}/Promoted Topic/Promoted Topic.md"})
+        self.put(f"{GAK}/Topic/_index.md",
+                 "- Note%20One.md - [Read note](Note%20One.md) - detail - read before changes\n"
+                 "- old.md (promoted -> General AI-Knowledge/Promoted Topic) — "
+                 "[Read promoted note](../Promoted%20Topic/Promoted%20Topic.md)\n"
+                 "- <file>.md - inert\n# - nonexistent.md - comment\n")
         self.assertEqual(self.run_check("--strict")[0], 0)
         self.put(f"{GAK}/Topic/hidden.md", "# Hidden\n")
         self.put(f"{GAK}/Topic/_index.md", "[Directory](.)\n")
@@ -406,7 +428,8 @@ class WorkMapTests(unittest.TestCase):
     # walkthrough may cover more). Red on a helper without FRONTMATTER_MISMATCH.
     def test_frontmatter_ticket_and_walkthrough_match_header(self):
         header = ("# TASK-1 - Orders\n\nRepos:\n- Work/GitHub/orders\n- `Work/GitHub/billing`\n"
-                  "- Work (the estate records)\n\n## Current State\n- Now: active.\n")
+                  "- Work (the estate records)\n\n## Current State\n- Now: active.\n"
+                  + TICKET_FILES + "- [Walkthrough](TASK-1-walkthrough.md)\n")
         self.put(f"{MAP}/_index.md", "[Orders](Repos/orders.md)\n[Billing](Repos/billing.md)\n")
         self.put(f"{MAP}/Repos/billing.md", "---\nrepos: [billing]\n---\n# Billing\n")
         self.put(TICKET, FM_ORDERS + header)
@@ -425,7 +448,7 @@ class WorkMapTests(unittest.TestCase):
     def test_frontmatter_header_repos_label_forms(self):
         def ticket(label):
             return (f"# TASK-1 - Orders\n\n{label}\n- Work/GitHub/orders\n\n"
-                    "## Current State\n- Now: active.\n")
+                    "## Current State\n- Now: active.\n" + TICKET_FILES)
         for label in ("**Repos:**", "**Repos**:", "Repos (confirmed by discovery):"):
             self.put(TICKET, "---\nrepos: []\n---\n" + ticket(label))
             _, report = self.run_check()
@@ -504,7 +527,7 @@ class WorkMapTests(unittest.TestCase):
         # Only the newest entry counts: one bare address and one PR, both on its first bullet.
         self.assertTrue(found[(TICKET, "BARE_URL")]["message"].startswith("1 "))
         self.assertTrue(found[(TICKET, "UNLINKED_PR")]["message"].startswith("1 "))
-        self.assertEqual(found[(TICKET, "UNLINKED_PR")]["line"], 17)
+        self.assertEqual(found[(TICKET, "UNLINKED_PR")]["line"], 21)
         # Masked, the same references are clean, and --strict passes again.
         self.put(TICKET, FM_ORDERS + TICKET_BODY + log.replace(
             "Opened PR #2 at https://new.invalid/pr/2", "Opened [PR #2](https://new.invalid/pr/2)"))
@@ -531,7 +554,7 @@ class WorkMapTests(unittest.TestCase):
         self.assertEqual([item["path"] for item in found], [TICKET])
         # Two distinct existing files in the newest entry; the first is on its first bullet.
         self.assertTrue(found[0]["message"].startswith("2 "), found[0]["message"])
-        self.assertEqual(found[0]["line"], 17)
+        self.assertEqual(found[0]["line"], 21)
         # Linked, the same references are clean, and --strict passes again.
         self.put(TICKET, FM_ORDERS + TICKET_BODY + log.replace(
             "Output in `Agent-Output/01-load.md`, reviewed in Agent-Output/02-review.md.",
@@ -564,6 +587,42 @@ class WorkMapTests(unittest.TestCase):
                        "workbooks: [Orders Design.xlsx, spare-one.xlsx, spare-two.xlsm]\n---\n# Orders load\n")
         exit_code, report = self.run_check("--strict")
         self.assertEqual(exit_code, 0, report["findings"])
+
+    # [work-map-ticket-files] (#397) Every retained file of a ticket folder, whatever its extension
+    # and however deep, Logs/ and Dump/ included although git ignores them, must be reachable from
+    # the ticket file through actual links: directly, or through the knowledge index it links. A
+    # bare path, a folder link, a link in a fence or a comment, and a bare index entry are not
+    # links. Housekeeping is not a retained file. Red on a helper without check_ticket_files: the
+    # code never appears and the coverage counts stay zero.
+    def test_ticket_files_reachable_through_real_links(self):
+        retained = ["Logs/03-build.txt", "Dump/a b (1).csv", "Dump/deep/er/shot.png",
+                    "Checks/checks_master.ipynb", "SQL/query.sql", "run.sh"]
+        for name in retained:
+            self.put(f"Tickets/custom-case/{name}", "x\n")
+        for name in (".DS_Store", "Logs/.gitkeep", "__pycache__/m.cpython-312.pyc",
+                     ".ipynb_checkpoints/c-checkpoint.ipynb", ".append-session-entry.AbC123"):
+            self.put(f"Tickets/custom-case/{name}", "x\n")
+        self.put("Tickets/custom-case/AI-Knowledge/_index.md", "- detail.md - local detail - when changing orders\n")
+        not_links = ("Paths `Logs/03-build.txt` and Dump/deep/er/shot.png; [Logs](Logs/) and [Dump](Dump).\n"
+                     "```\n[run](run.sh)\n```\n<!-- [query](SQL/query.sql) -->\n")
+        self.put(TICKET, FM_ORDERS + TICKET_BODY + not_links)
+        _, report = self.run_check()
+        found = [item for item in report["findings"] if item["code"] == "UNLINKED_TICKET_FILE"]
+        self.assertEqual([item["path"] for item in found], [TICKET], report["findings"])
+        # The six new files and detail.md, which a bare index entry does not reach.
+        self.assertTrue(found[0]["message"].startswith("7 "), found[0]["message"])
+        self.assertEqual(report["coverage"]["ticket_files"], 9)
+        self.assertEqual(report["coverage"]["ticket_files_linked"], 2)
+        self.assertTrue(report["coverage"]["ticket_files_checked"])
+        # Real links, one per file, and a linked index entry: every retained file is reachable.
+        self.put("Tickets/custom-case/AI-Knowledge/_index.md",
+                 "- detail.md - [Read note](detail.md) - local detail - when changing orders\n")
+        self.put(TICKET, FM_ORDERS + TICKET_BODY + "".join(
+            f"- [{name}]({name.replace(' ', '%20').replace('(', '%28').replace(')', '%29')})\n"
+            for name in retained))
+        exit_code, report = self.run_check("--strict")
+        self.assertEqual(exit_code, 0, report["findings"])
+        self.assertEqual(report["coverage"]["ticket_files_linked"], 9)
 
 unittest.main(verbosity=2)
 PY

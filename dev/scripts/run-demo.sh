@@ -160,6 +160,7 @@ demo_order() {
     case:session-clock \
     case:entry-order \
     case:iteration-links \
+    case:ticket-files \
     case:housekeeping \
     case:worktree-store \
     case:backfill-guards \

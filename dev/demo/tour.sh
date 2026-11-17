@@ -33,7 +33,7 @@ tour_happy_path() {
   mv "$S/999912Z-PROJ-99999.md" "$S/999911Z-PROJ-99998.md"
   printf '\n## %s - Demo work session\n- Added the new field to the staging model\n' \
     "$(date +%Y%m%d%H%M%S)" >> "$S/999911Z-PROJ-99998.md"
-  echo "- notes.md — platform quirk — read before editing" >> "$S/AI-Knowledge/_index.md"
+  echo "- notes.md — [Read note](notes.md) — platform quirk — read before editing" >> "$S/AI-Knowledge/_index.md"
   echo "quirk" > "$S/AI-Knowledge/notes.md"
   bash estate/_harness/scripts/check-ticket-log.sh
 }

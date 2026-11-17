@@ -10,7 +10,9 @@ script reads the workbook READ-ONLY and writes, under <out>/<workbook-stem>/:
   INDEX.md               provenance (sha256, size, modified time), the latest
                          version found in the history tab, and one row per sheet:
                          state, header row, data rows, used columns, version
-                         columns and the versions they hold
+                         columns and the versions they hold, linking its CSV;
+                         then a Files list linking every other file written
+                         (written last, so every link has its file)
   version-history.md     the version-history tab as a table (when one is found)
   sheets/NN-<sheet>.csv  every data row, keyed by its Excel row number, with
                          header names suffixed by their column letter
@@ -375,6 +377,9 @@ def main() -> int:
         sheets.append(Sheet(ws, args.header_scan))
 
     (target / "sheets").mkdir(parents=True, exist_ok=True)
+    # A marker-only INDEX.md first: the real one is written last (#397), and without this stub a
+    # run that died midway would leave a folder --force refuses to replace as not ours.
+    (target / "INDEX.md").write_text(MARKER + "\n# Workbook extract — incomplete run\n", encoding="utf-8")
     history = find_history(sheets)
     hist_versions = history_versions(history) if history else {}
     # History tabs are chronological, so the last row carrying a version is the latest one.
@@ -414,7 +419,7 @@ def main() -> int:
             version_summary.append(f"{sheet.headers[col]} {kind}: {shown or 'none'}")
         index.append(
             f"| {number} | {sheet.title} | {sheet.state} | {sheet.header_row or 'none'} | {len(sheet.data_rows())} "
-            f"| {sheet.max_col} | {'<br>'.join(version_summary) or '—'} | `sheets/{csv_name}` |"
+            f"| {sheet.max_col} | {'<br>'.join(version_summary) or '—'} | [sheets/{csv_name}](sheets/{csv_name}) |"
         )
         hidden_rows = sum(1 for r in sheet.data_rows() if sheet.row_hidden(r))
         merged = len(sheet.ws.merged_cells.ranges)
@@ -431,21 +436,19 @@ def main() -> int:
                 comments.append(f"- {sheet.title} {note}")
 
     index.extend(columns_section)
-    index.extend([
-        "## Use",
-        "",
-        "- Cite a fact as `<workbook> v<version>, sheet '<name>' row <n>`; quote the sha256 when a decision rests on it.",
-        "- Grep the CSVs by header or value; `_row` is the Excel row number, `_hidden` flags hidden rows, `_fill` lists highlight colours.",
-        "",
-    ])
-    (target / "INDEX.md").write_text("\n".join(index), encoding="utf-8")
+    # INDEX.md is written LAST (#397), after every other file, so its Files section can link each
+    # file this run wrote: an index whose readers cannot click through to what it indexes is a list
+    # of names, not an index. Every name here comes from safe_name(), so no link needs encoding.
+    written: list[str] = []
 
     if history:
         lines = [f"# Version history — {workbook.name}", "", f"Sheet {history.title!r}, header row {history.header_row}.", ""]
         lines += markdown_table(history, history.data_rows())
         (target / "version-history.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+        written.append("version-history.md")
     if comments:
         (target / "comments.md").write_text(f"# Cell comments — {workbook.name}\n\n" + "\n".join(comments) + "\n", encoding="utf-8")
+        written.append("comments.md")
 
     def changes(title: str, matcher, filename: str, kind: str) -> int:
         lines = [f"# {title} — {workbook.name}", "", f"sha256 `{digest}`", ""]
@@ -469,6 +472,7 @@ def main() -> int:
         if total == 0:
             lines += ["No sheet rows carry this version.", ""]
         (target / filename).write_text("\n".join(lines), encoding="utf-8")
+        written.append(filename)
         return total
 
     summary = []
@@ -489,6 +493,21 @@ def main() -> int:
                         lambda t: bool(NUMERIC_TOKEN_RE.match(t)) and version_key(t) > floor,
                         f"changes-since-{safe_name(args.since)}.md", "design")
         summary.append(f"since {args.since}: {count} row(s)")
+
+    # The index, now that every file it links exists. The CSVs are linked from the Sheets table.
+    index.extend(["## Files", ""])
+    index.extend(f"- [{name}]({name})" for name in written)
+    if not written:
+        index.append("- Only the CSVs in the Sheets table above; no history, comments or change files were written.")
+    index.extend([
+        "",
+        "## Use",
+        "",
+        "- Cite a fact as `<workbook> v<version>, sheet '<name>' row <n>`; quote the sha256 when a decision rests on it.",
+        "- Grep the CSVs by header or value; `_row` is the Excel row number, `_hidden` flags hidden rows, `_fill` lists highlight colours.",
+        "",
+    ])
+    (target / "INDEX.md").write_text("\n".join(index), encoding="utf-8")
 
     print(f"parse-workbook: {workbook.name} -> {target}")
     print(f"  sheets: {len(sheets)}; history: {history.title if history else 'not found'}; latest version: {latest or 'not found'}")

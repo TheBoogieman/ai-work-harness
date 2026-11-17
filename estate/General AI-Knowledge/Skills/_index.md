@@ -24,19 +24,20 @@
 #    is implemented, from PIPELINE-SKILL-TEMPLATE.md). The harness ships the templates only. Any agent
 #    may propose one; knowledge-curator mints it on the operator's approval.
 #
-# LINE FORMAT (one per skill): `- <Skill-Name> — triggers: <keywords> — tools: <tool[, tool...] | none>`
+# LINE FORMAT (one per skill): `- <Skill-Name> — [Read skill](<Skill-Name>/SKILL.md) — triggers: <keywords> — tools: <tool[, tool...] | none>`
+# The name stays the first token (what an agent matches and the demo reads); the link after it is what a reader clicks.
 # Doc-* skills are doc-writer's documentation targets (CONSTITUTION §19): each names its destination,
 # kind (living, append-only or draft-first), section template, sources and indexes.
-- SQL-Writing — triggers: sql, query, select, join, cte, window, aggregation, dbt model, warehouse query — tools: sqlfluff, dbt
-- Doc-Pipeline-Home — triggers: pipeline doc, pipeline home, pipeline page, identity card, refresh pipeline page, schedule, DAG, tables populated, dependency chain, design workbook, why didn't it run — tools: git, parse-workbook.py, mappings-index.py, check-work-map.py
-- Doc-Ticket-Walkthrough — triggers: walkthrough, handover, implementation walkthrough, close-out document, explain the ticket — tools: gh, git
-- Doc-Repo-Workflow — triggers: repo workflow, runbook, delivery guide, how to deploy this repo, correct the runbook — tools: git, gh
-- Doc-Knowledge-Topic — triggers: general knowledge note, topic note, how-to, tool setup note, technique note — tools: check-work-map.py
-- Doc-AI-Knowledge-Note — triggers: ticket knowledge note, AI-Knowledge note (user-requested only) — tools: check-ticket-log.sh
-- Doc-PR-Description — triggers: PR description, pull request body, PR summary, PR template — tools: git, gh
-- Doc-Readme — triggers: README, module readme, getting started — tools: git
-- Doc-Tracker-Update — triggers: tracker comment, tracker update, status summary, finding for the tracker, SQL evidence, verification script — tools: gh, tracker CLI or MCP
-- i-have-adhd — triggers: reply to the user, status report, next action, approval request, handback; loaded at run start by the operator-facing agents — tools: none
-- Estate-Levelling — triggers: level the estate, levelling, upgrade the estate, install.sh --upgrade, three-way merge, last levelled commit, LEFTOVER; read at the start of every levelling — tools: git, install.sh, deploy-agents.sh, anchor-style.py, check-ticket-log.sh, harness-status.sh, check-work-map.py
+- SQL-Writing — [Read skill](SQL-Writing/SKILL.md) — triggers: sql, query, select, join, cte, window, aggregation, dbt model, warehouse query — tools: sqlfluff, dbt
+- Doc-Pipeline-Home — [Read skill](Doc-Pipeline-Home/SKILL.md) — triggers: pipeline doc, pipeline home, pipeline page, identity card, refresh pipeline page, schedule, DAG, tables populated, dependency chain, design workbook, why didn't it run — tools: git, parse-workbook.py, mappings-index.py, check-work-map.py
+- Doc-Ticket-Walkthrough — [Read skill](Doc-Ticket-Walkthrough/SKILL.md) — triggers: walkthrough, handover, implementation walkthrough, close-out document, explain the ticket — tools: gh, git
+- Doc-Repo-Workflow — [Read skill](Doc-Repo-Workflow/SKILL.md) — triggers: repo workflow, runbook, delivery guide, how to deploy this repo, correct the runbook — tools: git, gh
+- Doc-Knowledge-Topic — [Read skill](Doc-Knowledge-Topic/SKILL.md) — triggers: general knowledge note, topic note, how-to, tool setup note, technique note — tools: check-work-map.py
+- Doc-AI-Knowledge-Note — [Read skill](Doc-AI-Knowledge-Note/SKILL.md) — triggers: ticket knowledge note, AI-Knowledge note (user-requested only) — tools: check-ticket-log.sh
+- Doc-PR-Description — [Read skill](Doc-PR-Description/SKILL.md) — triggers: PR description, pull request body, PR summary, PR template — tools: git, gh
+- Doc-Readme — [Read skill](Doc-Readme/SKILL.md) — triggers: README, module readme, getting started — tools: git
+- Doc-Tracker-Update — [Read skill](Doc-Tracker-Update/SKILL.md) — triggers: tracker comment, tracker update, status summary, finding for the tracker, SQL evidence, verification script — tools: gh, tracker CLI or MCP
+- i-have-adhd — [Read skill](i-have-adhd/SKILL.md) — triggers: reply to the user, status report, next action, approval request, handback; loaded at run start by the operator-facing agents — tools: none
+- Estate-Levelling — [Read skill](Estate-Levelling/SKILL.md) — triggers: level the estate, levelling, upgrade the estate, install.sh --upgrade, three-way merge, last levelled commit, LEFTOVER; read at the start of every levelling — tools: git, install.sh, deploy-agents.sh, anchor-style.py, check-ticket-log.sh, harness-status.sh, check-work-map.py
 
 [SQL-Writing module](SQL-Writing/SKILL.md) | [i-have-adhd module](i-have-adhd/SKILL.md) | [Estate-Levelling module](Estate-Levelling/SKILL.md) | [Skill map](SKILL-MAP.md) | [Skill template](SKILL-TEMPLATE.md) | [Repo skill template](REPO-SKILL-TEMPLATE.md) | [Pipeline skill template](PIPELINE-SKILL-TEMPLATE.md) | Documentation targets: [Doc-Pipeline-Home](Doc-Pipeline-Home/SKILL.md) · [Doc-Ticket-Walkthrough](Doc-Ticket-Walkthrough/SKILL.md) · [Doc-Repo-Workflow](Doc-Repo-Workflow/SKILL.md) · [Doc-Knowledge-Topic](Doc-Knowledge-Topic/SKILL.md) · [Doc-AI-Knowledge-Note](Doc-AI-Knowledge-Note/SKILL.md) · [Doc-PR-Description](Doc-PR-Description/SKILL.md) · [Doc-Readme](Doc-Readme/SKILL.md) · [Doc-Tracker-Update](Doc-Tracker-Update/SKILL.md)

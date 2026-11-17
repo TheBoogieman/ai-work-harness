@@ -123,9 +123,11 @@ check_current_state() {
 # scan_index — pass 1: read the index once; reduce each line to at most one filename.
 # entry_files = newline-delimited set of real entry filenames (first tokens); feeds orphan-coverage.
 # ghost_lines = entries whose filename backs no file and whose line is not a tombstone.
+# unlinked_lines = entries with a file but no link to it, and tombstones with no link (#397).
 scan_index() {
   entry_files=""
   ghost_lines=""
+  unlinked_lines=""
   entry_re='^- ([^[:space:]]+)'   # entry candidate = starts "- " then a token
   while IFS= read -r line || [[ -n "$line" ]]; do
     [[ "$line" == \#* ]] && continue        # comment line: inert, skip entirely
@@ -144,7 +146,35 @@ scan_index() {
     if [[ ! -f "$ak/$tok" && "$line" != *"(promoted ->"* && "$line" != *"(promoted →"* ]]; then
       ghost_lines+="$tok"$'\n'              # named a file that isn't here, and not a tombstone
     fi
+    # LINKED ENTRIES (#397). The first token is what this check reads, but a reader and an editor's
+    # graph follow links, so every entry also carries a Markdown link to its own note after that
+    # token ("- note.md — [Read note](note.md) — ..."), and every tombstone a link to the promoted
+    # note. A ghost is reported above and not here: it has no file to link.
+    if [[ "$line" == *"(promoted ->"* || "$line" == *"(promoted →"* ]]; then
+      [[ "$line" == *"]("* ]] || unlinked_lines+="$tok (tombstone)"$'\n'
+    elif [[ -f "$ak/$tok" ]]; then
+      [[ "$line" == *"]($tok)"* || "$line" == *"](./$tok)"* || "$line" == *"](<$tok>)"* ]] \
+        || unlinked_lines+="$tok"$'\n'
+    fi
   done < "$idx"
+  return 0
+}
+
+# report_unlinked — report the entries collected in pass 1 that carry no link (#397).
+report_unlinked() {
+  while IFS= read -r ref; do
+    [[ -z "$ref" ]] && continue
+    if [[ "$ref" == *" (tombstone)" ]]; then
+      echo "FAIL: $name tombstone '${ref% (tombstone)}' in _index.md has no link to the promoted note." \
+           "Fix: append ' — [Read promoted note](<relative path to the note>)', or run" \
+           "_harness/scripts/backfill-ticket-files.sh."
+    else
+      echo "FAIL: $name index entry '$ref' in _index.md has no link to its note." \
+           "Fix: write it as '- $ref — [Read note]($ref) — <what it covers> — <when to read it>', or run" \
+           "_harness/scripts/backfill-ticket-files.sh."
+    fi
+    ok=0
+  done < <(printf '%s' "$unlinked_lines")
   return 0
 }
 
@@ -159,7 +189,7 @@ check_orphans() {
     live=$((live+1))                        # count real files (drives the fat NOTE below)
     printf '%s' "$entry_files" | grep -Fxq -- "$base" && continue
     echo "FAIL: $name orphan file AI-Knowledge/$base not in _index.md." \
-         "Fix: echo '- $base — <what it covers>' >> '$idx'"
+         "Fix: echo '- $base — [Read note]($base) — <what it covers> — <when to read it>' >> '$idx'"
     ok=0
   done < <(find "$ak" -maxdepth 1 -name '*.md' -type f)
   return 0
@@ -170,7 +200,7 @@ report_ghosts() {
   while IFS= read -r ref; do
     [[ -z "$ref" ]] && continue
     echo "FAIL: $name ghost entry '$ref' in _index.md (no file, no tombstone)." \
-         "Fix: remove the line or add '(promoted -> General AI-Knowledge/<Topic>)'."
+         "Fix: remove the line or add '(promoted -> General AI-Knowledge/<Topic>) — [Read promoted note](<relative path to the note>)'."
     ok=0
   done < <(printf '%s' "$ghost_lines")
   return 0
@@ -189,6 +219,7 @@ check_knowledge() {
   scan_index
   check_orphans
   report_ghosts
+  report_unlinked
   (( live > 10 )) && echo "NOTE: $name AI-Knowledge is fat ($live files) — run knowledge-curator."
   return 0
 }

@@ -57,6 +57,15 @@ wp_extract() {
            "16.6:"; cat "$d/changes-16.6.md"; exit 1; }
   echo "  ok [workbook-parse-outputs] — INDEX (with sha256), history, sheet CSV and the 16.6" \
     "change list (exactly the tagged rows)"
+  # [workbook-parse-index-links] (#397) The INDEX is the extract's index, so it LINKS what it
+  # indexes: every file the run wrote, by a Markdown link whose destination is that file.
+  # REVERT-PROVABLE: write the CSV cell as inline code again, or drop the Files list, and this reds.
+  for f in sheets/01-Mapping.csv version-history.md changes-16.6.md; do
+    grep -qF "]($f)" "$d/INDEX.md" \
+      || { echo "BUG [workbook-parse-index-links]: INDEX.md does not link $f, which the run wrote:"; \
+           cat "$d/INDEX.md"; exit 1; }
+  done
+  echo "  ok [workbook-parse-index-links] — INDEX.md links the sheet CSV and every other file written"
 }
 
 # 2. Refusals: an existing extract without --force, output inside the workbook's folder, and an

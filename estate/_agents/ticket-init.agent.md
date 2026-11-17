@@ -104,7 +104,7 @@ or retain credentials in chat; let the user complete authentication privately.
   to three useful Context links to the ticket header. When the pipeline page
   lists a design workbook (its frontmatter `workbooks`), ask which version this
   ticket works from and write it on the header's `Design workbook:` line as
-  `<workbook> v<version>`; write `none` when there is no workbook, and never
+  `[<workbook>](../../Mappings/<workbook file>) v<version>`, linking the workbook; write `none` when there is no workbook, and never
   pick a version the user did not name (§10). Look for the links in this order
   and link what exists: the pipeline page, the design workbook, a General
   AI-Knowledge note, a General Human Knowledge runbook.

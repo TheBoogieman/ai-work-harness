@@ -209,10 +209,14 @@ dc_link_targets() {
   while IFS= read -r f; do
     [ -f "$f" ] || continue          # already reported BY NAME above
     dir=$(dirname "$f")
-    # each link target from [text](target); dc_link_target resolves/skips per scope
+    # each link target from [text](target); dc_link_target resolves/skips per scope. Fenced code is
+    # dropped first (#397): a link inside a fence is not rendered as a link, so no reader can follow
+    # it to a dead end, and a console transcript must be free to show real output that holds one
+    # (WORKED-EXAMPLE.md's knowledge-index lines link a note relative to a ticket folder).
     while IFS= read -r tgt; do
       dc_link_target "$f" "$dir" "$tgt"
-    done < <(grep -oE '\]\([^)]+\)' "$f" | sed -E 's/^\]\(//; s/\)$//')
+    done < <(awk '/^ ? ? ?(```|~~~)/ { fence = !fence; next } !fence' "$f" \
+             | grep -oE '\]\([^)]+\)' | sed -E 's/^\]\(//; s/\)$//')
   done < <(dc_md_files)
 }
 

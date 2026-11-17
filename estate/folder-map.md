@@ -32,25 +32,27 @@ Work/                                        [git root · local-only · whitelis
 │   └── scripts/                             THE MACHINERY (versioned)
 │       ├── check-ticket-log.sh              ← sessionStart hook │ sessionEnd (bonus)
 │       │       └── watermark →              ~/.harness/validated/<ticket>  [state · unversioned]
-│       ├── check-work-map.py                ← second sessionStart command · read-only, warning-only navigation observer (links, mapped tickets, orphan notes, repos/pipelines frontmatter) · --json for counts · --strict is manual-only, never a hook · asserts no lineage or truth
+│       ├── check-work-map.py                ← second sessionStart command · read-only, warning-only navigation observer (links, mapped tickets, orphan notes, ticket-file coverage, repos/pipelines frontmatter) · --json for counts · --strict is manual-only, never a hook · asserts no lineage or truth
 │       ├── harness-status.sh                stdout report + one primary-observation record (each WARN's first-seen, for aging #71) · roster = _agents/ · checks siblings
 │       ├── ticket-grammar.sh                recognition home: TICKET_RE + ticket predicates · validator + status both source it (edit only to change the naming pattern; any board key already matches)
 │       ├── init-ticket.sh                   ticket-init's full-template scaffold helper · local month/sequence, duplicate refusal, pending completion preview · never invents ticket facts
 │       ├── portability.sh                   shared GNU/BSD shims: ts14→epoch, sourced by validator + status (one home · no drift)
 │       ├── append-notebook-cell.py          ← check-scribe · THE ONE DOOR into a notebook: appends one selected evidence capsule · runs on whatever python3 is on the path, needs nbformat [user-created prereq]
-│       ├── append-session-entry.sh          ← ticket-scribe · THE ONE DOOR into a Session Log: reads the local clock, appends one entry at the bottom, refuses what it cannot place · links unlinked prompts, outputs and reviews under Iterations (CONSTITUTION §6)
+│       ├── append-session-entry.sh          ← ticket-scribe · THE ONE DOOR into a Session Log: reads the local clock, appends one entry at the bottom, refuses what it cannot place · links unlinked prompts, outputs and reviews under Iterations, and refreshes the Ticket files list (CONSTITUTION §6)
 │       ├── iteration-links.sh               shared: which prompt, output and review files a ticket holds and whether its file links each · sourced by the entry helper, the validator and the backfill (one home · no drift)
 │       ├── backfill-iterations.sh           human-run after an upgrade · links older tickets' prompts, outputs and reviews with one new entry each · --dry-run · idempotent
+│       ├── ticket-files.py                  shared: which files a ticket folder retains and the generated Ticket files list linking them · used by the entry helper, check-work-map.py and the backfill · dry run by default (one home · no drift)
+│       ├── backfill-ticket-files.sh         human-run after an upgrade · adds the Ticket files list and the knowledge-index links to older tickets with one new entry each · --dry-run · --only · idempotent
 │       ├── make-context-pack.sh             → ~/Desktop/harness-pack-*.zip [disposable · outside repo] · scrub table user-owned, KEEP on upgrade
 │       ├── tracker-sweep.sh                 human-run · on-demand board-vs-estate drift report · pluggable fetch seam · tracker-agnostic · fails open offline
 │       ├── retro-stats.sh                    dumb counter for the retrospective agent · closed tickets by completion month from Current State (open, undated apart) + pickup-to-close + per repo/pipeline + merged PRs + checks + promotions · offline, no git dates · exits 0 always
 │       ├── deploy-agents.sh                 → user-level agent dir (sync source → live · names retired contracts left there)
 │       ├── init-ticket.sh                   ← ticket-init · allocates the folder and copies the template; the agent owns every fact
 │       ├── check-work-map.py                ← SessionStart hook │ human-run · read-only Work Map link observer · warnings only
-│       ├── parse-workbook.py                human-run · Mappings/ workbook → ticket Dump/workbooks/ (INDEX, version history, sheet CSVs, changes-<V>) · needs openpyxl · CONSTITUTION §10
+│       ├── parse-workbook.py                human-run · Mappings/ workbook → ticket Dump/workbooks/ (INDEX linking every file, version history, sheet CSVs, changes-<V>) · --relink refreshes an older extract's links without its workbook · needs openpyxl · CONSTITUTION §10
 │       ├── mappings-index.py                human-run │ doc-writer · Mappings/ + pipeline pages' workbooks lists → Work Map/Mappings.md (versions, owning page, two gap lists) · writes nothing in Mappings/ · CONSTITUTION §10
 │       ├── audit-inventory.py               ← estate-auditor │ human-run · read-only inventory: ticket staleness, PRs, walkthroughs, broken #anchors, pipeline-page sections · CONSTITUTION §15
-│       ├── anchor-style.py                  human-run · rewrites section links between GitHub slugs and Obsidian heading text · --check reports unresolved links
+│       ├── anchor-style.py                  human-run · rewrites section links between GitHub slugs and Obsidian heading text · never rewrites an older Session Log entry · --check reports unresolved links
 │       ├── harness-housekeeping.sh          human-run · git gc + size report · never touches records
 │       └── harness-drill.sh                 human-run · rehearse restore/bundle/undo · read-only toward the estate
 │

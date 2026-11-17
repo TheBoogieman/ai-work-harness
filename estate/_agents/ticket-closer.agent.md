@@ -61,8 +61,10 @@ contradict it, never replace it.
 - **Closing plan:** one list grouped **Add / Change / Remove**, one line per file,
   each with why. Wait for approval. Apply exactly what was approved.
 - **Linking:** every external reference you write or hand on is a masked link
-  (§6.1 Links), and `check-work-map.py`'s `BARE_URL` / `UNLINKED_PR` / `UNLINKED_FILE` notes on this
-  ticket are fixed before close (older Session Log entries stay as written). The
+  (§6.1 Links), and `check-work-map.py`'s `BARE_URL` / `UNLINKED_PR` / `UNLINKED_FILE` /
+  `UNLINKED_TICKET_FILE` notes on this ticket are fixed before close (older Session Log entries
+  stay as written; the close-out entry itself refreshes the Ticket files list). A link to a file
+  is navigation: it never stands in for evidence in the walkthrough. The
   ticket header (PRs as masked links with final state; frontmatter `repos` /
   `pipelines` matching the Repos list and the pages the ticket touched, §4.3;
   Context links, checked in this order: the pipeline page, the design workbook,

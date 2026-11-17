@@ -16,8 +16,15 @@ unique. Matched fragments are rewritten in the requested style; unmatched ones a
 they are and listed. --check writes nothing. Exit 0 when every fragment resolved, 1 when any
 did not, 2 on bad arguments.
 
-Never pass dated or append-only records (ticket Session Logs, audits, retrospectives): the
-script edits what it is given.
+Older Session Log entries are history and are never rewritten (#397): in a file with a
+"## Session Log" section, every entry but the newest is copied as it is and not reported, so a
+ticket file can be passed whole. Never pass other dated or append-only records (audits,
+retrospectives): the script edits what it is given.
+
+Obsidian decodes a link the way decodeURI does, so an encoded reserved character (%2C for a
+comma, %3A for a colon, %26, %3F ...) never matches the heading again. An Obsidian fragment
+therefore keeps those characters raw and encodes only spaces and the like (#397; the same rule as
+ticket-files.py's encode).
 """
 from __future__ import annotations
 
@@ -38,8 +45,27 @@ def github_slug(text: str) -> str:
     return re.sub(r"[^a-z0-9 _-]", "", text.replace("`", "").strip().lower()).replace(" ", "-")
 
 
+# Kept raw in an Obsidian fragment: unreserved characters, plus the reserved ones decodeURI leaves
+# encoded, since Obsidian would then look for a heading spelt with the escape in it.
+OBSIDIAN_SAFE = "-._~!$&'*+,;=:@/?"
+
+
 def obsidian_fragment(text: str) -> str:
-    return quote(text, safe="-._~")
+    return quote(text, safe=OBSIDIAN_SAFE)
+
+
+# A Session Log entry heading, in the strict form or an older one that opens with a date.
+ENTRY_RE = re.compile(r"^## \d{8}")
+
+
+def history_lines(lines: list[str]) -> range:
+    """The line numbers (0-based) of every Session Log entry except the newest: history that is
+    never rewritten. Empty when the file has no Session Log or fewer than two entries."""
+    log = next((i for i, line in enumerate(lines) if re.match(r"^##\s+Session Log\s*#*\s*$", line)), None)
+    if log is None:
+        return range(0)
+    entries = [i for i in range(log + 1, len(lines)) if ENTRY_RE.match(lines[i])]
+    return range(entries[0], entries[-1]) if len(entries) > 1 else range(0)
 
 
 def headings_of(path: Path, cache: dict[Path, list[str]]) -> list[str]:
@@ -76,7 +102,11 @@ def convert(path: Path, style: str, cache: dict, write: bool) -> tuple[int, list
     # conversion rewrote the line endings of the whole document.
     with path.open(encoding="utf-8", newline="") as handle:
         text = handle.read()
+    history = history_lines(text.splitlines())
     for number, line in enumerate(text.splitlines(keepends=True), start=1):
+        if number - 1 in history:
+            out.append(line)
+            continue
         if FENCE_RE.match(line):
             fenced = not fenced
         if fenced or FENCE_RE.match(line):

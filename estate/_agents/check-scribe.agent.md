@@ -37,8 +37,9 @@ instead of inventing a wrapper. Never hand-edit notebook JSON or inject output.
 Append one concise markdown note and executable cell per selected claim, not a
 transcript of iterations. The helper captures a replay definition; appending
 does not execute it or produce verified notebook evidence, so report
-`CAPTURED REPLAY DEFINITION`, not a pass. Return the notebook
-path and visible cell number, the caller-observed result, and whether execution
+`CAPTURED REPLAY DEFINITION`, not a pass. Return the notebook's
+relative path (`Checks/checks_master.ipynb`, so the parent's entry can link it, CONSTITUTION
+§6.1 Links) and visible cell number, the caller-observed result, and whether execution
 with saved notebook output is still outstanding. Never claim the notebook
 passed solely because the append succeeded. The owning session records any
 ticket-level conclusion; do not add an independent Session Log entry.

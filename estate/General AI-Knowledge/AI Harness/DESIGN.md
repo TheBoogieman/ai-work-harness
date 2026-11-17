@@ -3,6 +3,9 @@ Last reviewed: 2026-10-21
 
 <!-- harness-upgrade: preserve-user-content -->
 
+**The sheets:** [architecture](harness-architecture.svg) · [session flow](harness-session-flow.svg). The
+currency notes below say where each lags the machinery.
+
 **Diagram currency (#354):** the sheets do not draw the `orchestrator` agent,
 which can start every other agent and carry the planner/implementer hand-offs,
 or the standing delegation it acts under. No SVG was edited; this note names the
@@ -100,6 +103,12 @@ names the lag.
 **Diagram currency (2026-11-13, #384):** the sheets do not draw the ticket file's Iterations
 section, the entry helper linking prompts, outputs and reviews into it, the validator's
 unlinked-file check, or `backfill-iterations.sh`. No SVG was edited; this note names the lag.
+
+**Diagram currency (2026-11-17, #397):** the sheets do not draw the ticket file's Ticket files
+section, `ticket-files.py` (which the entry helper and `check-work-map.py` share), the linked
+knowledge-index grammar the validator now requires, `backfill-ticket-files.sh`, the header
+pointer the entry helper adds to older tickets, or the checker's `UNLINKED_RULES` and
+`ORPHAN_FILE` notes. No SVG was edited; this note names the lag.
 
 **Diagram currency (2026-11-13, #385):** the sheets do not draw the skill map, the `Repo-*` and
 `Pipeline-*` skill templates, a pipeline page's `workbooks` list, or `mappings-index.py` and the

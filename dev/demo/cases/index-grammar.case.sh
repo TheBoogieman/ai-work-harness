@@ -50,31 +50,31 @@ reg_fail() {
 # 1. TRUTHFUL PROSE INERT: a filename in the DESCRIPTION is not an entry. A prose-scanning parser
 #    raises old-plan.md as a false ghost and red-blocks this honest record — the core R-12 case.
 ig_truthful_prose() {
-  ak_reset "- notes.md — supersedes old-plan.md" notes.md
+  ak_reset "- notes.md — [Read note](notes.md) — supersedes old-plan.md" notes.md
   reg_run; reg_pass "truthful-prose"
 }
 
 # 2. REAL ORPHAN CAUGHT: a real file with no entry line must FAIL. Then apply the printed fix
 #    (repair is a human act; reg_run gives it its own log entry) and watch the ticket go green.
 ig_real_orphan() {
-  ak_reset "- covered.md — the only entry" covered.md orphan.md
+  ak_reset "- covered.md — [Read note](covered.md) — the only entry" covered.md orphan.md
   reg_run; reg_fail "real-orphan" "orphan file AI-Knowledge/orphan.md"
   echo "  --- applying the printed fix: add the missing index line, re-validate ---"
-  echo "- orphan.md — now indexed" >> "$S/AI-Knowledge/_index.md"
+  echo "- orphan.md — [Read note](orphan.md) — now indexed" >> "$S/AI-Knowledge/_index.md"
   reg_run; reg_pass "orphan-repaired"
 }
 
 # 3. '#' COMMENT INERT: a .md name inside a comment line is not scanned. A prose-scanning parser
 #    reads notes.md out of the comment and mints a false ghost.
 ig_comment_inert() {
-  ak_reset $'# see notes.md for the mapping\n- real.md — the real entry' real.md
+  ak_reset $'# see notes.md for the mapping\n- real.md — [Read note](real.md) — the real entry' real.md
   reg_run; reg_pass "comment-inert"
 }
 
 # 4. PLACEHOLDER INERT: a <...> first token is illustrative, never a real entry or ghost —
 #    guaranteed by a deliberate angle-bracket check in the validator, not by char-class luck.
 ig_placeholder_inert() {
-  ak_reset $'- <file>.md — placeholder shown in the grammar\n- real.md — the real entry' real.md
+  ak_reset $'- <file>.md — placeholder shown in the grammar\n- real.md — [Read note](real.md) — the real entry' real.md
   reg_run; reg_pass "placeholder-inert"
 }
 
@@ -85,14 +85,14 @@ ig_placeholder_inert() {
 #    orphan property specifically: a future orphan-check regression can't hide behind a ghost
 #    failure here. (Cleanup: the next case's ak_reset rebuilds AI-Knowledge/, clearing both.)
 ig_substring_decoy() {
-  ak_reset "- release-extra.md — decoy" extra.md release-extra.md
+  ak_reset "- release-extra.md — [Read note](release-extra.md) — decoy" extra.md release-extra.md
   reg_run; reg_fail "substring-decoy" "orphan file AI-Knowledge/extra.md"
 }
 
 # 6. UNIFICATION: one validation, one rule, both directions — good.md is correctly covered by its
 #    exact entry (orphan side) while missing.md is correctly flagged (ghost side).
 ig_unification() {
-  ak_reset $'- good.md — real and covered\n- missing.md — names no file' good.md
+  ak_reset $'- good.md — [Read note](good.md) — real and covered\n- missing.md — names no file' good.md
   reg_run; reg_fail "ghost-side" "ghost entry 'missing.md'"
   if printf '%s\n' "$REG_OUT" | grep -q "orphan file AI-Knowledge/good.md"; then
     echo "BUG [orphan-side]: good.md wrongly flagged orphan — the orphan side broke"; exit 1
@@ -104,7 +104,7 @@ ig_unification() {
 # 7. TOMBSTONE ACCEPTED: "- old.md (promoted -> ...)" names no file but is a tombstone, not a
 #    ghost — the promotion record is legitimate and must PASS.
 ig_tombstone() {
-  ak_reset $'- old.md (promoted -> General AI-Knowledge/Foo)\n- real.md — kept' real.md
+  ak_reset $'- old.md (promoted -> General AI-Knowledge/Foo) — [Read promoted note](../../../General%20AI-Knowledge/Foo/Foo.md)\n- real.md — [Read note](real.md) — kept' real.md
   reg_run; reg_pass "tombstone-accepted"
 }
 
@@ -123,7 +123,7 @@ ig_dashless() {
 #    valid->ghost and red-block (the R-04 failure). The matcher accepts both arrows; the
 #    prescription (fix-line) teaches ASCII "->" only.
 ig_unicode_tombstone() {
-  ak_reset $'- old.md (promoted → General AI-Knowledge/Foo)\n- real.md — kept' real.md
+  ak_reset $'- old.md (promoted → General AI-Knowledge/Foo) — [Read promoted note](../../../General%20AI-Knowledge/Foo/Foo.md)\n- real.md — [Read note](real.md) — kept' real.md
   reg_run; reg_pass "unicode-tombstone"
 }
 
@@ -133,7 +133,7 @@ ig_unicode_tombstone() {
 #     ASCII "promoted ->" and NOT the unicode arrow. (Assertion, not a pass/fail stage: the
 #     ghost is expected to fire; we check the fix-line's bytes.)
 ig_fixline_ascii() {
-  ak_reset $'- ghosty.md — names no file\n- real.md — kept' real.md
+  ak_reset $'- ghosty.md — names no file\n- real.md — [Read note](real.md) — kept' real.md
   reg_run   # REG_OUT now holds the ghost FAIL and its fix-line
   if ! printf '%s\n' "$REG_OUT" | grep -q "promoted ->"; then
     echo "BUG [fixline-ascii]: ghost fix-line missing ASCII 'promoted ->':"
@@ -160,9 +160,30 @@ ig_zero_capture_healthy() {
   echo "  ok [zero-capture-valid] — multi-session zero capture is accepted without a volume nudge"
 }
 
+# 12. UNLINKED ENTRY REFUSED (#397): the first token is what the validator reads, but a reader and
+#     an editor's graph follow links, so an entry must also LINK its own note. A bare entry fails by
+#     name; a link to a DIFFERENT note does not count; linking its own note clears it.
+#     REVERT-PROVABLE: drop report_unlinked from check_knowledge and the first assertion reds.
+ig_entry_unlinked() {
+  ak_reset $'- notes.md — platform quirk — read before editing\n- other.md — [Read note](other.md) — kept' notes.md other.md
+  reg_run; reg_fail "entry-unlinked" "index entry 'notes.md' in _index.md has no link to its note"
+  ak_reset $'- notes.md — see [the other note](other.md)\n- other.md — [Read note](other.md) — kept' notes.md other.md
+  reg_run; reg_fail "entry-links-elsewhere" "index entry 'notes.md' in _index.md has no link to its note"
+  ak_reset $'- notes.md — [Read note](notes.md) — see [the other note](other.md)\n- other.md — [Read note](other.md) — kept' notes.md other.md
+  reg_run; reg_pass "entry-linked"
+}
+
+# 13. UNLINKED TOMBSTONE REFUSED (#397): a tombstone keeps its machine-readable promotion
+#     declaration and must also link the promoted note, so the record still leads somewhere.
+#     REVERT-PROVABLE: drop the tombstone branch of the linked-entry check and this reds.
+ig_tombstone_unlinked() {
+  ak_reset $'- old.md (promoted -> General AI-Knowledge/Foo)\n- real.md — [Read note](real.md) — kept' real.md
+  reg_run; reg_fail "tombstone-unlinked" "tombstone 'old.md' in _index.md has no link to the promoted note"
+}
+
 # Leave the scratch ticket green for the remaining stages — every later family runs against it.
 ig_clean_exit() {
-  ak_reset "- notes.md — platform quirk — read before editing" notes.md
+  ak_reset "- notes.md — [Read note](notes.md) — platform quirk — read before editing" notes.md
   reg_run; reg_pass "clean-exit"
 }
 
@@ -178,5 +199,7 @@ case_index_grammar() {
   ig_unicode_tombstone
   ig_fixline_ascii
   ig_zero_capture_healthy
+  ig_entry_unlinked
+  ig_tombstone_unlinked
   ig_clean_exit
 }

@@ -63,6 +63,10 @@ running anything.
 End every output with `## Handback to planner`:
 
 - **Done:** what was run and changed, file by file (added / changed / removed).
+- **Ticket files:** the relative path of every ticket file you created or used
+  (your output, `Logs/NN-*.txt`, extracts, scripts), each with its role when known,
+  for example `[build output](Logs/<NN-topic>.txt)`, so the step's entry can link it
+  (CONSTITUTION §6.1 Links).
 - **Deviations:** anything that differed from the prompt's expectations.
 - **Open questions:** every ambiguity, unexpected result or scope question — stated,
   not decided.

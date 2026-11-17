@@ -240,6 +240,21 @@ Re-running `install.sh` serves three different intents, each with its own home:
   and touching no older entry. Skipping it breaks nothing: an older ticket is not
   failed while it sits untouched, and its next entry links its files anyway.
 
+  **After an upgrade that brings in `backfill-ticket-files.sh`**, do the same for every
+  other file in your older tickets and for their knowledge indexes:
+  `bash _harness/scripts/backfill-ticket-files.sh --dry-run` lists each ticket with the
+  files and index lines it would link, `--only <ticket>` limits a run, and the command
+  without `--dry-run` writes one new Session Log entry per ticket (no older entry and no
+  Current State line changes). Run it before you next work an older ticket whose
+  knowledge index has unlinked lines: the validator now fails a changed ticket whose
+  index entry does not link its note. The same entries give an older ticket's header the
+  template's pointer line linking `AGENTS.md` and `CONSTITUTION.md`. Then run
+  `python3 _harness/scripts/mappings-index.py --write` once (its links now keep commas and
+  ampersands raw, which Obsidian needs), `python3 _harness/scripts/parse-workbook.py --relink
+  <extract folder>` for each extract under a ticket's `Dump/workbooks/` made before this
+  upgrade, and, in an estate read in Obsidian, `anchor-style.py --to obsidian` over your living
+  documents. It needs `python3`.
+
   **P.S. Using the `orchestrator` and the `Estate-Levelling` skill is recommended.**
   The commands above are the mechanical half of a levelling. The other half is the
   three-way merge of every file your estate customised (CONSTITUTION §18.1), and

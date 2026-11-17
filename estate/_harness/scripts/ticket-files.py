@@ -1,0 +1,592 @@
+#!/usr/bin/env python3
+"""ticket-files.py — link every retained file of a ticket folder from its ticket file (#397).
+
+    python3 _harness/scripts/ticket-files.py Tickets/<t>/<t>.md            # dry run: what would change
+    python3 _harness/scripts/ticket-files.py --write Tickets/<t>/<t>.md    # rewrite the section in place
+    python3 _harness/scripts/ticket-files.py --index Tickets/<t>/<t>.md    # dry run for the knowledge index
+    python3 _harness/scripts/ticket-files.py --index --write Tickets/<t>/<t>.md
+
+WHY IT EXISTS. #384 linked the prompt, output and review files from the ticket file. Everything
+else a ticket folder holds (notebooks, scripts, SQL, logs, extracts, screenshots, dropped inputs)
+had no link, so neither a reader nor an agent picking the ticket up could reach it from the record,
+and an editor's graph showed it as unconnected. This script is the ONE home for "which files does a
+ticket folder hold, and does its ticket file link each of them". Three readers use it:
+  - append-session-entry.sh refreshes the section in the same atomic write as every entry
+    (--input/--output), so no agent has to remember to;
+  - check-work-map.py imports inventory() and reachable() to note a ticket whose files are not all
+    reachable through real links (warning-only);
+  - backfill-ticket-files.sh brings older tickets and their knowledge indexes up to this shape.
+
+THE SECTION. "## Ticket files" sits above the Session Log. Its body between the two marker comments
+is generated; text outside the markers is kept as written. The generated body is:
+  - a link to AI-Knowledge/_index.md when it exists: knowledge notes are reached through the index
+    (one way: ticket -> index -> note), so a note the index links is not listed again;
+  - a line saying prompts, outputs and reviews are linked under Iterations, when some are: a ledger
+    file (Agent-Prompts/NN-*.md, Agent-Output/NN-*.md, as iteration-links.sh defines it) that the
+    ticket file already links outside this section is not listed again;
+  - every other retained file, grouped by folder, one link per file, in byte order.
+A file is never dropped from the list unless one of those two owners really links it, so the
+section guarantees reachability on its own. A second run with nothing changed writes nothing.
+
+THE HEADER. A ticket file links the estate's rules from its header: the template's agent pointer
+line, linking ../../AGENTS.md and ../../CONSTITUTION.md. A ticket written before the template
+carried that line gains it, right after its title heading, in the same write. Nothing else in the
+header changes, and a header that already links both files is left exactly as it is.
+
+WHAT IS NOT A RETAINED FILE (the whole list; nothing is skipped for its size, extension or git
+status, so git-ignored Logs/ and Dump/ files are listed): the ticket file itself; .gitkeep,
+.DS_Store, Thumbs.db, desktop.ini; the folder markers .ticket-pending and .not-a-ticket; Python
+bytecode (*.pyc, *.pyo); Office and LibreOffice lock files (~$*, .~lock.*); the temp files of the
+harness's own helpers (.append-session-entry.*, .iteration-links.*, .ticket-files.*); and the
+folders __pycache__, .ipynb_checkpoints, .pytest_cache, .mypy_cache, .ruff_cache. A symlink is
+never followed, and neither a .git folder (git internals) nor a folder holding .git (another
+checkout) is entered: each is named in the output as skipped. A folder that cannot be read stops
+the run with the reason and writes nothing.
+
+LINKS. A destination is the path relative to the ticket folder, percent-encoded so CommonMark
+readers and Obsidian both resolve it: space, %, parentheses, brackets, backtick, quote, backslash,
+angle brackets, braces, pipe, caret, # and ? are encoded; letters, digits, Unicode, & , ; = : + @ $
+and the like are kept. Obsidian decodes a link the way decodeURI does, so an encoded reserved
+character (%2C, %26, %3B, %3D, %2B, %40, %24, %3A, %23, %3F) never matches the file again
+(observed in Obsidian 1.14); keeping those raw is what makes a name with a comma or an ampersand
+resolve there. A name holding # or ? cannot be linked in Obsidian in any form, since raw they read
+as a heading and a query; those files are named in a NOTE. encode() is the one definition the
+harness's link writers share. The label is the file name with Markdown punctuation escaped.
+
+THE KNOWLEDGE INDEX (--index). An entry line keeps its file name as the first token, which the
+validator reads, and gains a link to that file after it: "- note.md — [Read note](note.md) — ...".
+A promotion tombstone keeps its "(promoted -> General AI-Knowledge/<Topic>)" declaration and gains
+a link to the promoted note when that note exists. An entry whose file is missing, and a tombstone
+whose note cannot be found, are reported and left alone: a link to nothing would claim a file exists.
+
+Exit status: 0 nothing to do or written; 1 a dry run found something to write; 2 refused (the
+reason is printed and nothing was written).
+"""
+
+from __future__ import annotations
+
+import argparse
+import importlib.util
+import os
+import posixpath
+import re
+import stat
+import sys
+import tempfile
+from pathlib import Path
+from urllib.parse import unquote, urlsplit
+
+HERE = Path(__file__).resolve().parent
+
+SECTION = "## Ticket files"
+# The template's agent pointer: the header line that links a ticket file to the estate's rules.
+# A ticket written before the template carried it gains it at its next entry (#397).
+POINTER = ("> **For AI agents — read this first.** [AGENTS.md](../../AGENTS.md) is the pointer: read your "
+           "row in its reading list, then this ticket's header and Current State. "
+           "[CONSTITUTION.md](../../CONSTITUTION.md) is the rulebook it points into.")
+RULES = {"../../AGENTS.md", "../../CONSTITUTION.md"}
+BEGIN = "<!-- ticket-files:begin — generated by _harness/scripts/ticket-files.py at every Session Log entry; edit outside these markers -->"
+END = "<!-- ticket-files:end -->"
+BEGIN_RE = re.compile(r"^<!-- ticket-files:begin\b.*-->\s*$")
+END_RE = re.compile(r"^<!-- ticket-files:end\b.*-->\s*$")
+SECTION_RE = re.compile(r"^##[ \t]+Ticket files[ \t#]*$")
+SESSION_LOG_RE = re.compile(r"^##[ \t]+Session Log[ \t#]*$")
+HEADING2_RE = re.compile(r"^## ")
+
+# The explicit housekeeping exclusions, and nothing else (see the docstring).
+HOUSEKEEPING_FILES = {".gitkeep", ".DS_Store", "Thumbs.db", "desktop.ini", ".ticket-pending", ".not-a-ticket"}
+HOUSEKEEPING_SUFFIXES = (".pyc", ".pyo")
+HOUSEKEEPING_PREFIXES = ("~$", ".~lock.", ".append-session-entry.", ".iteration-links.", ".ticket-files.")
+HOUSEKEEPING_DIRS = {"__pycache__", ".ipynb_checkpoints", ".pytest_cache", ".mypy_cache", ".ruff_cache"}
+
+# A ledger file as iteration-links.sh defines it: two digits, a hyphen, .md, directly in the folder.
+LEDGER_RE = re.compile(r"^(?:Agent-Prompts|Agent-Output)/[0-9]{2}-[^/]*\.md$")
+# The validator's filename-first index token (check-ticket-log.sh, scan_index).
+INDEX_ENTRY_RE = re.compile(r"^- ([A-Za-z0-9._-]+\.md)(?=\s|$)(.*)$")
+PROMOTED_RE = re.compile(r"\(promoted\s*(?:->|→)\s*(General AI-Knowledge/[^()<>]+?)\s*\)")
+# Characters a destination keeps as they are; every other ASCII character is percent-encoded and
+# every non-ASCII character is kept, which both CommonMark and Obsidian accept.
+SAFE = set("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~/!$&'*+,;=:@")
+LABEL_ESCAPE = set("\\`*[]<>|")
+
+
+class Refused(Exception):
+    """A reason to write nothing; the message is printed as REFUSED."""
+
+
+def _link_parser():
+    """check-work-map.py's Markdown reader, so "a link" has one definition in the harness."""
+    spec = importlib.util.spec_from_file_location("check_work_map_links", HERE / "check-work-map.py")
+    if spec is None or spec.loader is None:
+        raise Refused("check-work-map.py is missing beside this script; it holds the link reader")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+_PARSER = None
+
+
+def parser():
+    global _PARSER
+    if _PARSER is None:
+        _PARSER = _link_parser()
+    return _PARSER
+
+
+# ---- inventory ---------------------------------------------------------------------------------
+
+def housekeeping(name: str) -> bool:
+    """Is this file name one of the explicit housekeeping exclusions?"""
+    return (name in HOUSEKEEPING_FILES or name.endswith(HOUSEKEEPING_SUFFIXES)
+            or name.startswith(HOUSEKEEPING_PREFIXES))
+
+
+def inventory(ticket_dir: Path, primary: str) -> tuple[list[str], list[tuple[str, str]], int]:
+    """Walk the ticket folder without following symlinks. Returns the retained files as relative
+    POSIX paths in byte order, the (path, reason) pairs that were skipped, and how many housekeeping
+    entries were excluded. A folder that cannot be listed raises Refused: a partial list would
+    silently drop files."""
+    files: list[str] = []
+    skipped: list[tuple[str, str]] = []
+    excluded = 0
+
+    def walk(folder: Path, prefix: str):
+        nonlocal excluded
+        try:
+            entries = sorted(os.scandir(folder), key=lambda entry: entry.name.encode("utf-8", "surrogateescape"))
+        except OSError as error:
+            raise Refused(f"cannot list {prefix or './'}: {error.strerror or error}") from None
+        for entry in entries:
+            rel = prefix + entry.name
+            # A name that is not valid UTF-8 cannot be written into the ticket file; say so.
+            try:
+                rel.encode("utf-8")
+            except UnicodeEncodeError:
+                skipped.append((rel.encode("utf-8", "surrogateescape").decode("utf-8", "replace"),
+                                "name is not valid UTF-8, not linked"))
+                continue
+            try:
+                if entry.is_symlink():
+                    skipped.append((rel, "symlink, not followed"))
+                    continue
+                if entry.is_dir(follow_symlinks=False):
+                    if entry.name in HOUSEKEEPING_DIRS:
+                        excluded += 1
+                    elif entry.name == ".git":
+                        skipped.append((rel + "/", "git internals, not entered"))
+                    elif os.path.lexists(os.path.join(entry.path, ".git")):
+                        skipped.append((rel + "/", "another checkout (holds .git), not entered"))
+                    else:
+                        walk(Path(entry.path), rel + "/")
+                    continue
+                if not entry.is_file(follow_symlinks=False):
+                    skipped.append((rel, "not a regular file"))
+                    continue
+            except OSError as error:
+                raise Refused(f"cannot read {rel}: {error.strerror or error}") from None
+            if not prefix and entry.name == primary:
+                continue
+            if housekeeping(entry.name):
+                excluded += 1
+                continue
+            files.append(rel)
+
+    walk(ticket_dir, "")
+    return files, skipped, excluded
+
+
+# ---- links -------------------------------------------------------------------------------------
+
+def encode(rel: str) -> str:
+    """A relative path as a link destination (see LINKS in the docstring)."""
+    out = []
+    for character in rel:
+        if character in SAFE or ord(character) > 127:
+            out.append(character)
+        else:
+            out.append("".join(f"%{byte:02X}" for byte in character.encode("utf-8", "surrogateescape")))
+    destination = "".join(out)
+    # A colon in the first segment would read as a URI scheme ("a:b.txt"); "./" keeps it a path.
+    if ":" in destination.split("/", 1)[0]:
+        destination = "./" + destination
+    return destination
+
+
+def label(name: str) -> str:
+    """A file name as link text: Markdown punctuation escaped, control characters replaced, and an
+    underscore escaped unless it sits between two letters or digits (where it is never emphasis)."""
+    out = []
+    for index, character in enumerate(name):
+        if ord(character) < 32 or ord(character) == 127:
+            out.append("\ufffd")
+        elif character in LABEL_ESCAPE:
+            out.append("\\" + character)
+        elif character == "_" and not (0 < index < len(name) - 1 and name[index - 1].isalnum()
+                                       and name[index + 1].isalnum()):
+            out.append("\\_")
+        else:
+            out.append(character)
+    return "".join(out)
+
+
+def code(text: str) -> str:
+    """Inline code that survives a backtick inside the text."""
+    return f"`` {text} ``" if "`" in text else f"`{text}`"
+
+
+def destinations(text: str, base: str) -> set[str]:
+    """Every local link destination in Markdown text, as a normalised path relative to the folder
+    that `base` (a relative folder, "" for the ticket folder) names. Code, comments and bare paths
+    are not links; check-work-map.py's reader decides, so the checker and this script agree."""
+    module = parser()
+    found = set()
+    for _, raw, _ in module.routes(module.prose(text)):
+        if not raw or raw.startswith("#"):
+            continue
+        parsed = urlsplit(raw)
+        if parsed.scheme or parsed.netloc:
+            continue
+        path = unquote(parsed.path, encoding="utf-8", errors="replace")
+        if not path or path.startswith("/"):
+            continue
+        found.add(posixpath.normpath(posixpath.join(base, path)))
+    return found
+
+
+def reachable(text: str, index_text: str | None) -> set[str]:
+    """The ticket-folder paths reachable through actual links from a ticket file: its own links,
+    plus the links of AI-Knowledge/_index.md when the ticket file links that index (the one-way
+    ticket -> index -> note route). check-work-map.py counts coverage with this."""
+    found = destinations(text, "")
+    if index_text is not None and "AI-Knowledge/_index.md" in found:
+        found |= destinations(index_text, "AI-Knowledge")
+    return found
+
+
+# ---- the section -------------------------------------------------------------------------------
+
+def split_section(lines: list[str]) -> tuple[int, int, int, int] | None:
+    """Find "## Ticket files" above the Session Log. Returns (heading, end, begin, finish): the
+    heading's line, the line after the section, and the marker lines (-1 when absent). Malformed
+    markers raise Refused."""
+    log = next((i for i, line in enumerate(lines) if SESSION_LOG_RE.match(line)), len(lines))
+    heading = next((i for i in range(log) if SECTION_RE.match(lines[i])), None)
+    if heading is None:
+        return None
+    end = next((i for i in range(heading + 1, len(lines)) if HEADING2_RE.match(lines[i])), len(lines))
+    begins = [i for i in range(heading + 1, end) if BEGIN_RE.match(lines[i])]
+    ends = [i for i in range(heading + 1, end) if END_RE.match(lines[i])]
+    if len(begins) > 1 or len(ends) > 1 or len(begins) != len(ends) or (begins and ends[0] < begins[0]):
+        raise Refused("the Ticket files section has unmatched or repeated ticket-files markers; fix them by hand")
+    return heading, end, begins[0] if begins else -1, ends[0] if ends else -1
+
+
+def outside_section(text: str) -> str:
+    """The ticket file with the generated block blanked, so links inside it never count as an
+    owner's link (the block must not decide what it leaves out)."""
+    lines = text.split("\n")
+    found = split_section(lines)
+    if found and found[2] >= 0:
+        lines = lines[:found[2]] + lines[found[3] + 1:]
+    return "\n".join(lines)
+
+
+def render(files: list[str], text: str, ticket_dir: Path) -> tuple[list[str], int]:
+    """The generated lines for these files, given the ticket file's current text. Returns the lines
+    and how many files they link one by one."""
+    outside = destinations(outside_section(text), "")
+    index_text = ""
+    index = ticket_dir / "AI-Knowledge" / "_index.md"
+    has_index = "AI-Knowledge/_index.md" in files
+    if has_index:
+        try:
+            index_text = index.read_text(encoding="utf-8")
+        except (OSError, UnicodeError) as error:
+            raise Refused(f"cannot read AI-Knowledge/_index.md: {error}") from None
+    indexed = destinations(index_text, "AI-Knowledge") if has_index else set()
+
+    lines: list[str] = []
+    listed: list[str] = []
+    ledger_elsewhere = False
+    for rel in files:
+        if rel == "AI-Knowledge/_index.md":
+            continue
+        if has_index and rel.startswith("AI-Knowledge/") and rel in indexed:
+            continue
+        if LEDGER_RE.match(rel) and rel in outside:
+            ledger_elsewhere = True
+            continue
+        listed.append(rel)
+    if has_index:
+        lines.append("- [Ticket knowledge index](AI-Knowledge/_index.md) — links each knowledge note.")
+    if ledger_elsewhere:
+        lines.append("- Prompts, outputs and reviews: linked under Iterations.")
+    groups: dict[str, list[str]] = {}
+    for rel in listed:
+        folder, _, name = rel.rpartition("/")
+        groups.setdefault(folder, []).append(rel)
+    for folder in sorted(groups, key=lambda value: (value != "", value.encode("utf-8", "surrogateescape"))):
+        lines.append("- Ticket folder" if folder == "" else f"- {code(folder + '/')}")
+        for rel in groups[folder]:
+            lines.append(f"  - [{label(rel.rpartition('/')[2])}]({encode(rel)})")
+    return lines, len(listed)
+
+
+def sync_text(text: str, block: list[str]) -> str:
+    """The ticket file with the generated block replaced, or the section added above the Session
+    Log when it is missing. Nothing outside the section changes."""
+    lines = text.split("\n")
+    generated = [BEGIN, *block, END]
+    found = split_section(lines)
+    if found is None:
+        log = next((i for i, line in enumerate(lines) if SESSION_LOG_RE.match(line)), None)
+        if log is None:
+            raise Refused("the ticket file has no '## Session Log' section to place '## Ticket files' above")
+        # Blank and "---" lines before the Session Log are held back, so the new section lands
+        # above the rule that closes the ticket's body (the place iteration-links.sh uses too).
+        at = log
+        while at > 0 and re.match(r"^(---)?[ \t]*$", lines[at - 1]):
+            at -= 1
+        insert = ([""] if at > 0 and lines[at - 1].strip() else []) + [SECTION, *generated]
+        return "\n".join(lines[:at] + insert + lines[at:])
+    heading, end, begin, finish = found
+    if begin >= 0:
+        return "\n".join(lines[:begin] + generated + lines[finish + 1:])
+    # A section written by hand with no markers yet: the block goes after its last text line.
+    last = end
+    while last > heading + 1 and re.match(r"^(---)?[ \t]*$", lines[last - 1]):
+        last -= 1
+    return "\n".join(lines[:last] + generated + lines[last:])
+
+
+def header_end(lines: list[str]) -> int:
+    """The index of the first level-2 heading: everything above it is the ticket's header."""
+    return next((i for i, line in enumerate(lines) if HEADING2_RE.match(line)), len(lines))
+
+
+def has_rules_link(text: str) -> bool:
+    """Does the ticket's header link both AGENTS.md and CONSTITUTION.md at the estate root?"""
+    lines = text.split("\n")
+    return RULES <= destinations("\n".join(lines[:header_end(lines)]), "")
+
+
+def add_pointer(text: str) -> tuple[str, bool]:
+    """The ticket text with POINTER inserted after its title heading, when its header does not
+    already link the rules. The title is the first "# " line after any frontmatter; a ticket with
+    none is left as it is (and reported), since there is no header to put the line in."""
+    if has_rules_link(text):
+        return text, False
+    lines = text.split("\n")
+    start = 0
+    if lines and lines[0].rstrip("\r") == "---":
+        start = next((i + 1 for i in range(1, len(lines)) if lines[i].rstrip("\r") == "---"), 0)
+    title = next((i for i in range(start, header_end(lines)) if lines[i].startswith("# ")), None)
+    if title is None:
+        return text, False
+    after = lines[title + 1:]
+    insert = ["", POINTER] + ([] if after and not after[0].strip() else [""])
+    return "\n".join(lines[:title + 1] + insert + after), True
+
+
+def strip_section(text: str) -> list[str]:
+    """Everything the sync must not touch: the file without the Ticket files section, without
+    blank or "---" lines (a new section moves those) and without the rules pointer line, which
+    the sync may add to the header."""
+    out, on = [], False
+    for line in text.split("\n"):
+        if line == POINTER:
+            continue
+        if SECTION_RE.match(line):
+            on = True
+            continue
+        if on and HEADING2_RE.match(line):
+            on = False
+        if not on and not re.match(r"^(---)?[ \t]*$", line):
+            out.append(line)
+    return out
+
+
+def plan(md: Path, text: str) -> tuple[str, dict]:
+    """The new ticket text and a summary of what changed."""
+    ticket_dir = md.parent
+    files, skipped, excluded = inventory(ticket_dir, md.name)
+    with_pointer, pointer = add_pointer(text)
+    block, listed = render(files, with_pointer, ticket_dir)
+    new = sync_text(with_pointer, block)
+    if strip_section(new) != strip_section(text):
+        raise Refused("internal check: the sync changed something outside '## Ticket files' and the rules pointer")
+    before = destinations(text, "")
+    after = destinations(new, "")
+    summary = {
+        "files": len(files), "listed": listed, "skipped": skipped, "excluded": excluded,
+        "added": sorted(after - before), "removed": sorted(before - after),
+        "obsidian": [rel for rel in files if "#" in rel or "?" in rel],
+        "pointer": pointer, "rules": has_rules_link(new),
+    }
+    return new, summary
+
+
+def write_atomic(path: Path, text: str):
+    """Replace a file through a temp copy beside it, keeping its permissions."""
+    handle, temp = tempfile.mkstemp(prefix=".ticket-files.", dir=str(path.parent))
+    try:
+        with os.fdopen(handle, "w", encoding="utf-8", newline="") as out:
+            out.write(text)
+        if path.exists():
+            os.chmod(temp, stat.S_IMODE(path.stat().st_mode))
+        os.replace(temp, path)
+    except BaseException:
+        if os.path.exists(temp):
+            os.unlink(temp)
+        raise
+
+
+# ---- the knowledge index -----------------------------------------------------------------------
+
+def promoted_note(topic: str, root: Path) -> Path | None:
+    """The note a tombstone's "General AI-Knowledge/<Topic>" names: a .md path as given, else the
+    topic folder's same-named note, SKILL.md or _index.md. None when none exists."""
+    target = root / topic
+    if target.suffix == ".md":
+        return target if target.is_file() else None
+    for name in (target.name + ".md", "SKILL.md", "_index.md"):
+        if (target / name).is_file():
+            return target / name
+    return None
+
+
+def link_index(text: str, folder: Path, root: Path) -> tuple[str, int, list[str]]:
+    """Add the missing link to each entry and tombstone of a knowledge index. Returns the new text,
+    how many lines gained a link, and the lines that could not be linked, with the reason."""
+    out, changed, problems = [], 0, []
+    for line in text.split("\n"):
+        match = INDEX_ENTRY_RE.match(line)
+        if not match or line.startswith("#"):
+            out.append(line)
+            continue
+        name, rest = match.group(1), match.group(2)
+        own = {name, "./" + name, f"<{name}>"}
+        links = {raw for _, raw, _ in parser().routes(parser().prose(line))}
+        promotion = PROMOTED_RE.search(rest)
+        if promotion:
+            if links:
+                out.append(line)
+                continue
+            note = promoted_note(promotion.group(1).strip(), root)
+            if note is None:
+                problems.append(f"{name}: the promoted note under {promotion.group(1).strip()} was not found")
+                out.append(line)
+                continue
+            rel = os.path.relpath(note, folder).replace(os.sep, "/")
+            out.append(f"{line.rstrip()} — [Read promoted note]({encode(rel)})")
+            changed += 1
+            continue
+        if links & own:
+            out.append(line)
+            continue
+        if not (folder / name).is_file():
+            problems.append(f"{name}: no such file, so no link was added")
+            out.append(line)
+            continue
+        # Use the separator the line already uses after its file name, the em dash by default.
+        separator = re.match(r"^\s+(—|–|--|-|:)\s+", rest)
+        dash = separator.group(1) if separator else "—"
+        if separator:
+            tail = rest[separator.end():]
+            out.append(f"- {name} {dash} [Read note]({name}) {dash} {tail}")
+        else:
+            out.append(f"- {name} {dash} [Read note]({name}){rest}")
+        changed += 1
+    return "\n".join(out), changed, problems
+
+
+# ---- command line ------------------------------------------------------------------------------
+
+def estate_root(md: Path) -> Path:
+    """The estate a ticket file belongs to: two levels above its ticket folder."""
+    return md.parent.parent.parent
+
+
+def run_index(md: Path, write: bool) -> int:
+    folder = md.parent / "AI-Knowledge"
+    index = folder / "_index.md"
+    if not index.is_file():
+        print(f"NO INDEX: {md.parent.name} has no AI-Knowledge/_index.md")
+        return 0
+    try:
+        text = index.read_text(encoding="utf-8")
+    except (OSError, UnicodeError) as error:
+        raise Refused(f"cannot read {index}: {error}") from None
+    new, changed, problems = link_index(text, folder, estate_root(md))
+    for problem in problems:
+        print(f"UNLINKED: {md.parent.name} AI-Knowledge/_index.md {problem}")
+    if not changed:
+        print(f"UP TO DATE: {md.parent.name} AI-Knowledge/_index.md")
+        return 0
+    if not write:
+        print(f"WOULD LINK: {md.parent.name} AI-Knowledge/_index.md — {changed} entr{'y' if changed == 1 else 'ies'}")
+        return 1
+    write_atomic(index, new)
+    print(f"LINKED: {md.parent.name} AI-Knowledge/_index.md — {changed} entr{'y' if changed == 1 else 'ies'}")
+    return 0
+
+
+def report(name: str, summary: dict):
+    for rel, reason in summary["skipped"]:
+        print(f"SKIPPED: {name} {rel} — {reason}")
+    for rel in summary["obsidian"]:
+        print(f"NOTE: {name} {rel} — Obsidian cannot open a link to a name holding # or ?")
+    if not summary["rules"]:
+        print(f"NOTE: {name} — no '# ' title heading, so the header's rules pointer was not added")
+
+
+def main(argv: list[str]) -> int:
+    arguments = argparse.ArgumentParser(description="Link every retained ticket file from its ticket file.")
+    arguments.add_argument("ticket", type=Path, help="the ticket file, Tickets/<t>/<t>.md")
+    arguments.add_argument("--write", action="store_true", help="write the change (atomic); default is a dry run")
+    arguments.add_argument("--index", action="store_true", help="link the entries of AI-Knowledge/_index.md instead")
+    arguments.add_argument("--input", type=Path, help="read the ticket text from this file (the entry helper's copy)")
+    arguments.add_argument("--output", type=Path, help="write the result here instead of the ticket file")
+    options = arguments.parse_args(argv)
+    # Absolute, so the ticket name and the estate root are right however the path was given.
+    md = Path(os.path.abspath(options.ticket))
+    try:
+        if not md.is_file() or md.is_symlink():
+            raise Refused(f"no such ticket file (or a symlink): {md}")
+        if options.index:
+            return run_index(md, options.write)
+        source = options.input or md
+        try:
+            text = source.read_text(encoding="utf-8")
+        except (OSError, UnicodeError) as error:
+            raise Refused(f"cannot read {source}: {error}") from None
+        new, summary = plan(md, text)
+        name = md.parent.name
+        report(name, summary)
+        changes = f"+{len(summary['added'])} -{len(summary['removed'])} link(s), {summary['listed']} file(s) listed"
+        if summary["pointer"]:
+            changes += ", header rules pointer added"
+        if options.output:
+            write_atomic(options.output, new)
+            if new != text:
+                print(f"Ticket files refreshed: {changes}")
+            return 0
+        if new == text:
+            print(f"UP TO DATE: {name} — {summary['files']} retained file(s), {summary['listed']} listed in the section, "
+                  f"{summary['excluded']} housekeeping excluded")
+            return 0
+        if not options.write:
+            print(f"WOULD WRITE: {name} — {changes}; {summary['files']} retained file(s), "
+                  f"{summary['excluded']} housekeeping excluded")
+            return 1
+        write_atomic(md, new)
+        print(f"WROTE: {name} — {changes}")
+        return 0
+    except Refused as reason:
+        print(f"REFUSED: {reason}", file=sys.stderr)
+        return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv[1:]))

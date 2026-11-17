@@ -696,8 +696,8 @@ create_scaffold() {
     case "$rel" in
     */_index.md)
       printf '%s\n%s\n' \
-      '# _index.md — one line per file: `- <file>.md — <what it covers> — <when to read it>`' \
-      '# Tombstones for promoted files: `- <file>.md (promoted -> General AI-Knowledge/<Topic>)`' \
+      '# _index.md — one line per file: `- <file>.md — [Read note](<file>.md) — <what it covers> — <when to read it>`' \
+      '# Tombstones for promoted files: `- <file>.md (promoted -> General AI-Knowledge/<Topic>) — [Read promoted note](<relative path to the note>)`' \
       > "$TARGET/$rel" ;;
     *) : > "$TARGET/$rel" ;;   # .gitkeep placeholders
     esac

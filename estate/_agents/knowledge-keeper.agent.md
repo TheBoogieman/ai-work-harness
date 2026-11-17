@@ -36,7 +36,9 @@ owner. Name the component, column, condition, or logic involved rather than
 session narrative and check transcripts belong to their existing record owners.
 
 Update `AI-Knowledge/_index.md` in the same step using the canonical grammar
-in the constitution: `- <file>.md — <what it covers> — <when to read it>`.
+in the constitution: `- <file>.md — [Read note](<file>.md) — <what it covers> — <when to read it>`.
+The filename stays the first token and the link follows it; the validator fails an
+entry with no link to its note. The note does not link back to the ticket (§7).
 Include useful repo/pipeline aliases and a concrete read trigger in the prose.
 If a topic is already generalized, reuse its root-index route. Propose new
 generalization to `knowledge-curator`; do not self-promote or publish an

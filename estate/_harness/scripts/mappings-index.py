@@ -31,10 +31,10 @@ from __future__ import annotations
 
 import argparse
 import importlib.util
+import os
 import sys
 import warnings
 from pathlib import Path
-from urllib.parse import quote
 
 GAK = "General AI-Knowledge"
 OUTPUT = f"{GAK}/Work Map/Mappings.md"
@@ -60,6 +60,26 @@ def workbooks_in(root: Path) -> list[str]:
     return sorted((p.name for p in folder.iterdir()
                    if p.is_file() and p.suffix.lower() in WORKBOOK_SUFFIXES and not p.name.startswith("~$")),
                   key=str.lower)
+
+
+def other_files_in(root: Path) -> list[str]:
+    """Every other file under Mappings/ (#397), as paths relative to it, sorted: a name that does
+    not end in a workbook suffix ("x.xlsx (old)", a trailing space), a PDF, a subfolder's files. An
+    index of the folder links them too. Lock files (~$...), hidden names and .DS_Store are
+    housekeeping, and symlinks are never followed."""
+    folder = root / "Mappings"
+    found: list[str] = []
+    for current, dirs, files in os.walk(folder):
+        dirs[:] = sorted(d for d in dirs if not d.startswith(".") and not os.path.islink(os.path.join(current, d)))
+        for name in files:
+            path = Path(current) / name
+            rel = path.relative_to(folder).as_posix()
+            if name.startswith(("~$", ".")) or path.is_symlink() or not path.is_file():
+                continue
+            if "/" not in rel and path.suffix.lower() in WORKBOOK_SUFFIXES:
+                continue
+            found.append(rel)
+    return sorted(found, key=str.lower)
 
 
 def pages_naming(root: Path, read_frontmatter) -> dict[str, list[str]]:
@@ -117,8 +137,12 @@ def cell(text: str) -> str:
 
 def build(root: Path, read_versions: bool) -> str:
     check = sibling("check-work-map.py")
+    # ticket-files.py owns the harness's link encoding (#397): a reserved character such as a comma
+    # or an ampersand stays raw, because Obsidian never decodes %2C or %26 back to a file name.
+    links = sibling("ticket-files.py")
     parser = sibling("parse-workbook.py") if read_versions else None
     books = workbooks_in(root)
+    others = other_files_in(root)
     named = pages_naming(root, check.frontmatter)
     lines = [
         "# Design workbooks",
@@ -134,14 +158,14 @@ def build(root: Path, read_versions: bool) -> str:
         "written inside `Mappings/` (CONSTITUTION §10).",
         "",
     ]
-    if not books and not named:
+    if not books and not named and not others:
         lines += ["No workbooks indexed yet: `Mappings/` holds none and no pipeline page names one.", ""]
         return "\n".join(lines)
     lines += ["| Workbook | Versions | Latest | Pipeline page |", "|---|---|---|---|"]
     for name in books:
         versions, latest = versions_of(root / "Mappings" / name, parser) if parser else ("not read", "—")
-        pages = " · ".join(f"[{slug}](Pipelines/{quote(slug)}.md)" for slug in named.get(name, [])) or "—"
-        link = f"[{cell(name)}](../../Mappings/{quote(name)})"
+        pages = " · ".join(f"[{slug}](Pipelines/{links.encode(slug)}.md)" for slug in named.get(name, [])) or "—"
+        link = f"[{cell(links.label(name))}](../../Mappings/{links.encode(name)})"
         lines.append(f"| {link} | {cell(versions)} | {cell(latest)} | {pages} |")
     lines.append("")
     unlisted = [name for name in books if name not in named]
@@ -150,7 +174,10 @@ def build(root: Path, read_versions: bool) -> str:
     lines.append("")
     absent = sorted((name, slug) for name, slugs in named.items() if name not in books for slug in slugs)
     lines += ["## Pipeline pages naming a workbook that is not in Mappings/", ""]
-    lines += [f"- [{slug}](Pipelines/{quote(slug)}.md) names `{name}`" for name, slug in absent] or ["None."]
+    lines += [f"- [{slug}](Pipelines/{links.encode(slug)}.md) names `{name}`" for name, slug in absent] or ["None."]
+    lines.append("")
+    lines += ["## Other files in Mappings/", ""]
+    lines += [f"- [{links.label(rel)}](../../Mappings/{links.encode(rel)})" for rel in others] or ["None."]
     lines.append("")
     return "\n".join(lines)
 

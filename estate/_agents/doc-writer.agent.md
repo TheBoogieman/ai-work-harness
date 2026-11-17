@@ -71,7 +71,8 @@ on a page that change already edits, is fixed in the same write and reported
 page is returned as a proposal, not written. Draft-first targets (PR description, README, tracker update) go to
 chat unless the user asks for a file; after the user's yes you post the comment
 or open or edit the PR yourself (§2). After writing, update the indexes the skill
-names, keep Work Map links valid and the target's `repos` / `pipelines`
+names, with every index line linking the file it names (a bare file name is not a
+route, CONSTITUTION §6.1, §9.1), keep Work Map links valid and the target's `repos` / `pipelines`
 frontmatter filled as its skill says (CONSTITUTION §9.2; never guess a value, use
 `[]` when unknown), and run `python3 _harness/scripts/check-work-map.py`.
 

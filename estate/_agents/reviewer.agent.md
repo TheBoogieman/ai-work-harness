@@ -106,7 +106,9 @@ two-digit number in the ticket's `Agent-Prompts/` and `Agent-Output/` folders
 - `## Prior findings` — on a re-review only: each earlier blocking finding by its
   number and file, marked **fixed**, **partly fixed**, **open** or **regressed**,
   with the evidence.
-- `## Evidence` — the commands and their results; what was not checked.
+- `## Evidence` — the commands and their results; what was not checked. Name each
+  ticket file you created or used (a log under `Logs/`, an extract) by its relative
+  path and role, so the parent can link it in the step's entry (CONSTITUTION §6.1 Links).
 
 When you are started on a PR or branch that has no ticket folder in this estate,
 write no file: give the same sections in your reply.

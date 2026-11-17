@@ -78,6 +78,22 @@ si_skill_map() {
   echo "  ok [skill-map] — every skill folder is linked from SKILL-MAP.md"
 }
 
+# [skills-index-linked] (#397) The name is the first token an agent matches, but a reader (and an
+# editor's graph) follows links, so every skill line also links its own module as
+# "(<Name>/SKILL.md)" after the name. A line that names a skill without linking it is a dead end in
+# the one index every craft task starts from.
+# REVERT-PROVABLE: drop the link from one line of the shipped index and this reds naming it.
+si_index_lines_linked() {
+  local name line
+  while IFS= read -r line; do
+    name=$(printf '%s\n' "$line" | sed -E 's/^- ([^ ]+).*/\1/')
+    printf '%s\n' "$line" | grep -qF "]($name/SKILL.md)" \
+      || { echo "BUG [skills-index-linked]: the _index.md line for '$name' does not link" \
+             "$name/SKILL.md — write it as '- $name — [Read skill]($name/SKILL.md) — triggers: ...'"; exit 1; }
+  done < <(grep -E '^- ' "$SKILLS_INDEX")
+  echo "  ok [skills-index-linked] — every skill line links its own SKILL.md after the name"
+}
+
 case_skills_index() {
   si_setup
   si_folders_indexed
@@ -85,5 +101,6 @@ case_skills_index() {
   si_module_shape
   echo "  ok [skills-index] — every skill folder indexed, every index line has a folder, every" \
     "SKILL.md carries the four frozen sections + availability line"
+  si_index_lines_linked
   si_skill_map
 }

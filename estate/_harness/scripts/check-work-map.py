@@ -14,11 +14,13 @@ nested link labels, multiline definitions, blockquote fences and Obsidian
 wikilinks are not validated. This is not a CommonMark implementation or an
 anchor/URL checker. Symbolic <file>, <Topic>, <path/...> placeholders are inert.
 
-Only canonical filename-first index entries and promotion destinations supply
-additional routes; the existing validator still owns index grammar validation.
-Directory routes resolve to _index.md or the same-named topic Markdown, never
-to every descendant. Coverage means reachability in this supported local graph,
-not verified facts, lineage, aliases, or complete Markdown interpretation.
+Only actual links are routes (#397). An index file is read like any other Markdown: a
+bare filename-first entry or a promotion declaration names a file without linking it,
+so it supplies no route; the index grammar gives every entry and tombstone a real link,
+and the validator still owns that grammar. Directory routes resolve to _index.md or the
+same-named topic Markdown, never to every descendant. Coverage means reachability in
+this supported local graph, not verified facts, lineage, aliases, or complete Markdown
+interpretation.
 
 Earlier estate audit reports are frozen (never edited), so a dead link inside one
 is counted as history_links rather than raised as a finding; the newest report
@@ -52,16 +54,32 @@ under the ticket folder, or under Tickets/ or Mappings/ from the estate root
 (scripts, contracts and config files are things a ticket changes, not records). Inline code is read, because that is
 how a path is usually written; fenced blocks, comments, frontmatter, links and
 every Session Log entry but the newest are ignored.
+
+Ticket files (#397): every retained file in an initialized ticket's folder must be
+reachable through actual links from its ticket file, either directly or through the
+AI-Knowledge/_index.md the ticket file links. The files that are not are one
+UNLINKED_TICKET_FILE note per ticket with a count; the entry helper's Ticket files
+section links them. The inventory, its housekeeping exclusions and its refusal to follow
+symlinks or enter another checkout are ticket-files.py's, imported from beside this
+script; a file it skips is a TICKET_FILE_SKIPPED note. Only file names are listed: no
+ticket file other than the ticket file and its knowledge index is opened. Without
+ticket-files.py the check is not run, and coverage says so. A ticket whose header does not link
+AGENTS.md and CONSTITUTION.md (the template's agent pointer line) is an UNLINKED_RULES note; the
+next entry adds the line. A non-Markdown file in either knowledge tree (an image, a script, a
+licence) that no note the root indexes reach links is an ORPHAN_FILE note, as an unreached note is
+an ORPHAN_NOTE; only its name is read.
 """
 
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import os
 from pathlib import Path
 import re
 import stat
+import sys
 from urllib.parse import unquote, urlsplit
 
 
@@ -150,8 +168,12 @@ def destination(text: str, offset: int) -> tuple[str, int]:
     return "".join(result), offset
 
 
-def routes(text: str, index: bool) -> list[tuple[int, str, bool]]:
-    """Extract destinations, never descriptions; promotion routes are estate-relative."""
+def routes(text: str) -> list[tuple[int, str, bool]]:
+    """Extract destinations, never descriptions. Only an actual link is a route (#397): a bare
+    filename-first index entry or a promotion declaration names a file but links nothing, so it
+    no longer counts; the index grammar puts a real link on every entry and tombstone instead.
+    The third field is always False (no route is estate-relative any more); it keeps the shape
+    ticket-files.py, which reads links through this function, already unpacks."""
     found = []
     definitions = re.compile(r"^ {0,3}\[[^\]\n]+\]:[ \t]*", re.M)
     masked = list(text)
@@ -165,18 +187,6 @@ def routes(text: str, index: bool) -> list[tuple[int, str, bool]]:
         # A destination must close as a link; trailing prose is not a filesystem route.
         if re.match(r'''\s*(?:"[^"\n]*"|'[^'\n]*'|\([^\n]*?\))?\s*\)''', inline_text[end:]):
             found.append((text.count("\n", 0, match.start()) + 1, target, False))
-    if index:
-        for line, value in enumerate(text.splitlines(), 1):
-            entry = re.match(r"^- ([^\s<>\[\]`]+\.md)(?=\s|$)(.*)$", value)
-            if not entry:
-                continue
-            remainder = entry.group(2)
-            if "(promoted" in remainder:
-                promoted = re.fullmatch(r"\s+\(promoted\s*->\s*(General AI-Knowledge/[^<>]+)\)\s*", remainder)
-                if promoted:
-                    found.append((line, promoted.group(1).strip(), True))
-            else:
-                found.append((line, entry.group(1), False))
     return sorted(set(found))
 
 
@@ -201,6 +211,26 @@ FILE_MENTION_RE = re.compile(r"(?<![\w/.%:~-])((?:[\w.-]+/)+[\w.-]+\.[A-Za-z0-9]
 RECORD_ROOTS = ("Tickets", "Mappings")
 FILE_MESSAGE = ("{n} estate file(s) named by path but not linked; write [what it is](relative/path) "
                 "(CONSTITUTION §6.1).")
+RULES_MESSAGE = ("The header does not link AGENTS.md and CONSTITUTION.md; the next Session Log entry adds "
+                 "the template's agent pointer line (CONSTITUTION §4.3).")
+TICKET_FILES_MESSAGE = ("{n} retained ticket file(s) not reachable through links from the ticket file; "
+                        "the next Session Log entry links them under Ticket files (CONSTITUTION §6.1).")
+
+
+def ticket_files_module():
+    """ticket-files.py from beside this script, or None when it is absent or cannot load. It is
+    handed THIS module as its link reader, so both scripts parse links with the same code."""
+    path = Path(__file__).with_name("ticket-files.py")
+    if not path.is_file():
+        return None
+    try:
+        spec = importlib.util.spec_from_file_location("ticket_files", path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+    except Exception:  # an unloadable helper must not stop the rest of the observation
+        return None
+    module._PARSER = sys.modules[__name__]
+    return module
 
 
 def fences_blanked(text: str) -> str:
@@ -373,6 +403,14 @@ class Observer:
         self.properties: dict[Path, dict | None] = {}
         self.frontmatter_expected = 0
         self.frontmatter_present = 0
+        # Ticket-file coverage (#397): retained files counted, how many are reachable by links, and
+        # whether ticket-files.py was there to count them at all.
+        self.ticket_files = 0
+        self.ticket_files_linked = 0
+        self.ticket_files_checked = False
+        # Every existing local target each document links, files and folders alike (#397): a
+        # non-Markdown file in a knowledge tree counts as linked only through these.
+        self.targets: dict[Path, set[Path]] = {}
         self.map_dir = root / GAK / "Work Map"
         audits = sorted(path for path in (root / GHK / "Audits").glob("*.md") if AUDIT_RE.match(path.name))
         self.frozen_audits = set(audits[:-1])
@@ -582,6 +620,7 @@ class Observer:
                 self.note("MISSING_ENTITY" if self.entity(candidate) else "MISSING_LINK", source,
                           "Local target does not exist.", line, candidate)
                 return None
+            self.targets.setdefault(source, set()).add(target)
             if target.is_dir():
                 # A folder is a route to its authored landing page, not blanket coverage of its files.
                 for landing in (target / "_index.md", target / (target.name + ".md")):
@@ -659,15 +698,68 @@ class Observer:
             if seen:
                 self.note("UNLINKED_FILE", path, FILE_MESSAGE.format(n=len(seen)), min(seen.values()))
 
+    def knowledge_assets(self) -> list[Path]:
+        """Every non-Markdown file in both knowledge trees, without following symlinks, skipping
+        the excluded folders, hidden names and .gitkeep/.DS_Store housekeeping."""
+        found: list[Path] = []
+        pending = [self.root / name for name in (GAK, GHK)]
+        while pending:
+            folder = pending.pop()
+            if not folder.is_dir() or folder.is_symlink():
+                continue
+            for path in self.entries(folder):
+                if path.name in EXCLUDED or path.name.startswith(".") or path.is_symlink():
+                    continue
+                if path.is_dir():
+                    pending.append(path)
+                elif path.is_file() and path.suffix.lower() != ".md":
+                    found.append(path)
+        return sorted(found)
+
+    def check_ticket_files(self):
+        """Note the retained files of each ticket that its ticket file cannot reach through actual
+        links (#397): one UNLINKED_TICKET_FILE note per ticket with a count. ticket-files.py owns
+        the inventory and the meaning of "reachable"; without it the check is skipped and the
+        coverage report says so rather than claiming every file is linked."""
+        module = ticket_files_module()
+        if module is None:
+            return
+        self.ticket_files_checked = True
+        for primary in sorted(self.tickets):
+            raw = self.raw.get(primary)
+            if raw is None:
+                continue
+            try:
+                files, skipped, _ = module.inventory(primary.parent, primary.name)
+            except module.Refused:
+                self.note("UNAVAILABLE", primary.parent, "Ticket folder could not be listed; ticket-file coverage is incomplete.")
+                continue
+            for rel, reason in skipped:
+                self.note("TICKET_FILE_SKIPPED", primary.parent / rel.rstrip("/"), f"Not inventoried: {reason}.")
+            index = self.raw.get(primary.parent / "AI-Knowledge" / "_index.md")
+            if not module.has_rules_link(raw):
+                heading = re.search(r"^# ", without_frontmatter(raw), re.M)
+                self.note("UNLINKED_RULES", primary, RULES_MESSAGE,
+                          raw.count("\n", 0, heading.start()) + 1 if heading else 1)
+            reach = module.reachable(raw, index)
+            unlinked = [rel for rel in files if rel not in reach]
+            self.ticket_files += len(files)
+            self.ticket_files_linked += len(files) - len(unlinked)
+            if unlinked:
+                heading = re.search(r"^##[ \t]+Ticket files[ \t#]*$", raw, re.M)
+                line = raw.count("\n", 0, heading.start()) + 1 if heading else 1
+                self.note("UNLINKED_TICKET_FILE", primary, TICKET_FILES_MESSAGE.format(n=len(unlinked)), line)
+
     def report(self) -> dict:
         self.collect()
         self.check_frontmatter()
         self.check_external_links()
         self.check_file_mentions()
+        self.check_ticket_files()
         self.check_workbooks()
         for path, text in sorted(self.documents.items()):
             self.edges[path] = set()
-            for line, target, estate_relative in routes(text, path.name == "_index.md"):
+            for line, target, estate_relative in routes(text):
                 resolved = self.resolve(path, line, target, estate_relative)
                 if resolved is not None:
                     self.edges[path].add(resolved)
@@ -682,6 +774,13 @@ class Observer:
                 reachable.add(path)
                 pending.extend(self.edges.get(path, set()) - reachable)
         notes = {path for path in self.documents if any(path.is_relative_to(self.root / name) for name in (GAK, GHK))}
+        # Non-Markdown files in the knowledge trees (an SVG, a script, a licence): each must be
+        # linked from a note the root indexes reach, as every note must (#397).
+        linked = set().union(*(self.targets.get(path, set()) for path in reachable))
+        self.assets = self.knowledge_assets()
+        for path in sorted(set(self.assets) - linked):
+            self.note("ORPHAN_FILE", path, "Non-Markdown file no reachable note links; link it from the note it belongs to.")
+        self.assets_linked = len(set(self.assets) & linked)
         for path in sorted(notes - reachable):
             self.note("ORPHAN_NOTE", path, "No supported link path from either general root index.")
         map_index = self.map_dir / "_index.md"
@@ -716,6 +815,10 @@ class Observer:
                              "map_available": map_available,
                              "frontmatter_expected": self.frontmatter_expected,
                              "frontmatter_present": self.frontmatter_present,
+                             "ticket_files": self.ticket_files,
+                             "ticket_files_linked": self.ticket_files_linked,
+                             "ticket_files_checked": self.ticket_files_checked,
+                             "knowledge_files": len(self.assets), "knowledge_files_linked": self.assets_linked,
                              "complete": not self.findings}}
 
 
@@ -741,10 +844,14 @@ def main() -> int:
             print(f"NOTE [work-map:{finding['code']}] {location}:{finding['line']}: {finding['message']}{target}")
         coverage = report["coverage"]
         history = f"; {report['history_links']} dead links in earlier audits counted as history" if report["history_links"] else ""
+        # The ticket-file figure is stated either way, so an absent helper never reads as full coverage.
+        files = (f"{coverage['ticket_files_linked']}/{coverage['ticket_files']} retained ticket files reachable"
+                 if coverage["ticket_files_checked"] else "ticket files not checked (ticket-files.py absent)")
         print(f"NOTE [work-map] {report['files_scanned']} Markdown files, {report['links_checked']} local links; "
               f"{coverage['mapped']}/{coverage['tickets']} initialized tickets mapped; "
               f"{coverage['frontmatter_present']}/{coverage['frontmatter_expected']} documents carry repos frontmatter; "
-              f"{len(report['findings'])} findings{history}.")
+              f"{files}; {coverage['knowledge_files_linked']}/{coverage['knowledge_files']} other knowledge-tree "
+              f"files linked; {len(report['findings'])} findings{history}.")
     return int(arguments.strict and bool(report["findings"]))
 
 

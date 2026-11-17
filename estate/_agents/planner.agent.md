@@ -138,8 +138,11 @@ Name the review file in the milestone's `ticket-scribe` hand-off with its verdic
   you found (for a PR, `gh pr view <n> --json url`) with the names; a name whose
   address you did not find stays plain.
 - Every estate file you name to the scribe goes with its relative path, so the
-  entry links it. Prompts, outputs and reviews need no hand-off: the entry helper
-  links them under the ticket's Iterations section (§6).
+  entry links it. Pass on the paths and roles the implementer, the reviewer and
+  `check-scribe` returned, so the step's entry says which files it made or used
+  (§6.1 Links). Nothing else needs a hand-off: the entry helper links prompts,
+  outputs and reviews under Iterations and every other retained file under Ticket
+  files by itself (§6).
 - Never rewrite older Session Log entries, prompts or outputs.
 
 ## Close

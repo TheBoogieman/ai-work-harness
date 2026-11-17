@@ -460,7 +460,8 @@ guarantee is `REFUSED: <reason>`, exit 2, with the file byte-identical: two
 arguments not given, an empty or multi-line description, a description
 starting with `#`, an empty body, a body line opening a `#` or `##` heading (it
 would split the log or forge an entry), a file whose last section is not the
-Session Log, or a clock at or behind the newest entry (a future-dated or
+Session Log (a heading that opens with a date is an entry, in any older form such as a
+bare timestamp or an em dash, never a section), or a clock at or behind the newest entry (a future-dated or
 wrong-clock entry is corrected first; within the same second, wait one and run it
 again). A refusal is never worked around by editing the file.
 

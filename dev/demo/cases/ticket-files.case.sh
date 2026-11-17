@@ -243,7 +243,8 @@ tf_backfill() {
     >> "$TF4/AI-Knowledge/_index.md"
   python3 "$root/_harness/scripts/ticket-files.py" --write "$md5" >/dev/null
   printf 'x\n' > "$TF6/AI-Knowledge/n.md"; printf -- '- n.md — covers — when\n' >> "$TF6/AI-Knowledge/_index.md"
-  printf '\n## 20260101000001 — a hand-written header the helper cannot append after\n- x\n' >> "$md6"
+  # A newest entry dated ahead of the clock: the helper refuses to append behind it.
+  printf '\n## 29991231235959 - dated ahead of the clock\n- x\n' >> "$md6"
   sleep 1
   h4=$(tf_hash "$md4"); h5=$(tf_hash "$md5"); h6=$(tf_hash "$md6"); i6=$(tf_hash "$TF6/AI-Knowledge/_index.md")
   old=$(awk '/^## Session Log/ { on = 1 } on' "$md4"); cs=$(awk '/^## Current State/,/^## Background/' "$md4")

@@ -111,6 +111,31 @@ eo_append_helper() {
   rm -rf "$EO2"
 }
 
+# [append-helper-legacy-headers] (#397) Records kept before the helper existed hold entry headers
+#   in older forms: a bare timestamp, an em dash for the hyphen, a day with a letter suffix. They
+#   are entries, never rewritten, so the helper must append after them; a real section after the
+#   log ([append-helper] above) is still refused.
+#   REVERT-PROVABLE: drop the LEGACY_ENTRY_RE filter from append-session-entry.sh and this reds.
+eo_legacy_headers() {
+  echo "--- entry-order: the helper appends after older-style entry headers ---"
+  EO3="estate/Tickets/202608G-PROJ-58"; local md="$EO3/202608G-PROJ-58.md" helper before size out rc
+  helper="estate/_harness/scripts/append-session-entry.sh"
+  r09_make "$EO3"
+  printf '\n## 20260101000000\n- bare\n\n## 20260102000000 — em dash\n- old\n\n## 20260103b — day letter\n- older\n' >> "$md"
+  printf '\n## %s - a strict entry after them\n- new\n' "$(date +%Y%m%d%H%M%S)" >> "$md"
+  before=$(mktemp); cp "$md" "$before"; size=$(wc -c < "$before" | tr -d ' '); sleep 1
+  set +e; out=$(printf -- '- appended\n' | bash "$helper" "$md" "legacy probe" 2>&1); rc=$?; set -e
+  [ "$rc" -eq 0 ] && [ "$(tail -1 "$md")" = "- appended" ] \
+    || { echo "BUG [append-helper-legacy-headers]: the helper refused a log holding older-style" \
+           "entry headers (rc $rc):"; printf '%s\n' "$out"; exit 1; }
+  head -c "$size" "$md" | cmp -s - "$before" \
+    || { rm -f "$before"; echo "BUG [append-helper-legacy-headers]: an older line changed"; exit 1; }
+  rm -f "$before"
+  echo "  ok [append-helper-legacy-headers] — older-style entry headers are entries: the helper" \
+    "appends after them and changes none"
+  rm -rf "$EO3"
+}
+
 # [entry-current-state] (#382) the entry and Current State are one step (CONSTITUTION §5, §6), and
 #   the scribe used to do the second half with a hand edit it sometimes refused to make. The helper
 #   now takes --now / --next / --blocked and rewrites those lines in the same command as the entry.
@@ -181,5 +206,6 @@ eo_current_state() {
 case_entry_order() {
   eo_newest_entry_last
   eo_append_helper
+  eo_legacy_headers
   eo_current_state
 }

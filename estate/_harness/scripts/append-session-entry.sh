@@ -90,8 +90,15 @@ if printf '%s\n' "$body" | grep -qE '^#{1,2}( |$)'; then
   refuse "a body line opens a '#' or '##' heading, which would split the Session Log"
 fi
 
-# The end of the file must be the Session Log: the last level-2 heading that is not an entry.
-last_section=$(grep -E '^## ' "$md" | grep -vE "$ENTRY_RE" | tail -1 | sed -E 's/[[:space:]#]*$//' || true)
+# The end of the file must be the Session Log: the last level-2 heading that is not an entry. A
+# heading that opens with a date or timestamp is an entry too, even in a form older than the strict
+# one (#397): a bare "## 20260101000000", an em dash for the hyphen, "## 20260625b — ..." with a
+# day's letter. Records kept before the helper hold such headers, the validator reads them as
+# entries, and they are never rewritten, so reading one as a section after the log refused every
+# new entry on that ticket for good.
+LEGACY_ENTRY_RE='^## [0-9]{8}'
+last_section=$(grep -E '^## ' "$md" | grep -vE "$ENTRY_RE" | grep -vE "$LEGACY_ENTRY_RE" | tail -1 \
+  | sed -E 's/[[:space:]#]*$//' || true)
 [ "$last_section" = "## Session Log" ] \
   || refuse "the last section of $md is '${last_section:-none}', not '## Session Log'; appending at the end would land outside the log"
 

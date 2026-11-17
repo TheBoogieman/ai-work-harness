@@ -119,10 +119,12 @@ trap 'rm -f "$tmp" "$cs_tmp" "$it_tmp" "$tf_tmp"' EXIT
 # compared on everything else. The section runs from its heading to the next level-2 heading.
 cs_strip() { awk '/^## Current State/ { print; on = 1; next } on && /^## / { on = 0 } !on { print }' "$1"; }
 
-# tf_strip FILE — the file without its Ticket files section and without blank or "---" lines, so
-# the Ticket files refresh (#397) can be checked to have touched nothing else.
+# tf_strip FILE — the file without its Ticket files section, without blank or "---" lines and
+# without the header's agent pointer line (which the refresh adds to an older ticket), so the
+# Ticket files refresh (#397) can be checked to have touched nothing else.
 tf_strip() {
   awk '/^##[ \t]+Ticket files[ \t#]*$/ { on = 1; next } on && /^## / { on = 0 }
+       /^> \*\*For AI agents — read this first\.\*\* / { next }
        !on && !/^(---)?[[:space:]]*$/ { print }' "$1"
 }
 

@@ -63,7 +63,11 @@ section links them. The inventory, its housekeeping exclusions and its refusal t
 symlinks or enter another checkout are ticket-files.py's, imported from beside this
 script; a file it skips is a TICKET_FILE_SKIPPED note. Only file names are listed: no
 ticket file other than the ticket file and its knowledge index is opened. Without
-ticket-files.py the check is not run, and coverage says so.
+ticket-files.py the check is not run, and coverage says so. A ticket whose header does not link
+AGENTS.md and CONSTITUTION.md (the template's agent pointer line) is an UNLINKED_RULES note; the
+next entry adds the line. A non-Markdown file in either knowledge tree (an image, a script, a
+licence) that no note the root indexes reach links is an ORPHAN_FILE note, as an unreached note is
+an ORPHAN_NOTE; only its name is read.
 """
 
 from __future__ import annotations
@@ -207,6 +211,8 @@ FILE_MENTION_RE = re.compile(r"(?<![\w/.%:~-])((?:[\w.-]+/)+[\w.-]+\.[A-Za-z0-9]
 RECORD_ROOTS = ("Tickets", "Mappings")
 FILE_MESSAGE = ("{n} estate file(s) named by path but not linked; write [what it is](relative/path) "
                 "(CONSTITUTION §6.1).")
+RULES_MESSAGE = ("The header does not link AGENTS.md and CONSTITUTION.md; the next Session Log entry adds "
+                 "the template's agent pointer line (CONSTITUTION §4.3).")
 TICKET_FILES_MESSAGE = ("{n} retained ticket file(s) not reachable through links from the ticket file; "
                         "the next Session Log entry links them under Ticket files (CONSTITUTION §6.1).")
 
@@ -402,6 +408,9 @@ class Observer:
         self.ticket_files = 0
         self.ticket_files_linked = 0
         self.ticket_files_checked = False
+        # Every existing local target each document links, files and folders alike (#397): a
+        # non-Markdown file in a knowledge tree counts as linked only through these.
+        self.targets: dict[Path, set[Path]] = {}
         self.map_dir = root / GAK / "Work Map"
         audits = sorted(path for path in (root / GHK / "Audits").glob("*.md") if AUDIT_RE.match(path.name))
         self.frozen_audits = set(audits[:-1])
@@ -611,6 +620,7 @@ class Observer:
                 self.note("MISSING_ENTITY" if self.entity(candidate) else "MISSING_LINK", source,
                           "Local target does not exist.", line, candidate)
                 return None
+            self.targets.setdefault(source, set()).add(target)
             if target.is_dir():
                 # A folder is a route to its authored landing page, not blanket coverage of its files.
                 for landing in (target / "_index.md", target / (target.name + ".md")):
@@ -688,6 +698,24 @@ class Observer:
             if seen:
                 self.note("UNLINKED_FILE", path, FILE_MESSAGE.format(n=len(seen)), min(seen.values()))
 
+    def knowledge_assets(self) -> list[Path]:
+        """Every non-Markdown file in both knowledge trees, without following symlinks, skipping
+        the excluded folders, hidden names and .gitkeep/.DS_Store housekeeping."""
+        found: list[Path] = []
+        pending = [self.root / name for name in (GAK, GHK)]
+        while pending:
+            folder = pending.pop()
+            if not folder.is_dir() or folder.is_symlink():
+                continue
+            for path in self.entries(folder):
+                if path.name in EXCLUDED or path.name.startswith(".") or path.is_symlink():
+                    continue
+                if path.is_dir():
+                    pending.append(path)
+                elif path.is_file() and path.suffix.lower() != ".md":
+                    found.append(path)
+        return sorted(found)
+
     def check_ticket_files(self):
         """Note the retained files of each ticket that its ticket file cannot reach through actual
         links (#397): one UNLINKED_TICKET_FILE note per ticket with a count. ticket-files.py owns
@@ -709,6 +737,10 @@ class Observer:
             for rel, reason in skipped:
                 self.note("TICKET_FILE_SKIPPED", primary.parent / rel.rstrip("/"), f"Not inventoried: {reason}.")
             index = self.raw.get(primary.parent / "AI-Knowledge" / "_index.md")
+            if not module.has_rules_link(raw):
+                heading = re.search(r"^# ", without_frontmatter(raw), re.M)
+                self.note("UNLINKED_RULES", primary, RULES_MESSAGE,
+                          raw.count("\n", 0, heading.start()) + 1 if heading else 1)
             reach = module.reachable(raw, index)
             unlinked = [rel for rel in files if rel not in reach]
             self.ticket_files += len(files)
@@ -742,6 +774,13 @@ class Observer:
                 reachable.add(path)
                 pending.extend(self.edges.get(path, set()) - reachable)
         notes = {path for path in self.documents if any(path.is_relative_to(self.root / name) for name in (GAK, GHK))}
+        # Non-Markdown files in the knowledge trees (an SVG, a script, a licence): each must be
+        # linked from a note the root indexes reach, as every note must (#397).
+        linked = set().union(*(self.targets.get(path, set()) for path in reachable))
+        self.assets = self.knowledge_assets()
+        for path in sorted(set(self.assets) - linked):
+            self.note("ORPHAN_FILE", path, "Non-Markdown file no reachable note links; link it from the note it belongs to.")
+        self.assets_linked = len(set(self.assets) & linked)
         for path in sorted(notes - reachable):
             self.note("ORPHAN_NOTE", path, "No supported link path from either general root index.")
         map_index = self.map_dir / "_index.md"
@@ -779,6 +818,7 @@ class Observer:
                              "ticket_files": self.ticket_files,
                              "ticket_files_linked": self.ticket_files_linked,
                              "ticket_files_checked": self.ticket_files_checked,
+                             "knowledge_files": len(self.assets), "knowledge_files_linked": self.assets_linked,
                              "complete": not self.findings}}
 
 
@@ -810,7 +850,8 @@ def main() -> int:
         print(f"NOTE [work-map] {report['files_scanned']} Markdown files, {report['links_checked']} local links; "
               f"{coverage['mapped']}/{coverage['tickets']} initialized tickets mapped; "
               f"{coverage['frontmatter_present']}/{coverage['frontmatter_expected']} documents carry repos frontmatter; "
-              f"{files}; {len(report['findings'])} findings{history}.")
+              f"{files}; {coverage['knowledge_files_linked']}/{coverage['knowledge_files']} other knowledge-tree "
+              f"files linked; {len(report['findings'])} findings{history}.")
     return int(arguments.strict and bool(report["findings"]))
 
 

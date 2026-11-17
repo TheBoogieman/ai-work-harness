@@ -16,8 +16,9 @@
 #   1. AI-Knowledge/_index.md: the missing link on each entry and tombstone (ticket-files.py
 #      --index --write). An entry with no file, or a tombstone whose note cannot be found, is
 #      reported and left as it is: a link to nothing would claim a file exists.
-#   2. ONE new Session Log entry through append-session-entry.sh, which links the Iterations files
-#      and refreshes the Ticket files section in the same write. The entry is what keeps the
+#   2. ONE new Session Log entry through append-session-entry.sh, which links the Iterations files,
+#      refreshes the Ticket files section and adds the header's agent pointer (the links to
+#      AGENTS.md and CONSTITUTION.md) when the header lacks it, in the same write. The entry is what keeps the
 #      validator green: a ticket file that changes with no new entry is a FAIL. No older entry,
 #      Current State line or other section changes, so a closed ticket stays closed.
 # If the entry is refused, the index is put back as it was and the ticket is reported as skipped.
@@ -97,6 +98,10 @@ while IFS= read -r name; do
   # newest entry names without linking it (UNLINKED_FILE).
   [ "$idx_n" -eq 0 ] || body="$body"$'\n'"- [AI-Knowledge/_index.md](AI-Knowledge/_index.md): added the link to its note on $idx_n entr(ies) or tombstone(s); file names and descriptions unchanged."
   [ "$iter_n" -eq 0 ] || body="$body"$'\n'"- Iterations: linked $iter_n prompt, output and review file(s)."
+  # The header gains the template's agent pointer when it does not link the rules yet (#397).
+  if printf '%s\n' "$sec_out" | grep -q 'header rules pointer added'; then
+    body="$body"$'\n'"- Header: added the template's agent pointer line, linking [AGENTS.md](../../AGENTS.md) and [CONSTITUTION.md](../../CONSTITUTION.md); no other header line changed."
+  fi
   set +e
   out=$(printf '%s\n' "$body" | bash "$SCRIPT_DIR/append-session-entry.sh" "$md" "Ticket files linked (backfill)" 2>&1)
   rc=$?

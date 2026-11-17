@@ -239,6 +239,7 @@ tf_backfill() {
   # A real, closed ticket: a heading with no placeholder (so the checker reads it) and a closed Now.
   awk '{ if ($0 ~ /^- Now:/) print "- Now: Closed — delivered 2026-01-02, tracker Done";
          else if ($0 ~ /^# PROJ-99999/) print "# PROJ-54 — Backfill probe"; else print }' "$md4" > "$root/x.tmp" && mv "$root/x.tmp" "$md4"
+  tf_old_header "$md4"
   printf 'x\n' > "$TF4/AI-Knowledge/old-note.md"; printf 'x\n' > "$TF4/Logs/run.log"
   printf '# PROJ-54 — Prompt 01: Load\n' > "$TF4/Agent-Prompts/01-load.md"
   printf -- '- old-note.md — what it covers — when to read it\n- gone.md (promoted -> General AI-Knowledge/Probe Topic)\n' \
@@ -261,6 +262,9 @@ tf_backfill() {
   printf '%s\n' "$out" | grep -q 'LINKED: 202608D-PROJ-54' && printf '%s\n' "$out" | grep -q 'SKIPPED: 202608F-PROJ-56' \
     && [ "$rc" -ne 0 ] \
     || { echo "BUG [ticket-files-backfill]: the run did not link one ticket and report the other (rc $rc):"; printf '%s\n' "$out"; rm -rf "$root"; exit 1; }
+  grep -qF -- "- Header: added the template's agent pointer line, linking [AGENTS.md](../../AGENTS.md)" "$md4" \
+    && [ "$(grep -c '^> \*\*For AI agents' "$md4")" -eq 1 ] \
+    || { echo "BUG [ticket-files-backfill]: the older header did not gain its pointer, or the entry does not say so"; rm -rf "$root"; exit 1; }
   tf_resolves "$md4" | grep -Fxq 'Logs/run.log' \
     && grep -qF '[prompt](Agent-Prompts/01-load.md)' "$md4" \
     && grep -qFx -- '- old-note.md — [Read note](old-note.md) — what it covers — when to read it' "$TF4/AI-Knowledge/_index.md" \
@@ -329,8 +333,45 @@ tf_template() {
   rm -rf "$root"
 }
 
+# tf_old_header FILE — strip the template's agent pointer line and the blank line after it, which
+# is the header shape of a ticket written before the template carried the pointer.
+tf_old_header() {
+  awk 'skip && /^$/ { skip = 0; next } /^> \*\*For AI agents — read this first\.\*\* / { skip = 1; next } { skip = 0; print }' "$1" > "$1.tmp" \
+    && mv "$1.tmp" "$1"
+}
+
+# [ticket-files-rules-pointer] (#397) A ticket from before the template carried its agent pointer
+#   has no link to AGENTS.md or CONSTITUTION.md. Its next entry adds the template's line right after
+#   the title, once; nothing else in the header moves, and a second entry adds nothing.
+#   REVERT-PROVABLE: make add_pointer return the text unchanged and this reds.
+tf_pointer() {
+  echo "--- ticket-files: an older ticket's header gains the links to the rules ---"
+  TF7="estate/Tickets/202608H-PROJ-59"; local md="$TF7/202608H-PROJ-59.md" helper out rc rest
+  helper="estate/_harness/scripts/append-session-entry.sh"
+  r09_make "$TF7"; tf_old_header "$md"
+  grep -q 'CONSTITUTION.md' "$md" && { echo "BUG [ticket-files-rules-pointer]: the fixture still links the rules"; exit 1; }
+  rest=$(awk 'NR > 6' "$md" | awk '/^## Session Log/ { exit } { print }' | grep -v '^<!-- ticket-files\|^  - \|^- ' || true)
+  sleep 1
+  set +e; out=$(printf -- '- probe\n' | bash "$helper" "$md" "pointer probe" 2>&1); rc=$?; set -e
+  [ "$rc" -eq 0 ] && printf '%s\n' "$out" | grep -q 'header rules pointer added' \
+    || { echo "BUG [ticket-files-rules-pointer]: the entry did not add the pointer (rc $rc):"; printf '%s\n' "$out"; exit 1; }
+  awk '/^# / { t = NR } t && NR == t + 1 { b1 = $0 } t && NR == t + 2 { p = $0 } t && NR == t + 3 { b2 = $0 }
+       END { exit !(b1 == "" && p ~ /^> \*\*For AI agents — read this first\.\*\* \[AGENTS\.md\]\(\.\.\/\.\.\/AGENTS\.md\)/ && p ~ /\[CONSTITUTION\.md\]\(\.\.\/\.\.\/CONSTITUTION\.md\)/ && b2 == "") }' "$md" \
+    && [ "$(grep -c '^> \*\*For AI agents' "$md")" -eq 1 ] \
+    || { echo "BUG [ticket-files-rules-pointer]: the pointer is not the line after the title, once:"; sed -n 1,14p "$md"; exit 1; }
+  [ "$(awk 'NR > 8' "$md" | awk '/^## Session Log/ { exit } { print }' | grep -v '^<!-- ticket-files\|^  - \|^- ' || true)" = "$rest" ] \
+    || { echo "BUG [ticket-files-rules-pointer]: another header or body line moved"; exit 1; }
+  sleep 1; out=$(printf -- '- again\n' | bash "$helper" "$md" "second probe" 2>&1)
+  [ "$(grep -c '^> \*\*For AI agents' "$md")" -eq 1 ] && ! printf '%s\n' "$out" | grep -q 'pointer added' \
+    || { echo "BUG [ticket-files-rules-pointer]: a second entry added the pointer again"; exit 1; }
+  echo "  ok [ticket-files-rules-pointer] — an older header gains the template's links to AGENTS.md and" \
+    "CONSTITUTION.md after its title, once, with nothing else moved"
+  rm -rf "$TF7"
+}
+
 case_ticket_files() {
   tf_entry
+  tf_pointer
   tf_encoding
   tf_atomic
   tf_backfill

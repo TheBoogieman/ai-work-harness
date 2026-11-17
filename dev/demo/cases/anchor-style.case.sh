@@ -81,10 +81,30 @@ as_check_unresolved() {
   echo "  ok [anchor-style-unresolved] — an unmatched fragment is listed, rc=1, --check writes nothing"
 }
 
+# [anchor-style-reserved-history] (#397) Obsidian decodes a fragment the way decodeURI does, so a
+#   heading holding a comma, a colon or a slash only resolves with those raw. And a ticket file's
+#   older Session Log entries are history: never rewritten, never reported; the newest still is.
+#   REVERT-PROVABLE: quote with safe="-._~" again, or drop the history range, and this reds.
+as_reserved_and_history() {
+  local dir="$AS_ROOT/t" before
+  mkdir -p "$dir"
+  printf '# Note\n\n## Join grain, recency: and ties / why\n\ntext\n' > "$dir/note.md"
+  printf '# T\n\n- [grain](note.md#join-grain-recency-and-ties--why)\n\n## Session Log\n\n## 20260101000000 - old\n- [old](note.md#join-grain-recency-and-ties--why)\n\n## 20260102000000 - newest\n- [new](note.md#join-grain-recency-and-ties--why)\n' > "$dir/t.md"
+  before=$(sed -n '/^## 20260101000000/,/^## 20260102000000/p' "$dir/t.md")
+  "$AS_PY" "$AS_HELPER" --to obsidian "$dir/t.md" >/dev/null
+  [ "$(grep -c '](note.md#Join%20grain,%20recency:%20and%20ties%20/%20why)' "$dir/t.md")" -eq 2 ] \
+    && [ "$(sed -n '/^## 20260101000000/,/^## 20260102000000/p' "$dir/t.md")" = "$before" ] \
+    || { echo "BUG [anchor-style-reserved-history]: reserved characters were encoded, or an older" \
+           "Session Log entry was rewritten:"; cat "$dir/t.md"; exit 1; }
+  echo "  ok [anchor-style-reserved-history] — commas, colons and slashes stay raw in an Obsidian" \
+    "fragment; older Session Log entries are left as written, the newest is converted"
+}
+
 case_anchor_style() {
   as_fixture
   as_to_obsidian
   as_round_trip
   as_check_unresolved
+  as_reserved_and_history
   rm -rf "$AS_ROOT"
 }

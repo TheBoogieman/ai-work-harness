@@ -32,7 +32,8 @@ it; the files do.
   its Iterations section, and refreshes the generated `## Ticket files` list that
   links every other file in the ticket folder (notebooks, scripts, SQL, and the
   git-ignored `Logs/` and `Dump/`), so none is left where the record cannot reach
-  it. Knowledge notes are reached one way, through the ticket's knowledge index,
+  it. The same write gives an older ticket's header the template's pointer line,
+  linking `AGENTS.md` and `CONSTITUTION.md`. Knowledge notes are reached one way, through the ticket's knowledge index,
   whose every line links its note. A link is navigation, not evidence.
   `check-work-map.py` says how many ticket files are reachable; after an upgrade,
   `_harness/scripts/backfill-ticket-files.sh --dry-run` lists the older tickets to

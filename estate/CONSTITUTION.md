@@ -334,7 +334,7 @@ pipelines: []
 
 **Ticket:** [<BOARD>-<num>](<the issue's address on its board's tracker>)
 **Local path:** Work/Tickets/YYYYMM<seq>-<BOARD>-<num>
-**Design workbook:** <workbook file in Mappings/> v<version> | none
+**Design workbook:** [<workbook>](../../Mappings/<workbook file>) v<version> | none
 
 Repos:
 - Work/GitHub/<repo>
@@ -481,7 +481,10 @@ them first), which writes one new entry per ticket and touches no older entry.
 `## Ticket files` ([§4.3](#43-ticket-markdown-file)) through `_harness/scripts/ticket-files.py`, in
 the same write: a new file gains a link, a deleted or renamed one loses it, and a ticket with no
 section gets one above the Session Log. A second call with nothing changed leaves the block
-byte-identical. It prints `Ticket files refreshed: ...` when the block changed and `SKIPPED: ...`
+byte-identical. A ticket whose header does not link `AGENTS.md` and `CONSTITUTION.md` (one
+written before the template carried its agent pointer) gains the template's pointer line right
+after its title in the same write; no other header line changes. It prints
+`Ticket files refreshed: ...` when the block or the header changed and `SKIPPED: ...`
 for a symlink or another checkout it did not follow. It needs `python3`: without it the entry is
 written, the section is left as it was, and a `NOTE` says so. A folder it cannot read, or broken
 markers, refuse the entry like any other refusal. Older tickets, and the knowledge indexes they
@@ -599,9 +602,13 @@ writer. It also notes a ticket file that names one of its own files, or a file
 under `Tickets/` or `Mappings/`, by path without linking it (`UNLINKED_FILE`,
 warning-only), and a ticket whose retained files are not all reachable through actual
 links from its ticket file, directly or through the knowledge index it links
-(`UNLINKED_TICKET_FILE`, warning-only; the next entry links them). A bare path, a link
-to a folder, a link inside code or a comment, and an index entry without a link are not
-links.
+(`UNLINKED_TICKET_FILE`, warning-only; the next entry links them), a ticket header that
+does not link `AGENTS.md` and `CONSTITUTION.md` (`UNLINKED_RULES`, warning-only; the next
+entry adds the pointer line), and a non-Markdown file in either knowledge tree that no reached
+note links (`ORPHAN_FILE`, warning-only). A bare path, a link to a folder, a link inside code
+or a comment, and an index entry without a link are not links. Obsidian decodes a link as
+`decodeURI` does, so writers keep reserved characters (`,` `&` `:` `;` `=` `+` `@` `$`) raw in
+a destination or a section fragment; `ticket-files.py`'s `encode` is the shared rule.
 
 ---
 
@@ -731,7 +738,8 @@ warning-only observer (`--json` for counts and findings; `--strict` is opt-in an
 never wired into a hook) of encoded relative links (an index entry counts only
 through its link, never its bare filename), whether each initialized ticket is
 reachable from a map entity page, whether its retained files are reachable from its
-ticket file (§6.1), orphaned general notes, the `repos` / `pipelines` frontmatter and
+ticket file and its header links the rules (§6.1), orphaned general notes and other
+knowledge-tree files, the `repos` / `pipelines` frontmatter and
 a pipeline page's `workbooks` list against `Mappings/` (§9.2, §10). It
 reads only the Markdown syntax it supports (its
 docstring lists the limits); it does not establish that a fact is true, lineage,
@@ -842,8 +850,11 @@ version for each task; an agent never silently picks "the latest".
   (provenance and sha256, sheets, header rows, version columns and the versions
   they hold), `version-history.md`, one CSV per sheet keyed by Excel row number,
   and `changes-<version>.md` (the history row plus every row tagged with that
-  version, as `Header (column): value`). Re-run it rather than editing its output;
-  `--help` lists the other options.
+  version, as `Header (column): value`). `INDEX.md` links each CSV and every other file
+  the run wrote. Re-run it rather than editing its output; `--help` lists the other
+  options. An extract made before `INDEX.md` linked its files gains the links with
+  `parse-workbook.py --relink <extract folder>`, which reads no workbook, so an extract
+  whose workbook has moved on keeps the version the ticket worked from.
 - Cite workbook facts as `<workbook> v<version>, sheet '<name>' row <n>`, and quote
   the sha256 from `INDEX.md` when a decision rests on it. A design row is a
   requirement, not evidence that the pipeline already does it.
@@ -852,7 +863,8 @@ version for each task; an agent never silently picks "the latest".
   ([§9.2](#92-pipeline-and-repo-pages)) and links them, with their sheets, in the
   Identity card. Nothing is written in or beside a workbook to point back.
 - **A ticket records the version it works from** on its header's `Design workbook:`
-  line (`<workbook> v<version>`, or `none`), as the user named it.
+  line (`[<workbook>](../../Mappings/<workbook file>) v<version>`, a link to the workbook, or
+  `none`), as the user named it.
 - **The index is generated.** `python3 _harness/scripts/mappings-index.py --write`
   writes `General AI-Knowledge/Work Map/Mappings.md`: one row per workbook with its
   versions, the latest one and the pipeline page that names it, then the workbooks

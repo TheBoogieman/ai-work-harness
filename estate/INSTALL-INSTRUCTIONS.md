@@ -247,7 +247,13 @@ Re-running `install.sh` serves three different intents, each with its own home:
   without `--dry-run` writes one new Session Log entry per ticket (no older entry and no
   Current State line changes). Run it before you next work an older ticket whose
   knowledge index has unlinked lines: the validator now fails a changed ticket whose
-  index entry does not link its note. It needs `python3`.
+  index entry does not link its note. The same entries give an older ticket's header the
+  template's pointer line linking `AGENTS.md` and `CONSTITUTION.md`. Then run
+  `python3 _harness/scripts/mappings-index.py --write` once (its links now keep commas and
+  ampersands raw, which Obsidian needs), `python3 _harness/scripts/parse-workbook.py --relink
+  <extract folder>` for each extract under a ticket's `Dump/workbooks/` made before this
+  upgrade, and, in an estate read in Obsidian, `anchor-style.py --to obsidian` over your living
+  documents. It needs `python3`.
 
   **P.S. Using the `orchestrator` and the `Estate-Levelling` skill is recommended.**
   The commands above are the mechanical half of a levelling. The other half is the

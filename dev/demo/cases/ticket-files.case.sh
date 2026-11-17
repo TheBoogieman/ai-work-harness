@@ -236,7 +236,9 @@ tf_backfill() {
     awk '/^## Ticket files/ { skip = 1; next } skip && /^## / { skip = 0 } !skip' "$root/Tickets/$t/$t.md" > "$root/x.tmp" \
       && mv "$root/x.tmp" "$root/Tickets/$t/$t.md"
   done
-  awk '{ if ($0 ~ /^- Now:/) print "- Now: Closed — delivered 2026-01-02, tracker Done"; else print }' "$md4" > "$root/x.tmp" && mv "$root/x.tmp" "$md4"
+  # A real, closed ticket: a heading with no placeholder (so the checker reads it) and a closed Now.
+  awk '{ if ($0 ~ /^- Now:/) print "- Now: Closed — delivered 2026-01-02, tracker Done";
+         else if ($0 ~ /^# PROJ-99999/) print "# PROJ-54 — Backfill probe"; else print }' "$md4" > "$root/x.tmp" && mv "$root/x.tmp" "$md4"
   printf 'x\n' > "$TF4/AI-Knowledge/old-note.md"; printf 'x\n' > "$TF4/Logs/run.log"
   printf '# PROJ-54 — Prompt 01: Load\n' > "$TF4/Agent-Prompts/01-load.md"
   printf -- '- old-note.md — what it covers — when to read it\n- gone.md (promoted -> General AI-Knowledge/Probe Topic)\n' \
@@ -273,6 +275,11 @@ tf_backfill() {
   [ "$(tf_hash "$md5")" = "$h5" ] && [ "$(tf_hash "$md6")" = "$h6" ] && [ "$(tf_hash "$TF6/AI-Knowledge/_index.md")" = "$i6" ] \
     || { echo "BUG [ticket-files-backfill]: a ticket in shape was written, or a refused ticket's index" \
            "was not put back"; rm -rf "$root"; exit 1; }
+  # The backfill's own entry names files only as links, so the checker has nothing to note on it.
+  out=$(python3 "$root/_harness/scripts/check-work-map.py" --root "$root" --json)
+  if printf '%s\n' "$out" | python3 -c 'import json,sys; sys.exit(any(f["code"] == "UNLINKED_FILE" and "202608D" in f["path"] for f in json.load(sys.stdin)["findings"]))'; then :; else
+    echo "BUG [ticket-files-backfill]: the backfill entry names a file without linking it (UNLINKED_FILE)"; rm -rf "$root"; exit 1
+  fi
   set +e; out=$(bash "$root/_harness/scripts/check-ticket-log.sh" 2>&1); set -e
   if printf '%s\n' "$out" | grep -q 'FAIL: 202608D-PROJ-54'; then
     echo "BUG [ticket-files-backfill]: the validator refuses the backfilled ticket:"; printf '%s\n' "$out" | grep 202608D; rm -rf "$root"; exit 1

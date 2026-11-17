@@ -93,7 +93,9 @@ while IFS= read -r name; do
   # 2. One entry; the helper links the Iterations files and refreshes the section in the same write.
   files_n=$(printf '%s\n' "$sec_out" | sed -nE 's/.* ([0-9]+) retained file\(s\).*/\1/p' | head -1)
   body="- Ticket files section: added or refreshed by backfill-ticket-files.sh; it links the folder's ${files_n:-retained} retained file(s), directly or through the knowledge index and Iterations. Navigation only: no file was read or reviewed."
-  [ "$idx_n" -eq 0 ] || body="$body"$'\n'"- AI-Knowledge/_index.md: added the link to its note on $idx_n entr(ies) or tombstone(s); file names and descriptions unchanged."
+  # The index is named as a link: the entry is the newest, and check-work-map.py notes a path the
+  # newest entry names without linking it (UNLINKED_FILE).
+  [ "$idx_n" -eq 0 ] || body="$body"$'\n'"- [AI-Knowledge/_index.md](AI-Knowledge/_index.md): added the link to its note on $idx_n entr(ies) or tombstone(s); file names and descriptions unchanged."
   [ "$iter_n" -eq 0 ] || body="$body"$'\n'"- Iterations: linked $iter_n prompt, output and review file(s)."
   set +e
   out=$(printf '%s\n' "$body" | bash "$SCRIPT_DIR/append-session-entry.sh" "$md" "Ticket files linked (backfill)" 2>&1)

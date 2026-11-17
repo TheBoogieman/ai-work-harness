@@ -27,7 +27,15 @@ A header containing "sprint" (Sprint Version, SprintVersion, even "Sprin Version
 is a sprint column; any other header containing "version" is a design-version column.
 
 It never writes into the workbook's own folder, skips `~$` lock files, and
-replaces an earlier extract only with --force. Needs openpyxl (pip install
+replaces an earlier extract only with --force.
+
+  parse-workbook.py --relink <extract folder>
+
+refreshes the links of an extract's INDEX.md from the files the folder holds, without opening
+any workbook (#397): each Sheets-table CSV becomes a link and the Files list names every other
+file. It is for an extract made before INDEX.md linked its files, whose workbook may have moved
+on since; re-parsing would replace the extract the ticket worked from. It refuses an INDEX.md
+this script did not write, and a second run changes nothing. Needs openpyxl (pip install
 openpyxl). Exit codes: 0 done, 1 refused or bad arguments, 2 openpyxl missing
 or the workbook could not be read.
 """
@@ -38,6 +46,7 @@ import argparse
 import csv
 import datetime as dt
 import hashlib
+import importlib.util
 import re
 import shutil
 import sys
@@ -307,7 +316,54 @@ def write_csv(sheet: Sheet, path: Path) -> None:
             )
 
 
+def relink(target: Path) -> int:
+    """Refresh the links of one extract's INDEX.md from the files it holds (see the docstring)."""
+    index = target / "INDEX.md"
+    try:
+        text = index.read_text(encoding="utf-8")
+    except (OSError, UnicodeError):
+        fail(1, f"refused: no readable INDEX.md in {target}")
+    if MARKER not in text:
+        fail(1, f"refused: {index} was not written by parse-workbook; not relinking it")
+    # ticket-files.py owns the harness's link encoding; a file someone dropped in here may have a
+    # space or a comma in its name, which the parser's own names never do.
+    spec = importlib.util.spec_from_file_location("ticket_files", Path(__file__).resolve().parent / "ticket-files.py")
+    links = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(links)
+    body = re.sub(r"`(sheets/[A-Za-z0-9._-]+\.csv)`",
+                  lambda m: f"[{m.group(1)}]({m.group(1)})" if (target / m.group(1)).is_file() else m.group(0), text)
+    tabled = set(re.findall(r"\]\((sheets/[^)\s]+)\)", body))
+    rest = sorted((p.relative_to(target).as_posix() for p in target.rglob("*")
+                   if p.is_file() and not p.is_symlink() and not p.name.startswith(".") and p.name != "INDEX.md"),
+                  key=lambda rel: ({"version-history.md": 0, "comments.md": 1}.get(rel, 2), rel))
+    rest = [rel for rel in rest if rel not in tabled]
+    section = ["## Files", ""] + ([f"- [{rel}]({links.encode(rel)})" for rel in rest] or
+                                 ["- Only the CSVs in the Sheets table above; no history, comments or change files were written."]) + [""]
+    lines = body.split("\n")
+    if "## Files" in lines:
+        start = lines.index("## Files")
+        end = next((i for i in range(start + 1, len(lines)) if lines[i].startswith("## ")), len(lines))
+        lines[start:end] = section
+    else:
+        at = lines.index("## Use") if "## Use" in lines else len(lines)
+        lines[at:at] = section
+    new = "\n".join(lines)
+    if new == text:
+        print(f"parse-workbook: {index} already links its files")
+        return 0
+    tmp = index.with_name(".INDEX.md.relink")
+    tmp.write_text(new, encoding="utf-8")
+    tmp.replace(index)
+    print(f"parse-workbook: relinked {index}")
+    return 0
+
+
 def main() -> int:
+    # --relink is a mode of its own: it reads no workbook, so none of the arguments below apply.
+    if len(sys.argv) >= 2 and sys.argv[1] == "--relink":
+        if len(sys.argv) != 3:
+            fail(1, "usage: parse-workbook.py --relink <extract folder>")
+        return relink(Path(sys.argv[2]).expanduser().resolve())
     parser = argparse.ArgumentParser(
         description="Parse a design workbook (.xlsx) into AI-readable Markdown and CSV, read-only.",
         epilog="Example: parse-workbook.py 'Mappings/Design.xlsx' --out 'Tickets/<ticket>/Dump/workbooks' --version 16.6",

@@ -94,9 +94,36 @@ wp_refusals() {
     "lock files refused, workbook byte-unchanged"
 }
 
+# [workbook-parse-relink] (#397) An extract made before INDEX.md linked its files is relinked from
+#   the files it holds, without its workbook (which may have moved on): CSV cells become links and
+#   the Files list names the rest. A fresh extract needs nothing, a second run changes nothing,
+#   and an INDEX.md this script did not write is refused.
+#   REVERT-PROVABLE: delete the --relink branch of main() and this reds at once.
+wp_relink() {
+  local d="$WP_ROOT/out/design" old="$WP_ROOT/old" out rc
+  out=$("$WP_PY" "$WP_HELPER" --relink "$d" 2>&1) && printf '%s\n' "$out" | grep -q 'already links its files' \
+    || { echo "BUG [workbook-parse-relink]: a fresh extract was not already linked:"; echo "$out"; exit 1; }
+  cp -R "$d" "$old"
+  sed -E 's/\[(sheets\/[^]]+)\]\((sheets\/[^)]+)\)/`\1`/' "$d/INDEX.md" | awk '/^## Files$/ { skip = 1; next } skip && /^## / { skip = 0 } !skip' > "$old/INDEX.md"
+  "$WP_PY" "$WP_HELPER" --relink "$old" >/dev/null \
+    && grep -qF '[sheets/01-Mapping.csv](sheets/01-Mapping.csv)' "$old/INDEX.md" \
+    && grep -qF -- '- [changes-16.6.md](changes-16.6.md)' "$old/INDEX.md" \
+    && grep -qF -- '- [version-history.md](version-history.md)' "$old/INDEX.md" \
+    || { echo "BUG [workbook-parse-relink]: the old-style extract was not relinked:"; cat "$old/INDEX.md"; exit 1; }
+  out=$("$WP_PY" "$WP_HELPER" --relink "$old" 2>&1); printf '%s\n' "$out" | grep -q 'already links its files' \
+    || { echo "BUG [workbook-parse-relink]: a second relink changed the index:"; echo "$out"; exit 1; }
+  printf '# not ours\n' > "$old/INDEX.md"
+  set +e; "$WP_PY" "$WP_HELPER" --relink "$old" >/dev/null 2>&1; rc=$?; set -e
+  [ "$rc" -eq 1 ] && [ "$(cat "$old/INDEX.md")" = "# not ours" ] \
+    || { echo "BUG [workbook-parse-relink]: an INDEX.md the parser did not write was relinked (rc $rc)"; exit 1; }
+  echo "  ok [workbook-parse-relink] — an old extract gains its links without its workbook; fresh" \
+    "and relinked extracts are left alone; a foreign INDEX.md is refused"
+}
+
 case_workbook_parse() {
   wp_fixture
   wp_extract
+  wp_relink
   wp_refusals
   rm -rf "$WP_ROOT"
 }

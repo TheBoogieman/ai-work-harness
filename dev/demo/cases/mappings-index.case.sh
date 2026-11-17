@@ -124,9 +124,33 @@ mi_shipped() {
     "an estate with no workbooks"
 }
 
+# [mappings-index-links] (#397) Obsidian decodes a link the way decodeURI does, so a workbook whose
+#   name holds a comma or an ampersand is only reachable there when those stay raw; and every
+#   other file in Mappings/ (a mangled suffix, a PDF) is linked too, lock files and hidden names
+#   aside. REVERT-PROVABLE: encode with urllib's quote again, or drop other_files_in, and this reds.
+mi_links() {
+  local root out
+  root=$(mktemp -d); mkdir -p "$root/Mappings" "$root/General AI-Knowledge/Work Map/Pipelines"
+  for n in "A, B & C.xlsx" "old.xlsx (SUPERSEDED)" "notes.pdf" "~\$A, B & C.xlsx" ".DS_Store"; do
+    printf 'x\n' > "$root/Mappings/$n"
+  done
+  out=$("$MI_PY" "$MI_TOOL" --root "$root" --no-versions 2>&1) \
+    || { echo "BUG [mappings-index-links]: the script failed:"; echo "$out"; rm -rf "$root"; exit 1; }
+  printf '%s\n' "$out" | grep -qF '](../../Mappings/A,%20B%20&%20C.xlsx)' \
+    && printf '%s\n' "$out" | grep -qF -- '- [old.xlsx (SUPERSEDED)](../../Mappings/old.xlsx%20%28SUPERSEDED%29)' \
+    && printf '%s\n' "$out" | grep -qF -- '- [notes.pdf](../../Mappings/notes.pdf)' \
+    && ! printf '%s\n' "$out" | grep -qE '~\$|DS_Store' \
+    || { echo "BUG [mappings-index-links]: a comma or ampersand was encoded, or another file in" \
+           "Mappings/ is unlinked (or a lock file is listed):"; printf '%s\n' "$out"; rm -rf "$root"; exit 1; }
+  echo "  ok [mappings-index-links] — commas and ampersands stay raw, and every other file in" \
+    "Mappings/ is linked; lock files and hidden names are not"
+  rm -rf "$root"
+}
+
 case_mappings_index() {
   mi_fixture
   mi_index
+  mi_links
   mi_shipped
   rm -rf "$MI_ROOT"
 }

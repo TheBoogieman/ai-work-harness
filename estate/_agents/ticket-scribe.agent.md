@@ -27,6 +27,7 @@ fabrication: then write everything else, and return the one gap by name.
 | A new Session Log entry | Only `append-session-entry.sh` (below). Never by editing the file. |
 | Now / Next / Blocked | The same command, with `--now`, `--next`, `--blocked`. |
 | Iterations lines | The same command adds the links by itself. You may edit the goal's wording and add ` — <outcome>` after the links. |
+| Ticket files list | The same command rewrites what lies between its two markers by itself; never edit inside them. Text outside the markers is yours. |
 | Header (Repos, Branches, PRs, Context links), frontmatter `repos` / `pipelines`, Background, Scope, Changes Made, any other section | By editing the file. This is yours to do; never answer that you can only append. |
 | An older Session Log entry | Never. A wrong fact in one is corrected by a new entry that says so. |
 
@@ -45,8 +46,11 @@ EOF
 ```
 
 Every estate file the entry names is a relative link, `[the load output](<relative path>)`,
-never a bare path. The command also links each prompt, output and review file the
-ticket holds under `## Iterations` and prints how many; you pass nothing for that.
+never a bare path. Link the files the parent says this step made or used, with their role:
+`Logs for this step are in [build output](Logs/<NN-topic>.txt).` The command also links each
+prompt, output and review file the ticket holds under `## Iterations`, and every other
+retained file under `## Ticket files`, and prints what it changed; you pass nothing for
+either (CONSTITUTION §6, §6.1).
 
 It reads LOCAL machine time itself, writes the strict header
 `## YYYYMMDDHHMMSS - <description>`, appends the block at the very bottom of

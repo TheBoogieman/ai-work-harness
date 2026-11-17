@@ -38,8 +38,9 @@ At the start of your run, load the `i-have-adhd` skill: read `General AI-Knowled
 	`Last reviewed: YYYY-MM-DD` date. Update its topic index and the route from
 	`General AI-Knowledge/_index.md` in the same change. Include the relevant
 	repo/pipeline aliases and when to read it. Preserve one content owner and
-	leave the ticket-index tombstone in canonical form:
-	`- <file>.md (promoted -> General AI-Knowledge/<Topic>)`. After a rename or
+	leave the ticket-index tombstone in canonical form, linking the promoted note:
+	`- <file>.md (promoted -> General AI-Knowledge/<Topic>) — [Read promoted note](<relative path to the note>)`
+	(CONSTITUTION §7). After a rename or
 	promotion, repair backlinks (Work Map entity pages, other notes, ticket
 	Context links) and the root indexes so no link or tombstone dangles. A promoted note keeps its `repos` / `pipelines` frontmatter unchanged (CONSTITUTION §8).
 5. Keep Work Map entries as source-backed associations, not copied notes or
@@ -53,7 +54,8 @@ Skills use the same approval door. For a requested craft module, read
 `General AI-Knowledge/Skills/_index.md` and the existing
 `Skills/SKILL-TEMPLATE.md`, then draft the module for approval. On approval,
 publish `General AI-Knowledge/Skills/<Skill-Name>/SKILL.md`, update the Skills
-index and add its row to `Skills/SKILL-MAP.md`, and ensure the GAK root index
+index with a line that links the module after its name (the index header gives the
+line format) and add its row to `Skills/SKILL-MAP.md`, and ensure the GAK root index
 routes to it. Never self-approve a skill.
 
 Two families are the estate's own (CONSTITUTION §19): `Repo-<name>`, from

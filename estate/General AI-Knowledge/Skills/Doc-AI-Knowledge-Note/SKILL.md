@@ -8,7 +8,8 @@ the Durable Knowledge Gate (CONSTITUTION §7.1).
 
 ## CRAFT GUIDANCE
 **Kind:** ticket-local living note. **Destination:** `Tickets/<folder>/AI-Knowledge/<topic>.md` plus its
-`_index.md` line in the canonical grammar `- <file>.md — <what it covers> — <when to read it>`.
+`_index.md` line in the canonical grammar `- <file>.md — [Read note](<file>.md) — <what it covers> — <when to read it>`
+(the filename first, then the link the validator requires; CONSTITUTION §7).
 
 **Before writing:** read the index. If a note owns the topic, update it; never create `topic-2.md`.
 

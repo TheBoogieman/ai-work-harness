@@ -101,6 +101,11 @@ names the lag.
 section, the entry helper linking prompts, outputs and reviews into it, the validator's
 unlinked-file check, or `backfill-iterations.sh`. No SVG was edited; this note names the lag.
 
+**Diagram currency (2026-11-17, #397):** the sheets do not draw the ticket file's Ticket files
+section, `ticket-files.py` (which the entry helper and `check-work-map.py` share), the linked
+knowledge-index grammar the validator now requires, or `backfill-ticket-files.sh`. No SVG was
+edited; this note names the lag.
+
 **Diagram currency (2026-11-13, #385):** the sheets do not draw the skill map, the `Repo-*` and
 `Pipeline-*` skill templates, a pipeline page's `workbooks` list, or `mappings-index.py` and the
 Work Map's generated `Mappings.md`. No SVG was edited; this note names the lag.

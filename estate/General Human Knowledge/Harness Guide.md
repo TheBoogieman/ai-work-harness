@@ -29,7 +29,14 @@ it; the files do.
   `_harness/scripts/append-session-entry.sh`, which reads the clock and places the
   entry at the bottom, so no parent hands it a timestamp (CONSTITUTION §6). The
   same command links every prompt, output and review file the ticket holds under
-  its Iterations section, so none is left where the record cannot reach it.
+  its Iterations section, and refreshes the generated `## Ticket files` list that
+  links every other file in the ticket folder (notebooks, scripts, SQL, and the
+  git-ignored `Logs/` and `Dump/`), so none is left where the record cannot reach
+  it. Knowledge notes are reached one way, through the ticket's knowledge index,
+  whose every line links its note. A link is navigation, not evidence.
+  `check-work-map.py` says how many ticket files are reachable; after an upgrade,
+  `_harness/scripts/backfill-ticket-files.sh --dry-run` lists the older tickets to
+  bring up to this shape (CONSTITUTION §6, §6.1).
   `ticket-init` needs the new ticket's
   page entries linked before its final scribe step. `knowledge-curator` repairs
   backlinks and root indexes after renames and promotion. `doc-writer` registers a

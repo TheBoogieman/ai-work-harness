@@ -153,12 +153,14 @@ a tool is unavailable, state the limit and the next useful action.
   hosts run commands without an interactive terminal (stdin is not a TTY), so a
   terminal prompt either fails or waits where the human cannot answer it. On such
   a host, use a credential helper that shows a system dialog or reads the OS
-  keychain, and run every command that can prompt inside a time limit (for
+  keychain, or the host's own secure sign-in prompt if it has one (the answer
+  goes to the program, never to the model), and run every command that can
+  prompt inside a time limit (for
   example `timeout 180s ...`); record both in the local tools note. Wait and
   resume the same operation after completion. If the time limit expires, report
   it and do not retry while a prompt is still open; never retry in a loop,
-  abandon the check, switch profile, or substitute an assumption. Never collect
-  secrets through chat/question tools, echo them, save them, or wrap interactive
+  abandon the check, switch profile, or substitute an assumption. Never ask for
+  secrets with your own chat or question tools, echo them, save them, or wrap interactive
   commands in output filters.
 - **Tell the human before a prompt.** Before running a command you expect to ask
   for MFA or a sign-in, say so and wait until the human is present; a prompt

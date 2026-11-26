@@ -37,8 +37,9 @@ Before any remote call:
   tracker post, a PR or a push included.
 - MFA, SSO, passkeys, passphrases: leave the prompt visible, ask the human to
   complete it, wait, then resume the same command. Where agent commands have no
-  interactive terminal, use the dialog or keychain helper and time limit the
-  tools note names. Never ask for, echo or store a secret.
+  interactive terminal, use the dialog or keychain helper, or the host's secure
+  sign-in prompt, and the time limit the tools note names. Never ask for, echo
+  or store a secret.
 - Before a command you expect to ask for a sign-in, tell the human to be present;
   a prompt nobody answers only times out.
 - Only secrets are kept out of records: credentials (API keys, passwords,
